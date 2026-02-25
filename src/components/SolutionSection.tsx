@@ -1,3 +1,5 @@
+import { siteConfig } from "@/lib/site";
+
 interface Feature {
   label: string;
   detail: string;
@@ -6,22 +8,22 @@ interface Feature {
 const features: Feature[] = [
   {
     label: "Auto-calculate materials",
-    detail: "Panels, posts, gates, concrete, and hardware — counted for you.",
+    detail: "Panels, posts, gates, concrete, hardware — counted automatically from your linear footage.",
   },
   {
-    label: "Margin guardrails",
+    label: "Margin protection built in",
     detail:
-      "Set your target margin and get warned before any quote goes out low.",
+      "Set your target margin. Get a clear warning before any quote goes out below it.",
   },
   {
-    label: "Built for the field",
+    label: "Works on your phone",
     detail:
-      "Big buttons, simple inputs, works on a phone in the sun. No training needed.",
+      "Big buttons, simple inputs. Use it on-site in the sun. No training, no learning curve.",
   },
   {
-    label: "Change order tracking",
+    label: "Change orders recalculate instantly",
     detail:
-      "Every scope change recalculates cost and margin automatically.",
+      "Customer adds a gate? Scope changes? Cost and margin update automatically.",
   },
 ];
 
@@ -31,12 +33,12 @@ export default function SolutionSection() {
       <div className="max-w-5xl mx-auto">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold">
-            FenceOS protects your margin{" "}
+            {siteConfig.name} protects your margin{" "}
             <span className="text-fence-500">before</span> the quote goes out
           </h2>
           <p className="mt-4 text-lg text-gray-600 leading-relaxed">
-            A focused tool built specifically for fence contractors. No bloat,
-            no learning curve — just accurate estimates and protected profit.
+            One tool. Built specifically for fence contractors. No bloat, no
+            learning curve — just accurate estimates and protected profit.
           </p>
         </div>
 
