@@ -1,97 +1,72 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { signup } from "../login/actions";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/browser";
 
-export default function SignupPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-      return;
-    }
-
-    router.push("/dashboard");
-    router.refresh();
-  }
+export default async function SignupPage(props: {
+  searchParams: Promise<{ error?: string; message?: string }>;
+}) {
+  const searchParams = await props.searchParams;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-fence-950">
+      <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
+        <h1 className="text-2xl font-bold text-fence-900 mb-6 text-center">
           Create your FenceOS account
         </h1>
 
-        <form onSubmit={handleSignup} className="space-y-4">
+        {searchParams?.error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            {searchParams.error}
+          </div>
+        )}
+
+        {searchParams?.message && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+            {searchParams.message}
+          </div>
+        )}
+
+        <form className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-fence-700 mb-1">
               Email
             </label>
             <input
               id="email"
+              name="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-600"
-              placeholder="you@company.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-fence-500 focus:border-transparent"
+              placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium mb-1"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-fence-700 mb-1">
               Password
             </label>
             <input
               id="password"
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-600"
-              placeholder="Min 6 characters"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-fence-500 focus:border-transparent"
+              placeholder="••••••••"
             />
           </div>
 
-          {error && (
-            <p className="text-red-600 text-sm">{error}</p>
-          )}
-
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-fence-900 text-white py-2 rounded font-medium hover:bg-fence-800 disabled:opacity-50"
+            formAction={signup}
+            className="w-full py-2.5 px-4 bg-fence-600 hover:bg-fence-700 text-white font-medium rounded-lg transition-colors"
           >
-            {loading ? "Creating account…" : "Create account"}
+            Sign Up
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="mt-6 text-center text-sm text-fence-600">
           Already have an account?{" "}
-          <Link href="/login" className="text-fence-700 underline">
-            Log in
+          <Link href="/login" className="text-fence-500 hover:text-fence-700 font-medium">
+            Sign in
           </Link>
         </p>
       </div>
