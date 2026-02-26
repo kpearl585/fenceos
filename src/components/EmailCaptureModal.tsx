@@ -72,7 +72,7 @@ export default function EmailCaptureModal({
               Download Your Estimate
             </h3>
             <p className="text-gray-500 text-sm mt-1">
-              Enter your email and we'll generate your PDF.
+              Enter your email and we&apos;ll generate your PDF.
             </p>
           </div>
           <button
