@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { logout } from "../login/actions";
 
 export default async function DashboardPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/login");
@@ -19,29 +18,30 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold">FenceOS Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500">{user.email}</span>
-          <form action="/auth/logout" method="POST">
-            <button
-              type="submit"
-              className="text-sm text-red-600 hover:text-red-800 font-medium"
-            >
-              Log out
-            </button>
-          </form>
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-fence-900">FenceOS Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-fence-600">{user.email}</span>
+            <form>
+              <button
+                formAction={logout}
+                className="px-3 py-1.5 text-sm bg-fence-100 hover:bg-fence-200 text-fence-700 rounded-lg transition-colors"
+              >
+                Sign Out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-xl font-semibold mb-4">Welcome back</h2>
-
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {cards.map((card) => (
             <div
               key={card.title}
-              className="bg-white rounded-lg border border-gray-200 p-5"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
             >
               <h3 className="font-semibold text-fence-900">{card.title}</h3>
               <p className="text-sm text-gray-400 mt-1">{card.note}</p>
