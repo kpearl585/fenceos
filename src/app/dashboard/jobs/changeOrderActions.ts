@@ -33,7 +33,7 @@ export async function submitChangeOrder(fd: FormData) {
   const reason = (fd.get("reason") as string) || "";
 
   // Parse line items from form data
-  const linesJson = fd.get("lines") as string;
+  const linesJson = fd.get("lineItems") as string;
   let lineInputs: ChangeOrderLineInput[];
   try {
     lineInputs = JSON.parse(linesJson);
