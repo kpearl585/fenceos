@@ -230,6 +230,17 @@ export async function createEstimate(fd: FormData) {
 export async function updateEstimate(fd: FormData) {
   const { supabase, profile } = await getAuthContext();
   const estimateId = fd.get("estimateId") as string;
+
+  // Server-side lock check — block editing converted estimates
+  const { data: check } = await supabase
+    .from("estimates")
+    .select("status")
+    .eq("id", estimateId)
+    .single();
+  if (check?.status === "converted") {
+    throw new Error("This estimate has been converted to a job and is locked.");
+  }
+
   const inputs = buildInputs(fd);
 
   const title =
@@ -281,6 +292,16 @@ export async function updateEstimate(fd: FormData) {
 export async function sendQuote(fd: FormData) {
   const { supabase, profile } = await getAuthContext();
   const estimateId = fd.get("estimateId") as string;
+
+  // Server-side lock check
+  const { data: lockCheck } = await supabase
+    .from("estimates")
+    .select("status")
+    .eq("id", estimateId)
+    .single();
+  if (lockCheck?.status === "converted") {
+    throw new Error("This estimate has been converted to a job and is locked.");
+  }
 
   // Load current estimate row to rebuild inputs
   const { data: est, error: loadErr } = await supabase
