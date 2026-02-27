@@ -41,10 +41,17 @@ export async function convertEstimateToJob(
     throw new Error("Estimate not found or access denied");
   }
 
-  // 2. Validate status
-  if (est.status !== "quoted") {
+  // 2. Validate status — must be deposit_paid (or quoted for legacy)
+  if (est.status !== "deposit_paid" && est.status !== "quoted") {
     throw new Error(
-      `Cannot convert estimate with status "${est.status}". Only quoted estimates can be converted.`
+      `Cannot convert estimate with status "${est.status}". Deposit must be paid before job conversion.`
+    );
+  }
+
+  // 3. Enforce deposit gate — block if deposit required but not paid
+  if (est.deposit_required_amount && !est.deposit_paid) {
+    throw new Error(
+      "Deposit must be paid before job conversion. Please collect the deposit first."
     );
   }
 
@@ -80,12 +87,15 @@ export async function convertEstimateToJob(
   }
 
   // 6. Insert job row (financial snapshot)
+  const jobTitle = est.title || `Job from Estimate ${estimateId.slice(0, 8)}`;
+
   const { data: job, error: jobErr } = await supabase
     .from("jobs")
     .insert({
       org_id: profile.org_id,
       estimate_id: estimateId,
       customer_id: est.customer_id,
+      title: jobTitle,
       status: "scheduled",
       total_price: Number(est.total) || 0,
       total_cost: Number(est.estimated_cost) || 0,
