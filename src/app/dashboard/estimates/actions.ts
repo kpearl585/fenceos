@@ -13,6 +13,11 @@ import type {
   EstimateInputs,
   MaterialRow,
 } from "@/lib/estimate-engine";
+import { snapshotLegalTerms } from "@/lib/contracts/snapshotLegalTerms";
+import {
+  buildPdfData,
+  generateAndUploadEstimatePdf,
+} from "@/lib/contracts/uploadContractPdf";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -237,8 +242,8 @@ export async function updateEstimate(fd: FormData) {
     .select("status")
     .eq("id", estimateId)
     .single();
-  if (check?.status === "converted") {
-    throw new Error("This estimate has been converted to a job and is locked.");
+  if (check?.status === "converted" || check?.status === "accepted") {
+    throw new Error("This estimate has been accepted or converted and is locked.");
   }
 
   const inputs = buildInputs(fd);
@@ -299,8 +304,8 @@ export async function sendQuote(fd: FormData) {
     .select("status")
     .eq("id", estimateId)
     .single();
-  if (lockCheck?.status === "converted") {
-    throw new Error("This estimate has been converted to a job and is locked.");
+  if (lockCheck?.status === "converted" || lockCheck?.status === "accepted") {
+    throw new Error("This estimate has been accepted or converted and is locked.");
   }
 
   // Load current estimate row to rebuild inputs
@@ -361,6 +366,21 @@ export async function sendQuote(fd: FormData) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", estimateId);
+
+  // ── PHASE 7: Snapshot legal terms + generate customer-facing PDF ──
+  try {
+    await snapshotLegalTerms(estimateId, profile.org_id);
+    const pdfData = await buildPdfData(estimateId, profile.org_id);
+    await generateAndUploadEstimatePdf(
+      pdfData,
+      profile.org_id,
+      estimateId,
+      "estimate.pdf"
+    );
+  } catch (snapErr) {
+    console.error("Legal snapshot / PDF generation error:", snapErr);
+    // Non-blocking — estimate is already quoted, PDF can be regenerated
+  }
 
   redirect(`/dashboard/estimates/${estimateId}`);
 }
