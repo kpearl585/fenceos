@@ -349,8 +349,9 @@ export default async function EstimateDetailPage({
           </form>
         )}
 
-        {/* Convert to Job (deposit_paid or quoted legacy) */}
-        {(est.status === "deposit_paid" || (est.status === "quoted" && !est.deposit_required_amount)) && (
+        {/* Convert to Job (deposit_paid or quoted legacy) — requires customer */}
+        {est.customer_id &&
+          (est.status === "deposit_paid" || (est.status === "quoted" && !est.deposit_required_amount)) && (
           <form action={convertToJob} className="flex-1">
             <input type="hidden" name="estimateId" value={est.id} />
             <button
@@ -360,6 +361,14 @@ export default async function EstimateDetailPage({
               Convert to Job
             </button>
           </form>
+        )}
+
+        {/* Warning: cannot convert without customer */}
+        {!est.customer_id && !isConverted &&
+          (est.status === "deposit_paid" || est.status === "quoted") && (
+          <div className="flex-1 py-3 px-4 rounded-xl border border-yellow-300 bg-yellow-50 text-yellow-800 text-sm text-center font-medium">
+            Assign a customer before converting to a job.
+          </div>
         )}
 
         {/* Delete (owner only, not converted) */}
