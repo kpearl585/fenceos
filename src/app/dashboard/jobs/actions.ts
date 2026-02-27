@@ -94,8 +94,8 @@ export async function transitionJobStatus(fd: FormData) {
 
   // Validate transitions
   const validTransitions: Record<string, string[]> = {
-    scheduled: ["active"],
-    active: ["complete"],
+    scheduled: ["active", "cancelled"],
+    active: ["complete", "cancelled"],
   };
 
   // Load current job
