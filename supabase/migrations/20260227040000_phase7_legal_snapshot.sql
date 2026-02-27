@@ -31,3 +31,74 @@ ALTER TABLE estimates
 -- Index for token lookup (used by public acceptance route)
 CREATE INDEX IF NOT EXISTS idx_estimates_accept_token
   ON estimates (accept_token) WHERE accept_token IS NOT NULL;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 4. RLS policies for anonymous acceptance flow
+-- The public acceptance page uses an anon client to read estimates by token
+-- and update them when customer accepts.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- estimates: anon can SELECT when filtering by a valid accept_token
+CREATE POLICY estimates_anon_select ON estimates
+  FOR SELECT
+  USING (
+    auth.role() = 'anon'
+    AND accept_token IS NOT NULL
+  );
+
+-- estimates: anon can UPDATE when filtering by a valid accept_token
+-- (only status = 'quoted' can be accepted, enforced in app logic)
+CREATE POLICY estimates_anon_update ON estimates
+  FOR UPDATE
+  USING (
+    auth.role() = 'anon'
+    AND accept_token IS NOT NULL
+  );
+
+-- estimate_line_items: anon can SELECT items for estimates with accept_token
+CREATE POLICY eli_anon_select ON estimate_line_items
+  FOR SELECT
+  USING (
+    auth.role() = 'anon'
+    AND EXISTS (
+      SELECT 1 FROM estimates e
+      WHERE e.id = estimate_line_items.estimate_id
+      AND e.accept_token IS NOT NULL
+    )
+  );
+
+-- customers: anon can SELECT customers linked to estimates with accept_token
+CREATE POLICY customers_anon_select ON customers
+  FOR SELECT
+  USING (
+    auth.role() = 'anon'
+    AND EXISTS (
+      SELECT 1 FROM estimates e
+      WHERE e.customer_id = customers.id
+      AND e.accept_token IS NOT NULL
+    )
+  );
+
+-- organizations: anon can SELECT orgs linked to estimates with accept_token
+CREATE POLICY organizations_anon_select ON organizations
+  FOR SELECT
+  USING (
+    auth.role() = 'anon'
+    AND EXISTS (
+      SELECT 1 FROM estimates e
+      WHERE e.org_id = organizations.id
+      AND e.accept_token IS NOT NULL
+    )
+  );
+
+-- org_branding: anon can SELECT branding for orgs linked to estimates with accept_token
+CREATE POLICY org_branding_anon_select ON org_branding
+  FOR SELECT
+  USING (
+    auth.role() = 'anon'
+    AND EXISTS (
+      SELECT 1 FROM estimates e
+      WHERE e.org_id = org_branding.org_id
+      AND e.accept_token IS NOT NULL
+    )
+  );
