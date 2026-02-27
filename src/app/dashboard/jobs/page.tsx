@@ -107,12 +107,13 @@ export default async function JobsPage() {
               scheduled_date: string | null;
               assigned_foreman_id: string | null;
               created_at: string;
-              customers: { name: string }[];
-              estimates: { fence_type: string; linear_feet: number }[];
+              customers: { name: string } | { name: string }[] | null;
+              estimates: { fence_type: string; linear_feet: number } | { fence_type: string; linear_feet: number }[] | null;
             }) => {
-              const est = job.estimates?.[0];
-              const customerName =
-                job.customers?.[0]?.name || "No customer";
+              // Supabase returns object for many-to-one FK, array for one-to-many
+              const est = Array.isArray(job.estimates) ? job.estimates[0] : job.estimates;
+              const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
+              const customerName = customer?.name || "No customer";
               const fenceType =
                 est?.fence_type?.replace("_", " ") || "—";
               const foremanName = job.assigned_foreman_id

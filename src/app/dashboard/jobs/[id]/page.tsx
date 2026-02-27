@@ -148,24 +148,18 @@ export default async function JobDetailPage({
   }
 
   /* ── computed ── */
-  const customer = (
-    job.customers as unknown as {
-      name: string;
-      phone: string | null;
-      address: string | null;
-      city: string | null;
-      state: string | null;
-    }[]
-  )?.[0];
-  const est = (
-    job.estimates as unknown as {
-      fence_type: string;
-      linear_feet: number;
-      gate_count: number;
-      title: string;
-      target_margin_pct: number;
-    }[]
-  )?.[0];
+  // Supabase returns object for many-to-one FK, array for one-to-many
+  const rawCustomer = job.customers as unknown as
+    | { name: string; phone: string | null; address: string | null; city: string | null; state: string | null }
+    | { name: string; phone: string | null; address: string | null; city: string | null; state: string | null }[]
+    | null;
+  const customer = Array.isArray(rawCustomer) ? rawCustomer[0] : rawCustomer;
+
+  const rawEst = job.estimates as unknown as
+    | { fence_type: string; linear_feet: number; gate_count: number; title: string; target_margin_pct: number }
+    | { fence_type: string; linear_feet: number; gate_count: number; title: string; target_margin_pct: number }[]
+    | null;
+  const est = Array.isArray(rawEst) ? rawEst[0] : rawEst;
   const targetMarginPct = Number(est?.target_margin_pct) || 0.35;
 
   const canManage = profile.role === "owner" || profile.role === "sales";
@@ -175,7 +169,7 @@ export default async function JobDetailPage({
   const hasVerifications = verifications.length > 0;
 
   const requiredIncomplete = checklist.filter(
-    (c: { required: boolean; completed: boolean }) => c.required && !c.completed
+    (c: { is_required: boolean; completed: boolean }) => c.is_required && !c.completed
   ).length;
   const allRequiredDone = requiredIncomplete === 0 && hasChecklist;
   const allMaterialsVerified =
@@ -216,7 +210,7 @@ export default async function JobDetailPage({
           <p className="text-sm text-gray-500 mt-0.5">
             {est?.fence_type?.replace("_", " ") || "—"} &middot;{" "}
             {est?.linear_feet || 0} ft
-            {(est?.gate_count ?? 0) > 0 && ` · ${est.gate_count} gate(s)`}
+            {(est?.gate_count ?? 0) > 0 && ` · ${est?.gate_count} gate(s)`}
           </p>
         </div>
         <span
@@ -467,7 +461,7 @@ export default async function JobDetailPage({
               (c: {
                 id: string;
                 label: string;
-                required: boolean;
+                is_required: boolean;
                 completed: boolean;
                 item_key: string;
               }) => (
@@ -501,7 +495,7 @@ export default async function JobDetailPage({
                     >
                       {c.label}
                     </span>
-                    {c.required && !c.completed && (
+                    {c.is_required && !c.completed && (
                       <span className="ml-2 text-xs text-red-500 font-medium">
                         Required
                       </span>

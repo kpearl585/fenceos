@@ -101,7 +101,7 @@ export default async function EstimatesPage() {
               fence_type: string;
               linear_feet: number;
               created_at: string;
-              customers: { name: string }[];
+              customers: { name: string } | { name: string }[] | null;
             }) => {
               const marginPct = Number(est.gross_margin_pct) || 0;
               const marginColor =
@@ -120,7 +120,7 @@ export default async function EstimatesPage() {
                         {est.title}
                       </h3>
                       <p className="text-sm text-gray-500 mt-0.5">
-                        {est.customers?.[0]?.name || "No customer"} ·{" "}
+                        {(Array.isArray(est.customers) ? est.customers[0]?.name : est.customers?.name) || "No customer"} ·{" "}
                         {est.linear_feet} ft ·{" "}
                         {new Date(est.created_at).toLocaleDateString()}
                       </p>

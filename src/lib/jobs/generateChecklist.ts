@@ -44,7 +44,7 @@ export async function generateChecklist(
     job_id: jobId,
     item_key: item.item_key,
     label: item.label,
-    required: item.required,
+    is_required: item.required,
     sort_order: idx,
   }));
   const { error } = await supabase

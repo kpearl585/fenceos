@@ -98,7 +98,8 @@ export default async function EstimateDetailPage({
           <h1 className="text-2xl font-bold text-fence-900">{est.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {(() => {
-              const cust = (est.customers as unknown as { id: string; name: string }[] | null)?.[0];
+              const rawCust = est.customers as unknown as { id: string; name: string } | { id: string; name: string }[] | null;
+              const cust = Array.isArray(rawCust) ? rawCust[0] : rawCust;
               return cust ? (
                 <Link href={`/dashboard/customers/${cust.id}`} className="text-fence-600 hover:text-fence-800 hover:underline">
                   {cust.name}
@@ -157,7 +158,8 @@ export default async function EstimateDetailPage({
 
       {/* ── Customer Info Card ── */}
       {!missingCustomer && (() => {
-        const cust = (est.customers as unknown as { id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; state: string | null }[] | null)?.[0];
+        const rawCust2 = est.customers as unknown as { id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; state: string | null } | { id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; state: string | null }[] | null;
+        const cust = Array.isArray(rawCust2) ? rawCust2[0] : rawCust2;
         return cust ? (
           <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
             <div className="flex items-center justify-between mb-1">
