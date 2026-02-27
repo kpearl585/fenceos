@@ -17,6 +17,7 @@ export interface UserProfile {
 const ACCESS_MATRIX: Record<string, Role[]> = {
   // Dashboard home — everyone
   "":          ["owner", "sales", "foreman"],
+  customers:   ["owner", "sales", "foreman"],
   estimates:   ["owner", "sales"],
   jobs:        ["owner", "sales", "foreman"],
   materials:   ["owner", "foreman"],
@@ -30,11 +31,12 @@ export interface NavItem {
   href: string;
   /** Route segment used to check access */
   segment: string;
-  icon: "home" | "calculator" | "briefcase" | "package" | "trending-up";
+  icon: "home" | "users" | "calculator" | "briefcase" | "package" | "trending-up";
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { label: "Overview",   href: "/dashboard",           segment: "",          icon: "home" },
+  { label: "Customers",  href: "/dashboard/customers",  segment: "customers", icon: "users" },
   { label: "Estimates",  href: "/dashboard/estimates",  segment: "estimates", icon: "calculator" },
   { label: "Jobs",       href: "/dashboard/jobs",       segment: "jobs",      icon: "briefcase" },
   { label: "Materials",  href: "/dashboard/materials",  segment: "materials", icon: "package" },
