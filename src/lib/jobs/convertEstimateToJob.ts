@@ -87,12 +87,15 @@ export async function convertEstimateToJob(
   }
 
   // 6. Insert job row (financial snapshot)
+  const jobTitle = est.title || `Job from Estimate ${estimateId.slice(0, 8)}`;
+
   const { data: job, error: jobErr } = await supabase
     .from("jobs")
     .insert({
       org_id: profile.org_id,
       estimate_id: estimateId,
       customer_id: est.customer_id,
+      title: jobTitle,
       status: "scheduled",
       total_price: Number(est.total) || 0,
       total_cost: Number(est.estimated_cost) || 0,
