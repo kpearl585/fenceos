@@ -176,6 +176,11 @@ export async function createEstimate(fd: FormData) {
     customerId = custVal;
   }
 
+  // Customer is required — prevent orphan estimates
+  if (!customerId) {
+    throw new Error("Customer is required. Please select or create a customer.");
+  }
+
   const title =
     (fd.get("title") as string)?.trim() ||
     `${FENCE_TYPE_CONFIGS[inputs.fenceType].label} Fence Estimate`;
@@ -252,6 +257,11 @@ export async function updateEstimate(fd: FormData) {
     (fd.get("title") as string)?.trim() ||
     `${FENCE_TYPE_CONFIGS[inputs.fenceType].label} Fence Estimate`;
   const customerId = (fd.get("customerId") as string) || null;
+
+  // Customer is required — prevent orphan estimates
+  if (!customerId) {
+    throw new Error("Customer is required. Please select or create a customer.");
+  }
 
   // Re-run engine
   const materialsMap = await loadMaterialsMap(supabase, profile.org_id);
