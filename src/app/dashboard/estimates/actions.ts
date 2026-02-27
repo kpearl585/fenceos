@@ -424,23 +424,8 @@ export async function convertToJob(fd: FormData) {
     "@/lib/jobs/convertEstimateToJob"
   );
 
-  try {
-    const { jobId } = await convertEstimateToJob(estimateId);
-    redirect(`/dashboard/jobs`);
-  } catch (err: unknown) {
-    // Re-throw Next.js redirect (it throws NEXT_REDIRECT internally)
-    if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
-    if (
-      typeof err === "object" &&
-      err !== null &&
-      "digest" in err &&
-      typeof (err as { digest: unknown }).digest === "string" &&
-      (err as { digest: string }).digest.startsWith("NEXT_REDIRECT")
-    ) {
-      throw err;
-    }
-    const message =
-      err instanceof Error ? err.message : "Failed to convert estimate to job";
-    throw new Error(message);
-  }
+  // Do NOT wrap redirect() in try/catch — Next.js throws NEXT_REDIRECT
+  // internally and it must propagate unimpeded.
+  await convertEstimateToJob(estimateId);
+  redirect(`/dashboard/jobs`);
 }
