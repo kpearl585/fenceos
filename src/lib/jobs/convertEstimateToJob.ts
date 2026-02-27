@@ -18,6 +18,9 @@ import { canAccess } from "@/lib/roles";
 export async function convertEstimateToJob(
   estimateId: string
 ): Promise<{ jobId: string }> {
+  const tag = `[convertEstimateToJob][${estimateId.slice(0, 8)}]`;
+  console.log(`${tag} START`);
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,8 +41,15 @@ export async function convertEstimateToJob(
     .single();
 
   if (estErr || !est) {
+    console.error(`${tag} FAIL estimate fetch`, estErr?.message);
     throw new Error("Estimate not found or access denied");
   }
+
+  console.log(
+    `${tag} estimate loaded — status=${est.status}, customer_id=${est.customer_id}, ` +
+    `deposit_required=${est.deposit_required_amount}, deposit_paid=${est.deposit_paid}, ` +
+    `total=${est.total}, estimated_cost=${est.estimated_cost}`
+  );
 
   // 2. Validate status — must be deposit_paid (or quoted for legacy)
   if (est.status !== "deposit_paid" && est.status !== "quoted") {
@@ -55,7 +65,7 @@ export async function convertEstimateToJob(
     );
   }
 
-  // 3. Prevent double conversion
+  // 4. Prevent double conversion
   const { data: existingJob } = await supabase
     .from("jobs")
     .select("id")
@@ -68,14 +78,14 @@ export async function convertEstimateToJob(
     );
   }
 
-  // 4. Require customer
+  // 5. Require customer
   if (!est.customer_id) {
     throw new Error(
       "Estimate must have a customer before converting to a job."
     );
   }
 
-  // 5. Load estimate line items
+  // 6. Load estimate line items
   const { data: lineItems, error: liErr } = await supabase
     .from("estimate_line_items")
     .select("*")
@@ -86,33 +96,42 @@ export async function convertEstimateToJob(
     throw new Error(`Failed to load line items: ${liErr.message}`);
   }
 
-  // 6. Insert job row (financial snapshot)
+  console.log(`${tag} line items loaded — count=${lineItems?.length ?? 0}`);
+
+  // 7. Insert job row (financial snapshot)
   const jobTitle = est.title || `Job from Estimate ${estimateId.slice(0, 8)}`;
+
+  const jobPayload = {
+    org_id: profile.org_id,
+    estimate_id: estimateId,
+    customer_id: est.customer_id,
+    title: jobTitle,
+    status: "scheduled" as const,
+    total_price: Number(est.total) || 0,
+    total_cost: Number(est.estimated_cost) || 0,
+    gross_profit: Number(est.gross_profit) || 0,
+    gross_margin_pct: Number(est.gross_margin_pct) || 0,
+    created_by: profile.id,
+  };
+
+  console.log(`${tag} inserting job — title="${jobTitle}", total_price=${jobPayload.total_price}`);
 
   const { data: job, error: jobErr } = await supabase
     .from("jobs")
-    .insert({
-      org_id: profile.org_id,
-      estimate_id: estimateId,
-      customer_id: est.customer_id,
-      title: jobTitle,
-      status: "scheduled",
-      total_price: Number(est.total) || 0,
-      total_cost: Number(est.estimated_cost) || 0,
-      gross_profit: Number(est.gross_profit) || 0,
-      gross_margin_pct: Number(est.gross_margin_pct) || 0,
-      created_by: profile.id,
-    })
+    .insert(jobPayload)
     .select("id")
     .single();
 
   if (jobErr || !job) {
+    console.error(`${tag} FAIL job insert`, jobErr?.message, jobErr?.code, jobErr?.details);
     throw new Error(
       `Failed to create job: ${jobErr?.message ?? "unknown"}`
     );
   }
 
-  // 7. Copy line items → job_line_items
+  console.log(`${tag} job created — id=${job.id}`);
+
+  // 8. Copy line items → job_line_items
   if (lineItems && lineItems.length > 0) {
     const jobLines = lineItems.map((li) => ({
       job_id: job.id,
@@ -133,12 +152,17 @@ export async function convertEstimateToJob(
       .insert(jobLines);
 
     if (jliErr) {
+      console.error(`${tag} FAIL line items copy — rolling back job`, jliErr.message);
       await supabase.from("jobs").delete().eq("id", job.id);
       throw new Error(`Failed to copy line items: ${jliErr.message}`);
     }
+
+    console.log(`${tag} copied ${jobLines.length} line items`);
   }
 
-  // 8. Lock estimate → status = 'converted'
+  // 9. Lock estimate → status = 'converted'
+  console.log(`${tag} locking estimate → converted`);
+
   const { error: lockErr } = await supabase
     .from("estimates")
     .update({
@@ -148,10 +172,12 @@ export async function convertEstimateToJob(
     .eq("id", estimateId);
 
   if (lockErr) {
+    console.error(`${tag} FAIL estimate lock — rolling back`, lockErr.message);
     await supabase.from("job_line_items").delete().eq("job_id", job.id);
     await supabase.from("jobs").delete().eq("id", job.id);
     throw new Error(`Failed to lock estimate: ${lockErr.message}`);
   }
 
+  console.log(`${tag} SUCCESS — jobId=${job.id}`);
   return { jobId: job.id };
 }
