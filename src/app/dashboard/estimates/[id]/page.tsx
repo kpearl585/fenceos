@@ -60,8 +60,20 @@ export default async function EstimateDetailPage({
   );
 
   const isQuoted = est.status === "quoted";
+  const isConverted = est.status === "converted";
   const marginOk = est.margin_status === "ok";
   const targetPct = Number(est.target_margin_pct) || 0.35;
+
+  // Check if job exists for converted estimate
+  let linkedJobId: string | null = null;
+  if (isConverted) {
+    const { data: linkedJob } = await supabase
+      .from("jobs")
+      .select("id")
+      .eq("estimate_id", id)
+      .maybeSingle();
+    linkedJobId = linkedJob?.id ?? null;
+  }
 
   return (
     <>
@@ -95,6 +107,11 @@ export default async function EstimateDetailPage({
                 : isQuoted
                   ? "bg-blue-100 text-blue-700"
                   : "bg-gray-100 text-gray-700"
+            isConverted
+              ? "bg-purple-100 text-purple-700"
+              : isQuoted
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700"
           }`}
         >
           {est.status === "deposit_paid" ? "DEPOSIT PAID" : est.status.toUpperCase()}
@@ -288,6 +305,23 @@ export default async function EstimateDetailPage({
         )}
       </div>
 
+      {/* Converted banner */}
+      {isConverted && (
+        <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 mb-6">
+          <p className="text-sm font-semibold text-purple-800">
+            This estimate has been converted to a job and is locked.
+          </p>
+          {linkedJobId && (
+            <Link
+              href={`/dashboard/jobs/${linkedJobId}`}
+              className="inline-block mt-2 bg-purple-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors"
+            >
+              View Job
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* ── Actions ── */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Edit (only for drafts) */}
@@ -320,11 +354,14 @@ export default async function EstimateDetailPage({
 
         {/* Convert to Job (deposit_paid or quoted legacy) */}
         {(est.status === "deposit_paid" || (est.status === "quoted" && !est.deposit_required_amount)) && (
+        {/* Convert to Job (quoted only) */}
+        {isQuoted && (
           <form action={convertToJob} className="flex-1">
             <input type="hidden" name="estimateId" value={est.id} />
             <button
               type="submit"
               className="w-full py-3 rounded-xl font-semibold bg-fence-600 text-white hover:bg-fence-700 transition-colors"
+              className="w-full py-3 rounded-xl font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-colors"
             >
               Convert to Job
             </button>
@@ -333,6 +370,8 @@ export default async function EstimateDetailPage({
 
         {/* Delete (owner only) */}
         {profile.role === "owner" && (
+        {/* Delete (owner only, not converted) */}
+        {profile.role === "owner" && !isConverted && (
           <form action={deleteEstimate}>
             <input type="hidden" name="estimateId" value={est.id} />
             <button
