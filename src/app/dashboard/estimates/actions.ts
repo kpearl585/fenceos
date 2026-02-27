@@ -242,7 +242,7 @@ export async function updateEstimate(fd: FormData) {
     .select("status")
     .eq("id", estimateId)
     .single();
-  if (check?.status === "converted" || check?.status === "accepted") {
+  if (check?.status === "converted" || check?.status === "accepted" || check?.status === "deposit_paid") {
     throw new Error("This estimate has been accepted or converted and is locked.");
   }
 
@@ -304,7 +304,7 @@ export async function sendQuote(fd: FormData) {
     .select("status")
     .eq("id", estimateId)
     .single();
-  if (lockCheck?.status === "converted" || lockCheck?.status === "accepted") {
+  if (lockCheck?.status === "converted" || lockCheck?.status === "accepted" || lockCheck?.status === "deposit_paid") {
     throw new Error("This estimate has been accepted or converted and is locked.");
   }
 
