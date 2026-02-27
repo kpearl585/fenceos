@@ -122,6 +122,35 @@ export async function transitionJobStatus(fd: FormData) {
     throw new Error("Foremen can only start scheduled jobs");
   }
 
+  // Enforce: all materials must be verified before starting
+  if (newStatus === "active") {
+    const { data: unverified } = await supabase
+      .from("job_material_verifications")
+      .select("id")
+      .eq("job_id", jobId)
+      .eq("verified", false);
+    if (unverified && unverified.length > 0) {
+      throw new Error(
+        `Cannot start job: ${unverified.length} material(s) not yet verified.`
+      );
+    }
+  }
+
+  // Enforce: all required checklist items must be completed before marking complete
+  if (newStatus === "complete") {
+    const { data: incomplete } = await supabase
+      .from("job_checklists")
+      .select("id")
+      .eq("job_id", jobId)
+      .eq("required", true)
+      .eq("completed", false);
+    if (incomplete && incomplete.length > 0) {
+      throw new Error(
+        `Cannot complete job: ${incomplete.length} required checklist item(s) not completed.`
+      );
+    }
+  }
+
   const updateData: Record<string, unknown> = { status: newStatus };
   if (newStatus === "complete") {
     updateData.completed_date = new Date().toISOString().split("T")[0];
