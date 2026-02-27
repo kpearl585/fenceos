@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
     const supabase = await createAnonClient();
 
     // 1. Validate token and status
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: est, error: estErr } = (await supabase
       .from("estimates")
       .select(

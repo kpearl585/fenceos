@@ -41,7 +41,6 @@ export default async function AcceptPage({
   const supabase = await createAnonClient();
 
   // Validate token
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: est } = (await supabase
     .from("estimates")
     .select(
