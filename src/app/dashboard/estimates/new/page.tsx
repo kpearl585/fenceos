@@ -41,17 +41,20 @@ export default async function NewEstimatePage() {
         action={createEstimate}
         className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8 max-w-2xl space-y-6"
       >
-        {/* ── Customer ── */}
+        {/* ── Customer (required) ── */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-            Customer
+            Customer <span className="text-red-500">*</span>
           </label>
           <select
             name="customerId"
+            required
             defaultValue=""
             className="w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-fence-500 focus:border-fence-500"
           >
-            <option value="">No customer</option>
+            <option value="" disabled>
+              — Select a customer —
+            </option>
             {customers?.map((c: { id: string; name: string }) => (
               <option key={c.id} value={c.id}>
                 {c.name}

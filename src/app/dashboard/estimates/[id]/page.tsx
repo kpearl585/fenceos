@@ -63,6 +63,11 @@ export default async function EstimateDetailPage({
   const isConverted = est.status === "converted";
   const marginOk = est.margin_status === "ok";
   const targetPct = Number(est.target_margin_pct) || 0.35;
+  const missingCustomer = !est.customer_id;
+  const canConvert =
+    !missingCustomer &&
+    (est.status === "deposit_paid" ||
+      (est.status === "quoted" && !est.deposit_required_amount));
 
   // Check if job exists for converted estimate
   let linkedJobId: string | null = null;
@@ -117,6 +122,30 @@ export default async function EstimateDetailPage({
             ` · ${new Date(est.quoted_at).toLocaleDateString()}`}
         </span>
       </div>
+
+      {/* ── Missing Customer Warning (prominent, near top) ── */}
+      {missingCustomer && !isConverted && (
+        <div id="customer-warning" className="rounded-xl border-2 border-orange-400 bg-orange-50 p-4 sm:p-5 mb-6">
+          <div className="flex items-start gap-3">
+            <span className="text-orange-500 text-xl flex-shrink-0">&#9888;</span>
+            <div>
+              <h2 className="font-bold text-orange-800">No Customer Assigned</h2>
+              <p className="text-sm text-orange-700 mt-1">
+                This estimate has no customer. You must assign a customer before
+                you can send a quote or convert to a job.
+              </p>
+              {est.status === "draft" && (
+                <Link
+                  href={`/dashboard/estimates/new?edit=${est.id}`}
+                  className="inline-block mt-3 bg-orange-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-orange-700 transition-colors"
+                >
+                  Edit Estimate to Add Customer
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Margin Preview Card ── */}
       <div
@@ -331,44 +360,48 @@ export default async function EstimateDetailPage({
           </Link>
         )}
 
-        {/* Send Quote */}
+        {/* Send Quote — requires margin OK AND customer assigned */}
         {est.status === "draft" && (
           <form action={sendQuote} className="flex-1">
             <input type="hidden" name="estimateId" value={est.id} />
             <button
               type="submit"
-              disabled={!marginOk}
+              disabled={!marginOk || missingCustomer}
               className={`w-full py-3 rounded-xl font-semibold transition-colors ${
-                marginOk
+                marginOk && !missingCustomer
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
             >
-              {marginOk ? "Send Quote" : "Margin Too Low — Cannot Quote"}
+              {missingCustomer
+                ? "Assign Customer to Quote"
+                : marginOk
+                  ? "Send Quote"
+                  : "Margin Too Low — Cannot Quote"}
             </button>
           </form>
         )}
 
-        {/* Convert to Job (deposit_paid or quoted legacy) — requires customer */}
-        {est.customer_id &&
-          (est.status === "deposit_paid" || (est.status === "quoted" && !est.deposit_required_amount)) && (
-          <form action={convertToJob} className="flex-1">
-            <input type="hidden" name="estimateId" value={est.id} />
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl font-semibold bg-fence-600 text-white hover:bg-fence-700 transition-colors"
+        {/* Convert to Job — visible when status allows, disabled without customer */}
+        {(est.status === "deposit_paid" || (est.status === "quoted" && !est.deposit_required_amount)) && (
+          canConvert ? (
+            <form action={convertToJob} className="flex-1">
+              <input type="hidden" name="estimateId" value={est.id} />
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl font-semibold bg-fence-600 text-white hover:bg-fence-700 transition-colors"
+              >
+                Convert to Job
+              </button>
+            </form>
+          ) : (
+            <a
+              href="#customer-warning"
+              className="flex-1 block w-full py-3 rounded-xl font-semibold bg-gray-200 text-gray-400 cursor-not-allowed text-center text-sm"
             >
-              Convert to Job
-            </button>
-          </form>
-        )}
-
-        {/* Warning: cannot convert without customer */}
-        {!est.customer_id && !isConverted &&
-          (est.status === "deposit_paid" || est.status === "quoted") && (
-          <div className="flex-1 py-3 px-4 rounded-xl border border-yellow-300 bg-yellow-50 text-yellow-800 text-sm text-center font-medium">
-            Assign a customer before converting to a job.
-          </div>
+              Assign Customer to Convert
+            </a>
+          )
         )}
 
         {/* Delete (owner only, not converted) */}
