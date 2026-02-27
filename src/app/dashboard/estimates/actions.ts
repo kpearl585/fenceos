@@ -13,6 +13,11 @@ import type {
   EstimateInputs,
   MaterialRow,
 } from "@/lib/estimate-engine";
+import { snapshotLegalTerms } from "@/lib/contracts/snapshotLegalTerms";
+import {
+  buildPdfData,
+  generateAndUploadEstimatePdf,
+} from "@/lib/contracts/uploadContractPdf";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -237,8 +242,8 @@ export async function updateEstimate(fd: FormData) {
     .select("status")
     .eq("id", estimateId)
     .single();
-  if (check?.status === "converted") {
-    throw new Error("This estimate has been converted to a job and is locked.");
+  if (check?.status === "converted" || check?.status === "accepted" || check?.status === "deposit_paid") {
+    throw new Error("This estimate has been accepted or converted and is locked.");
   }
 
   const inputs = buildInputs(fd);
@@ -299,8 +304,8 @@ export async function sendQuote(fd: FormData) {
     .select("status")
     .eq("id", estimateId)
     .single();
-  if (lockCheck?.status === "converted") {
-    throw new Error("This estimate has been converted to a job and is locked.");
+  if (lockCheck?.status === "converted" || lockCheck?.status === "accepted" || lockCheck?.status === "deposit_paid") {
+    throw new Error("This estimate has been accepted or converted and is locked.");
   }
 
   // Load current estimate row to rebuild inputs
@@ -362,6 +367,21 @@ export async function sendQuote(fd: FormData) {
     })
     .eq("id", estimateId);
 
+  // ── PHASE 7: Snapshot legal terms + generate customer-facing PDF ──
+  try {
+    await snapshotLegalTerms(estimateId, profile.org_id);
+    const pdfData = await buildPdfData(estimateId, profile.org_id);
+    await generateAndUploadEstimatePdf(
+      pdfData,
+      profile.org_id,
+      estimateId,
+      "estimate.pdf"
+    );
+  } catch (snapErr) {
+    console.error("Legal snapshot / PDF generation error:", snapErr);
+    // Non-blocking — estimate is already quoted, PDF can be regenerated
+  }
+
   redirect(`/dashboard/estimates/${estimateId}`);
 }
 
@@ -390,4 +410,37 @@ export async function deleteEstimate(fd: FormData) {
     .eq("org_id", profile.org_id);
 
   redirect("/dashboard/estimates");
+}
+
+/* ------------------------------------------------------------------ */
+/*  Convert Estimate → Job                                             */
+/* ------------------------------------------------------------------ */
+
+export async function convertToJob(fd: FormData) {
+  const estimateId = fd.get("estimateId") as string;
+  if (!estimateId) throw new Error("Missing estimateId");
+
+  const { convertEstimateToJob } = await import(
+    "@/lib/jobs/convertEstimateToJob"
+  );
+
+  try {
+    const { jobId } = await convertEstimateToJob(estimateId);
+    redirect(`/dashboard/jobs`);
+  } catch (err: unknown) {
+    // Re-throw Next.js redirect (it throws NEXT_REDIRECT internally)
+    if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "digest" in err &&
+      typeof (err as { digest: unknown }).digest === "string" &&
+      (err as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+    ) {
+      throw err;
+    }
+    const message =
+      err instanceof Error ? err.message : "Failed to convert estimate to job";
+    throw new Error(message);
+  }
 }

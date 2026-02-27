@@ -3,8 +3,8 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { sendQuote, deleteEstimate } from "../actions";
-import { convertToJob } from "../../jobs/actions";
+import { sendQuote, deleteEstimate, convertToJob } from "../actions";
+import { payDeposit } from "@/lib/stripe/depositAction";
 
 function fmt(v: number | string | null) {
   return new Intl.NumberFormat("en-US", {
@@ -100,6 +100,13 @@ export default async function EstimateDetailPage({
         </div>
         <span
           className={`self-start text-xs px-3 py-1 rounded-full font-semibold ${
+            est.status === "deposit_paid"
+              ? "bg-green-100 text-green-700"
+              : est.status === "accepted"
+                ? "bg-yellow-100 text-yellow-700"
+                : isQuoted
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-gray-100 text-gray-700"
             isConverted
               ? "bg-purple-100 text-purple-700"
               : isQuoted
@@ -107,7 +114,7 @@ export default async function EstimateDetailPage({
                 : "bg-gray-100 text-gray-700"
           }`}
         >
-          {est.status.toUpperCase()}
+          {est.status === "deposit_paid" ? "DEPOSIT PAID" : est.status.toUpperCase()}
           {isQuoted &&
             est.quoted_at &&
             ` · ${new Date(est.quoted_at).toLocaleDateString()}`}
@@ -160,6 +167,45 @@ export default async function EstimateDetailPage({
           </div>
         )}
       </div>
+
+      {/* ── Deposit Status ── */}
+      {(est.status === "accepted" || est.status === "deposit_paid") && (
+        <div
+          className={`rounded-xl border-2 p-5 mb-6 ${
+            est.deposit_paid
+              ? "border-green-200 bg-green-50"
+              : "border-yellow-200 bg-yellow-50"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-bold text-lg text-fence-900">
+                {est.deposit_paid ? "Deposit Paid" : "Deposit Pending"}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                50% deposit:{" "}
+                <strong>{fmt(est.deposit_required_amount)}</strong>
+                {est.deposit_paid && est.deposit_paid_at && (
+                  <span className="ml-2 text-green-700">
+                    Paid {new Date(est.deposit_paid_at).toLocaleDateString()}
+                  </span>
+                )}
+              </p>
+            </div>
+            {!est.deposit_paid && (
+              <form action={payDeposit}>
+                <input type="hidden" name="estimateId" value={est.id} />
+                <button
+                  type="submit"
+                  className="bg-green-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-green-700 transition-colors text-sm"
+                >
+                  Pay Deposit
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Subtotals ── */}
       <div className="grid grid-cols-2 gap-4 mb-6">
@@ -306,12 +352,15 @@ export default async function EstimateDetailPage({
           </form>
         )}
 
+        {/* Convert to Job (deposit_paid or quoted legacy) */}
+        {(est.status === "deposit_paid" || (est.status === "quoted" && !est.deposit_required_amount)) && (
         {/* Convert to Job (quoted only) */}
         {isQuoted && (
           <form action={convertToJob} className="flex-1">
             <input type="hidden" name="estimateId" value={est.id} />
             <button
               type="submit"
+              className="w-full py-3 rounded-xl font-semibold bg-fence-600 text-white hover:bg-fence-700 transition-colors"
               className="w-full py-3 rounded-xl font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-colors"
             >
               Convert to Job
@@ -319,6 +368,8 @@ export default async function EstimateDetailPage({
           </form>
         )}
 
+        {/* Delete (owner only) */}
+        {profile.role === "owner" && (
         {/* Delete (owner only, not converted) */}
         {profile.role === "owner" && !isConverted && (
           <form action={deleteEstimate}>
