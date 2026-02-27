@@ -41,10 +41,10 @@ export async function convertEstimateToJob(
     throw new Error("Estimate not found or access denied");
   }
 
-  // 2. Validate status
-  if (est.status !== "quoted") {
+  // 2. Validate status (accepted estimates can also be converted)
+  if (est.status !== "quoted" && est.status !== "accepted") {
     throw new Error(
-      `Cannot convert estimate with status "${est.status}". Only quoted estimates can be converted.`
+      `Cannot convert estimate with status "${est.status}". Only quoted or accepted estimates can be converted.`
     );
   }
 
