@@ -37,7 +37,7 @@ export default async function EstimateDetailPage({
   // Load estimate
   const { data: est, error } = await supabase
     .from("estimates")
-    .select("*, customers(name)")
+    .select("*, customers(id, name, phone, email, address, city, state)")
     .eq("id", id)
     .eq("org_id", profile.org_id)
     .single();
@@ -97,8 +97,16 @@ export default async function EstimateDetailPage({
         <div>
           <h1 className="text-2xl font-bold text-fence-900">{est.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {((est.customers as unknown as { name: string }[] | null)?.[0]?.name) ||
-              "No customer"}{" "}
+            {(() => {
+              const cust = (est.customers as unknown as { id: string; name: string }[] | null)?.[0];
+              return cust ? (
+                <Link href={`/dashboard/customers/${cust.id}`} className="text-fence-600 hover:text-fence-800 hover:underline">
+                  {cust.name}
+                </Link>
+              ) : (
+                <span className="text-orange-600 font-medium">No customer</span>
+              );
+            })()}{" "}
             · {est.fence_type?.replace("_", " ")} · {est.linear_feet} ft
             {est.gate_count > 0 && ` · ${est.gate_count} gate(s)`}
           </p>
@@ -146,6 +154,29 @@ export default async function EstimateDetailPage({
           </div>
         </div>
       )}
+
+      {/* ── Customer Info Card ── */}
+      {!missingCustomer && (() => {
+        const cust = (est.customers as unknown as { id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; state: string | null }[] | null)?.[0];
+        return cust ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-semibold text-fence-900 text-sm">Customer</h2>
+              <Link href={`/dashboard/customers/${cust.id}`} className="text-xs text-fence-600 hover:text-fence-800 font-medium">
+                View Details →
+              </Link>
+            </div>
+            <p className="text-sm font-medium">{cust.name}</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-gray-500">
+              {cust.phone && <span>{cust.phone}</span>}
+              {cust.email && <span>{cust.email}</span>}
+              {cust.address && (
+                <span>{cust.address}{cust.city && `, ${cust.city}`}{cust.state && ` ${cust.state}`}</span>
+              )}
+            </div>
+          </div>
+        ) : null;
+      })()}
 
       {/* ── Margin Preview Card ── */}
       <div
