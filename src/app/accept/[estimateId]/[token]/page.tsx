@@ -80,8 +80,8 @@ export default async function AcceptPage({
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
-  // Already accepted
-  if (est.status === "accepted" || est.status === "converted") {
+  // Already accepted (includes deposit_paid since that means customer accepted + paid)
+  if (est.status === "accepted" || est.status === "deposit_paid" || est.status === "converted") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-8 text-center">
