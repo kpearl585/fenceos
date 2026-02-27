@@ -143,7 +143,10 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(sigPath);
     const signatureUrl = sigUrlData.publicUrl;
 
-    // 7. Update estimate
+    // 7. Calculate deposit (50% of total)
+    const depositAmount = Math.round(Number(est.total) * 50) / 100;
+
+    // 8. Update estimate
     const { error: updateErr } = await supabase
       .from("estimates")
       .update({
@@ -154,6 +157,8 @@ export async function POST(request: NextRequest) {
         accepted_ip: ip,
         accepted_signature_url: signatureUrl,
         acceptance_hash: acceptanceHash,
+        deposit_required_amount: depositAmount,
+        deposit_paid: false,
         updated_at: timestamp,
       })
       .eq("id", estimateId)
