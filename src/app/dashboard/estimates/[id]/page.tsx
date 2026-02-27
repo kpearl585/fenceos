@@ -3,7 +3,7 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { sendQuote, deleteEstimate } from "../actions";
+import { sendQuote, deleteEstimate, convertToJob } from "../actions";
 import { payDeposit } from "@/lib/stripe/depositAction";
 
 function fmt(v: number | string | null) {
@@ -314,6 +314,19 @@ export default async function EstimateDetailPage({
               }`}
             >
               {marginOk ? "Send Quote" : "Margin Too Low — Cannot Quote"}
+            </button>
+          </form>
+        )}
+
+        {/* Convert to Job (deposit_paid or quoted legacy) */}
+        {(est.status === "deposit_paid" || (est.status === "quoted" && !est.deposit_required_amount)) && (
+          <form action={convertToJob} className="flex-1">
+            <input type="hidden" name="estimateId" value={est.id} />
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl font-semibold bg-fence-600 text-white hover:bg-fence-700 transition-colors"
+            >
+              Convert to Job
             </button>
           </form>
         )}
