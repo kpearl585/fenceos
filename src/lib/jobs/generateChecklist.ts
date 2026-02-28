@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 const CHECKLIST_TEMPLATES: Record<
   string,
   { item_key: string; label: string; required: boolean }[]
 > = {
-  wood: [
+  wood_privacy: [
     { item_key: "mark_utilities", label: "Mark utility lines", required: true },
     { item_key: "set_posts", label: "Set posts in concrete", required: true },
     { item_key: "attach_rails", label: "Attach horizontal rails", required: true },
@@ -34,11 +34,8 @@ const DEFAULT_CHECKLIST = [
   { item_key: "final_walkthrough", label: "Final walkthrough with customer", required: true },
 ];
 
-export async function generateChecklist(
-  jobId: string,
-  fenceType: string | null
-): Promise<void> {
-  const supabase = await createClient();
+export async function generateChecklist(jobId: string, fenceType: string | null): Promise<void> {
+  const supabase = createAdminClient();
   const template = CHECKLIST_TEMPLATES[fenceType ?? ""] ?? DEFAULT_CHECKLIST;
   const rows = template.map((item, idx) => ({
     job_id: jobId,
@@ -50,7 +47,5 @@ export async function generateChecklist(
   const { error } = await supabase
     .from("job_checklists")
     .upsert(rows, { onConflict: "job_id,item_key", ignoreDuplicates: true });
-  if (error) {
-    throw new Error(`Failed to generate checklist: ${error.message}`);
-  }
+  if (error) throw new Error(`Failed to generate checklist: ${error.message}`);
 }
