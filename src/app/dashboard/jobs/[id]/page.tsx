@@ -561,6 +561,7 @@ export default async function JobDetailPage({
                 created_at: string;
               }) => (
                 <div key={p.id} className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photoUrls[p.id]}
                     alt={p.caption || "Job photo"}

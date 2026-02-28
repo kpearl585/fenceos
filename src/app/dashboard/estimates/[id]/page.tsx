@@ -435,6 +435,18 @@ export default async function EstimateDetailPage({
           )
         )}
 
+        {/* Download PDF — always available for quoted/accepted estimates */}
+        {(est.status !== "draft") && (
+          <a
+            href={`/api/pdf/estimate/${est.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3 rounded-xl font-semibold text-fence-600 border border-fence-200 hover:bg-fence-50 transition-colors text-center text-sm"
+          >
+            ↓ PDF
+          </a>
+        )}
+
         {/* Delete (owner only, not converted) */}
         {profile.role === "owner" && !isConverted && (
           <form action={deleteEstimate}>

@@ -23,6 +23,7 @@ const ACCESS_MATRIX: Record<string, Role[]> = {
   materials:   ["owner", "foreman"],
   margin:      ["owner"],
   owner:       ["owner"],
+  settings:    ["owner"],
 };
 
 /** Navigation items for the sidebar / mobile nav */
@@ -42,6 +43,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Materials",  href: "/dashboard/materials",  segment: "materials", icon: "package" },
   { label: "Margin",     href: "/dashboard/margin",     segment: "margin",    icon: "trending-up" },
   { label: "Owner P&L",  href: "/dashboard/owner",      segment: "owner",     icon: "trending-up" },
+  { label: "Settings",   href: "/dashboard/settings",   segment: "settings",  icon: "home" },
 ];
 
 /** Check if a role can access a given route segment */

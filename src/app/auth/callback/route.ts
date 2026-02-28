@@ -10,10 +10,12 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      // Use NEXT_PUBLIC_SITE_URL for production safety, fallback to origin for local dev
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
+      return NextResponse.redirect(`${baseUrl}${next}`);
     }
   }
 
-  // Auth code exchange failed — redirect to login with error
-  return NextResponse.redirect(`${origin}/login?error=Could+not+authenticate`);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
+  return NextResponse.redirect(`${baseUrl}/login?error=Could+not+authenticate`);
 }
