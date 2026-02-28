@@ -13,7 +13,7 @@ async function getForemanAuthContext() {
   if (!user) throw new Error("Not authenticated");
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "jobs")) throw new Error("Access denied");
-  return { supabase, profile };
+  return { supabase, profile, user };
 }
 
 /* ------------------------------------------------------------------ */
@@ -81,7 +81,7 @@ export async function initForemanData(fd: FormData) {
 /* ------------------------------------------------------------------ */
 
 export async function toggleChecklistItem(fd: FormData) {
-  const { supabase, profile } = await getForemanAuthContext();
+  const { supabase, profile, user } = await getForemanAuthContext();
   const jobId = fd.get("jobId") as string;
   const itemId = fd.get("itemId") as string;
   const completed = fd.get("completed") === "true";
@@ -91,7 +91,6 @@ export async function toggleChecklistItem(fd: FormData) {
   }
 
   const admin = createAdminClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
   const updateData: Record<string, unknown> = { completed };
   if (completed) {
@@ -117,7 +116,7 @@ export async function toggleChecklistItem(fd: FormData) {
 /* ------------------------------------------------------------------ */
 
 export async function verifyMaterial(fd: FormData) {
-  const { supabase, profile } = await getForemanAuthContext();
+  const { supabase, profile, user } = await getForemanAuthContext();
   const verificationId = fd.get("verificationId") as string;
   const verifiedQty = Number(fd.get("verifiedQty")) || 0;
   const jobId = fd.get("jobId") as string;
@@ -127,7 +126,6 @@ export async function verifyMaterial(fd: FormData) {
   }
 
   const admin = createAdminClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
   const { error } = await admin
     .from("job_material_verifications")
