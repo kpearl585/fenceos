@@ -95,10 +95,8 @@ export async function toggleChecklistItem(fd: FormData) {
   const updateData: Record<string, unknown> = { completed };
   if (completed) {
     updateData.completed_at = new Date().toISOString();
-    updateData.completed_by = user?.id;
   } else {
     updateData.completed_at = null;
-    updateData.completed_by = null;
   }
 
   const { error } = await admin
@@ -133,7 +131,6 @@ export async function verifyMaterial(fd: FormData) {
       verified: true,
       verified_qty: verifiedQty,
       verified_at: new Date().toISOString(),
-      verified_by: user?.id,
     })
     .eq("id", verificationId);
 
