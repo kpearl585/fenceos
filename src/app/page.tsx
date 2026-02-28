@@ -8,6 +8,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import ROISection from "@/components/ROISection";
 import PricingSection from "@/components/PricingSection";
 import CTAFooter from "@/components/CTAFooter";
+import WaitlistSection from "@/components/WaitlistSection";
 
 export default function Home() {
   return (
@@ -22,6 +23,7 @@ export default function Home() {
         <TestimonialsSection />
         <ROISection />
         <PricingSection />
+        <WaitlistSection />
         <CTAFooter />
       </main>
     </>

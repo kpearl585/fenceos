@@ -12,10 +12,10 @@ export default function CTAFooter() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/signup"
+              href="/#waitlist"
               className="inline-flex items-center justify-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold text-lg px-10 py-4 rounded-xl transition-colors"
             >
-              Start Free Trial →
+              Join the Waitlist →
             </Link>
             <Link
               href="/login"
@@ -43,7 +43,7 @@ export default function CTAFooter() {
             <a href="#how-it-works" className="hover:text-fence-200 transition-colors">How It Works</a>
             <a href="#pricing" className="hover:text-fence-200 transition-colors">Pricing</a>
             <Link href="/login" className="hover:text-fence-200 transition-colors">Login</Link>
-            <Link href="/signup" className="hover:text-fence-200 transition-colors">Sign Up</Link>
+            <Link href="/#waitlist" className="hover:text-fence-200 transition-colors">Join Waitlist</Link>
           </div>
           <p className="text-fence-500 text-xs">© 2026 FenceEstimatePro. All rights reserved.</p>
         </div>

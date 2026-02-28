@@ -41,8 +41,8 @@ export default function ROISection() {
           <p className="text-fence-300 text-sm font-semibold uppercase tracking-wide mb-2">Return on investment</p>
           <p className="text-5xl font-bold text-white mb-2">41x ROI</p>
           <p className="text-fence-300">If it saves you from just one underbid job per month, you&apos;re up $1,200. That&apos;s $14,352 back in your pocket every year — for $348.</p>
-          <Link href="/signup" className="mt-6 inline-flex items-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold px-8 py-3.5 rounded-xl transition-colors">
-            Start Free Trial →
+          <Link href="/#waitlist" className="mt-6 inline-flex items-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold px-8 py-3.5 rounded-xl transition-colors">
+            Join the Waitlist →
           </Link>
           <p className="mt-3 text-fence-400 text-xs">30-day free trial · No credit card required</p>
         </div>
