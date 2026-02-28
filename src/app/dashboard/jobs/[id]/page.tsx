@@ -48,10 +48,13 @@ const CO_STATUS_STYLES: Record<string, string> = {
 
 export default async function JobDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error: errorMsg } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },

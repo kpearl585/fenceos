@@ -109,9 +109,7 @@ export async function transitionJobStatus(fd: FormData) {
 
   const allowed = validTransitions[job.status];
   if (!allowed || !allowed.includes(newStatus)) {
-    throw new Error(
-      `Cannot transition from "${job.status}" to "${newStatus}".`
-    );
+    redirect(`/dashboard/jobs/${jobId}?error=Invalid+status+transition`);
   }
 
   // Foreman can only start jobs (scheduled → active)
@@ -119,7 +117,7 @@ export async function transitionJobStatus(fd: FormData) {
     profile.role === "foreman" &&
     !(job.status === "scheduled" && newStatus === "active")
   ) {
-    throw new Error("Foremen can only start scheduled jobs");
+    redirect(`/dashboard/jobs/${jobId}?error=Foremen+can+only+start+scheduled+jobs`);
   }
 
   // Enforce: all materials must be verified before starting
@@ -130,9 +128,7 @@ export async function transitionJobStatus(fd: FormData) {
       .eq("job_id", jobId)
       .eq("verified", false);
     if (unverified && unverified.length > 0) {
-      throw new Error(
-        `Cannot start job: ${unverified.length} material(s) not yet verified.`
-      );
+      redirect(`/dashboard/jobs/${jobId}?error=Verify+all+${unverified.length}+material(s)+before+starting+the+job`);
     }
   }
 
@@ -142,12 +138,10 @@ export async function transitionJobStatus(fd: FormData) {
       .from("job_checklists")
       .select("id")
       .eq("job_id", jobId)
-      .eq("required", true)
+      .eq("is_required", true)
       .eq("completed", false);
     if (incomplete && incomplete.length > 0) {
-      throw new Error(
-        `Cannot complete job: ${incomplete.length} required checklist item(s) not completed.`
-      );
+      redirect(`/dashboard/jobs/${jobId}?error=Complete+all+${incomplete.length}+required+checklist+item(s)+first`);
     }
   }
 
