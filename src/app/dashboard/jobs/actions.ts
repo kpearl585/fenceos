@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect } from "next/navigation";
@@ -50,7 +50,8 @@ export async function assignForeman(fd: FormData) {
     throw new Error("Only owners and sales can assign foremen");
   }
 
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("jobs")
     .update({ assigned_foreman_id: foremanId || null })
     .eq("id", jobId)
@@ -65,15 +66,16 @@ export async function assignForeman(fd: FormData) {
 /* ------------------------------------------------------------------ */
 
 export async function updateScheduledDate(fd: FormData) {
-  const { supabase, profile } = await getJobAuthContext();
+  const { profile } = await getJobAuthContext();
   const jobId = fd.get("jobId") as string;
   const date = (fd.get("scheduledDate") as string) || null;
 
   if (profile.role !== "owner" && profile.role !== "sales") {
-    throw new Error("Only owners and sales can set schedule dates");
+    redirect(`/dashboard/jobs/${jobId}?error=Only+owners+and+sales+can+set+schedule+dates`);
   }
 
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("jobs")
     .update({ scheduled_date: date })
     .eq("id", jobId)
@@ -150,7 +152,8 @@ export async function transitionJobStatus(fd: FormData) {
     updateData.completed_date = new Date().toISOString().split("T")[0];
   }
 
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("jobs")
     .update(updateData)
     .eq("id", jobId)
@@ -197,7 +200,8 @@ export async function updateJobStatus(fd: FormData) {
   const updates: Record<string, unknown> = { status: newStatus };
   if (newStatus === "complete") updates.completed_date = new Date().toISOString();
 
-  const { error } = await supabase
+  const adminClient = createAdminClient();
+  const { error } = await adminClient
     .from("jobs")
     .update(updates)
     .eq("id", jobId)
