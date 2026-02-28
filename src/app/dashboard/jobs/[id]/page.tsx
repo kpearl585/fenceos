@@ -3,6 +3,7 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import ChangeOrderForm from "@/components/jobs/ChangeOrderForm";
 import {
   assignForeman,
   updateScheduledDate,
@@ -135,13 +136,14 @@ export default async function JobDetailPage({
   let materialsCatalog: {
     sku: string;
     name: string;
+    unit: string;
     unit_cost: number;
     unit_price: number;
   }[] = [];
   if (profile.role === "owner" || profile.role === "foreman") {
     const { data: mats } = await supabase
       .from("materials")
-      .select("sku, name, unit_cost, unit_price")
+      .select("sku, name, unit, unit_cost, unit_price")
       .eq("org_id", profile.org_id)
       .order("name");
     materialsCatalog = mats ?? [];
@@ -741,63 +743,15 @@ export default async function JobDetailPage({
               <h3 className="text-sm font-semibold text-fence-900 mb-3">
                 Add Change Order
               </h3>
-              <form action={submitChangeOrder}>
-                <input type="hidden" name="jobId" value={job.id} />
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">
-                      Reason
-                    </label>
-                    <input
-                      type="text"
-                      name="reason"
-                      placeholder="Reason for change order"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-3">
-                    <p className="text-xs font-medium text-gray-700 mb-2">
-                      Line Items (JSON format)
-                    </p>
-                    <p className="text-xs text-gray-400 mb-2">
-                      Each item: name, type (material/labor), qty, sku
-                      (optional)
-                    </p>
-                    {materialsCatalog.length > 0 && (
-                      <details className="mb-2">
-                        <summary className="text-xs text-fence-600 cursor-pointer font-medium">
-                          Available Materials ({materialsCatalog.length})
-                        </summary>
-                        <div className="mt-1 max-h-32 overflow-y-auto text-xs text-gray-600 space-y-0.5">
-                          {materialsCatalog.map((m) => (
-                            <p key={m.sku}>
-                              <span className="font-mono text-fence-700">
-                                {m.sku}
-                              </span>{" "}
-                              — {m.name} (${m.unit_price})
-                            </p>
-                          ))}
-                        </div>
-                      </details>
-                    )}
-                    <textarea
-                      name="lineItems"
-                      rows={3}
-                      placeholder={
-                        '[{"name":"Extra post","type":"material","qty":2,"sku":"POST-4X4-8"}]'
-                      }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-fence-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors"
-                  >
-                    Submit Change Order
-                  </button>
-                </div>
-              </form>
+              <ChangeOrderForm
+                jobId={job.id}
+                materials={materialsCatalog.map((m) => ({
+                  sku: m.sku ?? "",
+                  name: m.name,
+                  unit: m.unit,
+                  unit_price: Number(m.unit_price) || 0,
+                }))}
+              />
             </div>
           )}
 
