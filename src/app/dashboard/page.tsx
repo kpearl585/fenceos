@@ -30,7 +30,12 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-gray-100 text-gray-500",
 };
 
-export default async function DashboardHome() {
+export default async function DashboardHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ welcome?: string }>;
+}) {
+  const { welcome } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -99,6 +104,12 @@ export default async function DashboardHome() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fence-900">{greeting()}, {firstName} 👋</h1>
+          {welcome === "1" && (
+            <div className="mb-6 flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl px-5 py-3.5 text-sm font-medium">
+              <span className="text-xl">🎉</span>
+              <span>Welcome to FenceEstimatePro! Your account is set up. Start by adding a customer or creating your first estimate.</span>
+            </div>
+          )}
           <p className="text-sm text-gray-500 mt-0.5">
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
           </p>
