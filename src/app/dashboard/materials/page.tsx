@@ -2,47 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
-import { revalidatePath } from "next/cache";
+import { addMaterial, deleteMaterial } from "./actions";
 
 function fmt(v: number | string | null) {
   return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    style: "currency", currency: "USD",
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(Number(v) || 0);
-}
-
-async function addMaterial(fd: FormData) {
-  "use server";
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  const profile = await (await import("@/lib/bootstrap")).ensureProfile(supabase, user);
-
-  await supabase.from("materials").insert({
-    org_id: profile.org_id,
-    name: fd.get("name") as string,
-    sku: fd.get("sku") as string || null,
-    unit: fd.get("unit") as string,
-    unit_cost: Number(fd.get("unit_cost")) || 0,
-    unit_price: Number(fd.get("unit_price")) || 0,
-    category: fd.get("category") as string || null,
-    supplier: fd.get("supplier") as string || null,
-    notes: fd.get("notes") as string || null,
-  });
-  revalidatePath("/dashboard/materials");
-}
-
-async function deleteMaterial(fd: FormData) {
-  "use server";
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  const profile = await (await import("@/lib/bootstrap")).ensureProfile(supabase, user);
-  const id = fd.get("id") as string;
-  await supabase.from("materials").delete().eq("id", id).eq("org_id", profile.org_id);
-  revalidatePath("/dashboard/materials");
 }
 
 export default async function MaterialsPage() {
@@ -55,7 +21,7 @@ export default async function MaterialsPage() {
 
   const { data: materials } = await supabase
     .from("materials")
-    .select("id, name, sku, unit, unit_cost, unit_price, category, supplier, notes, created_at")
+    .select("id, name, sku, unit, unit_cost, unit_price, category, supplier, notes")
     .eq("org_id", profile.org_id)
     .order("category", { ascending: true })
     .order("name", { ascending: true });
@@ -65,9 +31,7 @@ export default async function MaterialsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-fence-900">Materials</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Manage your material catalog. These drive estimate line items.
-          </p>
+          <p className="text-sm text-gray-500 mt-0.5">Manage your material catalog. These drive estimate line items.</p>
         </div>
       </div>
 
@@ -113,11 +77,11 @@ export default async function MaterialsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {(materials as Array<{
+                {(materials as {
                   id: string; name: string; sku: string | null; unit: string;
                   unit_cost: number; unit_price: number; category: string | null;
-                  supplier: string | null; notes: string | null; created_at: string;
-                }>).map((m) => (
+                  supplier: string | null; notes: string | null;
+                }[]).map((m) => (
                   <tr key={m.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-fence-900">{m.name}</td>
                     <td className="px-4 py-3 text-gray-500 font-mono text-xs">{m.sku || "—"}</td>
@@ -129,8 +93,7 @@ export default async function MaterialsPage() {
                     <td className="px-4 py-3">
                       <form action={deleteMaterial}>
                         <input type="hidden" name="id" value={m.id} />
-                        <button type="submit" className="text-red-500 hover:text-red-700 text-xs font-medium"
-                          onClick={(e) => { if (!confirm("Delete this material?")) e.preventDefault(); }}>
+                        <button type="submit" className="text-red-500 hover:text-red-700 text-xs font-medium">
                           Delete
                         </button>
                       </form>
