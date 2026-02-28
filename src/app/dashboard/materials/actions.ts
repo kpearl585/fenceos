@@ -42,3 +42,26 @@ export async function deleteMaterial(fd: FormData) {
   if (error) throw new Error(`Failed to delete material: ${error.message}`);
   revalidatePath("/dashboard/materials");
 }
+
+export async function bulkAddMaterials(rows: { name: string; sku: string; unit: string; unit_cost: string; unit_price: string; category: string; supplier: string }[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { imported: 0, errors: ["Not authenticated"] };
+  const profile = await ensureProfile(supabase, user);
+
+  const inserts = rows.map(r => ({
+    org_id: profile.org_id,
+    name: r.name,
+    sku: r.sku || null,
+    unit: r.unit || "ea",
+    unit_cost: Number(r.unit_cost) || 0,
+    unit_price: Number(r.unit_price) || 0,
+    category: r.category || null,
+    supplier: r.supplier || null,
+  }));
+
+  const { error, data } = await supabase.from("materials").insert(inserts).select("id");
+  if (error) return { imported: 0, errors: [error.message] };
+  revalidatePath("/dashboard/materials");
+  return { imported: data?.length || 0, errors: [] };
+}

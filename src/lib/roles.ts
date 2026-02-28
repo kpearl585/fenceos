@@ -9,13 +9,7 @@ export interface UserProfile {
   role: Role;
 }
 
-/**
- * Route access matrix.
- * Key = route segment under /dashboard.
- * Value = set of roles allowed.
- */
 const ACCESS_MATRIX: Record<string, Role[]> = {
-  // Dashboard home — everyone
   "":          ["owner", "sales", "foreman"],
   customers:   ["owner", "sales", "foreman"],
   estimates:   ["owner", "sales"],
@@ -26,13 +20,13 @@ const ACCESS_MATRIX: Record<string, Role[]> = {
   settings:    ["owner"],
 };
 
-/** Navigation items for the sidebar / mobile nav */
+export type NavIcon = "home" | "users" | "calculator" | "briefcase" | "package" | "trending-up" | "settings" | "bar-chart";
+
 export interface NavItem {
   label: string;
   href: string;
-  /** Route segment used to check access */
   segment: string;
-  icon: "home" | "users" | "calculator" | "briefcase" | "package" | "trending-up";
+  icon: NavIcon;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -41,19 +35,16 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Estimates",  href: "/dashboard/estimates",  segment: "estimates", icon: "calculator" },
   { label: "Jobs",       href: "/dashboard/jobs",       segment: "jobs",      icon: "briefcase" },
   { label: "Materials",  href: "/dashboard/materials",  segment: "materials", icon: "package" },
-  { label: "Margin",     href: "/dashboard/margin",     segment: "margin",    icon: "trending-up" },
-  { label: "Owner P&L",  href: "/dashboard/owner",      segment: "owner",     icon: "trending-up" },
-  { label: "Settings",   href: "/dashboard/settings",   segment: "settings",  icon: "home" },
+  { label: "P&L",        href: "/dashboard/owner",      segment: "owner",     icon: "bar-chart" },
+  { label: "Settings",   href: "/dashboard/settings",   segment: "settings",  icon: "settings" },
 ];
 
-/** Check if a role can access a given route segment */
 export function canAccess(role: Role, segment: string): boolean {
   const allowed = ACCESS_MATRIX[segment];
   if (!allowed) return false;
   return allowed.includes(role);
 }
 
-/** Filter nav items to only those the role can see */
 export function getVisibleNav(role: Role): NavItem[] {
   return NAV_ITEMS.filter((item) => canAccess(role, item.segment));
 }

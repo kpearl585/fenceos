@@ -3,6 +3,7 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
 import { addMaterial, deleteMaterial } from "./actions";
+import MaterialsImportBar from "./MaterialsClient";
 
 function fmt(v: number | string | null) {
   return new Intl.NumberFormat("en-US", {
@@ -37,7 +38,7 @@ export default async function MaterialsPage() {
 
       {/* Add Material Form */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="font-semibold text-fence-900 mb-4">Add Material</h2>
+        <div className="flex items-center justify-between mb-4"><h2 className="font-semibold text-fence-900">Add Material</h2><MaterialsImportBar materials={materials ?? []} /></div>
         <form action={addMaterial} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <input name="name" placeholder="Name *" required className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <input name="sku" placeholder="SKU" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
