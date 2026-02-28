@@ -92,7 +92,7 @@ export default async function CustomerDetailPage({
         <div className="flex gap-2">
           {canEdit && (
             <Link
-              href={`/dashboard/estimates/new`}
+              href={`/dashboard/estimates/new?customerId=${customer.id}`}
               className="bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors"
             >
               + New Estimate

@@ -56,56 +56,72 @@ export default async function MaterialsPage() {
         </form>
       </div>
 
-      {/* Materials Table */}
+      {/* Materials grouped by category */}
       {!materials || materials.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
           No materials yet. Add one above.
         </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Name</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">SKU</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Unit</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600">Cost</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600">Price</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Category</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Supplier</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {(materials as {
-                  id: string; name: string; sku: string | null; unit: string;
-                  unit_cost: number; unit_price: number; category: string | null;
-                  supplier: string | null; notes: string | null;
-                }[]).map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-fence-900">{m.name}</td>
-                    <td className="px-4 py-3 text-gray-500 font-mono text-xs">{m.sku || "—"}</td>
-                    <td className="px-4 py-3 text-gray-600">{m.unit}</td>
-                    <td className="px-4 py-3 text-right font-medium">{fmt(m.unit_cost)}</td>
-                    <td className="px-4 py-3 text-right font-medium text-green-700">{fmt(m.unit_price)}</td>
-                    <td className="px-4 py-3 text-gray-500">{m.category || "—"}</td>
-                    <td className="px-4 py-3 text-gray-500">{m.supplier || "—"}</td>
-                    <td className="px-4 py-3">
-                      <form action={deleteMaterial}>
-                        <input type="hidden" name="id" value={m.id} />
-                        <button type="submit" className="text-red-500 hover:text-red-700 text-xs font-medium">
-                          Delete
-                        </button>
-                      </form>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      ) : (() => {
+        type Mat = { id: string; name: string; sku: string | null; unit: string; unit_cost: number; unit_price: number; category: string | null; supplier: string | null; notes: string | null; };
+        const mats = materials as Mat[];
+        const grouped: Record<string, Mat[]> = {};
+        for (const m of mats) {
+          const cat = m.category || "Uncategorized";
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push(m);
+        }
+        const sortedCats = Object.keys(grouped).sort((a, b) => {
+          if (a === "Uncategorized") return 1;
+          if (b === "Uncategorized") return -1;
+          return a.localeCompare(b);
+        });
+        return (
+          <div className="space-y-6">
+            {sortedCats.map((cat) => (
+              <div key={cat} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                  <h3 className="font-bold text-sm text-gray-600 uppercase tracking-wide">{cat}</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Name</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">SKU</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Unit</th>
+                        <th className="text-right px-4 py-3 font-semibold text-gray-600">Cost</th>
+                        <th className="text-right px-4 py-3 font-semibold text-gray-600">Price</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Supplier</th>
+                        <th className="px-4 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {grouped[cat].map((m) => (
+                        <tr key={m.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium text-fence-900">{m.name}</td>
+                          <td className="px-4 py-3 text-gray-500 font-mono text-xs">{m.sku || "—"}</td>
+                          <td className="px-4 py-3 text-gray-600">{m.unit}</td>
+                          <td className="px-4 py-3 text-right font-medium">{fmt(m.unit_cost)}</td>
+                          <td className="px-4 py-3 text-right font-medium text-green-700">{fmt(m.unit_price)}</td>
+                          <td className="px-4 py-3 text-gray-500">{m.supplier || "—"}</td>
+                          <td className="px-4 py-3">
+                            <form action={deleteMaterial}>
+                              <input type="hidden" name="id" value={m.id} />
+                              <button type="submit" className="text-red-500 hover:text-red-700 text-xs font-medium">
+                                Delete
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 }

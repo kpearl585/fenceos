@@ -3,7 +3,7 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { sendQuote, deleteEstimate, convertToJob } from "../actions";
+import { sendQuote, deleteEstimate, convertToJob, duplicateEstimate } from "../actions";
 import { payDeposit } from "@/lib/stripe/depositAction";
 
 function fmt(v: number | string | null) {
@@ -445,6 +445,18 @@ export default async function EstimateDetailPage({
           >
             ↓ PDF
           </a>
+        )}
+
+        {/* Duplicate Estimate */}
+        {(profile.role === "owner" || profile.role === "sales") && (
+          <form action={duplicateEstimate.bind(null, est.id)}>
+            <button
+              type="submit"
+              className="px-6 py-3 rounded-xl font-semibold text-fence-700 border border-fence-200 hover:bg-fence-50 transition-colors"
+            >
+              Duplicate
+            </button>
+          </form>
         )}
 
         {/* Delete (owner only, not converted) */}

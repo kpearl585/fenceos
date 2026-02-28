@@ -3,8 +3,14 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
+import SearchFilter from "@/components/dashboard/SearchFilter";
 
-export default async function CustomersPage() {
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -14,13 +20,25 @@ export default async function CustomersPage() {
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "customers")) redirect("/dashboard");
 
+  const { q = "" } = await searchParams;
+  const canCreate = profile.role === "owner" || profile.role === "sales";
+
   const { data: customers } = await supabase
     .from("customers")
     .select("id, name, email, phone, city, state, created_at")
     .eq("org_id", profile.org_id)
     .order("name");
 
-  const canCreate = profile.role === "owner" || profile.role === "sales";
+  const filtered = q
+    ? (customers ?? []).filter((c) => {
+        const query = q.toLowerCase();
+        return (
+          c.name?.toLowerCase().includes(query) ||
+          c.email?.toLowerCase().includes(query) ||
+          c.city?.toLowerCase().includes(query)
+        );
+      })
+    : (customers ?? []);
 
   return (
     <>
@@ -36,16 +54,29 @@ export default async function CustomersPage() {
         )}
       </div>
 
-      {(!customers || customers.length === 0) ? (
+      <div className="mb-4">
+        <Suspense fallback={null}>
+          <SearchFilter
+            placeholder="Search by name, email, or city..."
+            statuses={[]}
+            currentSearch={q}
+            currentStatus=""
+          />
+        </Suspense>
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <div className="text-4xl mb-3">👤</div>
           <h2 className="text-lg font-semibold text-gray-700 mb-1">
-            No customers yet
+            {q ? "No customers match your search" : "No customers yet"}
           </h2>
           <p className="text-sm text-gray-500 mb-4">
-            Add your first customer to start creating estimates.
+            {q
+              ? "Try a different search term."
+              : "Add your first customer to start creating estimates."}
           </p>
-          {canCreate && (
+          {canCreate && !q && (
             <Link
               href="/dashboard/customers/new"
               className="inline-block bg-fence-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-fence-700 transition-colors"
@@ -68,7 +99,7 @@ export default async function CustomersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {customers.map((c) => (
+                {filtered.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-3">
                       <Link
@@ -109,7 +140,7 @@ export default async function CustomersPage() {
 
           {/* Mobile cards */}
           <div className="sm:hidden divide-y divide-gray-100">
-            {customers.map((c) => (
+            {filtered.map((c) => (
               <Link
                 key={c.id}
                 href={`/dashboard/customers/${c.id}`}

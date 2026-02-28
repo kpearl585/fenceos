@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
+import ExportCSV from "@/components/dashboard/ExportCSV";
 
 /* ── Types ── */
 interface SummaryData {
@@ -126,11 +127,14 @@ export default async function OwnerDashboardPage() {
   return (
     <>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-fence-900">Owner P&amp;L Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Financial overview across all jobs and estimates. Owner access only.
-        </p>
+      <div className="flex items-start justify-between mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-fence-900">Owner P&amp;L Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Financial overview across all jobs and estimates. Owner access only.
+          </p>
+        </div>
+        <ExportCSV data={atRiskJobs} />
       </div>
 
       {/* Error state */}

@@ -439,3 +439,52 @@ export async function convertToJob(fd: FormData) {
   await convertEstimateToJob(estimateId);
   redirect(`/dashboard/jobs`);
 }
+
+/* ------------------------------------------------------------------ */
+/*  Duplicate Estimate                                                 */
+/* ------------------------------------------------------------------ */
+
+export async function duplicateEstimate(estimateId: string) {
+  "use server";
+  const { createAdminClient } = await import("@/lib/supabase/server");
+  const supabase = await createAdminClient();
+
+  // Load original estimate
+  const { data: original, error } = await supabase
+    .from("estimates")
+    .select("*")
+    .eq("id", estimateId)
+    .single();
+
+  if (error || !original) throw new Error("Estimate not found");
+
+  // Create new estimate row
+  const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = original;
+  const { data: newEst, error: insertErr } = await supabase
+    .from("estimates")
+    .insert({
+      ...rest,
+      status: "draft",
+      title: `Copy of ${original.title || "Estimate"}`,
+    })
+    .select("id")
+    .single();
+
+  if (insertErr || !newEst) throw new Error("Failed to duplicate estimate");
+
+  // Copy line items
+  const { data: lineItems } = await supabase
+    .from("estimate_line_items")
+    .select("*")
+    .eq("estimate_id", estimateId);
+
+  if (lineItems && lineItems.length > 0) {
+    const newItems = lineItems.map(({ id: _lid, created_at: _lca, ...li }) => ({
+      ...li,
+      estimate_id: newEst.id,
+    }));
+    await supabase.from("estimate_line_items").insert(newItems);
+  }
+
+  redirect(`/dashboard/estimates/${newEst.id}`);
+}

@@ -6,7 +6,11 @@ import Link from "next/link";
 import { createEstimate } from "../actions";
 import { FENCE_TYPE_OPTIONS } from "@/lib/estimate-engine";
 
-export default async function NewEstimatePage() {
+export default async function NewEstimatePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ customerId?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -15,6 +19,8 @@ export default async function NewEstimatePage() {
 
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "estimates")) redirect("/dashboard");
+
+  const { customerId = "" } = await searchParams;
 
   const { data: customers } = await supabase
     .from("customers")
@@ -49,7 +55,7 @@ export default async function NewEstimatePage() {
           <select
             name="customerId"
             required
-            defaultValue=""
+            defaultValue={customerId || ""}
             className="w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-fence-500 focus:border-fence-500"
           >
             <option value="" disabled>

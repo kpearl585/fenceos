@@ -2,44 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
-import { revalidatePath } from "next/cache";
-
-async function saveOrgSettings(fd: FormData) {
-  "use server";
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  const profile = await (await import("@/lib/bootstrap")).ensureProfile(supabase, user);
-
-  // Upsert org_settings
-  await supabase.from("org_settings").upsert({
-    org_id: profile.org_id,
-    legal_terms: fd.get("legal_terms") as string || null,
-    payment_terms: fd.get("payment_terms") as string || null,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "org_id" });
-
-  revalidatePath("/dashboard/settings");
-}
-
-async function saveBranding(fd: FormData) {
-  "use server";
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  const profile = await (await import("@/lib/bootstrap")).ensureProfile(supabase, user);
-
-  await supabase.from("org_branding").upsert({
-    org_id: profile.org_id,
-    primary_color: fd.get("primary_color") as string || null,
-    accent_color: fd.get("accent_color") as string || null,
-    footer_note: fd.get("footer_note") as string || null,
-    logo_url: fd.get("logo_url") as string || null,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "org_id" });
-
-  revalidatePath("/dashboard/settings");
-}
+import { saveOrgSettings, saveBranding } from "./actions";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -85,7 +48,7 @@ export default async function SettingsPage() {
           </div>
         </div>
 
-        {/* Legal / Payment Terms */}
+        {/* Legal / Payment Terms + Business Settings */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="font-semibold text-fence-900 mb-4">Legal & Payment Terms</h2>
           <form action={saveOrgSettings} className="space-y-4">
@@ -109,8 +72,43 @@ export default async function SettingsPage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
               />
             </div>
+
+            {/* Business defaults */}
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Business Defaults</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Target Gross Margin (%)
+                  </label>
+                  <input
+                    name="target_margin_pct"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    defaultValue={Number((orgSettings as Record<string, unknown>)?.target_margin_pct ?? 35)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Default Labor Rate (per LF)
+                  </label>
+                  <input
+                    name="default_labor_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={Number((orgSettings as Record<string, unknown>)?.default_labor_rate ?? 0)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                  />
+                </div>
+              </div>
+            </div>
+
             <button type="submit" className="bg-fence-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700">
-              Save Terms
+              Save Settings
             </button>
           </form>
         </div>

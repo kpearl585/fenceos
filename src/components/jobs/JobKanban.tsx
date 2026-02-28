@@ -83,11 +83,11 @@ function JobCard({ job, dragHandleProps }: {
             {job.foremanName !== "Unassigned" && (
               <p className="text-xs text-gray-400 mt-0.5">👷 {job.foremanName}</p>
             )}
-            {job.scheduled_date && (
-              <p className="text-xs text-gray-400 mt-0.5">
-                📅 {new Date(job.scheduled_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              </p>
-            )}
+            <p className="text-xs text-gray-400 mt-0.5">
+              📅 {job.scheduled_date
+                ? new Date(job.scheduled_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                : "Not scheduled"}
+            </p>
           </div>
           {job.isOwner && (
             <div className="text-right shrink-0">
