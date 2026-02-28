@@ -173,7 +173,8 @@ export default async function JobDetailPage({
   )?.[0];
   const targetMarginPct = Number(est?.target_margin_pct) || 0.35;
 
-  const canManage = profile.role === "owner" || profile.role === "sales";
+  const isOwner = profile.role === "owner";
+  const canManage = isOwner || profile.role === "sales";
   const isForeman = profile.role === "foreman";
   const canExecute = profile.role === "owner" || profile.role === "foreman";
   const hasChecklist = checklist.length > 0;
@@ -202,61 +203,85 @@ export default async function JobDetailPage({
   /* ── render ── */
   return (
     <>
-      {/* Breadcrumb */}
-      <div className="mb-4">
-        <Link
-          href="/dashboard/jobs"
-          className="text-sm text-fence-600 hover:text-fence-800 font-medium"
-        >
+      {/* Breadcrumb + PDF */}
+      <div className="mb-4 flex items-center justify-between">
+        <Link href="/dashboard/jobs" className="text-sm text-fence-600 hover:text-fence-800 font-medium">
           &larr; Back to Jobs
         </Link>
+        {canManage && job.estimate_id && (
+          <a href={`/api/pdf/estimate/${job.estimate_id}`} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-sm text-fence-600 hover:text-fence-800 font-medium border border-fence-200 px-3 py-1.5 rounded-lg hover:bg-fence-50 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Download PDF
+          </a>
+        )}
       </div>
+
+      {/* Error message */}
+      {errorMsg && (
+        <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-medium">
+          ⚠️ {decodeURIComponent(errorMsg)}
+        </div>
+      )}
 
       {/* Title + Status */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fence-900">
-            {customer?.name || "Job"}
-          </h1>
+          <h1 className="text-2xl font-bold text-fence-900">{customer?.name || "Job"}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {est?.fence_type?.replace("_", " ") || "—"} &middot;{" "}
-            {est?.linear_feet || 0} ft
+            {est?.fence_type?.replace("_", " ") || "—"} &middot; {est?.linear_feet || 0} ft
             {(est?.gate_count ?? 0) > 0 && ` · ${est.gate_count} gate(s)`}
+            {job.estimate_id && (
+              <Link href={`/dashboard/estimates/${job.estimate_id}`} className="ml-2 text-fence-500 hover:text-fence-700 underline">
+                View Estimate
+              </Link>
+            )}
           </p>
         </div>
-        <span
-          className={`self-start text-xs px-3 py-1 rounded-full font-semibold ${STATUS_STYLES[job.status] || "bg-gray-100 text-gray-600"}`}
-        >
+        <span className={`self-start text-xs px-3 py-1 rounded-full font-semibold ${STATUS_STYLES[job.status] || "bg-gray-100 text-gray-600"}`}>
           {job.status.toUpperCase()}
         </span>
       </div>
 
-      {/* Financial Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Total Price</p>
-          <p className="text-xl font-bold">{fmt(job.total_price)}</p>
+      {/* Financial Summary — OWNER ONLY */}
+      {isOwner && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Price</p>
+            <p className="text-xl font-bold text-fence-900">{fmt(job.total_price)}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Cost</p>
+            <p className="text-xl font-bold text-fence-900">{fmt(job.total_cost)}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Gross Profit</p>
+            <p className="text-xl font-bold text-fence-900">{fmt(job.gross_profit)}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Margin</p>
+            <p className={`text-xl font-bold ${Number(job.gross_margin_pct) >= targetMarginPct ? "text-green-600" : "text-red-600"}`}>
+              {fmtPct(job.gross_margin_pct)}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">Target: {fmtPct(targetMarginPct)}</p>
+          </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Total Cost</p>
-          <p className="text-xl font-bold">{fmt(job.total_cost)}</p>
+      )}
+      {/* Price + schedule for non-owners */}
+      {!isOwner && (
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Job Value</p>
+            <p className="text-xl font-bold text-fence-900">{fmt(job.total_price)}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Scheduled</p>
+            <p className="text-xl font-bold text-fence-900">
+              {job.scheduled_date ? new Date(job.scheduled_date + "T00:00:00").toLocaleDateString() : "TBD"}
+            </p>
+          </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Gross Profit</p>
-          <p className="text-xl font-bold">{fmt(job.gross_profit)}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Margin</p>
-          <p
-            className={`text-xl font-bold ${Number(job.gross_margin_pct) >= targetMarginPct ? "text-green-600" : "text-red-600"}`}
-          >
-            {fmtPct(job.gross_margin_pct)}
-          </p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Target: {fmtPct(targetMarginPct)}
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Customer Info */}
       {customer && (
