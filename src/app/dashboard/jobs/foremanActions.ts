@@ -180,3 +180,32 @@ export async function uploadJobPhoto(fd: FormData) {
   if (insertErr) throw new Error(`Photo record failed: ${insertErr.message}`);
   redirect(`/dashboard/jobs/${jobId}`);
 }
+
+/* ------------------------------------------------------------------ */
+/*  Delete Job Photo                                                   */
+/* ------------------------------------------------------------------ */
+
+export async function deleteJobPhoto(fd: FormData) {
+  const { profile } = await getForemanAuthContext();
+  const photoId = fd.get("photoId") as string;
+  const jobId = fd.get("jobId") as string;
+  if (!photoId) throw new Error("Missing photoId");
+
+  const admin = createAdminClient();
+
+  const { data: photo } = await admin
+    .from("job_photos")
+    .select("storage_path")
+    .eq("id", photoId)
+    .single();
+
+  if (photo?.storage_path) {
+    await admin.storage.from("job-photos").remove([photo.storage_path]);
+  }
+
+  await admin.from("job_photos").delete().eq("id", photoId);
+  redirect(`/dashboard/jobs/${jobId}`);
+}
+
+// Alias for backward compat
+export { uploadJobPhoto as addJobPhoto };
