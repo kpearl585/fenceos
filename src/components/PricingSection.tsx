@@ -1,66 +1,127 @@
-import { siteConfig } from "@/lib/site";
+import Link from "next/link";
+
+const tiers = [
+  {
+    name: "Starter",
+    price: 29,
+    annual: 290,
+    desc: "Perfect for solo operators who need fast, accurate estimates.",
+    features: [
+      "Unlimited estimates",
+      "Auto material calculations",
+      "Margin protection",
+      "PDF quote generation",
+      "1 user",
+      "Email support",
+    ],
+    cta: "Start Free Trial",
+    href: "/signup",
+    highlight: false,
+  },
+  {
+    name: "Pro",
+    price: 59,
+    annual: 590,
+    desc: "For contractors running a crew. Everything in Starter, plus job management.",
+    features: [
+      "Everything in Starter",
+      "Jobs & foreman board",
+      "Foreman mobile access",
+      "Change order tracking",
+      "3 users",
+      "Priority support",
+    ],
+    cta: "Start Free Trial",
+    href: "/signup",
+    highlight: true,
+    badge: "Most Popular",
+  },
+  {
+    name: "Business",
+    price: 99,
+    annual: 990,
+    desc: "For growing operations running multiple crews and high job volume.",
+    features: [
+      "Everything in Pro",
+      "Unlimited users",
+      "Advanced reporting",
+      "Custom branding on PDFs",
+      "Dedicated onboarding",
+      "Phone support",
+    ],
+    cta: "Start Free Trial",
+    href: "/signup",
+    highlight: false,
+  },
+];
 
 export default function PricingSection() {
   return (
-    <section id="pricing" className="bg-white px-6 py-20 md:py-28">
-      <div className="max-w-3xl mx-auto text-center">
-        <p className="text-fence-500 font-semibold text-sm uppercase tracking-widest mb-4">
-          Beta Pricing
-        </p>
-        <h2 className="text-3xl md:text-4xl font-bold">
-          Simple pricing. No surprises.
-        </h2>
-        <p className="mt-4 text-lg text-gray-600 max-w-xl mx-auto">
-          {siteConfig.name} is launching soon. Early users lock in the lowest
-          price — forever.
-        </p>
-
-        <div className="mt-12 bg-fence-50 border-2 border-fence-200 rounded-2xl p-8 md:p-12 max-w-md mx-auto">
-          <p className="text-sm font-semibold text-fence-600 uppercase tracking-wide">
-            Pro Plan
-          </p>
-          <div className="mt-4 flex items-baseline justify-center gap-2">
-            <span className="text-5xl font-bold text-fence-900">$19–29</span>
-            <span className="text-gray-500 text-lg">/month</span>
+    <section id="pricing" className="bg-gray-50 px-6 py-20 md:py-24">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <p className="text-fence-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple pricing</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">No contracts. No surprises.</h2>
+          <p className="mt-4 text-gray-500">Start free for 30 days. No credit card required.</p>
+          <div className="mt-4 inline-flex items-center gap-2 bg-fence-50 border border-fence-200 rounded-full px-4 py-1.5">
+            <span className="text-xs font-semibold text-fence-700">🔒 Beta pricing — lock it in forever before it goes up</span>
           </div>
-          <p className="mt-2 text-sm text-gray-500">
-            Beta pricing. Locked in for early access users.
-          </p>
-          <ul className="mt-8 text-left space-y-3">
-            {[
-              "Unlimited estimates",
-              "Automatic material calculations",
-              "Margin protection on every quote",
-              "PDF estimate downloads",
-              "Change order tracking",
-              "Mobile-first — works on any phone",
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-3">
-                <svg
-                  className="w-5 h-5 text-fence-500 mt-0.5 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span className="text-gray-700">{item}</span>
-              </li>
-            ))}
-          </ul>
-
-          <a
-            href="#demo"
-            className="mt-8 block w-full bg-fence-500 hover:bg-fence-600 text-white font-semibold text-lg py-4 rounded-lg transition-colors text-center"
-          >
-            Try the Demo First
-          </a>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {tiers.map((tier) => (
+            <div
+              key={tier.name}
+              className={`relative rounded-2xl p-7 flex flex-col ${
+                tier.highlight
+                  ? "bg-fence-900 text-white border-2 border-fence-500 shadow-2xl scale-105"
+                  : "bg-white border border-gray-200 shadow-sm"
+              }`}
+            >
+              {tier.badge && (
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                  <span className="bg-fence-500 text-white text-xs font-bold px-4 py-1 rounded-full">{tier.badge}</span>
+                </div>
+              )}
+
+              <div className="mb-6">
+                <p className={`font-semibold text-sm uppercase tracking-wide mb-1 ${tier.highlight ? "text-fence-400" : "text-fence-600"}`}>{tier.name}</p>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-4xl font-bold ${tier.highlight ? "text-white" : "text-gray-900"}`}>${tier.price}</span>
+                  <span className={`text-sm ${tier.highlight ? "text-fence-300" : "text-gray-400"}`}>/mo</span>
+                </div>
+                <p className={`text-xs mt-1 ${tier.highlight ? "text-fence-400" : "text-gray-400"}`}>
+                  ${tier.annual}/yr · save ${tier.price * 12 - tier.annual}
+                </p>
+                <p className={`text-sm mt-3 leading-relaxed ${tier.highlight ? "text-fence-200" : "text-gray-500"}`}>{tier.desc}</p>
+              </div>
+
+              <ul className="space-y-2.5 flex-1 mb-7">
+                {tier.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm">
+                    <svg className={`w-4 h-4 mt-0.5 flex-shrink-0 ${tier.highlight ? "text-fence-400" : "text-fence-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className={tier.highlight ? "text-fence-100" : "text-gray-600"}>{f}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href={tier.href}
+                className={`block text-center font-bold py-3.5 rounded-xl transition-colors ${
+                  tier.highlight
+                    ? "bg-fence-500 hover:bg-fence-400 text-white"
+                    : "bg-fence-50 hover:bg-fence-100 text-fence-700 border border-fence-200"
+                }`}
+              >
+                {tier.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-center text-gray-400 text-sm mt-8">All plans include a 30-day free trial · Cancel anytime · No setup fees</p>
       </div>
     </section>
   );

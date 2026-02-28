@@ -1,0 +1,52 @@
+import Link from "next/link";
+
+export default function ROISection() {
+  return (
+    <section className="bg-white px-6 py-20 md:py-24">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <p className="text-fence-600 font-semibold text-sm uppercase tracking-widest mb-3">Do the math</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">$29/month vs. one underbid job</h2>
+          <p className="mt-4 text-gray-500 max-w-xl mx-auto">This isn&apos;t a software expense. It&apos;s an insurance policy on every job you quote.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-7">
+            <h3 className="font-bold text-red-800 mb-4 flex items-center gap-2">
+              <span className="text-xl">❌</span> Without FenceEstimatePro
+            </h3>
+            <ul className="space-y-3 text-sm text-red-700">
+              <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Manual estimate: 45–60 min per job</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Average underbid loss: $1,200 per job</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Material miscounts: $200–$400 extra cost</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Change orders: lose $400–$600 per incident</li>
+              <li className="flex items-start gap-2 font-bold"><span className="mt-0.5">•</span>Annual loss: $14,000–$28,000+</li>
+            </ul>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-7">
+            <h3 className="font-bold text-green-800 mb-4 flex items-center gap-2">
+              <span className="text-xl">✅</span> With FenceEstimatePro
+            </h3>
+            <ul className="space-y-3 text-sm text-green-700">
+              <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Estimate in 5 minutes, on your phone</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Margin locked before every quote</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Materials auto-calculated — zero guessing</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Change orders recalculate automatically</li>
+              <li className="flex items-start gap-2 font-bold"><span className="mt-0.5">•</span>Cost: $29/month = $348/year</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="bg-fence-900 rounded-2xl p-8 text-center text-white">
+          <p className="text-fence-300 text-sm font-semibold uppercase tracking-wide mb-2">Return on investment</p>
+          <p className="text-5xl font-bold text-white mb-2">41x ROI</p>
+          <p className="text-fence-300">If it saves you from just one underbid job per month, you&apos;re up $1,200. That&apos;s $14,352 back in your pocket every year — for $348.</p>
+          <Link href="/signup" className="mt-6 inline-flex items-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold px-8 py-3.5 rounded-xl transition-colors">
+            Start Free Trial →
+          </Link>
+          <p className="mt-3 text-fence-400 text-xs">30-day free trial · No credit card required</p>
+        </div>
+      </div>
+    </section>
+  );
+}
