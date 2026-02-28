@@ -2,6 +2,20 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://fenceestimatepro.com"),
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "FenceEstimatePro",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@fenceestimatepro",
+  },
   title: "FenceOS — Fence Estimating That Protects Your Margin",
   description:
     "FenceOS helps fence contractors generate accurate estimates, calculate materials automatically, and protect gross margin before the quote goes out.",
