@@ -175,7 +175,7 @@ export default async function JobDetailPage({
   const hasVerifications = verifications.length > 0;
 
   const requiredIncomplete = checklist.filter(
-    (c: { required: boolean; completed: boolean }) => c.required && !c.completed
+    (c: { is_required: boolean; completed: boolean }) => c.is_required && !c.completed
   ).length;
   const allRequiredDone = requiredIncomplete === 0 && hasChecklist;
   const allMaterialsVerified =
@@ -467,7 +467,7 @@ export default async function JobDetailPage({
               (c: {
                 id: string;
                 label: string;
-                required: boolean;
+                is_required: boolean;
                 completed: boolean;
                 item_key: string;
               }) => (
@@ -501,7 +501,7 @@ export default async function JobDetailPage({
                     >
                       {c.label}
                     </span>
-                    {c.required && !c.completed && (
+                    {c.is_required && !c.completed && (
                       <span className="ml-2 text-xs text-red-500 font-medium">
                         Required
                       </span>
