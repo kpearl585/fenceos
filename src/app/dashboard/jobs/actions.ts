@@ -165,3 +165,49 @@ export async function transitionJobStatus(fd: FormData) {
   if (error) throw new Error(`Failed to update status: ${error.message}`);
   redirect(`/dashboard/jobs/${jobId}`);
 }
+
+/* ------------------------------------------------------------------ */
+/*  Update Job Status (Kanban drag-and-drop)                          */
+/* ------------------------------------------------------------------ */
+
+const STATUS_ORDER = ["scheduled", "active", "complete"];
+
+export async function updateJobStatus(fd: FormData) {
+  const { supabase, profile } = await getJobAuthContext();
+  const jobId = fd.get("jobId") as string;
+  const newStatus = fd.get("status") as string;
+
+  if (!jobId || !newStatus) throw new Error("Missing jobId or status");
+
+  const validStatuses = ["scheduled", "active", "complete"];
+  if (!validStatuses.includes(newStatus)) throw new Error("Invalid status");
+
+  // Fetch current status to validate transition
+  const { data: job, error: fetchError } = await supabase
+    .from("jobs")
+    .select("status")
+    .eq("id", jobId)
+    .eq("org_id", profile.org_id)
+    .single();
+
+  if (fetchError || !job) throw new Error("Job not found");
+
+  const currentIdx = STATUS_ORDER.indexOf(job.status);
+  const newIdx = STATUS_ORDER.indexOf(newStatus);
+
+  // Enforce forward-only transitions (one step at a time)
+  if (newIdx !== currentIdx + 1) {
+    throw new Error(`Invalid transition: ${job.status} → ${newStatus}`);
+  }
+
+  const updates: Record<string, unknown> = { status: newStatus };
+  if (newStatus === "complete") updates.completed_date = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("jobs")
+    .update(updates)
+    .eq("id", jobId)
+    .eq("org_id", profile.org_id);
+
+  if (error) throw new Error(`Status update failed: ${error.message}`);
+}
