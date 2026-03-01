@@ -38,7 +38,6 @@ export default function BrandingForm({
               onChange={e => setPrimaryColor(e.target.value)}
               style={{ width: '48px', height: '40px', padding: '2px', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.875rem', color: '#6b7280', fontFamily: 'monospace' }}>{primaryColor}</span>
           </div>
         </div>
 
@@ -52,7 +51,6 @@ export default function BrandingForm({
               onChange={e => setAccentColor(e.target.value)}
               style={{ width: '48px', height: '40px', padding: '2px', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.875rem', color: '#6b7280', fontFamily: 'monospace' }}>{accentColor}</span>
           </div>
         </div>
 
