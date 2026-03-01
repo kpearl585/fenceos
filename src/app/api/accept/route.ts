@@ -6,6 +6,7 @@ import {
   generateEstimatePdfBuffer,
   type PdfEstimateData,
 } from "@/lib/contracts/generateEstimatePdf";
+import { sendEmail, estimateAcceptedOwnerEmail, estimateAcceptedCustomerEmail } from "@/lib/email";
 
 /**
  * POST /api/accept
@@ -254,7 +255,58 @@ export async function POST(request: NextRequest) {
         .eq("id", estimateId);
     }
 
-    return NextResponse.json({ success: true });
+    // 9. Send notification emails (non-blocking)
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fenceestimatepro.com";
+      const estimateUrl = `${baseUrl}/dashboard/estimates/${estimateId}`;
+
+      // Get owner email
+      const { data: ownerUser } = await supabase
+        .from("users")
+        .select("email")
+        .eq("org_id", est.org_id)
+        .eq("role", "owner")
+        .single();
+
+      if (ownerUser?.email) {
+        await sendEmail({
+          to: ownerUser.email,
+          subject: `✅ Estimate Accepted — ${customer?.name || name} (${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(est.total))})`,
+          html: estimateAcceptedOwnerEmail({
+            ownerEmail: ownerUser.email,
+            orgName,
+            customerName: customer?.name || name,
+            total: Number(est.total),
+            estimateUrl,
+            acceptedAt: timestamp,
+          }),
+        });
+      }
+
+      // Customer confirmation
+      const customerEmail = customer?.email || email;
+      if (customerEmail) {
+        const { data: contractUrl } = await supabase.storage
+          .from("contracts")
+          .getPublicUrl(`${est.org_id}/${estimateId}/signed-contract.pdf`);
+
+        await sendEmail({
+          to: customerEmail,
+          subject: `Your estimate from ${orgName} has been confirmed`,
+          html: estimateAcceptedCustomerEmail({
+            orgName,
+            customerName: customer?.name || name,
+            total: Number(est.total),
+            contractUrl: contractUrl?.publicUrl,
+          }),
+        });
+      }
+    } catch (emailErr) {
+      console.error("[accept] Email send failed:", emailErr);
+      // Non-blocking — acceptance is already recorded
+    }
+
+        return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Acceptance error:", err);
     return NextResponse.json(

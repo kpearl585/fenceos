@@ -4,6 +4,7 @@ import { canAccess } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { sendQuote, deleteEstimate, convertToJob, duplicateEstimate } from "../actions";
+import { ShareEstimatePanel } from "@/components/estimates/ShareEstimatePanel";
 import { payDeposit } from "@/lib/stripe/depositAction";
 
 function fmt(v: number | string | null) {
@@ -389,6 +390,17 @@ export default async function EstimateDetailPage({
           >
             Edit Estimate
           </Link>
+        )}
+
+        {/* Share with Customer — shown when quoted and has token */}
+        {est.status === "quoted" && est.accept_token && (
+          <ShareEstimatePanel
+            estimateId={est.id}
+            acceptToken={est.accept_token}
+            customerEmail={
+              (est.customers as unknown as { email?: string }[] | null)?.[0]?.email
+            }
+          />
         )}
 
         {/* Send Quote — requires margin OK AND customer assigned */}

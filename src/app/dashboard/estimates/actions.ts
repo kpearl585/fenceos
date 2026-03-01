@@ -1,4 +1,5 @@
 "use server";
+import crypto from "crypto";
 
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
@@ -365,6 +366,7 @@ export async function sendQuote(fd: FormData) {
     .update({
       status: "quoted",
       quoted_at: new Date().toISOString(),
+      accept_token: crypto.randomUUID(),
       total: result.totals.total,
       margin_pct: result.totals.grossMarginPct,
       materials_subtotal: result.totals.materialsSubtotal,
