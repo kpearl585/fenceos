@@ -39,7 +39,7 @@ export default async function EstimatesPage({
 
   let query = supabase
     .from("estimates")
-    .select("id, title, status, total, gross_margin_pct, fence_type, linear_feet, created_at, customers(name)")
+    .select("id, title, status, total, gross_margin_pct, fence_type, linear_feet, created_at, last_sent_at, last_sent_to, customers(name)")
     .eq("org_id", profile.org_id)
     .order("created_at", { ascending: false });
 
@@ -99,7 +99,7 @@ export default async function EstimatesPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.map((e: { id: string; title: string; status: string; total: number | null; gross_margin_pct: number | null; fence_type: string | null; linear_feet: number | null; created_at: string; customers: { name: string }[] | null }) => (
+                {filtered.map((e: { id: string; title: string; status: string; total: number | null; gross_margin_pct: number | null; fence_type: string | null; linear_feet: number | null; created_at: string; last_sent_at: string | null; last_sent_to: string | null; customers: { name: string }[] | null }) => (
                   <tr key={e.id} className="hover:bg-gray-50 cursor-pointer">
                     <td className="px-4 py-3">
                       <Link href={`/dashboard/estimates/${e.id}`} className="block">
@@ -118,9 +118,16 @@ export default async function EstimatesPage({
                       </td>
                     )}
                     <td className="px-4 py-3 text-center">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${STATUS_COLORS[e.status] || "bg-gray-100 text-gray-600"}`}>
-                        {e.status}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${STATUS_COLORS[e.status] || "bg-gray-100 text-gray-600"}`}>
+                          {e.status}
+                        </span>
+                        {e.status === "quoted" && e.last_sent_at && (
+                          <span className="text-xs text-gray-400">
+                            &#128228; {new Date(e.last_sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right text-gray-400 text-xs hidden md:table-cell">
                       {new Date(e.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}

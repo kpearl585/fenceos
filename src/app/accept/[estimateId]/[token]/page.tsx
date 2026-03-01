@@ -80,6 +80,28 @@ export default async function AcceptPage({
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
+  // Expired estimate
+  if (est.status === "expired") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">&#9203;</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            This Estimate Has Expired
+          </h1>
+          <p className="text-gray-600 mb-4">
+            This estimate is no longer valid. Estimates expire after 30 days.
+          </p>
+          <p className="text-gray-600 font-medium">
+            Contact <strong>{orgName}</strong> to request a new quote.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Already accepted
   if (est.status === "accepted" || est.status === "converted") {
     return (

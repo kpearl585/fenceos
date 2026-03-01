@@ -3,7 +3,7 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { sendQuote, deleteEstimate, convertToJob, duplicateEstimate } from "../actions";
+import { sendQuote, deleteEstimate, convertToJob, duplicateEstimate, reQuoteEstimate } from "../actions";
 import { ShareEstimatePanel } from "@/components/estimates/ShareEstimatePanel";
 import { payDeposit } from "@/lib/stripe/depositAction";
 
@@ -382,6 +382,19 @@ export default async function EstimateDetailPage({
 
       {/* ── Actions ── */}
       <div className="flex flex-col sm:flex-row gap-3">
+        {/* Re-quote (for expired estimates) */}
+        {est.status === "expired" && (profile.role === "owner" || profile.role === "sales") && (
+          <form action={reQuoteEstimate}>
+            <input type="hidden" name="estimateId" value={est.id} />
+            <button
+              type="submit"
+              className="px-6 py-3 rounded-xl font-semibold bg-fence-600 text-white hover:bg-fence-700 transition-colors"
+            >
+              Re-quote
+            </button>
+          </form>
+        )}
+
         {/* Edit (only for drafts) */}
         {est.status === "draft" && (
           <Link
@@ -394,13 +407,21 @@ export default async function EstimateDetailPage({
 
         {/* Share with Customer — shown when quoted and has token */}
         {est.status === "quoted" && est.accept_token && (
-          <ShareEstimatePanel
-            estimateId={est.id}
-            acceptToken={est.accept_token}
-            customerEmail={
-              (est.customers as unknown as { email?: string }[] | null)?.[0]?.email
-            }
-          />
+          <div>
+            <ShareEstimatePanel
+              estimateId={est.id}
+              acceptToken={est.accept_token}
+              customerEmail={
+                (est.customers as unknown as { email?: string }[] | null)?.[0]?.email
+              }
+            />
+            {est.last_sent_at && (
+              <p className="text-xs text-gray-400 mt-2 px-1">
+                Last sent to: <span className="text-gray-600">{est.last_sent_to || "—"}</span> on{" "}
+                {new Date(est.last_sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+            )}
+          </div>
         )}
 
         {/* Send Quote — requires margin OK AND customer assigned */}

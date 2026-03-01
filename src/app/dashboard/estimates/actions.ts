@@ -490,3 +490,59 @@ export async function duplicateEstimate(estimateId: string) {
 
   redirect(`/dashboard/estimates/${newEst.id}`);
 }
+
+/* ------------------------------------------------------------------ */
+/*  Expire Old Estimates                                               */
+/* ------------------------------------------------------------------ */
+
+export async function expireOldEstimates() {
+  "use server";
+  const { createAdminClient } = await import("@/lib/supabase/server");
+  const supabase = await createAdminClient();
+  const supabaseAuth = await createClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const profile = await ensureProfile(supabaseAuth, user);
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { error } = await supabase
+    .from("estimates")
+    .update({ status: "expired" })
+    .eq("org_id", profile.org_id)
+    .eq("status", "quoted")
+    .lt("quoted_at", thirtyDaysAgo.toISOString());
+
+  if (error) throw new Error(`Failed to expire estimates: ${error.message}`);
+  return { success: true };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Re-quote Estimate (reset from expired to draft)                   */
+/* ------------------------------------------------------------------ */
+
+export async function reQuoteEstimate(fd: FormData) {
+  "use server";
+  const { supabase, profile } = await getAuthContext();
+  const estimateId = fd.get("estimateId") as string;
+  if (!estimateId) throw new Error("Missing estimateId");
+
+  if (profile.role !== "owner" && profile.role !== "sales") {
+    throw new Error("Only owners and sales can re-quote estimates");
+  }
+
+  const { error } = await supabase
+    .from("estimates")
+    .update({
+      status: "draft",
+      accept_token: null,
+      quoted_at: null,
+      accepted_at: null,
+    })
+    .eq("id", estimateId)
+    .eq("org_id", profile.org_id);
+
+  if (error) throw new Error(`Failed to re-quote estimate: ${error.message}`);
+  redirect(`/dashboard/estimates/${estimateId}`);
+}
