@@ -13,7 +13,7 @@ export default function ROISection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           <div className="bg-red-50 border border-red-100 rounded-2xl p-7">
             <h3 className="font-bold text-red-800 mb-4 flex items-center gap-2">
-              <span className="text-xl">❌</span> Without FenceEstimatePro
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Without FenceEstimatePro
             </h3>
             <ul className="space-y-3 text-sm text-red-700">
               <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Manual estimate: 45–60 min per job</li>
@@ -25,7 +25,7 @@ export default function ROISection() {
           </div>
           <div className="bg-green-50 border border-green-200 rounded-2xl p-7">
             <h3 className="font-bold text-green-800 mb-4 flex items-center gap-2">
-              <span className="text-xl">✅</span> With FenceEstimatePro
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> With FenceEstimatePro
             </h3>
             <ul className="space-y-3 text-sm text-green-700">
               <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Estimate in 5 minutes, on your phone</li>

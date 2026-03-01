@@ -1,9 +1,9 @@
 export default function DemoSection() {
   const features = [
-    { label: "Build estimate", time: "< 5 min", icon: "📋", desc: "Line items auto-populate from your materials catalog. Margin calculated live as you type." },
-    { label: "Send to customer", time: "1 click", icon: "📤", desc: "Branded link sent to the customer. They view, sign, and accept from any device." },
-    { label: "Convert to job", time: "1 click", icon: "🔨", desc: "Accepted estimate becomes a job instantly. Foreman gets notified, materials verified." },
-    { label: "Track to completion", time: "Real-time", icon: "✅", desc: "Kanban board moves job from Scheduled → Active → Complete. Full audit trail." },
+    { label: "Build estimate", time: "< 5 min", icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>', desc: "Line items auto-populate from your materials catalog. Margin calculated live as you type." },
+    { label: "Send to customer", time: "1 click", icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>', desc: "Branded link sent to the customer. They view, sign, and accept from any device." },
+    { label: "Convert to job", time: "1 click", icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>', desc: "Accepted estimate becomes a job instantly. Foreman gets notified, materials verified." },
+    { label: "Track to completion", time: "Real-time", icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>', desc: "Kanban board moves job from Scheduled → Active → Complete. Full audit trail." },
   ];
 
   return (
@@ -33,7 +33,7 @@ export default function DemoSection() {
                 </div>
                 <span className="text-xs font-semibold text-fence-400 bg-fence-500/10 px-2 py-0.5 rounded-full">{f.time}</span>
               </div>
-              <div className="text-2xl mb-3">{f.icon}</div>
+              <div className="mb-3" dangerouslySetInnerHTML={{ __html: f.icon }} />
               <h3 className="text-white font-semibold mb-2">{f.label}</h3>
               <p className="text-white/40 text-sm leading-relaxed">{f.desc}</p>
             </div>

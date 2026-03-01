@@ -45,7 +45,7 @@ export default function Hero() {
 
             <div className="mt-3">
               <a href="/calculator" className="inline-flex items-center gap-2 text-fence-300 hover:text-white text-sm underline underline-offset-2 transition-colors">
-                🔢 Try our free fence cost calculator →
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline",marginRight:"4px"}}><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/></svg>Try our free fence cost calculator →
               </a>
             </div>
 
@@ -71,7 +71,7 @@ export default function Hero() {
               </div>
               <div className="w-px bg-fence-700"></div>
               <div className="flex items-center gap-2">
-                <span className="text-xl">🎖️</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#c9a84c" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 <div>
                   <p className="text-xs font-bold text-amber-400 uppercase tracking-wide">Veteran-Owned</p>
                   <p className="text-xs text-fence-400 mt-0.5">&amp; Operated</p>
