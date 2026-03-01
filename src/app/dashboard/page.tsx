@@ -3,6 +3,8 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
 import Link from "next/link";
+import ReferralWidget from "@/components/dashboard/ReferralWidget";
+import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 
 function fmt(v: number | null) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(v) || 0);
@@ -160,6 +162,16 @@ export default async function DashboardHome({
         )}
       </div>
 
+
+      {/* ── Onboarding Checklist ── */}
+      {isOwner && (
+        <OnboardingChecklist
+          userId={profile.id}
+          orgId={profile.org_id}
+          userCreatedAt={user.created_at ?? new Date().toISOString()}
+        />
+      )}
+
       {/* ── Margin Alert ── */}
       {isOwner && belowTargetJobs.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
@@ -278,6 +290,10 @@ export default async function DashboardHome({
           )}
         </div>
       </div>
+
+
+      {/* ── Referral Widget ── */}
+      {isOwner && <ReferralWidget />}
 
       {/* ── Quick Actions ── */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">

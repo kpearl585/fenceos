@@ -4,6 +4,7 @@ import { canAccess } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import ChangeOrderForm from "@/components/jobs/ChangeOrderForm";
+import ActivityTimeline from "@/components/jobs/ActivityTimeline";
 import {
   assignForeman,
   updateScheduledDate,
@@ -955,6 +956,15 @@ export default async function JobDetailPage({
           )}
         </div>
       )}
+
+      {/* ── Activity Timeline ── */}
+      <div className="mt-6">
+        <ActivityTimeline
+          jobCreatedAt={job.created_at}
+          jobStatus={job.status}
+          scheduledDate={job.scheduled_date}
+        />
+      </div>
     </>
   );
 }

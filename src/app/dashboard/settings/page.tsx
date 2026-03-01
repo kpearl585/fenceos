@@ -141,6 +141,34 @@ export default async function SettingsPage() {
           </form>
         </div>
 
+
+        {/* Billing */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-fence-900 mb-4">Plan & Billing</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Current Plan</p>
+              <p className="text-xs text-gray-400 mt-0.5">Manage your subscription and billing details</p>
+            </div>
+            <div className="flex gap-2">
+              <a
+                href="/dashboard/upgrade"
+                className="border border-fence-600 text-fence-600 hover:bg-fence-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                Upgrade Plan
+              </a>
+              <form action="/api/stripe/portal" method="POST">
+                <button
+                  type="submit"
+                  className="bg-fence-600 hover:bg-fence-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                >
+                  Manage Billing
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
         {/* Users */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="font-semibold text-fence-900 mb-4">Team Members</h2>

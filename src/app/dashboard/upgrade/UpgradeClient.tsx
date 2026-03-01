@@ -6,7 +6,9 @@ const PLANS = [
   {
     key: "starter",
     name: "Starter",
-    price: 49,
+    monthlyPrice: 49,
+    annualPrice: 490,
+    annualSavings: 98,
     description: "Perfect for solo operators",
     features: ["1 user", "20 estimates/month", "Customer portal", "PDF generation", "Email notifications"],
     highlighted: false,
@@ -14,7 +16,9 @@ const PLANS = [
   {
     key: "pro",
     name: "Pro",
-    price: 89,
+    monthlyPrice: 89,
+    annualPrice: 890,
+    annualSavings: 178,
     description: "For growing operations",
     features: ["5 users", "Unlimited estimates", "Foreman access", "Job tracking", "Materials management", "Everything in Starter"],
     highlighted: true,
@@ -22,7 +26,9 @@ const PLANS = [
   {
     key: "business",
     name: "Business",
-    price: 179,
+    monthlyPrice: 179,
+    annualPrice: 1790,
+    annualSavings: 358,
     description: "For established companies",
     features: ["Unlimited users", "Priority support", "Custom PDF branding", "API access", "Everything in Pro"],
     highlighted: false,
@@ -32,6 +38,7 @@ const PLANS = [
 export default function UpgradeClient() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
 
   async function handleSelect(plan: string) {
     setLoading(plan);
@@ -39,7 +46,7 @@ export default function UpgradeClient() {
       const res = await fetch("/api/stripe/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, billing_period: billingPeriod }),
       });
       const data = await res.json();
       if (data.url) {
@@ -57,55 +64,83 @@ export default function UpgradeClient() {
   return (
     <div className="min-h-screen bg-gray-50 py-16 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-fence-950 mb-3">Choose Your Plan</h1>
           <p className="text-gray-500">Start your 14-day free trial. No credit card required until trial ends.</p>
         </div>
 
+        {/* Billing Toggle */}
+        <div className="flex items-center justify-center gap-4 mb-10">
+          <span className={`text-sm font-semibold ${billingPeriod === "monthly" ? "text-fence-900" : "text-gray-400"}`}>Monthly</span>
+          <button
+            onClick={() => setBillingPeriod(billingPeriod === "monthly" ? "annual" : "monthly")}
+            className={`relative w-14 h-7 rounded-full transition-colors ${billingPeriod === "annual" ? "bg-fence-600" : "bg-gray-300"}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${billingPeriod === "annual" ? "translate-x-7" : "translate-x-0"}`} />
+          </button>
+          <span className={`text-sm font-semibold ${billingPeriod === "annual" ? "text-fence-900" : "text-gray-400"}`}>
+            Annual
+            <span className="ml-2 bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">Save up to $358</span>
+          </span>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.key}
-              className={`rounded-2xl p-8 border-2 flex flex-col ${
-                plan.highlighted
-                  ? "border-fence-600 bg-white shadow-xl"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              {plan.highlighted && (
-                <div className="text-xs font-bold text-fence-600 uppercase tracking-wider mb-3">
-                  Most Popular
-                </div>
-              )}
-              <h2 className="text-xl font-bold text-fence-950 mb-1">{plan.name}</h2>
-              <p className="text-gray-500 text-sm mb-4">{plan.description}</p>
-              <div className="mb-6">
-                <span className="text-4xl font-black text-fence-950">${plan.price}</span>
-                <span className="text-gray-400">/mo</span>
-              </div>
-              <ul className="space-y-2 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
-                    <svg className="w-4 h-4 text-fence-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handleSelect(plan.key)}
-                disabled={!!loading}
-                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
+          {PLANS.map((plan) => {
+            const price = billingPeriod === "annual" ? Math.round(plan.annualPrice / 12) : plan.monthlyPrice;
+            return (
+              <div
+                key={plan.key}
+                className={`rounded-2xl p-8 border-2 flex flex-col ${
                   plan.highlighted
-                    ? "bg-fence-600 text-white hover:bg-fence-700"
-                    : "bg-fence-950 text-white hover:bg-fence-800"
-                } disabled:opacity-50`}
+                    ? "border-fence-600 bg-white shadow-xl"
+                    : "border-gray-200 bg-white"
+                }`}
               >
-                {loading === plan.key ? "Loading..." : "Start Free Trial"}
-              </button>
-            </div>
-          ))}
+                {plan.highlighted && (
+                  <div className="text-xs font-bold text-fence-600 uppercase tracking-wider mb-3">
+                    Most Popular
+                  </div>
+                )}
+                <h2 className="text-xl font-bold text-fence-950 mb-1">{plan.name}</h2>
+                <p className="text-gray-500 text-sm mb-4">{plan.description}</p>
+                <div className="mb-2">
+                  <span className="text-4xl font-black text-fence-950">${price}</span>
+                  <span className="text-gray-400">/mo</span>
+                  {billingPeriod === "annual" && (
+                    <p className="text-xs text-gray-400 mt-0.5">billed ${plan.annualPrice}/yr</p>
+                  )}
+                </div>
+                {billingPeriod === "annual" && (
+                  <div className="mb-4">
+                    <span className="inline-block bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">
+                      Save ${plan.annualSavings}/yr
+                    </span>
+                  </div>
+                )}
+                <ul className="space-y-2 mb-8 flex-1">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
+                      <svg className="w-4 h-4 text-fence-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => handleSelect(plan.key)}
+                  disabled={!!loading}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
+                    plan.highlighted
+                      ? "bg-fence-600 text-white hover:bg-fence-700"
+                      : "bg-fence-950 text-white hover:bg-fence-800"
+                  } disabled:opacity-50`}
+                >
+                  {loading === plan.key ? "Loading..." : "Start Free Trial"}
+                </button>
+              </div>
+            );
+          })}
         </div>
 
         <p className="text-center text-gray-400 text-xs mt-8">

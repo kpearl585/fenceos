@@ -9,12 +9,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { plan } = await req.json();
+  const { plan, billing_period = "monthly" } = await req.json();
   if (!["starter", "pro", "business"].includes(plan)) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
+  if (!["monthly", "annual"].includes(billing_period)) {
+    return NextResponse.json({ error: "Invalid billing period" }, { status: 400 });
+  }
 
-  // Get org
   const { data: profile } = await supabase
     .from("users")
     .select("org_id, role")
@@ -39,6 +41,7 @@ export async function POST(req: NextRequest) {
       email: user.email!,
       successUrl: `${origin}/dashboard?subscribed=1`,
       cancelUrl: `${origin}/dashboard/upgrade?cancelled=1`,
+      billingPeriod: billing_period as "monthly" | "annual",
     });
 
     return NextResponse.json({ url: session.url });

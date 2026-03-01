@@ -71,6 +71,14 @@ export default async function CustomerDetailPage({
 
   const canEdit = profile.role === "owner" || profile.role === "sales";
   const canDelete = profile.role === "owner";
+  const isOwner = profile.role === "owner";
+  const allEstimates = estimates ?? [];
+  const allJobs = jobs ?? [];
+  const acceptedEstimates = allEstimates.filter((e: {status: string}) => ["approved", "accepted", "deposit_paid", "converted"].includes(e.status));
+  const totalRevenue = allJobs.filter((j: {status: string; total_price: number | null}) => j.status === "complete").reduce((s: number, j: {status: string; total_price: number | null}) => s + (Number(j.total_price) || 0), 0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allActivity: any[] = [...allEstimates, ...allJobs];
+  const lastActivity = allActivity.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
   const hasLinkedRecords =
     (estimates?.length ?? 0) > 0 || (jobs?.length ?? 0) > 0;
 
@@ -98,6 +106,31 @@ export default async function CustomerDetailPage({
               + New Estimate
             </Link>
           )}
+        </div>
+      </div>
+
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Estimates</p>
+          <p className="text-2xl font-bold text-fence-900">{allEstimates.length}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Accepted</p>
+          <p className="text-2xl font-bold text-green-700">{acceptedEstimates.length}</p>
+        </div>
+        {isOwner && (
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Revenue</p>
+            <p className="text-2xl font-bold text-fence-900">{fmt(totalRevenue)}</p>
+          </div>
+        )}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Last Activity</p>
+          <p className="text-sm font-semibold text-fence-900 mt-1">
+            {lastActivity ? new Date(lastActivity.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+          </p>
         </div>
       </div>
 

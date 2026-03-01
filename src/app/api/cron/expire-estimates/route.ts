@@ -1,29 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
-export async function POST(req: NextRequest) {
-  const secret = req.headers.get("x-cron-secret");
-  if (!secret || secret !== process.env.CRON_SECRET) {
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get("authorization");
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const { createAdminClient } = await import("@/lib/supabase/server");
-    const supabase = createAdminClient();
+  const supabase = createAdminClient();
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const { error, count } = await supabase
-      .from("estimates")
-      .update({ status: "expired" })
-      .eq("status", "quoted")
-      .lt("quoted_at", thirtyDaysAgo.toISOString());
+  const { data, error } = await supabase
+    .from("estimates")
+    .update({ status: "expired" })
+    .eq("status", "quoted")
+    .lt("created_at", thirtyDaysAgo.toISOString())
+    .select("id");
 
-    if (error) throw error;
-
-    return NextResponse.json({ success: true, expired: count });
-  } catch (err) {
-    console.error("[cron] expire-estimates error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  if (error) {
+    console.error("[expire-estimates] Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const count = data?.length ?? 0;
+  console.log(`[expire-estimates] Expired ${count} estimates`);
+
+  return NextResponse.json({ expired: count, timestamp: new Date().toISOString() });
 }
