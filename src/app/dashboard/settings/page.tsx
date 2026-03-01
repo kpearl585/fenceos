@@ -5,6 +5,7 @@ import { canAccess } from "@/lib/roles";
 import { saveOrgSettings } from "./actions";
 import OrgNameForm from "@/components/settings/OrgNameForm";
 import BrandingForm from "@/components/settings/BrandingForm";
+import TeamMembersSection from "@/components/settings/TeamMembersSection";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -20,12 +21,6 @@ export default async function SettingsPage() {
     supabase.from("users").select("id, full_name, email, role, created_at").eq("org_id", profile.org_id).order("created_at"),
     supabase.from("organizations").select("name, slug, id").eq("id", profile.org_id).single(),
   ]);
-
-  const ROLE_BADGE: Record<string, string> = {
-    owner: "bg-purple-100 text-purple-700",
-    sales: "bg-blue-100 text-blue-700",
-    foreman: "bg-yellow-100 text-yellow-700",
-  };
 
   return (
     <>
@@ -149,34 +144,11 @@ export default async function SettingsPage() {
         {/* Users */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="font-semibold text-fence-900 mb-4">Team Members</h2>
-          {!orgUsers || orgUsers.length === 0 ? (
-            <p className="text-sm text-gray-400">No users found.</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 font-semibold text-gray-600">Name</th>
-                  <th className="text-left py-2 font-semibold text-gray-600">Email</th>
-                  <th className="text-left py-2 font-semibold text-gray-600">Role</th>
-                  <th className="text-left py-2 font-semibold text-gray-600">Joined</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {(orgUsers as Array<{id: string; full_name: string | null; email: string; role: string; created_at: string}>).map((u) => (
-                  <tr key={u.id}>
-                    <td className="py-2 font-medium">{u.full_name || "—"}</td>
-                    <td className="py-2 text-gray-600">{u.email}</td>
-                    <td className="py-2">
-                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${ROLE_BADGE[u.role] || "bg-gray-100 text-gray-600"}`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="py-2 text-gray-400 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <TeamMembersSection
+            members={(orgUsers ?? []) as Array<{id: string; full_name: string | null; email: string; role: string; created_at: string}>}
+            orgId={org?.id || profile.org_id}
+            currentUserId={user.id}
+          />
         </div>
       </div>
     </>

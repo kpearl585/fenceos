@@ -22,6 +22,10 @@ import {
   approveChangeOrderAction,
   rejectChangeOrderAction,
 } from "../changeOrderActions";
+import {
+  requestMaterialVerification,
+  approveMaterialVerification,
+} from "./verifyActions";
 
 function fmt(v: number | string | null) {
   return new Intl.NumberFormat("en-US", {
@@ -100,6 +104,7 @@ export default async function JobDetailPage({
   }
 
   let foremanName = "Unassigned";
+  let foremanEmail = "";
   if (job.assigned_foreman_id) {
     const { data: fm } = await supabase
       .from("users")
@@ -107,6 +112,7 @@ export default async function JobDetailPage({
       .eq("id", job.assigned_foreman_id)
       .single();
     foremanName = fm?.full_name || fm?.email || "Unknown";
+    foremanEmail = fm?.email || "";
   }
 
   const { data: checklistItems } = await supabase
@@ -900,6 +906,99 @@ export default async function JobDetailPage({
           </div>
         </div>
       )}
+
+      {/* Materials Verification Card */}
+      {job.status === "scheduled" && (() => {
+        const mvStatus = ((job as Record<string, unknown>).material_verification_status as string) || "pending";
+        const jobAddr = [customer?.address, customer?.city, customer?.state].filter(Boolean).join(", ");
+        const jobNameStr = customer?.name || "Job";
+
+        async function handleApprove(fd: FormData) {
+          "use server";
+          await approveMaterialVerification(fd.get("jobId") as string);
+        }
+        async function handleRequestVerification(fd: FormData) {
+          "use server";
+          await requestMaterialVerification(
+            fd.get("jobId") as string,
+            fd.get("jobName") as string,
+            fd.get("jobAddr") as string,
+            fd.get("foremanEmail") as string
+          );
+        }
+
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+            <h2 className="font-semibold text-fence-900 mb-3">Materials Verification</h2>
+            {mvStatus === "foreman_approved" && (
+              <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg p-3 text-sm font-medium">
+                <span>✓</span><span>Materials verified — job cleared to start</span>
+              </div>
+            )}
+            {mvStatus === "employee_confirmed" && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm font-medium">
+                  <span>✓</span><span>Employee has confirmed materials loaded</span>
+                </div>
+                {canExecute && (
+                  <form action={handleApprove}>
+                    <input type="hidden" name="jobId" value={job.id} />
+                    <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
+                      Approve &amp; Clear to Start
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+            {mvStatus === "rejected" && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 text-sm font-medium">
+                  <span>⚠️</span><span>Material verification was rejected</span>
+                </div>
+                {canExecute && (
+                  <form action={handleRequestVerification}>
+                    <input type="hidden" name="jobId" value={job.id} />
+                    <input type="hidden" name="jobName" value={jobNameStr} />
+                    <input type="hidden" name="jobAddr" value={jobAddr} />
+                    <input type="hidden" name="foremanEmail" value={foremanEmail} />
+                    <button type="submit" className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">
+                      Re-request Verification
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+            {(mvStatus === "pending" || !mvStatus) && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                  <span>⏳</span><span>Awaiting material verification before job can start</span>
+                </div>
+                {canExecute && (
+                  <div className="flex gap-2 flex-wrap">
+                    <a
+                      href={`/dashboard/jobs/${job.id}/verify-materials`}
+                      className="bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors"
+                    >
+                      Verify Materials Now →
+                    </a>
+                    {foremanEmail && (
+                      <form action={handleRequestVerification}>
+                        <input type="hidden" name="jobId" value={job.id} />
+                        <input type="hidden" name="jobName" value={jobNameStr} />
+                        <input type="hidden" name="jobAddr" value={jobAddr} />
+                        <input type="hidden" name="foremanEmail" value={foremanEmail} />
+                        <button type="submit" className="border border-fence-600 text-fence-600 hover:bg-fence-50 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                          Send Verification Request Email
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Status Transitions */}
       {job.status !== "complete" && job.status !== "cancelled" && (

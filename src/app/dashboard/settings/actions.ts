@@ -61,3 +61,53 @@ export async function updateOrgName(orgId: string, name: string) {
   revalidatePath("/dashboard/settings");
   return { success: true };
 }
+
+export async function inviteTeamMember(orgId: string, email: string, role: 'sales' | 'foreman') {
+  if (!email?.trim() || !email.includes('@')) return { error: 'Valid email required' }
+  if (!['sales', 'foreman'].includes(role)) return { error: 'Invalid role' }
+
+  const supabase = createAdminClient()
+
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id, org_id')
+    .eq('email', email)
+    .single()
+
+  if (existing?.org_id === orgId) return { error: 'This person is already on your team' }
+  if (existing?.org_id && existing.org_id !== orgId) return { error: 'This email is already registered to another organization' }
+
+  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+    data: { org_id: orgId, role }
+  })
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}
+
+export async function removeTeamMember(profileId: string, orgId: string) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('users')
+    .update({ org_id: null, role: null })
+    .eq('id', profileId)
+    .eq('org_id', orgId)
+    .neq('role', 'owner')
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}
+
+export async function updateMemberRole(profileId: string, orgId: string, role: 'sales' | 'foreman') {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('users')
+    .update({ role })
+    .eq('id', profileId)
+    .eq('org_id', orgId)
+    .neq('role', 'owner')
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}

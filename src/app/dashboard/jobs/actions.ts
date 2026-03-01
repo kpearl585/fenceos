@@ -122,15 +122,29 @@ export async function transitionJobStatus(fd: FormData) {
     redirect(`/dashboard/jobs/${jobId}?error=Foremen+can+only+start+scheduled+jobs`);
   }
 
-  // Enforce: all materials must be verified before starting
+  // Enforce: material_verification_status must be 'foreman_approved' before starting
+  // Requires migration: ALTER TABLE jobs ADD COLUMN IF NOT EXISTS material_verification_status text DEFAULT 'pending'
+  //   CHECK (material_verification_status IN ('pending', 'employee_confirmed', 'foreman_approved', 'rejected'));
   if (newStatus === "active") {
-    const { data: unverified } = await supabase
-      .from("job_material_verifications")
-      .select("id")
-      .eq("job_id", jobId)
-      .eq("verified", false);
-    if (unverified && unverified.length > 0) {
-      redirect(`/dashboard/jobs/${jobId}?error=Verify+all+${unverified.length}+material(s)+before+starting+the+job`);
+    const { data: jobForVerify } = await supabase
+      .from("jobs")
+      .select("material_verification_status")
+      .eq("id", jobId)
+      .single();
+    const mvStatus = jobForVerify?.material_verification_status;
+    if (mvStatus && mvStatus !== "foreman_approved") {
+      redirect(`/dashboard/jobs/${jobId}?error=Materials+must+be+verified+before+starting+this+job`);
+    }
+    // Legacy check: also verify all individual material verification rows
+    if (!mvStatus) {
+      const { data: unverified } = await supabase
+        .from("job_material_verifications")
+        .select("id")
+        .eq("job_id", jobId)
+        .eq("verified", false);
+      if (unverified && unverified.length > 0) {
+        redirect(`/dashboard/jobs/${jobId}?error=Verify+all+${unverified.length}+material(s)+before+starting+the+job`);
+      }
     }
   }
 
