@@ -3,6 +3,7 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
 import { saveOrgSettings, saveBranding } from "./actions";
+import OrgNameForm from "@/components/settings/OrgNameForm";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -16,7 +17,7 @@ export default async function SettingsPage() {
     supabase.from("org_settings").select("*").eq("org_id", profile.org_id).single(),
     supabase.from("org_branding").select("*").eq("org_id", profile.org_id).single(),
     supabase.from("users").select("id, full_name, email, role, created_at").eq("org_id", profile.org_id).order("created_at"),
-    supabase.from("organizations").select("name, slug").eq("id", profile.org_id).single(),
+    supabase.from("organizations").select("name, slug, id").eq("id", profile.org_id).single(),
   ]);
 
   const ROLE_BADGE: Record<string, string> = {
@@ -36,16 +37,7 @@ export default async function SettingsPage() {
         {/* Org Info */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="font-semibold text-fence-900 mb-4">Organization</h2>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">Name</p>
-              <p className="font-medium">{org?.name || "—"}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">Slug</p>
-              <p className="font-mono text-xs">{org?.slug || "—"}</p>
-            </div>
-          </div>
+          <OrgNameForm orgId={org?.id || profile.org_id} currentName={org?.name || ""} />
         </div>
 
         {/* Legal / Payment Terms + Business Settings */}

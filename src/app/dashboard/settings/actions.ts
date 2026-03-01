@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { revalidatePath } from "next/cache";
 
@@ -22,7 +22,6 @@ export async function saveOrgSettings(fd: FormData) {
     updated_at: new Date().toISOString(),
   };
 
-  // Try to save new fields gracefully
   try {
     await supabase.from("org_settings").upsert({
       ...base,
@@ -30,7 +29,6 @@ export async function saveOrgSettings(fd: FormData) {
       default_labor_rate: fd.get("default_labor_rate") ? Number(fd.get("default_labor_rate")) : 0,
     }, { onConflict: "org_id" });
   } catch {
-    // Fallback without new columns if they don't exist yet
     await supabase.from("org_settings").upsert(base, { onConflict: "org_id" });
   }
 
@@ -50,4 +48,16 @@ export async function saveBranding(fd: FormData) {
   }, { onConflict: "org_id" });
 
   revalidatePath("/dashboard/settings");
+}
+
+export async function updateOrgName(orgId: string, name: string) {
+  if (!name?.trim()) return { error: "Name is required" };
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ name: name.trim() })
+    .eq("id", orgId);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/settings");
+  return { success: true };
 }
