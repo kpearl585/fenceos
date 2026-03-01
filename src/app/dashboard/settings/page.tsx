@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
-import { saveOrgSettings, saveBranding } from "./actions";
+import { saveOrgSettings } from "./actions";
 import OrgNameForm from "@/components/settings/OrgNameForm";
+import BrandingForm from "@/components/settings/BrandingForm";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -108,29 +109,13 @@ export default async function SettingsPage() {
         {/* Branding */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="font-semibold text-fence-900 mb-4">Branding</h2>
-          <form action={saveBranding} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
-                <input name="primary_color" type="text" defaultValue={branding?.primary_color || ""} placeholder="#1a4d2e" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Accent Color</label>
-                <input name="accent_color" type="text" defaultValue={branding?.accent_color || ""} placeholder="#4ade80" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
-                <input name="logo_url" type="url" defaultValue={branding?.logo_url || ""} placeholder="https://..." className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Footer Note</label>
-                <input name="footer_note" type="text" defaultValue={branding?.footer_note || ""} placeholder="Licensed & Insured" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              </div>
-            </div>
-            <button type="submit" className="bg-fence-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700">
-              Save Branding
-            </button>
-          </form>
+          <BrandingForm
+            orgId={profile.org_id}
+            initialPrimaryColor={branding?.primary_color || '#2D6A4F'}
+            initialAccentColor={branding?.accent_color || '#4ade80'}
+            initialLogoUrl={branding?.logo_url || ''}
+            initialFooterNote={branding?.footer_note || ''}
+          />
         </div>
 
 
