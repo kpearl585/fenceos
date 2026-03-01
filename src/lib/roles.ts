@@ -12,7 +12,7 @@ export interface UserProfile {
 const ACCESS_MATRIX: Record<string, Role[]> = {
   "":          ["owner", "sales", "foreman"],
   customers:   ["owner", "sales", "foreman"],
-  estimates:   ["owner", "sales"],
+  estimates:   ["owner", "sales", "foreman"],
   jobs:        ["owner", "sales", "foreman"],
   materials:   ["owner", "foreman"],
   margin:      ["owner"],

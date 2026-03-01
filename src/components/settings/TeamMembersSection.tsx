@@ -25,8 +25,8 @@ const ROLE_BADGE: Record<string, string> = {
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   owner: 'Full access — billing, settings, all jobs & estimates',
-  sales: 'Estimates + customers (no job execution)',
-  foreman: 'Jobs only — can verify materials, manage checklist',
+  sales: 'Estimates + customers (view jobs)',
+  foreman: 'Estimates + customers + full job management',
 }
 
 export default function TeamMembersSection({ members, orgId, currentUserId }: Props) {
