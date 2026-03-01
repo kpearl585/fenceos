@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { TrialBanner } from "@/components/dashboard/TrialBanner";
+import HelpModule from "@/components/dashboard/HelpModule";
 
 export default async function DashboardLayout({
   children,
@@ -75,6 +76,7 @@ export default async function DashboardLayout({
       </main>
 
       <MobileNav items={visibleNav} />
+      <HelpModule />
     </div>
   );
 }

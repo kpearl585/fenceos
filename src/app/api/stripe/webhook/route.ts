@@ -3,10 +3,12 @@ import { getStripe } from "@/lib/stripe/client";
 import { createClient } from "@supabase/supabase-js";
 
 function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error("Missing Supabase env vars: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
+  return createClient(url, key);
 }
 
 export async function POST(request: NextRequest) {
@@ -30,7 +32,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const supabase = getServiceClient();
+  let supabase: ReturnType<typeof getServiceClient>;
+  try {
+    supabase = getServiceClient();
+  } catch (err) {
+    console.error("[webhook] Supabase client init failed:", err);
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  }
 
   // ── Subscription checkout completed ──────────────────────────────────────
   if (event.type === "checkout.session.completed") {
@@ -43,7 +51,7 @@ export async function POST(request: NextRequest) {
         ? session.customer : session.customer?.id;
 
       if (orgId && plan && customerId) {
-        await supabase.from("organizations").update({
+        const { error: updateErr } = await supabase.from("organizations").update({
           stripe_customer_id: customerId,
           stripe_subscription_id: typeof session.subscription === "string"
             ? session.subscription : null,
@@ -53,7 +61,11 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         }).eq("id", orgId);
 
-        console.log(`[webhook] Subscribed org ${orgId} to plan ${plan}`);
+        if (updateErr) {
+          console.error(`[webhook] Failed to update org ${orgId} after checkout:`, updateErr.message);
+          // Return 500 so Stripe retries the webhook
+          return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+        }
       }
     }
 
@@ -64,7 +76,7 @@ export async function POST(request: NextRequest) {
       if (estimateId && orgId) {
         const piId = typeof session.payment_intent === "string"
           ? session.payment_intent : null;
-        await supabase.from("estimates").update({
+        const { error: depositErr } = await supabase.from("estimates").update({
           deposit_paid: true,
           deposit_paid_at: new Date().toISOString(),
           stripe_payment_intent_id: piId,
@@ -72,7 +84,11 @@ export async function POST(request: NextRequest) {
           status: "deposit_paid",
           updated_at: new Date().toISOString(),
         }).eq("id", estimateId).eq("org_id", orgId);
-        console.log(`[webhook] Deposit paid for estimate ${estimateId}`);
+
+        if (depositErr) {
+          console.error(`[webhook] Failed to update deposit for estimate ${estimateId}:`, depositErr.message);
+          return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+        }
       }
     }
   }
@@ -83,12 +99,16 @@ export async function POST(request: NextRequest) {
     const orgId = sub.metadata?.org_id;
     if (orgId) {
       const plan = sub.metadata?.plan || sub.items.data[0]?.price?.metadata?.plan;
-      await supabase.from("organizations").update({
+      const { error: subUpdateErr } = await supabase.from("organizations").update({
         plan: plan || null,
         plan_status: sub.status,
         updated_at: new Date().toISOString(),
       }).eq("id", orgId);
-      console.log(`[webhook] Subscription updated for org ${orgId}: ${sub.status}`);
+
+      if (subUpdateErr) {
+        console.error(`[webhook] Failed to update subscription for org ${orgId}:`, subUpdateErr.message);
+        return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+      }
     }
   }
 
@@ -97,13 +117,17 @@ export async function POST(request: NextRequest) {
     const sub = event.data.object;
     const orgId = sub.metadata?.org_id;
     if (orgId) {
-      await supabase.from("organizations").update({
+      const { error: cancelErr } = await supabase.from("organizations").update({
         plan: "free",
         plan_status: "cancelled",
         stripe_subscription_id: null,
         updated_at: new Date().toISOString(),
       }).eq("id", orgId);
-      console.log(`[webhook] Subscription cancelled for org ${orgId}`);
+
+      if (cancelErr) {
+        console.error(`[webhook] Failed to cancel subscription for org ${orgId}:`, cancelErr.message);
+        return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+      }
     }
   }
 

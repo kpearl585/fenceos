@@ -361,7 +361,7 @@ export async function sendQuote(fd: FormData) {
   await replaceLineItems(supabase, estimateId, profile.org_id, result);
 
   // Update totals and mark quoted
-  await supabase
+  const { error: quoteUpdateErr } = await supabase
     .from("estimates")
     .update({
       status: "quoted",
@@ -378,6 +378,7 @@ export async function sendQuote(fd: FormData) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", estimateId);
+  if (quoteUpdateErr) throw new Error(`Failed to mark estimate as quoted: ${quoteUpdateErr.message}`);
 
   // ── PHASE 7: Snapshot legal terms + generate customer-facing PDF ──
   try {
