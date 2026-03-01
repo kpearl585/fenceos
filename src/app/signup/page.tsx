@@ -2,14 +2,14 @@ import { signup } from "../login/actions";
 import Link from "next/link";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Create Account | FenceEstimatePro" };
 
 export default async function SignupPage(props: {
   searchParams: Promise<{ error?: string; message?: string }>;
 }) {
-  const supabase = createServerClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect("/dashboard");
 
