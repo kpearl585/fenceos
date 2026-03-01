@@ -69,6 +69,14 @@ export default function Hero() {
                 <p className="text-2xl font-bold text-white">200+</p>
                 <p className="text-xs text-fence-400 mt-0.5">Contractors protected</p>
               </div>
+              <div className="w-px bg-fence-700"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎖️</span>
+                <div>
+                  <p className="text-xs font-bold text-amber-400 uppercase tracking-wide">Veteran-Owned</p>
+                  <p className="text-xs text-fence-400 mt-0.5">&amp; Operated</p>
+                </div>
+              </div>
             </div>
           </div>
 
