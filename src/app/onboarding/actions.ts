@@ -2,6 +2,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
+import { sendEmail, onboardingWelcomeEmail } from "@/lib/email";
 
 export async function saveOnboarding(fd: FormData) {
   const supabase = await createClient();
@@ -43,6 +44,26 @@ export async function saveOnboarding(fd: FormData) {
       target_margin_pct: targetMargin,
       default_labor_rate: laborRate,
     }, { onConflict: "org_id" });
+
+  // Send onboarding welcome email — never block the redirect if this fails
+  try {
+    const ownerEmail = user.email;
+    if (ownerEmail) {
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fenceestimatepro.com";
+      const dashboardUrl = `${baseUrl}/dashboard?welcome=1`;
+      await sendEmail({
+        to: ownerEmail,
+        subject: "Welcome to FenceEstimatePro — let's get you set up",
+        html: onboardingWelcomeEmail({
+          orgName: companyName,
+          ownerEmail,
+          dashboardUrl,
+        }),
+      });
+    }
+  } catch (emailErr) {
+    console.error("[onboarding] Welcome email failed:", emailErr);
+  }
 
   redirect("/dashboard?welcome=1");
 }

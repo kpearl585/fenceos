@@ -6,7 +6,7 @@ import {
   generateEstimatePdfBuffer,
   type PdfEstimateData,
 } from "@/lib/contracts/generateEstimatePdf";
-import { sendEmail, estimateAcceptedOwnerEmail, estimateAcceptedCustomerEmail } from "@/lib/email";
+import { sendEmail, estimateAcceptedOwnerEmail, estimateAcceptedCustomerEmail, depositReminderEmail } from "@/lib/email";
 
 /**
  * POST /api/accept
@@ -279,6 +279,19 @@ export async function POST(request: NextRequest) {
             total: Number(est.total),
             estimateUrl,
             acceptedAt: timestamp,
+          }),
+        });
+
+        // Deposit reminder email — separate, action-focused
+        await sendEmail({
+          to: ownerUser.email,
+          subject: `💰 Next step: collect your deposit from ${customer?.name || name}`,
+          html: depositReminderEmail({
+            ownerEmail: ownerUser.email,
+            customerName: customer?.name || name,
+            depositAmount: depositAmount,
+            estimateUrl,
+            orgName,
           }),
         });
       }
