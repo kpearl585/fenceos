@@ -38,6 +38,8 @@ export default function SiteNav() {
           <a href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-fence-700 transition-colors">How It Works</a>
           <a href="#demo" className="text-sm font-medium text-gray-600 hover:text-fence-700 transition-colors">Live Demo</a>
           <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-fence-700 transition-colors">Pricing</a>
+          <Link href="/blog" className="text-sm font-medium text-gray-600 hover:text-fence-700 transition-colors">Blog</Link>
+          <Link href="/calculator" className="text-sm font-medium text-gray-600 hover:text-fence-700 transition-colors">Free Calculator</Link>
         </nav>
 
         {/* Auth Buttons */}
@@ -76,6 +78,8 @@ export default function SiteNav() {
           <a href="#how-it-works" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 py-2">How It Works</a>
           <a href="#demo" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 py-2">Live Demo</a>
           <a href="#pricing" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 py-2">Pricing</a>
+          <Link href="/blog" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 py-2">Blog</Link>
+          <Link href="/calculator" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 py-2">Free Calculator</Link>
           <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
             {checked && (loggedIn ? (
               <Link href="/dashboard" className="block text-center bg-fence-600 text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
@@ -93,3 +97,4 @@ export default function SiteNav() {
     </header>
   );
 }
+
