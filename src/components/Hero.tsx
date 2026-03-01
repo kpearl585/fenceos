@@ -41,7 +41,7 @@ export default function Hero() {
               </a>
             </div>
 
-            <p className="mt-4 text-sm text-fence-400">No credit card required · Cancel anytime · 30-day free trial</p>
+            <p className="mt-4 text-sm text-fence-400">No credit card required · Cancel anytime · 14-day free trial</p>
 
             <div className="mt-3">
               <a href="/calculator" className="inline-flex items-center gap-2 text-fence-300 hover:text-white text-sm underline underline-offset-2 transition-colors">

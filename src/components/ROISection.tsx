@@ -44,7 +44,7 @@ export default function ROISection() {
           <Link href="/#waitlist" className="mt-6 inline-flex items-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold px-8 py-3.5 rounded-xl transition-colors">
             Join the Waitlist →
           </Link>
-          <p className="mt-3 text-fence-400 text-xs">30-day free trial · No credit card required</p>
+          <p className="mt-3 text-fence-400 text-xs">14-day free trial · No credit card required</p>
         </div>
       </div>
     </section>

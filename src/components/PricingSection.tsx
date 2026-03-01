@@ -62,7 +62,7 @@ export default function PricingSection() {
         <div className="text-center mb-12">
           <p className="text-fence-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple pricing</p>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900">No contracts. No surprises.</h2>
-          <p className="mt-4 text-gray-500">Start free for 30 days. No credit card required.</p>
+          <p className="mt-4 text-gray-500">Start free for 14 days. No credit card required.</p>
           <div className="mt-4 inline-flex items-center gap-2 bg-fence-50 border border-fence-200 rounded-full px-4 py-1.5">
             <span className="text-xs font-semibold text-fence-700"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline",marginRight:"4px"}}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Beta pricing — lock it in forever before it goes up</span>
           </div>
@@ -121,7 +121,7 @@ export default function PricingSection() {
           ))}
         </div>
 
-        <p className="text-center text-gray-400 text-sm mt-8">All plans include a 30-day free trial · Cancel anytime · No setup fees</p>
+        <p className="text-center text-gray-400 text-sm mt-8">All plans include a 14-day free trial · Cancel anytime · No setup fees</p>
       </div>
     </section>
   );
