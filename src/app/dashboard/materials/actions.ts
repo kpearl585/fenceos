@@ -65,3 +65,40 @@ export async function bulkAddMaterials(rows: { name: string; sku: string; unit: 
   revalidatePath("/dashboard/materials");
   return { imported: data?.length || 0, errors: [] };
 }
+
+import { createAdminClient } from "@/lib/supabase/server";
+
+export async function updateMaterialPrice(
+  materialId: string,
+  orgId: string,
+  field: 'unit_cost' | 'unit_price',
+  value: number
+) {
+  if (value < 0) return { error: 'Price cannot be negative' }
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('materials')
+    .update({ [field]: value })
+    .eq('id', materialId)
+    .eq('org_id', orgId)
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/materials')
+  return { success: true }
+}
+
+export async function updateMaterialField(
+  materialId: string,
+  orgId: string,
+  field: 'name' | 'supplier' | 'sku',
+  value: string
+) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('materials')
+    .update({ [field]: value })
+    .eq('id', materialId)
+    .eq('org_id', orgId)
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/materials')
+  return { success: true }
+}

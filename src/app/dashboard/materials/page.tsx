@@ -4,13 +4,8 @@ import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
 import { addMaterial, deleteMaterial } from "./actions";
 import MaterialsImportBar from "./MaterialsClient";
-
-function fmt(v: number | string | null) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency", currency: "USD",
-    minimumFractionDigits: 2, maximumFractionDigits: 2,
-  }).format(Number(v) || 0);
-}
+import EditablePrice from "@/components/materials/EditablePrice";
+import EditableText from "@/components/materials/EditableText";
 
 export default async function MaterialsPage() {
   const supabase = await createClient();
@@ -20,10 +15,12 @@ export default async function MaterialsPage() {
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "materials")) redirect("/dashboard");
 
+  const orgId = profile.org_id;
+
   const { data: materials } = await supabase
     .from("materials")
     .select("id, name, sku, unit, unit_cost, unit_price, category, supplier, notes")
-    .eq("org_id", profile.org_id)
+    .eq("org_id", orgId)
     .order("category", { ascending: true })
     .order("name", { ascending: true });
 
@@ -77,6 +74,7 @@ export default async function MaterialsPage() {
         });
         return (
           <div className="space-y-6">
+            <p className="text-xs text-gray-400 italic">✏️ Click any Name, SKU, Supplier, Cost, or Price to edit. Changes save automatically.</p>
             {sortedCats.map((cat) => (
               <div key={cat} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
@@ -98,12 +96,26 @@ export default async function MaterialsPage() {
                     <tbody className="divide-y divide-gray-100">
                       {grouped[cat].map((m) => (
                         <tr key={m.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium text-fence-900">{m.name}</td>
-                          <td className="px-4 py-3 text-gray-500 font-mono text-xs">{m.sku || "—"}</td>
+                          <td className="px-4 py-3">
+                            <EditableText materialId={m.id} orgId={orgId} field="name" value={m.name} placeholder="Name" />
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 font-mono text-xs">
+                            <EditableText materialId={m.id} orgId={orgId} field="sku" value={m.sku || ''} placeholder="SKU" />
+                          </td>
                           <td className="px-4 py-3 text-gray-600">{m.unit}</td>
-                          <td className="px-4 py-3 text-right font-medium">{fmt(m.unit_cost)}</td>
-                          <td className="px-4 py-3 text-right font-medium text-green-700">{fmt(m.unit_price)}</td>
-                          <td className="px-4 py-3 text-gray-500">{m.supplier || "—"}</td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end">
+                              <EditablePrice materialId={m.id} orgId={orgId} field="unit_cost" value={m.unit_cost} />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end">
+                              <EditablePrice materialId={m.id} orgId={orgId} field="unit_price" value={m.unit_price} color="#2D6A4F" />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <EditableText materialId={m.id} orgId={orgId} field="supplier" value={m.supplier || ''} placeholder="Supplier" />
+                          </td>
                           <td className="px-4 py-3">
                             <form action={deleteMaterial}>
                               <input type="hidden" name="id" value={m.id} />
