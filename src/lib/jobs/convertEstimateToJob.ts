@@ -19,7 +19,6 @@ export async function convertEstimateToJob(
   estimateId: string
 ): Promise<{ jobId: string }> {
   const tag = `[convertEstimateToJob][${estimateId.slice(0, 8)}]`;
-  console.log(`${tag} START`);
 
   const supabase = await createClient();
   const {
@@ -45,11 +44,6 @@ export async function convertEstimateToJob(
     throw new Error("Estimate not found or access denied");
   }
 
-  console.log(
-    `${tag} estimate loaded — status=${est.status}, customer_id=${est.customer_id}, ` +
-    `deposit_required=${est.deposit_required_amount}, deposit_paid=${est.deposit_paid}, ` +
-    `total=${est.total}, estimated_cost=${est.estimated_cost}`
-  );
 
   // 2. Validate status — must be deposit_paid (or quoted for legacy)
   if (est.status !== "deposit_paid" && est.status !== "quoted") {
@@ -96,7 +90,6 @@ export async function convertEstimateToJob(
     throw new Error(`Failed to load line items: ${liErr.message}`);
   }
 
-  console.log(`${tag} line items loaded — count=${lineItems?.length ?? 0}`);
 
   // 7. Insert job row (financial snapshot)
   const jobTitle = est.title || `Job from Estimate ${estimateId.slice(0, 8)}`;
@@ -114,7 +107,6 @@ export async function convertEstimateToJob(
     created_by: profile.id,
   };
 
-  console.log(`${tag} inserting job — title="${jobTitle}", total_price=${jobPayload.total_price}`);
 
   const { data: job, error: jobErr } = await supabase
     .from("jobs")
@@ -129,7 +121,6 @@ export async function convertEstimateToJob(
     );
   }
 
-  console.log(`${tag} job created — id=${job.id}`);
 
   // 8. Copy line items → job_line_items
   if (lineItems && lineItems.length > 0) {
@@ -157,11 +148,9 @@ export async function convertEstimateToJob(
       throw new Error(`Failed to copy line items: ${jliErr.message}`);
     }
 
-    console.log(`${tag} copied ${jobLines.length} line items`);
   }
 
   // 9. Lock estimate → status = 'converted'
-  console.log(`${tag} locking estimate → converted`);
 
   const { error: lockErr } = await supabase
     .from("estimates")
@@ -178,6 +167,5 @@ export async function convertEstimateToJob(
     throw new Error(`Failed to lock estimate: ${lockErr.message}`);
   }
 
-  console.log(`${tag} SUCCESS — jobId=${job.id}`);
   return { jobId: job.id };
 }

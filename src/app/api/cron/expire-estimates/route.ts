@@ -27,7 +27,6 @@ export async function GET(req: NextRequest) {
   }
 
   const count = data?.length ?? 0;
-  console.log(`[expire-estimates] Expired ${count} estimates`);
 
   return NextResponse.json({ expired: count, timestamp: new Date().toISOString() });
 }

@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[LEAD] ${email} — ${name || "(no name)"} — ${new Date().toISOString()}`);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

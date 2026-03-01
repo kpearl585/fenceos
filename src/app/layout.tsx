@@ -7,12 +7,13 @@ export const viewport: Viewport = {
   themeColor: "#2D6A4F",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fenceestimatepro.com"),
+  alternates: { canonical: "/" },
   title: "FenceEstimatePro — Fence Estimating That Protects Your Margin",
   description:
     "FenceEstimatePro helps fence contractors generate accurate estimates, calculate materials automatically, and protect gross margin before the quote goes out.",

@@ -1,26 +1,20 @@
-"use client";
-import { useEffect } from "react";
-import Link from "next/link";
+'use client'
+import { useEffect } from 'react'
 
-export default function DashboardError({ error, reset }: { error: Error; reset: () => void }) {
-  useEffect(() => { console.error("[dashboard] Error:", error.message); }, [error]);
+export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => { console.error(error) }, [error])
   return (
-    <div className="flex flex-col items-center justify-center min-h-64 text-center p-8">
-      <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-4">
-        <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      </div>
-      <h2 className="text-gray-900 font-bold text-lg mb-2">Something went wrong</h2>
-      <p className="text-gray-500 text-sm mb-6 max-w-xs">An unexpected error occurred. Your data is safe.</p>
-      <div className="flex gap-3">
-        <button onClick={reset} className="px-4 py-2 bg-fence-600 text-white text-sm font-semibold rounded-lg hover:bg-fence-700">
-          Try Again
-        </button>
-        <Link href="/dashboard" className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-semibold rounded-lg hover:bg-gray-50">
-          Go to Dashboard
-        </Link>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '2rem' }}>
+      <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+        <div style={{ width: '48px', height: '48px', background: '#fef2f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.5rem' }}>⚠️</div>
+        <h2 style={{ color: '#111827', fontWeight: 700, marginBottom: '0.5rem' }}>Something went wrong</h2>
+        <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>We hit an unexpected error loading this page. Your data is safe.</p>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <button onClick={reset} style={{ background: '#2D6A4F', color: '#fff', border: 'none', padding: '0.625rem 1.25rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>Try Again</button>
+          <a href="/dashboard" style={{ background: '#f3f4f6', color: '#374151', padding: '0.625rem 1.25rem', borderRadius: '6px', textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem' }}>Go to Dashboard</a>
+        </div>
+        <p style={{ marginTop: '1.5rem', fontSize: '0.75rem', color: '#9ca3af' }}>Need help? Email <a href="mailto:support@fenceestimatepro.com" style={{ color: '#2D6A4F' }}>support@fenceestimatepro.com</a></p>
       </div>
     </div>
-  );
+  )
 }
