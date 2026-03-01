@@ -655,3 +655,79 @@ export function depositReminderEmail(opts: {
 </body>
 </html>`;
 }
+
+export function trialDay7Email(opts: { email: string; orgName: string; trialEndsAt: string }) {
+  const days = Math.max(0, Math.ceil((new Date(opts.trialEndsAt).getTime() - Date.now()) / 86400000));
+  return {
+    to: opts.email,
+    subject: "How's FenceEstimatePro working for you?",
+    html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f9fafb;font-family:system-ui,sans-serif;">
+<div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <div style="background:#1a3a2a;padding:32px 40px;">
+    <div style="color:#6fcf97;font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;">FenceEstimatePro</div>
+    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Week 1 check-in</h1>
+  </div>
+  <div style="padding:32px 40px;">
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Hey ${opts.orgName},</p>
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">You've been on FenceEstimatePro for a week. A few things worth knowing:</p>
+    <ul style="color:#374151;line-height:1.8;padding-left:20px;margin:0 0 20px;">
+      <li>Your trial has <strong>${days} days remaining</strong></li>
+      <li>Contractors using FEP average <strong>35%+ gross margin</strong> on estimates</li>
+      <li>The biggest win: knowing your number <em>before</em> you hand over the quote</li>
+    </ul>
+    <p style="color:#374151;line-height:1.6;margin:0 0 24px;">Questions? Just reply to this email — I read every one.</p>
+    <a href="https://fenceestimatepro.com/dashboard" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:14px;padding:14px 28px;border-radius:8px;text-decoration:none;">Open Dashboard →</a>
+    <p style="color:#9ca3af;font-size:12px;margin:28px 0 0;">FenceEstimatePro · <a href="https://fenceestimatepro.com/unsubscribe" style="color:#9ca3af;">Unsubscribe</a></p>
+  </div>
+</div></body></html>`,
+  };
+}
+
+export function trialDay12Email(opts: { email: string; orgName: string }) {
+  return {
+    to: opts.email,
+    subject: "2 days left in your FenceEstimatePro trial",
+    html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f9fafb;font-family:system-ui,sans-serif;">
+<div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <div style="background:#1a3a2a;padding:32px 40px;">
+    <div style="color:#f87171;font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;">Trial Ending Soon</div>
+    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Your trial ends in 2 days</h1>
+  </div>
+  <div style="padding:32px 40px;">
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Hey ${opts.orgName},</p>
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Your free trial wraps up in 2 days. After that, you'll need an active plan to keep building estimates and tracking jobs.</p>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin:0 0 24px;">
+      <p style="color:#166534;font-weight:700;margin:0 0 8px;font-size:15px;">Most popular: Pro — $89/month</p>
+      <ul style="color:#166534;line-height:1.8;padding-left:18px;margin:0;font-size:14px;">
+        <li>5 users (owner + foreman + sales)</li>
+        <li>Unlimited estimates</li>
+        <li>Job tracking + foreman app</li>
+        <li>Customer portal + digital signatures</li>
+      </ul>
+    </div>
+    <a href="https://fenceestimatepro.com/dashboard/upgrade" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:14px;padding:14px 28px;border-radius:8px;text-decoration:none;">Upgrade Now →</a>
+    <p style="color:#9ca3af;font-size:12px;margin:28px 0 0;">FenceEstimatePro · <a href="https://fenceestimatepro.com/unsubscribe" style="color:#9ca3af;">Unsubscribe</a></p>
+  </div>
+</div></body></html>`,
+  };
+}
+
+export function trialExpiredEmail(opts: { email: string; orgName: string }) {
+  return {
+    to: opts.email,
+    subject: "Your FenceEstimatePro trial has ended",
+    html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f9fafb;font-family:system-ui,sans-serif;">
+<div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <div style="background:#1a3a2a;padding:32px 40px;">
+    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Your trial has ended</h1>
+  </div>
+  <div style="padding:32px 40px;">
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Hey ${opts.orgName},</p>
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Your 14-day trial is up. Your data is safe — we hold it for 30 days. Pick a plan to get back to work.</p>
+    <a href="https://fenceestimatepro.com/dashboard/upgrade" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:14px;padding:14px 28px;border-radius:8px;text-decoration:none;margin-bottom:16px;">Choose a Plan →</a>
+    <p style="color:#6b7280;font-size:13px;margin:0;">Starting at $49/month. Cancel anytime.</p>
+    <p style="color:#9ca3af;font-size:12px;margin:28px 0 0;">FenceEstimatePro · <a href="https://fenceestimatepro.com/unsubscribe" style="color:#9ca3af;">Unsubscribe</a></p>
+  </div>
+</div></body></html>`,
+  };
+}
