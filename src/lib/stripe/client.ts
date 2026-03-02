@@ -15,10 +15,8 @@ export function getStripe(): Stripe {
         "STRIPE_SECRET_KEY is not set. Add it to .env.local."
       );
     }
-    stripeInstance = new Stripe(key, {
-      apiVersion: "2024-06-20",
-      typescript: true,
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    stripeInstance = new Stripe(key, { apiVersion: "2024-06-20" as any });
   }
   return stripeInstance;
 }
