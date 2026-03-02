@@ -8,11 +8,16 @@ export default async function UpgradePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Use ensureProfile so the profile is always available (creates it if missing)
-  // — avoids silent redirect to /dashboard when a raw .single() query returns null
-  const profile = await ensureProfile(supabase, user);
+  let profile;
+  try {
+    profile = await ensureProfile(supabase, user);
+  } catch {
+    // Profile provisioning failed — still show upgrade page
+    return <UpgradeClient />;
+  }
 
-  if (profile.role !== "owner") redirect("/dashboard");
+  // Only block non-owners who are on a real paid plan — trial users always see upgrade
+  if (profile.role && profile.role !== "owner") redirect("/dashboard");
 
   return <UpgradeClient />;
 }
