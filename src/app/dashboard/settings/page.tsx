@@ -6,6 +6,7 @@ import { saveOrgSettings } from "./actions";
 import OrgNameForm from "@/components/settings/OrgNameForm";
 import BrandingForm from "@/components/settings/BrandingForm";
 import TeamMembersSection from "@/components/settings/TeamMembersSection";
+import BillingPortalButton from "@/components/settings/BillingPortalButton";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -129,14 +130,7 @@ export default async function SettingsPage() {
               >
                 Upgrade Plan
               </a>
-              <form action="/api/stripe/portal" method="POST">
-                <button
-                  type="submit"
-                  className="bg-fence-600 hover:bg-fence-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-                >
-                  Manage Billing
-                </button>
-              </form>
+              <BillingPortalButton />
             </div>
           </div>
         </div>

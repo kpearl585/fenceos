@@ -21,15 +21,20 @@ export async function POST(req: NextRequest) {
   const { data: org } = await admin
     .from("organizations").select("stripe_customer_id").eq("id", profile.org_id).single();
 
+  // No Stripe customer yet — redirect to upgrade page instead of crashing
   if (!org?.stripe_customer_id) {
-    return NextResponse.json({ error: "No billing account found" }, { status: 400 });
+    return NextResponse.json({ redirect: "/dashboard/upgrade" });
   }
 
-  const origin = req.headers.get("origin") || "https://fenceestimatepro.com";
-  const session = await createBillingPortalSession(
-    org.stripe_customer_id,
-    `${origin}/dashboard/settings`
-  );
-
-  return NextResponse.json({ url: session.url });
+  try {
+    const origin = req.headers.get("origin") || "https://fenceestimatepro.com";
+    const session = await createBillingPortalSession(
+      org.stripe_customer_id,
+      `${origin}/dashboard/settings`
+    );
+    return NextResponse.json({ url: session.url });
+  } catch (err: unknown) {
+    console.error("[portal] Billing portal error:", err);
+    return NextResponse.json({ redirect: "/dashboard/upgrade" });
+  }
 }
