@@ -1,15 +1,15 @@
 import { getStripe } from "@/lib/stripe/client";
 
 export const PLAN_PRICE_IDS: Record<string, string> = {
-  starter:  "price_1T62WN3lkEgG4216JquIVsyd",
-  pro:      "price_1T62WO3lkEgG4216pY0yU6NC",
-  business: "price_1T62WO3lkEgG4216uWZMXyoE",
+  starter:  "price_1T6LKQ38qXAGqAtuCsw4nRDO",
+  pro:      "price_1T6LKQ38qXAGqAtudYvBH9j8",
+  business: "price_1T6LKR38qXAGqAtutHB0L2cu",
 };
 
 export const PLAN_PRICE_IDS_ANNUAL: Record<string, string> = {
-  starter:  "price_1T63953lkEgG4216y7E64jvJ",
-  pro:      "price_1T63963lkEgG4216TejGsrIt",
-  business: "price_1T63963lkEgG4216QyZOkSjy",
+  starter:  "price_1T6LKQ38qXAGqAtuuxgi8871",
+  pro:      "price_1T6LKR38qXAGqAtuwFaeQIA3",
+  business: "price_1T6LKR38qXAGqAtue8YCMlxz",
 };
 
 export const PLAN_ANNUAL_SAVINGS: Record<string, number> = {
