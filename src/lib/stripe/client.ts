@@ -16,7 +16,7 @@ export function getStripe(): Stripe {
       );
     }
     stripeInstance = new Stripe(key, {
-      apiVersion: "2026-02-25.clover",
+      apiVersion: "2024-06-20",
       typescript: true,
     });
   }
