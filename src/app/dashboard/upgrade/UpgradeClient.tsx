@@ -66,7 +66,7 @@ export default function UpgradeClient() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-fence-950 mb-3">Choose Your Plan</h1>
-          <p className="text-gray-500">Start your 14-day free trial. No credit card required until trial ends.</p>
+          <p className="text-gray-500">Subscribe and unlock your full account. Cancel anytime.</p>
         </div>
 
         {/* Billing Toggle */}
@@ -136,7 +136,7 @@ export default function UpgradeClient() {
                       : "bg-fence-950 text-white hover:bg-fence-800"
                   } disabled:opacity-50`}
                 >
-                  {loading === plan.key ? "Loading..." : "Start Free Trial"}
+                  {loading === plan.key ? "Loading..." : "Subscribe Now"}
                 </button>
               </div>
             );

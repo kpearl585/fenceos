@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/server";
+import { seedMaterials } from "@/lib/seedMaterials";
 import type { UserProfile, Role } from "./roles";
 
 /**
@@ -65,6 +66,13 @@ export async function ensureProfile(
     throw new Error(
       "Failed to create user profile: " + (profileErr?.message ?? "unknown")
     );
+  }
+
+  // 3. Seed standard materials for the new org (non-blocking — failure doesn't break signup)
+  try {
+    await seedMaterials(admin, org.id);
+  } catch {
+    // Materials seeding failed — user can add manually, don't block account creation
   }
 
   return profile as UserProfile;

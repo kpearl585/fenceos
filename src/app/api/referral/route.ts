@@ -11,7 +11,7 @@ export async function GET() {
   const { data: profile } = await supabase
     .from("users")
     .select("org_id")
-    .eq("id", user.id)
+    .eq("auth_id", user.id)
     .single();
 
   if (!profile?.org_id) {
