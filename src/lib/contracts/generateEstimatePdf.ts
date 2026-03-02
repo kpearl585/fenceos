@@ -313,7 +313,7 @@ export function generateEstimatePdfBuffer(data: PdfEstimateData): Buffer {
     doc.setTextColor(21, 128, 61);
     doc.setFontSize(9);
     doc.setFont(data.fontFamily, "bold");
-    doc.text("✓ ACCEPTED", margin, y);
+    doc.text("ACCEPTED", margin, y);
     y += 5;
     doc.setTextColor(60, 60, 60);
     doc.setFont(data.fontFamily, "normal");

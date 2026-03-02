@@ -42,9 +42,9 @@ export default function TermsPage() {
             <div className="mt-3 p-4 bg-white/5 rounded-lg border border-white/10">
               <p className="font-medium text-white mb-2">Current Plans</p>
               <ul className="space-y-1 text-white/60">
-                <li>Starter — $29/month</li>
-                <li>Pro — $59/month</li>
-                <li>Business — $99/month</li>
+                <li>Starter — $49/month</li>
+                <li>Pro — $89/month</li>
+                <li>Business — $179/month</li>
               </ul>
             </div>
           </section>

@@ -176,7 +176,7 @@ export default function CalculatorClient() {
           <div className="bg-fence-700/30 border border-fence-600/40 rounded-2xl p-6">
             {submitted ? (
               <div className="text-center py-2">
-                <p className="text-green-400 font-bold text-lg">✓ Check your inbox!</p>
+                <p className="text-green-400 font-bold text-lg">Check your inbox!</p>
                 <p className="text-fence-200 text-sm mt-1">Also — you&apos;re on the FenceEstimatePro waitlist.</p>
               </div>
             ) : (

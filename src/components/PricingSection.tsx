@@ -3,8 +3,8 @@ import Link from "next/link";
 const tiers = [
   {
     name: "Starter",
-    price: 29,
-    annual: 290,
+    price: 49,
+    annual: 490,
     desc: "Perfect for solo operators who need fast, accurate estimates.",
     features: [
       "Unlimited estimates",
@@ -20,8 +20,8 @@ const tiers = [
   },
   {
     name: "Pro",
-    price: 59,
-    annual: 590,
+    price: 89,
+    annual: 890,
     desc: "For contractors running a crew. Everything in Starter, plus job management.",
     features: [
       "Everything in Starter",
@@ -38,8 +38,8 @@ const tiers = [
   },
   {
     name: "Business",
-    price: 99,
-    annual: 990,
+    price: 179,
+    annual: 1790,
     desc: "For growing operations running multiple crews and high job volume.",
     features: [
       "Everything in Pro",
@@ -63,9 +63,7 @@ export default function PricingSection() {
           <p className="text-fence-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple pricing</p>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900">No contracts. No surprises.</h2>
           <p className="mt-4 text-gray-500">Start free for 14 days. No credit card required.</p>
-          <div className="mt-4 inline-flex items-center gap-2 bg-fence-50 border border-fence-200 rounded-full px-4 py-1.5">
-            <span className="text-xs font-semibold text-fence-700"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline",marginRight:"4px"}}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Beta pricing — lock it in forever before it goes up</span>
-          </div>
+          <p className="mt-4 text-sm text-gray-500">Simple, transparent pricing. Cancel anytime.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -91,7 +89,7 @@ export default function PricingSection() {
                   <span className={`text-sm ${tier.highlight ? "text-fence-300" : "text-gray-400"}`}>/mo</span>
                 </div>
                 <p className={`text-xs mt-1 ${tier.highlight ? "text-fence-400" : "text-gray-400"}`}>
-                  ${tier.annual}/yr · save ${tier.price * 12 - tier.annual}
+                  ${tier.annual.toLocaleString()}/yr · save ${tier.price * 12 - tier.annual}
                 </p>
                 <p className={`text-sm mt-3 leading-relaxed ${tier.highlight ? "text-fence-200" : "text-gray-500"}`}>{tier.desc}</p>
               </div>

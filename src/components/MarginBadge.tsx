@@ -37,7 +37,7 @@ export default function MarginBadge({
       )}
       {!isBelowTarget && (
         <p className="mt-3 text-green-700 font-semibold text-sm">
-          ✓ Margin is at or above your {targetMargin}% target.
+          Margin is at or above your {targetMargin}% target.
         </p>
       )}
     </div>
