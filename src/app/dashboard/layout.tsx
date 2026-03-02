@@ -26,14 +26,30 @@ export default async function DashboardLayout({
   let profile;
   try {
     profile = await ensureProfile(supabase, user);
-  } catch {
-    // If bootstrap fails (tables don't exist yet), show minimal fallback
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    // Provisioning failed — show actionable error with refresh link
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-fence-900 mb-2">Setting up your account...</h1>
-          <p className="text-sm text-gray-500">
-            Database tables are being provisioned. Please refresh in a moment.
+        <div className="text-center max-w-md px-4">
+          <h1 className="text-xl font-bold text-fence-900 mb-2">Account setup failed</h1>
+          <p className="text-sm text-gray-500 mb-4">
+            We couldn&apos;t finish setting up your account. This is usually a temporary issue.
+          </p>
+          {process.env.NODE_ENV !== "production" && (
+            <p className="text-xs text-red-400 mb-4 font-mono break-all">{message}</p>
+          )}
+          <a
+            href="/dashboard"
+            className="inline-block px-4 py-2 bg-fence-600 text-white text-sm rounded hover:bg-fence-700 transition-colors"
+          >
+            Retry
+          </a>
+          <p className="text-xs text-gray-400 mt-4">
+            If this keeps happening, contact{" "}
+            <a href="mailto:support@fenceestimatepro.com" className="underline">
+              support@fenceestimatepro.com
+            </a>
           </p>
         </div>
       </div>

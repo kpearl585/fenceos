@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
 import type { UserProfile, Role } from "./roles";
 
 /**
@@ -7,12 +8,15 @@ import type { UserProfile, Role } from "./roles";
  *   1. Creates an organization for the user.
  *   2. Creates a users row with role = 'owner'.
  * Returns the user profile.
+ *
+ * NOTE: Inserts use the service-role admin client to bypass RLS —
+ * new users have no profile yet and cannot satisfy row-level policies.
  */
 export async function ensureProfile(
   supabase: SupabaseClient,
   authUser: { id: string; email?: string }
 ): Promise<UserProfile> {
-  // Try to fetch existing profile
+  // Try to fetch existing profile using the user's own client
   const { data: existing, error: fetchErr } = await supabase
     .from("users")
     .select("id, auth_id, org_id, email, full_name, role")
@@ -23,23 +27,28 @@ export async function ensureProfile(
     return existing as UserProfile;
   }
 
-  // No profile — create org + profile in one flow
+  // No profile found — use admin client to bypass RLS for inserts
+  const admin = createAdminClient();
   const email = authUser.email ?? "";
   const orgName = email.split("@")[0] + "'s Org";
 
-  const { data: org, error: orgErr } = await supabase
+  // 1. Create organization
+  const { data: org, error: orgErr } = await admin
     .from("organizations")
     .insert({ name: orgName })
     .select("id")
     .single();
 
   if (orgErr || !org) {
-    throw new Error("Failed to create organization: " + (orgErr?.message ?? "unknown"));
+    throw new Error(
+      "Failed to create organization: " + (orgErr?.message ?? "unknown")
+    );
   }
 
   const role: Role = "owner"; // First user is always owner
 
-  const { data: profile, error: profileErr } = await supabase
+  // 2. Create user profile
+  const { data: profile, error: profileErr } = await admin
     .from("users")
     .insert({
       auth_id: authUser.id,
@@ -51,7 +60,11 @@ export async function ensureProfile(
     .single();
 
   if (profileErr || !profile) {
-    throw new Error("Failed to create user profile: " + (profileErr?.message ?? "unknown"));
+    // Rollback: remove the org we just created so we don't leave orphans
+    await admin.from("organizations").delete().eq("id", org.id);
+    throw new Error(
+      "Failed to create user profile: " + (profileErr?.message ?? "unknown")
+    );
   }
 
   return profile as UserProfile;
