@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: profile } = await supabase
-    .from("users").select("org_id, role").eq("id", user.id).single();
+    .from("users").select("org_id, role").eq("auth_id", user.id).single();
 
   if (profile?.role !== "owner") {
     return NextResponse.json({ error: "Owner only" }, { status: 403 });
