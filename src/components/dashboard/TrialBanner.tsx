@@ -1,5 +1,4 @@
-"use client";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface TrialBannerProps {
   daysRemaining: number;
@@ -7,7 +6,6 @@ interface TrialBannerProps {
 }
 
 export function TrialBanner({ daysRemaining, plan }: TrialBannerProps) {
-  const router = useRouter();
   if (plan !== "trial" && plan !== "trialing") return null;
 
   const urgent = daysRemaining <= 3;
@@ -24,12 +22,12 @@ export function TrialBanner({ daysRemaining, plan }: TrialBannerProps) {
           ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} left in your trial`
           : ` ${daysRemaining} days left in your free trial`}
       </span>
-      <button
-        onClick={() => router.push("/dashboard/upgrade")}
+      <Link
+        href="/dashboard/upgrade"
         className="shrink-0 bg-white text-fence-800 font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
       >
         Upgrade Now
-      </button>
+      </Link>
     </div>
   );
 }
