@@ -49,6 +49,12 @@ export default function CTAFooter() {
             <Link href="/login" className="hover:text-fence-200 transition-colors">Login</Link>
             <Link href="/signup" className="hover:text-fence-200 transition-colors">Start Free Trial</Link>
           </div>
+          <div className="text-center">
+            <p className="text-fence-600 text-xs mb-1">A Pearl Ventures Company</p>
+            <a href="https://contractordocuments.com" target="_blank" rel="noopener noreferrer" className="text-fence-500 text-xs hover:text-fence-300 transition-colors">
+              Also need contractor documents? Visit <span className="text-blue-400 underline">ContractorDocuments.com</span> — attorney-reviewed templates, instant download.
+            </a>
+          </div>
           <p className="text-fence-500 text-xs">© 2026 FenceEstimatePro. All rights reserved.</p>
         </div>
       </footer>
