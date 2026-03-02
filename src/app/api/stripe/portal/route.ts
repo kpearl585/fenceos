@@ -10,14 +10,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("users").select("org_id, role").eq("auth_id", user.id).single();
 
   if (profile?.role !== "owner") {
     return NextResponse.json({ error: "Owner only" }, { status: 403 });
   }
-
-  const admin = createAdminClient();
   const { data: org } = await admin
     .from("organizations").select("stripe_customer_id").eq("id", profile.org_id).single();
 

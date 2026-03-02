@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSubscriptionCheckout } from "@/lib/stripe/subscription";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid billing period" }, { status: 400 });
   }
 
-  const { data: profile } = await supabase
+  // Use admin client to bypass RLS — user is authenticated above, lookup is safe
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("users")
     .select("org_id, role")
     .eq("auth_id", user.id)
