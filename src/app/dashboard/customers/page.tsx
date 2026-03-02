@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import SearchFilter from "@/components/dashboard/SearchFilter";
+import ImportCustomersButton from "@/components/customers/ImportCustomersButton";
 
 export default async function CustomersPage({
   searchParams,
@@ -45,12 +46,15 @@ export default async function CustomersPage({
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-fence-900">Customers</h1>
         {canCreate && (
-          <Link
-            href="/dashboard/customers/new"
-            className="bg-fence-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-fence-700 transition-colors"
-          >
-            + New Customer
-          </Link>
+          <div className="flex items-center gap-2">
+            <ImportCustomersButton />
+            <Link
+              href="/dashboard/customers/new"
+              className="bg-fence-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-fence-700 transition-colors"
+            >
+              + New Customer
+            </Link>
+          </div>
         )}
       </div>
 

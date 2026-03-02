@@ -45,8 +45,12 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[subscribe] Checkout error:", err);
-    return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 });
+    const stripeErr = err as { type?: string; message?: string; code?: string };
+    if (stripeErr?.type === "StripeInvalidRequestError" || stripeErr?.code === "account_invalid") {
+      return NextResponse.json({ error: "Payment processing is being configured. Please contact support@fenceestimatepro.com to complete your upgrade." }, { status: 503 });
+    }
+    return NextResponse.json({ error: stripeErr?.message || "Failed to create checkout session. Please try again or contact support." }, { status: 500 });
   }
 }
