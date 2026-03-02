@@ -68,7 +68,7 @@ export function ShareEstimatePanel({
             copied ? "bg-green-600 text-white" : "bg-white border border-green-300 text-green-700 hover:bg-green-50"
           }`}
         >
-          {copied ? "✓ Copied!" : "Copy Link"}
+          {copied ? " Copied!" : "Copy Link"}
         </button>
       </div>
 
@@ -89,14 +89,14 @@ export function ShareEstimatePanel({
             : "bg-green-600 hover:bg-green-700 text-white"
           }`}
         >
-          {emailStatus === "sending" ? "Sending..." : emailStatus === "sent" ? "✓ Sent!" : emailStatus === "error" ? "Error" : "Email Customer"}
+          {emailStatus === "sending" ? "Sending..." : emailStatus === "sent" ? " Sent!" : emailStatus === "error" ? "Error" : "Email Customer"}
         </button>
       </form>
       {emailStatus === "error" && (
         <p className="text-xs text-red-600 mt-1.5">Failed — RESEND_API_KEY not configured yet.</p>
       )}
       <p className="text-xs text-green-600 mt-3">
-        💡 Customer clicks the link, reads the estimate, draws their signature, and hits Accept. You get an email the moment they sign.
+         Customer clicks the link, reads the estimate, draws their signature, and hits Accept. You get an email the moment they sign.
       </p>
     </div>
   );

@@ -69,7 +69,7 @@ export default async function JobDetailPage({
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "jobs")) redirect("/dashboard");
 
-  /* ── data loading ── */
+  /*  data loading  */
   const { data: job, error } = await supabase
     .from("jobs")
     .select(
@@ -159,7 +159,7 @@ export default async function JobDetailPage({
     materialsCatalog = mats ?? [];
   }
 
-  /* ── computed ── */
+  /*  computed  */
   const customer = (
     job.customers as unknown as {
       name: string;
@@ -207,7 +207,7 @@ export default async function JobDetailPage({
     (co: { status: string }) => co.status === "pending"
   );
 
-  /* ── render ── */
+  /*  render  */
   return (
     <>
       {/* Breadcrumb + PDF */}
@@ -227,7 +227,7 @@ export default async function JobDetailPage({
       {/* Error message */}
       {errorMsg && (
         <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-medium">
-          ⚠️ {decodeURIComponent(errorMsg)}
+           {decodeURIComponent(errorMsg)}
         </div>
       )}
 
@@ -442,7 +442,7 @@ export default async function JobDetailPage({
                   </div>
                   {v.verified ? (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium whitespace-nowrap">
-                      ✓ {v.verified_qty} verified
+                       {v.verified_qty} verified
                     </span>
                   ) : canExecute && job.status !== "complete" ? (
                     <form
@@ -522,14 +522,14 @@ export default async function JobDetailPage({
                         type="submit"
                         className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${c.completed ? "bg-green-500 border-green-500 text-white" : "border-gray-300 hover:border-fence-500"}`}
                       >
-                        {c.completed && <span className="text-xs">✓</span>}
+                        {c.completed && <span className="text-xs"></span>}
                       </button>
                     </form>
                   ) : (
                     <div
                       className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${c.completed ? "bg-green-500 border-green-500 text-white" : "border-gray-300"}`}
                     >
-                      {c.completed && <span className="text-xs">✓</span>}
+                      {c.completed && <span className="text-xs"></span>}
                     </div>
                   )}
                   <div className="flex-1">
@@ -624,7 +624,7 @@ export default async function JobDetailPage({
                         className="bg-red-600 text-white w-6 h-6 rounded-full text-xs hover:bg-red-700"
                         title="Delete photo"
                       >
-                        ✕
+                        
                       </button>
                     </form>
                   )}
@@ -638,7 +638,7 @@ export default async function JobDetailPage({
           </p>
         )}
       </div>
-      {/* ═══ CHANGE ORDERS ═══ */}
+      {/*  CHANGE ORDERS  */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
         <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-semibold text-fence-900">
@@ -932,13 +932,13 @@ export default async function JobDetailPage({
             <h2 className="font-semibold text-fence-900 mb-3">Materials Verification</h2>
             {mvStatus === "foreman_approved" && (
               <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg p-3 text-sm font-medium">
-                <span>✓</span><span>Materials verified — job cleared to start</span>
+                <span></span><span>Materials verified — job cleared to start</span>
               </div>
             )}
             {mvStatus === "employee_confirmed" && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm font-medium">
-                  <span>✓</span><span>Employee has confirmed materials loaded</span>
+                  <span></span><span>Employee has confirmed materials loaded</span>
                 </div>
                 {canExecute && (
                   <form action={handleApprove}>
@@ -953,7 +953,7 @@ export default async function JobDetailPage({
             {mvStatus === "rejected" && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 text-sm font-medium">
-                  <span>⚠️</span><span>Material verification was rejected</span>
+                  <span></span><span>Material verification was rejected</span>
                 </div>
                 {canExecute && (
                   <form action={handleRequestVerification}>
@@ -1056,7 +1056,7 @@ export default async function JobDetailPage({
         </div>
       )}
 
-      {/* ── Activity Timeline ── */}
+      {/*  Activity Timeline  */}
       <div className="mt-6">
         <ActivityTimeline
           jobCreatedAt={job.created_at}

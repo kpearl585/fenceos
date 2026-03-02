@@ -74,7 +74,7 @@ export default async function MaterialsPage() {
         });
         return (
           <div className="space-y-6">
-            <p className="text-xs text-gray-400 italic">✏️ Click any Name, SKU, Supplier, Cost, or Price to edit. Changes save automatically.</p>
+            <p className="text-xs text-gray-400 italic"> Click any Name, SKU, Supplier, Cost, or Price to edit. Changes save automatically.</p>
             {sortedCats.map((cat) => (
               <div key={cat} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">

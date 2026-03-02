@@ -1,5 +1,4 @@
 import Link from "next/link";
-import WaitlistCounter from "@/components/WaitlistCounter";
 
 export default function Hero() {
   return (
@@ -25,10 +24,10 @@ export default function Hero() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
-                href="/#waitlist"
+                href="/signup"
                 className="inline-flex items-center justify-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold text-lg px-8 py-4 rounded-xl transition-colors shadow-lg"
               >
-                Join the Waitlist
+                Start Free Trial
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -49,9 +48,6 @@ export default function Hero() {
               </a>
             </div>
 
-            <div className="mt-6">
-              <WaitlistCounter />
-            </div>
 
             {/* Quick stats */}
             <div className="mt-10 flex flex-wrap gap-6">
@@ -95,7 +91,7 @@ export default function Hero() {
                 <div className="p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-white font-semibold text-sm">New Estimate</p>
-                    <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-0.5 rounded-full">38% margin ✓</span>
+                    <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-0.5 rounded-full">38% margin protected</span>
                   </div>
                   <div className="space-y-2">
                     {[
@@ -114,7 +110,7 @@ export default function Hero() {
                     <span className="text-white text-xl font-bold">$11,935</span>
                   </div>
                   <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
-                    <p className="text-green-400 text-xs font-semibold">✓ Margin protected · Ready to send</p>
+                    <p className="text-green-400 text-xs font-semibold">Margin protected · Ready to send</p>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <button className="bg-fence-600 text-white text-xs font-bold py-2 rounded-lg">Send to Customer</button>

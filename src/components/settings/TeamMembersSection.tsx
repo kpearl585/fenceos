@@ -136,7 +136,7 @@ export default function TeamMembersSection({ members, orgId, currentUserId }: Pr
         <h3 className="text-sm font-semibold text-fence-900 mb-3">Invite Team Member</h3>
         {message && (
           <div className={`mb-3 p-3 rounded-lg text-sm font-medium ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-            {message.type === 'error' ? '⚠️ ' : '✓ '}{message.text}
+            {message.type === 'error' ? ' ' : ' '}{message.text}
           </div>
         )}
         <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-2">

@@ -19,10 +19,10 @@ export function TrialBanner({ daysRemaining, plan }: TrialBannerProps) {
     } text-white`}>
       <span>
         {expired
-          ? "⚠️ Your trial has expired — upgrade to keep access"
+          ? " Your trial has expired — upgrade to keep access"
           : urgent
-          ? `⏰ ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} left in your trial`
-          : `🚀 ${daysRemaining} days left in your free trial`}
+          ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} left in your trial`
+          : ` ${daysRemaining} days left in your free trial`}
       </span>
       <button
         onClick={() => router.push("/dashboard/upgrade")}

@@ -27,7 +27,7 @@ export default function ReferralWidget() {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
       <div className="flex items-start gap-3">
-        <div className="text-2xl">🎁</div>
+        <div className="text-2xl"></div>
         <div className="flex-1">
           <h3 className="font-semibold text-fence-900 text-sm">Refer a Contractor</h3>
           <p className="text-xs text-gray-500 mt-0.5">

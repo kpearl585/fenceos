@@ -22,31 +22,31 @@ export default function ActivityTimeline({ jobCreatedAt, jobStatus, scheduledDat
       label: "Job Created",
       date: jobCreatedAt,
       done: true,
-      icon: "📋",
+      icon: "1",
     },
     {
       label: "Estimate Accepted",
       date: estimateAcceptedAt ?? null,
       done: !!estimateAcceptedAt || statusIndex >= 0,
-      icon: "✅",
+      icon: "2",
     },
     {
       label: "Job Scheduled",
       date: scheduledDate ?? null,
       done: statusIndex >= 0,
-      icon: "📅",
+      icon: "3",
     },
     {
       label: "Job Started",
       date: jobStatus === "active" || jobStatus === "complete" ? scheduledDate ?? null : null,
       done: jobStatus === "active" || jobStatus === "complete",
-      icon: "🔨",
+      icon: "4",
     },
     {
       label: "Job Completed",
       date: jobStatus === "complete" ? new Date().toISOString() : null,
       done: jobStatus === "complete",
-      icon: "🎉",
+      icon: "5",
     },
   ];
 

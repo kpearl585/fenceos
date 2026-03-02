@@ -8,7 +8,7 @@ function currency(n: number) {
 }
 function pct(n: number, decimals = 1) { return `${n.toFixed(decimals)}%`; }
 function deltaLabel(n: number) {
-  const sign = n >= 0 ? "▲" : "▼";
+  const sign = n >= 0 ? "" : "";
   const color = n >= 0 ? "text-green-600" : "text-red-500";
   return { sign, color, text: `${sign} ${Math.abs(n).toFixed(1)}%` };
 }
@@ -59,7 +59,7 @@ export default async function MetricsDashboard() {
   const orgId = profile.org_id;
   const now = new Date();
 
-  // ── Time windows ─────────────────────────────────────────────────────────
+  //  Time windows 
   const startThisWeek  = new Date(now.getTime() - 7  * 86400000).toISOString();
   const startLastWeek  = new Date(now.getTime() - 14 * 86400000).toISOString();
   const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -84,7 +84,7 @@ export default async function MetricsDashboard() {
   const estimates  = allEstimates  ?? [];
   const customers  = allCustomers  ?? [];
 
-  // ── Revenue ───────────────────────────────────────────────────────────────
+  //  Revenue 
   const closed     = estimates.filter(e => ["accepted","deposit_paid"].includes(e.status));
   const closedWeek = closed.filter(e => e.accepted_at && e.accepted_at >= startThisWeek);
   const closedLstW = closed.filter(e => e.accepted_at && e.accepted_at >= startLastWeek && e.accepted_at < startThisWeek);
@@ -102,7 +102,7 @@ export default async function MetricsDashboard() {
 
   const avgDeal  = closed.length  > 0 ? revTotal  / closed.length  : 0;
 
-  // ── Acquisition ───────────────────────────────────────────────────────────
+  //  Acquisition 
   const sent     = estimates.filter(e => ["quoted","accepted","deposit_paid","rejected"].includes(e.status));
   const sentWeek = sent.filter(e => e.last_sent_at && e.last_sent_at >= startThisWeek);
   const sentLstW = sent.filter(e => e.last_sent_at && e.last_sent_at >= startLastWeek && e.last_sent_at < startThisWeek);
@@ -111,7 +111,7 @@ export default async function MetricsDashboard() {
   const closeRate     = sent.length  > 0 ? (closed.length  / sent.length)  * 100 : 0;
   const closeRateWeek = sentWeek.length > 0 ? (closedWeek.length / sentWeek.length) * 100 : 0;
 
-  // ── CAC / LTV / LTV:CAC ──────────────────────────────────────────────────
+  //  CAC / LTV / LTV:CAC 
   // CAC = estimated (no ad spend yet — using $0 paid, time-cost proxy)
   // Once Stripe live: CAC = total acquisition spend / new customers
   const newCust90  = customers.filter(c => c.created_at >= start90).length;
@@ -120,18 +120,18 @@ export default async function MetricsDashboard() {
   const estimatedLTV  = avgDeal * 3; // conservative: avg contractor stays 3+ jobs
   const ltvcac         = cac > 0 ? estimatedLTV / cac : null;
 
-  // ── Retention proxies ─────────────────────────────────────────────────────
+  //  Retention proxies 
   const custWithJobs   = new Set((allJobs ?? []).map(j => j.id)).size;
   const onboardingRate = customers.length > 0 ? Math.min(100, (custWithJobs / customers.length) * 100) : 0;
 
-  // ── Efficiency ────────────────────────────────────────────────────────────
+  //  Efficiency 
   const grossMarginPct = 75; // SaaS target — update when cost data available
   const plan = org?.plan ?? "trial";
   const daysLeft = org?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(org.trial_ends_at).getTime() - now.getTime()) / 86400000))
     : null;
 
-  // ── Bottleneck diagnostic ─────────────────────────────────────────────────
+  //  Bottleneck diagnostic 
   let bottleneck = "No data yet — send your first estimate to start tracking.";
   let bottleneckAction = "Build your first estimate → send to a customer.";
   if (sent.length === 0) {
@@ -174,12 +174,12 @@ export default async function MetricsDashboard() {
       <div>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Revenue</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon="💰" label="Revenue This Week"  value={currency(revWeek)}
+          <StatCard icon="" label="Revenue This Week"  value={currency(revWeek)}
             deltaText={weekDelta.text}  deltaColor={weekDelta.color}  sub="vs prior 7 days" />
-          <StatCard icon="📅" label="Revenue This Month" value={currency(revMonth)}
+          <StatCard icon="" label="Revenue This Month" value={currency(revMonth)}
             deltaText={monthDelta.text} deltaColor={monthDelta.color} sub="vs last month" />
-          <StatCard icon="🏆" label="Total Revenue"      value={currency(revTotal)} sub={`${closed.length} deals closed`} />
-          <StatCard icon="📊" label="Avg Deal Size"       value={currency(avgDeal)}  sub="per closed estimate" />
+          <StatCard icon="" label="Total Revenue"      value={currency(revTotal)} sub={`${closed.length} deals closed`} />
+          <StatCard icon="" label="Avg Deal Size"       value={currency(avgDeal)}  sub="per closed estimate" />
         </div>
       </div>
 
@@ -187,15 +187,15 @@ export default async function MetricsDashboard() {
       <div>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Acquisition</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon="📤" label="Quotes Sent (Week)"  value={String(sentWeek.length)}
+          <StatCard icon="" label="Quotes Sent (Week)"  value={String(sentWeek.length)}
             deltaText={leadsDeltaObj.text} deltaColor={leadsDeltaObj.color} sub="vs prior 7 days" />
-          <StatCard icon="🎯" label="Close Rate (All Time)" value={pct(closeRate)}
+          <StatCard icon="" label="Close Rate (All Time)" value={pct(closeRate)}
             accent={closeRate >= 30 ? "text-green-600" : closeRate >= 15 ? "text-amber-600" : "text-red-500"}
             sub={`${closed.length} of ${sent.length} sent`} />
-          <StatCard icon="🎯" label="Close Rate (Week)"     value={pct(closeRateWeek)}
+          <StatCard icon="" label="Close Rate (Week)"     value={pct(closeRateWeek)}
             accent={closeRateWeek >= 30 ? "text-green-600" : "text-amber-600"}
             sub={`${closedWeek.length} of ${sentWeek.length} this week`} />
-          <StatCard icon="🏷️" label="CAC"  value={cac > 0 ? currency(cac) : "$0 (organic)"}
+          <StatCard icon="" label="CAC"  value={cac > 0 ? currency(cac) : "$0 (organic)"}
             sub="cost per acquired customer" />
         </div>
       </div>
@@ -204,13 +204,13 @@ export default async function MetricsDashboard() {
       <div>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Retention & LTV</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon="♻️"  label="Est. Customer LTV"    value={currency(estimatedLTV)} sub="avg deal × 3 jobs" />
-          <StatCard icon="📐"  label="LTV:CAC Ratio"        value={ltvcac !== null ? `${ltvcac.toFixed(1)}:1` : "N/A (organic)"}
+          <StatCard icon=""  label="Est. Customer LTV"    value={currency(estimatedLTV)} sub="avg deal × 3 jobs" />
+          <StatCard icon=""  label="LTV:CAC Ratio"        value={ltvcac !== null ? `${ltvcac.toFixed(1)}:1` : "N/A (organic)"}
             accent="text-green-600" sub="Target: >3:1" />
-          <StatCard icon="✅"  label="Onboarding Rate"      value={pct(onboardingRate)}
+          <StatCard icon=""  label="Onboarding Rate"      value={pct(onboardingRate)}
             accent={onboardingRate >= 60 ? "text-green-600" : "text-amber-600"}
             sub="customers with active jobs" />
-          <StatCard icon="👥"  label="Total Customers"      value={String(customers.length)}
+          <StatCard icon=""  label="Total Customers"      value={String(customers.length)}
             sub={`${customers.filter(c => c.created_at >= startThisMonth).length} new this month`} />
         </div>
       </div>
@@ -235,9 +235,9 @@ export default async function MetricsDashboard() {
       }`}>
         <div className="flex items-start gap-3">
           <span className="text-xl">
-            {bottleneck.includes("volume") ? "⚡" :
-             bottleneck.includes("onboarding") ? "🔴" :
-             bottleneck.includes("close rate") ? "🟡" : "📍"}
+            {bottleneck.includes("volume") ? "" :
+             bottleneck.includes("onboarding") ? "" :
+             bottleneck.includes("close rate") ? "" : ""}
           </span>
           <div>
             <h3 className="font-bold text-fence-950 mb-1">Current Bottleneck</h3>
@@ -258,7 +258,7 @@ export default async function MetricsDashboard() {
             { cond: "Revenue high, margin low",fix: "Pricing problem → raise prices",           active: revMonth > 10000 && grossMarginPct < 60 },
           ].map(({ cond, fix, active }) => (
             <div key={cond} className={`flex gap-3 p-3 rounded-lg ${active ? "bg-amber-500/20 border border-amber-500/40" : "bg-white/5"}`}>
-              <span>{active ? "🔴" : "⚪"}</span>
+              <span>{active ? "" : ""}</span>
               <div>
                 <div className={`font-semibold text-xs ${active ? "text-amber-300" : "text-white/50"}`}>{cond}</div>
                 <div className={`text-xs mt-0.5 ${active ? "text-white" : "text-white/30"}`}>{fix}</div>

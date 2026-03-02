@@ -87,7 +87,7 @@ export default function VerifyMaterialsPage() {
   if (submitted) {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center">
-        <div className="text-5xl mb-4">✅</div>
+        <div className="text-5xl mb-4"></div>
         <h2 className="text-xl font-bold text-fence-900 mb-2">Materials Confirmed</h2>
         <p className="text-gray-500 text-sm">Foreman has been notified. Redirecting…</p>
       </div>
@@ -97,7 +97,7 @@ export default function VerifyMaterialsPage() {
   if (verifyStatus === 'foreman_approved') {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center">
-        <div className="text-5xl mb-4">✅</div>
+        <div className="text-5xl mb-4"></div>
         <h2 className="text-xl font-bold text-fence-900 mb-2">Already Approved</h2>
         <p className="text-gray-500 text-sm mb-4">Materials have been verified and foreman-approved for this job.</p>
         <Link href={`/dashboard/jobs/${jobId}`} className="text-fence-600 hover:underline text-sm">← Back to Job</Link>
@@ -120,7 +120,7 @@ export default function VerifyMaterialsPage() {
 
       {verifyStatus === 'employee_confirmed' && (
         <div className="mb-4 p-3.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-sm font-medium">
-          ✓ You have already submitted this verification. Waiting for foreman approval.
+           You have already submitted this verification. Waiting for foreman approval.
         </div>
       )}
 
@@ -149,7 +149,7 @@ export default function VerifyMaterialsPage() {
                     {m.sku && <span className="ml-2 text-xs text-gray-400">({m.sku})</span>}
                     <span className="ml-2 text-xs text-gray-400">— confirm loaded</span>
                   </div>
-                  {checked[m.id] && <span className="text-green-500 text-sm">✓</span>}
+                  {checked[m.id] && <span className="text-green-500 text-sm"></span>}
                 </label>
               ))}
             </div>

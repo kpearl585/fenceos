@@ -71,7 +71,7 @@ export default async function CustomersPage({
 
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-          <div className="text-4xl mb-3">👤</div>
+          <div className="text-4xl mb-3"></div>
           <h2 className="text-lg font-semibold text-gray-700 mb-1">
             {q ? "No customers match your search" : "No customers yet"}
           </h2>

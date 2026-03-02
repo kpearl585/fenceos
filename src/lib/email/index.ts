@@ -38,7 +38,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<void> {
   }
 }
 
-/* ── Email Templates ── */
+/*  Email Templates  */
 
 export function estimateShareEmail(opts: {
   orgName: string;
@@ -63,7 +63,7 @@ export function estimateShareEmail(opts: {
         <tr><td style="background:#0a1a12;border-radius:12px 12px 0 0;padding:28px 32px;">
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="background:#2D6A4F;width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;">
-              <span style="color:white;font-size:18px;">🏠</span>
+              <span style="color:white;font-size:18px;"></span>
             </div>
             <span style="color:white;font-size:16px;font-weight:700;margin-left:10px;">${opts.orgName}</span>
           </div>
@@ -141,7 +141,7 @@ export function estimateAcceptedOwnerEmail(opts: {
         </td></tr>
         <tr><td style="background:white;padding:32px;">
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
-            <span style="font-size:24px;">🎉</span>
+            <span style="font-size:24px;"></span>
             <div>
               <p style="margin:0;color:#15803d;font-weight:700;font-size:15px;">Estimate Accepted!</p>
               <p style="margin:4px 0 0;color:#16a34a;font-size:13px;">${date}</p>
@@ -217,7 +217,7 @@ export function estimateAcceptedCustomerEmail(opts: {
 </html>`;
 }
 
-/* ── Waitlist Email Templates ── */
+/*  Waitlist Email Templates  */
 
 export function waitlistWelcomeEmail(opts: { email: string }) {
   return `
@@ -234,7 +234,7 @@ export function waitlistWelcomeEmail(opts: { email: string }) {
           <div>
             <div style="display:inline-flex;align-items:center;gap:10px;">
               <div style="background:#2D6A4F;width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;">
-                <span style="color:white;font-size:18px;">🏠</span>
+                <span style="color:white;font-size:18px;"></span>
               </div>
               <span style="color:white;font-size:18px;font-weight:800;margin-left:10px;">FenceEstimatePro</span>
             </div>
@@ -256,19 +256,19 @@ export function waitlistWelcomeEmail(opts: { email: string }) {
             <table cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td style="padding-bottom:12px;">
-                  <span style="color:#2D6A4F;font-weight:700;margin-right:10px;">✓</span>
+                  <span style="color:#2D6A4F;font-weight:700;margin-right:10px;"></span>
                   <span style="color:#374151;font-size:15px;">Line-item estimates with automatic margin calculation</span>
                 </td>
               </tr>
               <tr>
                 <td style="padding-bottom:12px;">
-                  <span style="color:#2D6A4F;font-weight:700;margin-right:10px;">✓</span>
+                  <span style="color:#2D6A4F;font-weight:700;margin-right:10px;"></span>
                   <span style="color:#374151;font-size:15px;">Customer-facing quote links with digital signature acceptance</span>
                 </td>
               </tr>
               <tr>
                 <td>
-                  <span style="color:#2D6A4F;font-weight:700;margin-right:10px;">✓</span>
+                  <span style="color:#2D6A4F;font-weight:700;margin-right:10px;"></span>
                   <span style="color:#374151;font-size:15px;">Job tracking from estimate to completion — for your whole crew</span>
                 </td>
               </tr>
@@ -402,19 +402,19 @@ export function waitlistDaySevenEmail(opts: { email: string }) {
             <p style="margin:0 0 14px;color:#14532d;font-size:14px;font-weight:700;">Here's what you'll see when you log in for the first time:</p>
             <table cellpadding="0" cellspacing="0" width="100%">
               <tr><td style="padding-bottom:10px;">
-                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;">📊</span>
+                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;"></span>
                 <span style="color:#374151;font-size:14px;"><strong>KPI Cards</strong> — revenue, margin, jobs in progress at a glance</span>
               </td></tr>
               <tr><td style="padding-bottom:10px;">
-                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;">🧮</span>
+                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;"></span>
                 <span style="color:#374151;font-size:14px;"><strong>Estimate Builder</strong> — line-item pricing with real-time margin tracking</span>
               </td></tr>
               <tr><td style="padding-bottom:10px;">
-                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;">📋</span>
+                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;"></span>
                 <span style="color:#374151;font-size:14px;"><strong>Job Kanban</strong> — track every job from estimate to completion</span>
               </td></tr>
               <tr><td>
-                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;">💰</span>
+                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;"></span>
                 <span style="color:#374151;font-size:14px;"><strong>P&amp;L View</strong> — actual vs. estimated profit on every job</span>
               </td></tr>
             </table>
@@ -429,7 +429,7 @@ export function waitlistDaySevenEmail(opts: { email: string }) {
           </table>
 
           <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.7;background:#fef9c3;border-radius:8px;padding:14px 18px;">
-            ⚡ <strong>We're keeping the first cohort small.</strong> If you referred anyone, now's the time.
+             <strong>We're keeping the first cohort small.</strong> If you referred anyone, now's the time.
           </p>
 
           <!-- CTA -->
@@ -457,7 +457,7 @@ export function waitlistDaySevenEmail(opts: { email: string }) {
 </html>`;
 }
 
-/* ── Onboarding Email ── */
+/*  Onboarding Email  */
 
 export function onboardingWelcomeEmail(opts: {
   orgName: string;
@@ -478,7 +478,7 @@ export function onboardingWelcomeEmail(opts: {
         <tr><td style="background:#0a1a12;border-radius:12px 12px 0 0;padding:28px 32px;">
           <div style="display:inline-flex;align-items:center;">
             <div style="background:#2D6A4F;width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;">
-              <span style="color:white;font-size:18px;">🏠</span>
+              <span style="color:white;font-size:18px;"></span>
             </div>
             <span style="color:white;font-size:18px;font-weight:800;margin-left:12px;">FenceEstimatePro</span>
           </div>
@@ -487,7 +487,7 @@ export function onboardingWelcomeEmail(opts: {
         <!-- Body -->
         <tr><td style="background:white;padding:36px 32px;">
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;">
-            <span style="font-size:22px;margin-right:12px;">🎉</span>
+            <span style="font-size:22px;margin-right:12px;"></span>
             <p style="margin:0;color:#15803d;font-weight:700;font-size:15px;">Your account is live, ${opts.orgName}.</p>
           </div>
 
@@ -570,7 +570,7 @@ export function onboardingWelcomeEmail(opts: {
 </html>`;
 }
 
-/* ── Deposit Reminder Email ── */
+/*  Deposit Reminder Email  */
 
 export function depositReminderEmail(opts: {
   ownerEmail: string;
@@ -599,7 +599,7 @@ export function depositReminderEmail(opts: {
         <!-- Body -->
         <tr><td style="background:white;padding:36px 32px;">
           <h1 style="margin:0 0 20px;color:#111827;font-size:22px;font-weight:800;">
-            💰 Next step: collect your deposit from ${opts.customerName}
+             Next step: collect your deposit from ${opts.customerName}
           </h1>
 
           <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.7;">

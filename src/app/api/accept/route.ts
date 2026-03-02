@@ -271,7 +271,7 @@ export async function POST(request: NextRequest) {
       if (ownerUser?.email) {
         await sendEmail({
           to: ownerUser.email,
-          subject: `✅ Estimate Accepted — ${customer?.name || name} (${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(est.total))})`,
+          subject: ` Estimate Accepted — ${customer?.name || name} (${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(est.total))})`,
           html: estimateAcceptedOwnerEmail({
             ownerEmail: ownerUser.email,
             orgName,
@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
         // Deposit reminder email — separate, action-focused
         await sendEmail({
           to: ownerUser.email,
-          subject: `💰 Next step: collect your deposit from ${customer?.name || name}`,
+          subject: ` Next step: collect your deposit from ${customer?.name || name}`,
           html: depositReminderEmail({
             ownerEmail: ownerUser.email,
             customerName: customer?.name || name,

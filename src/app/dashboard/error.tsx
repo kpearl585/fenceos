@@ -6,7 +6,7 @@ export default function DashboardError({ error, reset }: { error: Error & { dige
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '2rem' }}>
       <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-        <div style={{ width: '48px', height: '48px', background: '#fef2f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.5rem' }}>⚠️</div>
+        <div style={{ width: '48px', height: '48px', background: '#fef2f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.5rem' }}></div>
         <h2 style={{ color: '#111827', fontWeight: 700, marginBottom: '0.5rem' }}>Something went wrong</h2>
         <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>We hit an unexpected error loading this page. Your data is safe.</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>

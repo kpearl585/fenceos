@@ -57,7 +57,7 @@ export default async function OnboardingPage(props: {
 
           {error && (
             <div className="mb-6 p-3.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">
-              ⚠️ {decodeURIComponent(error)}
+               {decodeURIComponent(error)}
             </div>
           )}
 
@@ -170,7 +170,7 @@ export default async function OnboardingPage(props: {
                   "Track jobs from estimate to completion",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2 text-white/45 text-xs">
-                    <span className="text-fence-400 text-xs">✓</span>
+                    <span className="text-fence-400 text-xs"></span>
                     {item}
                   </li>
                 ))}

@@ -46,7 +46,7 @@ export default async function DashboardHome({
   const isOwner = profile.role === "owner";
   const canEstimate = canAccess(profile.role, "estimates");
 
-  // ── Parallel data fetches ──
+  //  Parallel data fetches 
   const [
     { data: estimates },
     { data: jobs },
@@ -72,7 +72,7 @@ export default async function DashboardHome({
   const allEstimates = estimates ?? [];
   const allJobs = jobs ?? [];
 
-  // ── KPIs ──
+  //  KPIs 
   const quotedEstimates = allEstimates.filter(e => e.status === "quoted" || e.status === "draft");
   const activeJobs = allJobs.filter(j => j.status === "active");
   const scheduledJobs = allJobs.filter(j => j.status === "scheduled");
@@ -98,17 +98,16 @@ export default async function DashboardHome({
   // Active + scheduled jobs (show first 5)
   const liveJobs = [...activeJobs, ...scheduledJobs].slice(0, 5);
 
-  const firstName = (profile.full_name || profile.email.split("@")[0]).split(" ")[0];
+  const firstName = profile.full_name ? profile.full_name.split(" ")[0] : "there";
 
   return (
     <div className="space-y-6">
-      {/* ── Page Header ── */}
+      {/*  Page Header  */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-fence-900">{greeting()}, {firstName} 👋</h1>
+          <h1 className="text-2xl font-bold text-fence-900">{greeting()}, {firstName}</h1>
           {welcome === "1" && (
             <div className="mb-6 flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl px-5 py-3.5 text-sm font-medium">
-              <span className="text-xl">🎉</span>
               <span>Welcome to FenceEstimatePro! Your account is set up. Start by adding a customer or creating your first estimate.</span>
             </div>
           )}
@@ -130,7 +129,7 @@ export default async function DashboardHome({
         </div>
       </div>
 
-      {/* ── KPI Cards ── */}
+      {/*  KPI Cards  */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isOwner && (
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
@@ -163,7 +162,7 @@ export default async function DashboardHome({
       </div>
 
 
-      {/* ── Onboarding Checklist ── */}
+      {/*  Onboarding Checklist  */}
       {isOwner && (
         <OnboardingChecklist
           userId={profile.id}
@@ -172,10 +171,10 @@ export default async function DashboardHome({
         />
       )}
 
-      {/* ── Margin Alert ── */}
+      {/*  Margin Alert  */}
       {isOwner && belowTargetJobs.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-          <span className="text-xl">⚠️</span>
+          
           <div className="flex-1">
             <p className="text-sm font-semibold text-red-800">
               {belowTargetJobs.length} job{belowTargetJobs.length !== 1 ? "s" : ""} below 30% margin
@@ -191,7 +190,7 @@ export default async function DashboardHome({
         </div>
       )}
 
-      {/* ── Pipeline Bar ── */}
+      {/*  Pipeline Bar  */}
       {canEstimate && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">Pipeline</h2>
@@ -216,7 +215,7 @@ export default async function DashboardHome({
         </div>
       )}
 
-      {/* ── Two-Column: Recent Estimates + Live Jobs ── */}
+      {/*  Two-Column: Recent Estimates + Live Jobs  */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Recent Estimates */}
@@ -292,32 +291,32 @@ export default async function DashboardHome({
       </div>
 
 
-      {/* ── Referral Widget ── */}
+      {/*  Referral Widget  */}
       {isOwner && <ReferralWidget />}
 
-      {/* ── Quick Actions ── */}
+      {/*  Quick Actions  */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-gray-700 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {canEstimate && (
             <Link href="/dashboard/estimates/new" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-fence-200 hover:border-fence-400 hover:bg-fence-50 transition-all group text-center">
-              <span className="text-2xl">📋</span>
+              <span className="text-2xl"></span>
               <span className="text-xs font-semibold text-fence-700 group-hover:text-fence-900">New Estimate</span>
             </Link>
           )}
           {canEstimate && (
             <Link href="/dashboard/customers/new" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all group text-center">
-              <span className="text-2xl">👤</span>
+              <span className="text-2xl"></span>
               <span className="text-xs font-semibold text-gray-600 group-hover:text-gray-900">New Customer</span>
             </Link>
           )}
           <Link href="/dashboard/jobs" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all group text-center">
-            <span className="text-2xl">🔨</span>
+            <span className="text-2xl"></span>
             <span className="text-xs font-semibold text-gray-600 group-hover:text-gray-900">View Jobs</span>
           </Link>
           {canAccess(profile.role, "materials") && (
             <Link href="/dashboard/materials" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all group text-center">
-              <span className="text-2xl">📦</span>
+              <span className="text-2xl"></span>
               <span className="text-xs font-semibold text-gray-600 group-hover:text-gray-900">Materials</span>
             </Link>
           )}

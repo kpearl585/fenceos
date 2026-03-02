@@ -119,10 +119,10 @@ export default function ArticlePage() {
             FenceEstimatePro shows your exact margin before every quote goes out — so you stop losing money on jobs that look profitable but aren&apos;t.
           </p>
           <Link
-            href="/#waitlist"
+            href="/signup"
             className="inline-flex items-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold text-lg px-8 py-4 rounded-xl transition-colors shadow-lg"
           >
-            Join the Waitlist →
+            Start Free Trial →
           </Link>
         </div>
       </section>

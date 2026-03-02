@@ -92,7 +92,7 @@ export default function MaterialImport({ onImport }: { onImport: (rows: ParsedRo
               )}
               {result && (
                 <div className={`rounded-lg p-4 text-sm font-medium ${result.imported > 0 ? "bg-green-50 border border-green-200 text-green-800" : "bg-red-50 border border-red-200 text-red-800"}`}>
-                  {result.imported > 0 ? `✅ ${result.imported} materials imported!` : "❌ Import failed."}
+                  {result.imported > 0 ? ` ${result.imported} materials imported!` : " Import failed."}
                 </div>
               )}
             </div>
