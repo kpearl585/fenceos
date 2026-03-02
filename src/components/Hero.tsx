@@ -62,8 +62,8 @@ export default function Hero() {
               </div>
               <div className="w-px bg-fence-700"></div>
               <div>
-                <p className="text-2xl font-bold text-white">200+</p>
-                <p className="text-xs text-fence-400 mt-0.5">Contractors protected</p>
+                <p className="text-2xl font-bold text-white">Florida</p>
+                <p className="text-xs text-fence-400 mt-0.5">Veteran-built &amp; operated</p>
               </div>
               <div className="w-px bg-fence-700"></div>
               <div className="flex items-center gap-2">
