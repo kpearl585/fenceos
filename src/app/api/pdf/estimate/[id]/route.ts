@@ -32,7 +32,7 @@ export async function GET(
 
   try {
     const pdfData = await buildPdfData(id, profile.org_id);
-    const nodeBuffer = generateEstimatePdfBuffer(pdfData);
+    const nodeBuffer = await generateEstimatePdfBuffer(pdfData);
     const buffer = new Uint8Array(nodeBuffer);
 
     const safeName = (estimate.title || "estimate")

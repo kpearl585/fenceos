@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
       acceptanceHash,
     };
 
-    const pdfBuffer = generateEstimatePdfBuffer(pdfData);
+    const pdfBuffer = await generateEstimatePdfBuffer(pdfData);
     const contractPath = `${est.org_id}/${estimateId}/signed-contract.pdf`;
 
     const { error: pdfErr } = await supabase.storage
