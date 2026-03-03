@@ -59,7 +59,7 @@ export async function markJobPaidAndSendInvoice(jobId: string) {
   const { data: changeOrders } = await admin
     .from("change_orders")
     .select(`
-      id, description, subtotal,
+      id, description, reason, subtotal,
       change_order_line_items (
         name, qty, unit_price, extended_price
       )
@@ -68,12 +68,19 @@ export async function markJobPaidAndSendInvoice(jobId: string) {
     .eq("status", "approved")
     .order("created_at", { ascending: true });
 
-  // Load org settings for branding
+  // Load org name (only `name` exists on organizations table)
   const { data: org } = await admin
     .from("organizations")
-    .select("name, logo_url, phone, email, address")
+    .select("name")
     .eq("id", profile.org_id)
     .single();
+
+  // Load branding (logo, colors, contact info stored in org_branding)
+  const { data: branding } = await admin
+    .from("org_branding")
+    .select("logo_url, phone, email, address")
+    .eq("org_id", profile.org_id)
+    .maybeSingle();
 
   const now = new Date();
   const invNumber = invoiceNumber(jobId, now);
@@ -83,18 +90,24 @@ export async function markJobPaidAndSendInvoice(jobId: string) {
     day: "numeric",
   });
 
-  const estimate = Array.isArray(job.estimates) ? job.estimates[0] : job.estimates;
-  const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
+  // Supabase FK joins return single object for one-to-one relationships
+  const estimate = (Array.isArray(job.estimates) ? job.estimates[0] : job.estimates) as {
+    id: string; total: number; fence_type: string; linear_feet: number; gate_count: number; target_margin_pct: number;
+  } | null;
+  const customer = (Array.isArray(job.customers) ? job.customers[0] : job.customers) as {
+    id: string; name: string; email: string | null; phone: string | null;
+    address: string | null; city: string | null; state: string | null; zip: string | null;
+  } | null;
 
   const invoiceData: InvoiceData = {
     invoiceNumber: invNumber,
     invoiceDate: invDate,
     org: {
       name: org?.name ?? "Your Company",
-      logoUrl: org?.logo_url ?? undefined,
-      phone: org?.phone ?? undefined,
-      email: org?.email ?? undefined,
-      address: org?.address ?? undefined,
+      logoUrl: branding?.logo_url ?? undefined,
+      phone: branding?.phone ?? undefined,
+      email: branding?.email ?? undefined,
+      address: branding?.address ?? undefined,
     },
     customer: {
       name: customer?.name ?? "Customer",
@@ -121,7 +134,7 @@ export async function markJobPaidAndSendInvoice(jobId: string) {
     estimateTotal: Number(estimate?.total ?? job.total_price ?? 0),
     changeOrders: (changeOrders ?? []).map((co) => ({
       id: co.id,
-      description: co.description ?? "",
+      description: co.reason || co.description || "",
       subtotal: Number(co.subtotal ?? 0),
       lines: (Array.isArray(co.change_order_line_items)
         ? co.change_order_line_items
