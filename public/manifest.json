@@ -1,0 +1,21 @@
+{
+  "name": "FenceEstimatePro",
+  "short_name": "FenceEstimatePro",
+  "description": "Professional fence estimating and job management platform",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0a1a12",
+  "theme_color": "#2D6A4F",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

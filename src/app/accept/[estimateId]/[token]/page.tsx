@@ -1,5 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import AcceptForm from "./AcceptForm";
 
@@ -8,29 +7,9 @@ import AcceptForm from "./AcceptForm";
  * Validates token, shows estimate summary + legal terms + signature form.
  */
 
-async function createAnonClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Server component — ignore
-          }
-        },
-      },
-    }
-  );
-}
+// Uses the canonical createClient from @/lib/supabase/server (anon key, cookie-aware).
+// This is a public customer-facing page — no auth session required.
+const createAnonClient = () => createClient();
 
 export default async function AcceptPage({
   params,
@@ -108,7 +87,7 @@ export default async function AcceptPage({
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">✓</span>
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Estimate Accepted

@@ -102,7 +102,7 @@ export default async function JobsPage({
         {q && (
           <Link href={`/dashboard/jobs${status ? `?status=${status}` : ""}`}
             className="px-3 py-2.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg bg-white">
-            ✕ Clear
+            x Clear
           </Link>
         )}
       </form>

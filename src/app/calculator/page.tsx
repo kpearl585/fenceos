@@ -19,7 +19,7 @@ export default function CalculatorPage() {
         {/* Header */}
         <section className="px-6 py-16 text-center">
           <div className="inline-flex items-center gap-2 bg-fence-700/50 border border-fence-600/50 rounded-full px-4 py-1.5 mb-6">
-            <span className="text-xs font-semibold text-fence-200 uppercase tracking-wide">🔢 Free Fence Cost Calculator</span>
+            <span className="text-xs font-semibold text-fence-200 uppercase tracking-wide">Free Fence Cost Calculator</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Estimate Your Fence Cost in 60 Seconds</h1>
           <p className="mt-4 text-lg text-fence-200 max-w-xl mx-auto">

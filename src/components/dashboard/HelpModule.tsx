@@ -82,7 +82,7 @@ export default function HelpModule() {
             <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Help Center</div>
             <div style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '0.2rem' }}>FenceEstimatePro</div>
           </div>
-          <button onClick={() => setOpen(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+          <button onClick={() => setOpen(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem' }}>x</button>
         </div>
 
         {/* Quick links */}

@@ -32,7 +32,7 @@ export default function MarginBadge({
       </p>
       {isBelowTarget && (
         <p className="mt-3 text-red-700 font-semibold text-sm">
-          ⚠ Below your {targetMargin}% target — you will lose money on this job.
+          Below your {targetMargin}% target — you will lose money on this job.
         </p>
       )}
       {!isBelowTarget && (
