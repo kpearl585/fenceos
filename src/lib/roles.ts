@@ -33,6 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Overview",   href: "/dashboard",           segment: "",          icon: "home" },
   { label: "Customers",  href: "/dashboard/customers",  segment: "customers", icon: "users" },
   { label: "Estimates",  href: "/dashboard/estimates",  segment: "estimates", icon: "calculator" },
+  { label: "Adv. Estimate", href: "/dashboard/advanced-estimate", segment: "advanced-estimate", icon: "calculator" },
   { label: "Jobs",       href: "/dashboard/jobs",       segment: "jobs",      icon: "briefcase" },
   { label: "Materials",  href: "/dashboard/materials",  segment: "materials", icon: "package" },
   { label: "P&L",        href: "/dashboard/owner",      segment: "owner",     icon: "bar-chart" },
