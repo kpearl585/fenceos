@@ -6,7 +6,7 @@ export default function ROISection() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-fence-600 font-semibold text-sm uppercase tracking-widest mb-3">Do the math</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">$49/month vs. one underbid job</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">$29/month vs. one underbid job</h2>
           <p className="mt-4 text-gray-500 max-w-xl mx-auto">This isn&apos;t a software expense. It&apos;s an insurance policy on every job you quote.</p>
         </div>
 
@@ -32,15 +32,15 @@ export default function ROISection() {
               <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Margin locked before every quote</li>
               <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Materials auto-calculated — zero guessing</li>
               <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Change orders recalculate automatically</li>
-              <li className="flex items-start gap-2 font-bold"><span className="mt-0.5">•</span>Cost: $49/month = $588/year</li>
+              <li className="flex items-start gap-2 font-bold"><span className="mt-0.5">•</span>Cost: $29/month = $348/year</li>
             </ul>
           </div>
         </div>
 
         <div className="bg-fence-900 rounded-2xl p-8 text-center text-white">
           <p className="text-fence-300 text-sm font-semibold uppercase tracking-wide mb-2">Return on investment</p>
-          <p className="text-5xl font-bold text-white mb-2">24x ROI</p>
-          <p className="text-fence-300">If it saves you from just one underbid job per month, you&apos;re up $1,200. That&apos;s $13,812 back in your pocket every year — for $588.</p>
+          <p className="text-5xl font-bold text-white mb-2">41x ROI</p>
+          <p className="text-fence-300">If it saves you from just one underbid job per month, you&apos;re up $1,200. That&apos;s $14,052 back in your pocket every year — for $348.</p>
           <Link href="/signup" className="mt-6 inline-flex items-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold px-8 py-3.5 rounded-xl transition-colors">
             Start Free Trial →
           </Link>
