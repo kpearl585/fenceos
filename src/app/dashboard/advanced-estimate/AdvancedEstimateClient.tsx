@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
 import {
   estimateFence,
   PRODUCT_LINES,
@@ -8,6 +8,7 @@ import {
   type GateInput,
   type FenceEstimateResult,
 } from "@/lib/fence-graph/engine";
+import { saveAdvancedEstimate, generateAdvancedEstimatePdf } from "./actions";
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
 
 const SOIL_LABELS: Record<SoilType, string> = {
@@ -49,6 +50,10 @@ export default function AdvancedEstimateClient() {
   const [runs, setRuns] = useState<RunInput[]>([defaultRun()]);
   const [gates, setGates] = useState<GateInput[]>([]);
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
+  const [projectName, setProjectName] = useState("New Estimate");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [pdfStatus, setPdfStatus] = useState<"idle" | "generating" | "error">("idle");
+  const [isPending, startTransition] = useTransition();
 
   const productLine = PRODUCT_LINES[productLineId];
   const postSize = productLine?.postSize ?? "5x5";
@@ -104,6 +109,34 @@ export default function AdvancedEstimateClient() {
   const totalLF = runs.reduce((s, r) => s + (r.linearFeet || 0), 0);
   const hasValidInput = input.runs.length > 0;
 
+  async function handleSave() {
+    if (!result) return;
+    setSaveStatus("saving");
+    const res = await saveAdvancedEstimate(input, result, projectName, laborRate, wastePct / 100);
+    setSaveStatus(res.success ? "saved" : "error");
+    setTimeout(() => setSaveStatus("idle"), 3000);
+  }
+
+  async function handlePdfDownload() {
+    if (!result) return;
+    setPdfStatus("generating");
+    const res = await generateAdvancedEstimatePdf(input, laborRate, wastePct, projectName);
+    if (res.success && res.pdf) {
+      const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${projectName.replace(/\s+/g, "-")}-estimate.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setPdfStatus("idle");
+    } else {
+      setPdfStatus("error");
+      setTimeout(() => setPdfStatus("idle"), 3000);
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* ── Left Column: Inputs ────────────────────────────────────── */}
@@ -113,6 +146,15 @@ export default function AdvancedEstimateClient() {
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="font-semibold text-fence-900 mb-4">Project Setup</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Project Name</label>
+              <input
+                type="text" placeholder="e.g. Smith Residence — Backyard Privacy"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+              />
+            </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Product Line</label>
               <select
@@ -323,6 +365,22 @@ export default function AdvancedEstimateClient() {
                 {result.redFlagItems.length > 0 && (
                   <span className="text-amber-400">{result.redFlagItems.length} red flags</span>
                 )}
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saveStatus === "saving"}
+                  className="py-2 rounded-lg text-xs font-semibold bg-fence-700 hover:bg-fence-600 text-white transition-colors disabled:opacity-60"
+                >
+                  {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error" : "Save Estimate"}
+                </button>
+                <button
+                  onClick={handlePdfDownload}
+                  disabled={pdfStatus === "generating"}
+                  className="py-2 rounded-lg text-xs font-semibold bg-white text-fence-900 hover:bg-fence-50 transition-colors disabled:opacity-60"
+                >
+                  {pdfStatus === "generating" ? "Generating..." : pdfStatus === "error" ? "Failed" : "Export PDF"}
+                </button>
               </div>
             </div>
 
