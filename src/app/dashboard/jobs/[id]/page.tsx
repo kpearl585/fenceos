@@ -696,7 +696,7 @@ export default async function JobDetailPage({
                   </div>
 
                   {/* CO Line Items */}
-                  {co.change_order_line_items.length > 0 && (
+                  {(co.change_order_line_items ?? []).length > 0 && (
                     <table className="w-full text-xs mb-2">
                       <thead>
                         <tr className="text-gray-400 border-b border-gray-100">
@@ -708,7 +708,7 @@ export default async function JobDetailPage({
                         </tr>
                       </thead>
                       <tbody>
-                        {co.change_order_line_items.map((li) => (
+                        {(co.change_order_line_items ?? []).map((li) => (
                           <tr key={li.id} className="border-b border-gray-50">
                             <td className="py-1">{li.name}</td>
                             <td className="py-1 text-gray-500">{li.type}</td>
