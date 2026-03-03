@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail, onboardingWelcomeEmail } from "@/lib/email";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -34,6 +35,20 @@ export async function signup(formData: FormData) {
 
   if (error) {
     redirect("/signup?error=" + encodeURIComponent(error.message));
+  }
+
+  // Send welcome email immediately on signup — non-blocking
+  try {
+    await sendEmail({
+      to: data.email,
+      subject: "Welcome to FenceEstimatePro — here is what you can do",
+      html: onboardingWelcomeEmail({
+        ownerEmail: data.email,
+        dashboardUrl: "https://fenceestimatepro.com/dashboard",
+      }),
+    });
+  } catch (_) {
+    // never block signup if email fails
   }
 
   redirect("/signup?message=Check your email to confirm your account");

@@ -460,11 +460,12 @@ export function waitlistDaySevenEmail(opts: { email: string }) {
 /*  Onboarding Email  */
 
 export function onboardingWelcomeEmail(opts: {
-  orgName: string;
+  orgName?: string;
   ownerEmail: string;
   dashboardUrl: string;
 }) {
   const base = "https://fenceestimatepro.com";
+  const greeting = opts.orgName ? opts.orgName : "there";
   return `
 <!DOCTYPE html>
 <html>
@@ -483,7 +484,7 @@ export function onboardingWelcomeEmail(opts: {
         <tr><td style="background:white;padding:36px 32px;">
 
           <h1 style="margin:0 0 8px;color:#111827;font-size:24px;font-weight:800;line-height:1.3;">
-            Welcome to FenceEstimatePro, ${opts.orgName}.
+            Welcome to FenceEstimatePro, ${greeting}.
           </h1>
           <p style="margin:0 0 28px;color:#6b7280;font-size:15px;line-height:1.6;">
             Your 14-day free trial is active. Here is everything you have access to right now.
