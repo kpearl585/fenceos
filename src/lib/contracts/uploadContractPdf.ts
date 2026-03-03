@@ -15,7 +15,7 @@ export async function generateAndUploadEstimatePdf(
   filename: string = "estimate.pdf"
 ): Promise<string> {
   const supabase = await createClient();
-  const buffer = generateEstimatePdfBuffer(pdfData);
+  const buffer = await generateEstimatePdfBuffer(pdfData);
   const storagePath = `${orgId}/${estimateId}/${filename}`;
 
   const { error } = await supabase.storage

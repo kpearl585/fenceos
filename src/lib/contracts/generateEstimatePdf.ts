@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+// jsPDF is browser-only — must be dynamically imported to avoid crashing in Node.js/Vercel
 
 /**
  * Customer-facing estimate PDF generator.
@@ -76,7 +76,8 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
-export function generateEstimatePdfBuffer(data: PdfEstimateData): Buffer {
+export async function generateEstimatePdfBuffer(data: PdfEstimateData): Promise<Buffer> {
+  const { default: jsPDF } = await import("jspdf");
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
