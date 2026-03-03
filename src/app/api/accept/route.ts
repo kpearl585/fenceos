@@ -5,7 +5,7 @@ import {
   generateEstimatePdfBuffer,
   type PdfEstimateData,
 } from "@/lib/contracts/generateEstimatePdf";
-import { sendEmail, estimateAcceptedOwnerEmail, estimateAcceptedCustomerEmail, depositReminderEmail } from "@/lib/email";
+import { sendEmail, estimateAcceptedOwnerEmail, estimateAcceptedCustomerEmail } from "@/lib/email";
 
 /**
  * POST /api/accept
@@ -123,10 +123,7 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(sigPath);
     const signatureUrl = sigUrlData.publicUrl;
 
-    // 7. Calculate deposit (50% of total)
-    const depositAmount = Math.round(Number(est.total) * 50) / 100;
-
-    // 8. Update estimate
+    // 7. Update estimate — V1: no deposit handling
     const { error: updateErr } = await supabase
       .from("estimates")
       .update({
@@ -137,8 +134,6 @@ export async function POST(request: NextRequest) {
         accepted_ip: ip,
         accepted_signature_url: signatureUrl,
         acceptance_hash: acceptanceHash,
-        deposit_required_amount: depositAmount,
-        deposit_paid: false,
         updated_at: timestamp,
       })
       .eq("id", estimateId)
@@ -262,18 +257,7 @@ export async function POST(request: NextRequest) {
           }),
         });
 
-        // Deposit reminder email — separate, action-focused
-        await sendEmail({
-          to: ownerUser.email,
-          subject: `Next step: collect your deposit from ${customer?.name || name}`,
-          html: depositReminderEmail({
-            ownerEmail: ownerUser.email,
-            customerName: customer?.name || name,
-            depositAmount: depositAmount,
-            estimateUrl,
-            orgName,
-          }),
-        });
+        // Deposit reminder removed — V2 feature
       }
 
       // Customer confirmation
