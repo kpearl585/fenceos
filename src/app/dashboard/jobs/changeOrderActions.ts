@@ -70,25 +70,20 @@ export async function submitChangeOrder(fd: FormData) {
   // Calculate financials
   const calc = await calculateChangeOrder(jobId, profile.org_id, lineInputs);
 
-  // Determine initial status: auto-approve if margin stays above target
-  // and submitter is owner
-  let initialStatus = "pending";
-  if (profile.role === "owner" && !calc.requires_owner_approval) {
-    initialStatus = "approved";
-  }
+  // Determine if owner auto-approve should happen after insert
+  const autoApprove = profile.role === "owner" && !calc.requires_owner_approval;
 
-  // Insert change order — use admin client to bypass RLS for writes that span
-  // the job-org boundary check; org_id is included for RLS-aware queries.
+  // Always insert as "pending" — approveChangeOrder handles the status
+  // transition to "approved" and updates job totals. Inserting as "approved"
+  // then calling approveChangeOrder throws because it expects "pending".
   const admin = createAdminClient();
   const { data: co, error: coErr } = await admin
     .from("change_orders")
     .insert({
       org_id: profile.org_id,
       job_id: jobId,
-      status: initialStatus,
+      status: "pending",
       created_by: user.id,
-      approved_by: initialStatus === "approved" ? user.id : null,
-      approved_at: initialStatus === "approved" ? new Date().toISOString() : null,
       reason,
       subtotal: calc.subtotal,
       cost_total: calc.cost_total,
@@ -123,8 +118,9 @@ export async function submitChangeOrder(fd: FormData) {
     throw new Error(`Failed to insert line items: ${liErr.message}`);
   }
 
-  // If auto-approved, update job totals immediately
-  if (initialStatus === "approved") {
+  // Auto-approve for owners when margin is acceptable: transitions status
+  // pending → approved and updates job totals.
+  if (autoApprove) {
     await approveChangeOrder(co.id, user.id);
   }
 
