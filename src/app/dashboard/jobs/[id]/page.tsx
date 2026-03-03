@@ -6,6 +6,7 @@ import { planHasJobs } from "@/lib/planLimits";
 import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import ChangeOrderForm from "@/components/jobs/ChangeOrderForm";
+import MarkPaidModal from "@/components/jobs/MarkPaidModal";
 import ActivityTimeline from "@/components/jobs/ActivityTimeline";
 import {
   assignForeman,
@@ -80,7 +81,7 @@ export default async function JobDetailPage({
   const { data: job, error } = await supabase
     .from("jobs")
     .select(
-      "*, customers(name, phone, address, city, state), estimates(fence_type, linear_feet, gate_count, title, target_margin_pct)"
+      "*, customers(name, email, phone, address, city, state), estimates(fence_type, linear_feet, gate_count, title, target_margin_pct)"
     )
     .eq("id", id)
     .eq("org_id", profile.org_id)
@@ -170,6 +171,7 @@ export default async function JobDetailPage({
   const customer = (
     job.customers as unknown as {
       name: string;
+      email: string | null;
       phone: string | null;
       address: string | null;
       city: string | null;
@@ -1025,16 +1027,12 @@ export default async function JobDetailPage({
               </form>
             )}
             {job.status === "active" && canExecute && (
-              <form action={transitionJobStatus}>
-                <input type="hidden" name="jobId" value={job.id} />
-                <input type="hidden" name="newStatus" value="complete" />
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors"
-                >
-                  Mark Complete
-                </button>
-              </form>
+              <MarkPaidModal
+                jobId={job.id}
+                jobTitle={job.title}
+                totalDue={Number(job.total_price ?? 0)}
+                customerEmail={customer?.email ?? undefined}
+              />
             )}
             {canManage && (
               <form action={transitionJobStatus}>
