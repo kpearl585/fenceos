@@ -3,6 +3,7 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import { planHasJobs } from "@/lib/planLimits";
+import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import ChangeOrderForm from "@/components/jobs/ChangeOrderForm";
 import ActivityTimeline from "@/components/jobs/ActivityTimeline";
@@ -70,8 +71,9 @@ export default async function JobDetailPage({
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "jobs")) redirect("/dashboard");
 
-  // Plan gate
-  const { data: orgForPlan } = await supabase.from("organizations").select("plan").eq("id", profile.org_id).single();
+  // Plan gate (admin client — cannot fail open due to RLS)
+  const adminForPlan = createAdminClient();
+  const { data: orgForPlan } = await adminForPlan.from("organizations").select("plan").eq("id", profile.org_id).single();
   if (!planHasJobs(orgForPlan?.plan)) redirect("/dashboard/jobs");
 
   /*  data loading  */

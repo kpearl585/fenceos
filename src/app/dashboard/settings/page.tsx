@@ -8,6 +8,7 @@ import BrandingForm from "@/components/settings/BrandingForm";
 import TeamMembersSection from "@/components/settings/TeamMembersSection";
 import BillingPortalButton from "@/components/settings/BillingPortalButton";
 import { planHasCustomBranding } from "@/lib/planLimits";
+import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
 export default async function SettingsPage() {
@@ -18,11 +19,12 @@ export default async function SettingsPage() {
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "owner")) redirect("/dashboard");
 
+  const adminSettings = createAdminClient();
   const [{ data: orgSettings }, { data: branding }, { data: orgUsers }, { data: org }] = await Promise.all([
     supabase.from("org_settings").select("*").eq("org_id", profile.org_id).single(),
     supabase.from("org_branding").select("*").eq("org_id", profile.org_id).single(),
-    supabase.from("users").select("id, full_name, email, role, created_at").eq("org_id", profile.org_id).order("created_at"),
-    supabase.from("organizations").select("name, slug, id, plan, plan_status, trial_ends_at").eq("id", profile.org_id).single(),
+    adminSettings.from("users").select("id, full_name, email, role, created_at").eq("org_id", profile.org_id).order("created_at"),
+    adminSettings.from("organizations").select("name, slug, id, plan, plan_status, trial_ends_at").eq("id", profile.org_id).single(),
   ]);
 
   const planLabel: Record<string, string> = {

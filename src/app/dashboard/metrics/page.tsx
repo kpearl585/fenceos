@@ -57,8 +57,9 @@ export default async function MetricsDashboard() {
   const profile = await ensureProfile(supabase, user);
   if (profile.role !== "owner") redirect("/dashboard");
 
-  // Plan gate — advanced reporting requires Business
-  const { data: orgForPlan } = await supabase.from("organizations").select("plan").eq("id", profile.org_id).single();
+  // Plan gate — advanced reporting requires Business (admin client — cannot fail open)
+  const adminForPlan = createAdminClient();
+  const { data: orgForPlan } = await adminForPlan.from("organizations").select("plan").eq("id", profile.org_id).single();
   if (!getPlanLimits(orgForPlan?.plan).advancedReporting) {
     return <UpgradeGate feature="Advanced Reporting" requiredPlan="Business" description="Full KPI dashboard with margin analysis, revenue trends, close rate tracking, and business health scoring. Available on Business." />;
   }

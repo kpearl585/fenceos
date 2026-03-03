@@ -81,7 +81,13 @@ const LIMITS: Record<PlanKey, PlanLimits> = {
 };
 
 export function getPlanLimits(plan: string | null | undefined): PlanLimits {
-  return LIMITS[(plan as PlanKey) ?? "trial"] ?? LIMITS.trial;
+  // Default to "free" (most restrictive) if plan is unknown — fail closed, not open
+  return LIMITS[(plan as PlanKey) ?? "free"] ?? LIMITS.free;
+}
+
+/** Use this when you know the org is on trial (just signed up, no plan yet) */
+export function getTrialLimits(): PlanLimits {
+  return LIMITS.trial;
 }
 
 export const PLAN_UPGRADE_URL = "/dashboard/upgrade";
