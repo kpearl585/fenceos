@@ -32,8 +32,9 @@ export async function sendEstimateEmail(
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fenceestimatepro.com";
   const acceptUrl = `${baseUrl}/accept/${estimateId}/${est.accept_token}`;
 
+  const orgObj = est.organizations as unknown as { name: string } | { name: string }[] | null;
   const orgName =
-    (est.organizations as unknown as { name: string }[])?.[0]?.name ||
+    (Array.isArray(orgObj) ? orgObj[0]?.name : (orgObj as { name: string } | null)?.name) ||
     "Your Contractor";
   const customerName =
     (est.customers as unknown as { name: string }[])?.[0]?.name || "there";

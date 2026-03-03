@@ -163,8 +163,9 @@ export async function POST(request: NextRequest) {
       }[]
     )?.[0];
 
+    const orgObj2 = est.organizations as unknown as { name: string } | { name: string }[] | null;
     const orgName =
-      (est.organizations as unknown as { name: string }[])?.[0]?.name ||
+      (Array.isArray(orgObj2) ? orgObj2[0]?.name : (orgObj2 as { name: string } | null)?.name) ||
       "FenceOS";
 
     // Load branding

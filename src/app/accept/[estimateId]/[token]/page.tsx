@@ -51,9 +51,10 @@ export default async function AcceptPage({
     }[]
   )?.[0];
 
-  const orgName = (
-    est.organizations as unknown as { name: string }[]
-  )?.[0]?.name || "Contractor";
+  const orgObj = est.organizations as unknown as { name: string } | { name: string }[] | null;
+  const orgName =
+    (Array.isArray(orgObj) ? orgObj[0]?.name : (orgObj as { name: string } | null)?.name) ||
+    "Contractor";
 
   const fenceLabel = (est.fence_type || "standard")
     .replace(/_/g, " ")
