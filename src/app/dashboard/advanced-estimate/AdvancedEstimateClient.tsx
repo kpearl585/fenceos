@@ -7,9 +7,32 @@ import {
   type RunInput,
   type GateInput,
   type FenceEstimateResult,
+  type FenceType,
+  type WoodStyle,
 } from "@/lib/fence-graph/engine";
 import { saveAdvancedEstimate, generateAdvancedEstimatePdf } from "./actions";
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
+
+const FENCE_TYPES: { value: FenceType; label: string }[] = [
+  { value: "vinyl", label: "Vinyl" },
+  { value: "wood", label: "Wood" },
+  { value: "chain_link", label: "Chain Link" },
+  { value: "aluminum", label: "Aluminum / Ornamental" },
+];
+
+const WOOD_STYLES: { value: WoodStyle; label: string }[] = [
+  { value: "dog_ear_privacy", label: "Dog Ear Privacy" },
+  { value: "flat_top_privacy", label: "Flat Top Privacy" },
+  { value: "picket", label: "Picket" },
+  { value: "board_on_board", label: "Board on Board" },
+];
+
+const PRODUCT_LINE_BY_TYPE: Record<FenceType, string[]> = {
+  vinyl: ["vinyl_privacy_6ft", "vinyl_privacy_8ft", "vinyl_picket_4ft", "vinyl_picket_6ft"],
+  wood: ["wood_privacy_6ft", "wood_privacy_8ft", "wood_picket_4ft"],
+  chain_link: ["chain_link_4ft", "chain_link_6ft"],
+  aluminum: ["aluminum_4ft", "aluminum_6ft"],
+};
 
 const SOIL_LABELS: Record<SoilType, string> = {
   clay: "Clay (firm)",
@@ -42,7 +65,9 @@ function defaultRun(): RunInput {
 }
 
 export default function AdvancedEstimateClient() {
-  const [productLineId, setProductLineId] = useState("classic_privacy_6ft");
+  const [fenceType, setFenceType] = useState<FenceType>("vinyl");
+  const [woodStyle, setWoodStyle] = useState<WoodStyle>("dog_ear_privacy");
+  const [productLineId, setProductLineId] = useState("vinyl_privacy_6ft");
   const [soilType, setSoilType] = useState<SoilType>("sandy_loam");
   const [windMode, setWindMode] = useState(false);
   const [laborRate, setLaborRate] = useState(65);
@@ -73,11 +98,11 @@ export default function AdvancedEstimateClient() {
   const result: FenceEstimateResult | null = useMemo(() => {
     if (input.runs.length === 0) return null;
     try {
-      return estimateFence(input, laborRate, wastePct / 100);
+      return estimateFence(input, { fenceType, woodStyle, laborRatePerHr: laborRate, wastePct: wastePct / 100 });
     } catch {
       return null;
     }
-  }, [productLineId, soilType, windMode, laborRate, wastePct, runs, gates]);
+  }, [productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates]);
 
   function updateRun(id: string, patch: Partial<RunInput>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -155,18 +180,49 @@ export default function AdvancedEstimateClient() {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
               />
             </div>
+            {/* Fence Type Selector */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Fence Type</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {FENCE_TYPES.map((ft) => (
+                  <button
+                    key={ft.value}
+                    type="button"
+                    onClick={() => {
+                      setFenceType(ft.value);
+                      setProductLineId(PRODUCT_LINE_BY_TYPE[ft.value][0]);
+                    }}
+                    className={`py-2 px-3 rounded-lg text-sm font-semibold border transition-colors ${fenceType === ft.value ? "bg-fence-600 text-white border-fence-600" : "bg-white text-gray-600 border-gray-200 hover:border-fence-400"}`}
+                  >
+                    {ft.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Product Line</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Product / Height</label>
               <select
                 value={productLineId}
                 onChange={(e) => setProductLineId(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
               >
-                {Object.entries(PRODUCT_LINES).map(([id, pl]) => (
-                  <option key={id} value={id}>{pl.name}</option>
+                {PRODUCT_LINE_BY_TYPE[fenceType].map((id) => (
+                  <option key={id} value={id}>{PRODUCT_LINES[id]?.name ?? id}</option>
                 ))}
               </select>
             </div>
+            {fenceType === "wood" && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Wood Style</label>
+                <select
+                  value={woodStyle}
+                  onChange={(e) => setWoodStyle(e.target.value as WoodStyle)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                >
+                  {WOOD_STYLES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Soil Type</label>
               <select

@@ -196,8 +196,9 @@ export interface FenceEstimateResult {
 // ── Product Line Presets ──────────────────────────────────────────
 
 export const PRODUCT_LINES: Record<string, ProductLineConfig> = {
-  classic_privacy_6ft: {
-    name: "Classic Privacy 6ft",
+  // ── Vinyl ──────────────────────────────────────────────────────
+  vinyl_privacy_6ft: {
+    name: "Vinyl Privacy 6ft",
     panelStyle: "privacy",
     panelHeight_in: 72,
     nominalWidth_in: 96,
@@ -207,8 +208,8 @@ export const PRODUCT_LINES: Record<string, ProductLineConfig> = {
     railType: "routed",
     windKitAvailable: true,
   },
-  classic_privacy_8ft: {
-    name: "Classic Privacy 8ft",
+  vinyl_privacy_8ft: {
+    name: "Vinyl Privacy 8ft",
     panelStyle: "privacy",
     panelHeight_in: 96,
     nominalWidth_in: 96,
@@ -218,8 +219,8 @@ export const PRODUCT_LINES: Record<string, ProductLineConfig> = {
     railType: "routed",
     windKitAvailable: true,
   },
-  classic_picket_4ft: {
-    name: "Classic Picket 4ft",
+  vinyl_picket_4ft: {
+    name: "Vinyl Picket 4ft",
     panelStyle: "picket",
     panelHeight_in: 48,
     nominalWidth_in: 96,
@@ -229,8 +230,8 @@ export const PRODUCT_LINES: Record<string, ProductLineConfig> = {
     railType: "plain",
     windKitAvailable: false,
   },
-  classic_picket_6ft: {
-    name: "Classic Picket 6ft",
+  vinyl_picket_6ft: {
+    name: "Vinyl Picket 6ft",
     panelStyle: "picket",
     panelHeight_in: 72,
     nominalWidth_in: 96,
@@ -238,6 +239,98 @@ export const PRODUCT_LINES: Record<string, ProductLineConfig> = {
     postSize: "5x5",
     railCount: 3,
     railType: "plain",
+    windKitAvailable: true,
+  },
+  // ── Wood ───────────────────────────────────────────────────────
+  wood_privacy_6ft: {
+    name: "Wood Privacy 6ft",
+    panelStyle: "privacy",
+    panelHeight_in: 72,
+    nominalWidth_in: 96,
+    minReducedWidth_in: 24,
+    postSize: "4x4",
+    railCount: 3,
+    railType: "plain",
+    windKitAvailable: false,
+  },
+  wood_privacy_8ft: {
+    name: "Wood Privacy 8ft",
+    panelStyle: "privacy",
+    panelHeight_in: 96,
+    nominalWidth_in: 96,
+    minReducedWidth_in: 24,
+    postSize: "4x4",
+    railCount: 4,
+    railType: "plain",
+    windKitAvailable: false,
+  },
+  wood_picket_4ft: {
+    name: "Wood Picket 4ft",
+    panelStyle: "picket",
+    panelHeight_in: 48,
+    nominalWidth_in: 96,
+    minReducedWidth_in: 24,
+    postSize: "4x4",
+    railCount: 2,
+    railType: "plain",
+    windKitAvailable: false,
+  },
+  // ── Chain Link ─────────────────────────────────────────────────
+  chain_link_4ft: {
+    name: "Chain Link 4ft",
+    panelStyle: "privacy",
+    panelHeight_in: 48,
+    nominalWidth_in: 96,
+    minReducedWidth_in: 24,
+    postSize: "4x4",
+    railCount: 1,
+    railType: "plain",
+    windKitAvailable: false,
+  },
+  chain_link_6ft: {
+    name: "Chain Link 6ft",
+    panelStyle: "privacy",
+    panelHeight_in: 72,
+    nominalWidth_in: 96,
+    minReducedWidth_in: 24,
+    postSize: "4x4",
+    railCount: 1,
+    railType: "plain",
+    windKitAvailable: false,
+  },
+  // ── Aluminum ───────────────────────────────────────────────────
+  aluminum_4ft: {
+    name: "Aluminum Ornamental 4ft",
+    panelStyle: "picket",
+    panelHeight_in: 48,
+    nominalWidth_in: 96,
+    minReducedWidth_in: 24,
+    postSize: "4x4",
+    railCount: 2,
+    railType: "plain",
+    windKitAvailable: true,
+  },
+  aluminum_6ft: {
+    name: "Aluminum Ornamental 6ft",
+    panelStyle: "picket",
+    panelHeight_in: 72,
+    nominalWidth_in: 96,
+    minReducedWidth_in: 24,
+    postSize: "4x4",
+    railCount: 3,
+    railType: "plain",
+    windKitAvailable: true,
+  },
+  // Legacy aliases
+  classic_privacy_6ft: {
+    name: "Vinyl Privacy 6ft",
+    panelStyle: "privacy",
+    panelHeight_in: 72,
+    nominalWidth_in: 96,
+    minReducedWidth_in: 24,
+    postSize: "5x5",
+    railCount: 3,
+    railType: "routed",
     windKitAvailable: true,
   },
 };
