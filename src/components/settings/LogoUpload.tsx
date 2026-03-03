@@ -12,7 +12,7 @@ export default function LogoUpload({ orgId, currentLogoUrl }: { orgId: string; c
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { setError('Please select an image file'); return }
-    if (file.size > 2 * 1024 * 1024) { setError('Image must be under 2MB'); return }
+    if (file.size > 10 * 1024 * 1024) { setError('Image must be under 10MB'); return }
 
     setUploading(true)
     setError('')
@@ -48,7 +48,7 @@ export default function LogoUpload({ orgId, currentLogoUrl }: { orgId: string; c
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
         Company Logo
-        <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 400, marginLeft: '0.5rem' }}>Appears on estimates and PDFs · Max 2MB</span>
+        <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 400, marginLeft: '0.5rem' }}>Appears on estimates and PDFs · Max 10MB</span>
       </label>
 
       {logoUrl ? (
