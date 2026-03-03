@@ -51,12 +51,16 @@ export async function sendEstimateEmail(
       }),
     });
 
-    // Log the send
+    // Log the send (columns added in migration 20260303000000_fix_change_orders_schema.sql)
     const admin = createAdminClient();
-    await admin
-      .from("estimates")
-      .update({ last_sent_at: new Date().toISOString(), last_sent_to: to })
-      .eq("id", estimateId);
+    try {
+      await admin
+        .from("estimates")
+        .update({ last_sent_at: new Date().toISOString(), last_sent_to: to })
+        .eq("id", estimateId);
+    } catch {
+      // Non-blocking — email already sent; columns may not exist yet if migration pending
+    }
 
     return { success: true };
   } catch (err) {

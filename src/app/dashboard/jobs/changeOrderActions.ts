@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 import { redirect } from "next/navigation";
@@ -77,10 +77,13 @@ export async function submitChangeOrder(fd: FormData) {
     initialStatus = "approved";
   }
 
-  // Insert change order
-  const { data: co, error: coErr } = await supabase
+  // Insert change order — use admin client to bypass RLS for writes that span
+  // the job-org boundary check; org_id is included for RLS-aware queries.
+  const admin = createAdminClient();
+  const { data: co, error: coErr } = await admin
     .from("change_orders")
     .insert({
+      org_id: profile.org_id,
       job_id: jobId,
       status: initialStatus,
       created_by: user.id,
@@ -112,11 +115,11 @@ export async function submitChangeOrder(fd: FormData) {
     extended_price: l.extended_price,
   }));
 
-  const { error: liErr } = await supabase
+  const { error: liErr } = await admin
     .from("change_order_line_items")
     .insert(coLines);
   if (liErr) {
-    await supabase.from("change_orders").delete().eq("id", co.id);
+    await admin.from("change_orders").delete().eq("id", co.id);
     throw new Error(`Failed to insert line items: ${liErr.message}`);
   }
 

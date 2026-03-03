@@ -162,6 +162,7 @@ export async function uploadJobPhoto(fd: FormData) {
 
   const { data: { publicUrl } } = admin.storage.from("job-photos").getPublicUrl(path);
 
+  // uploaded_by references users.id (the profile's PK, not auth_id)
   const { error: insertErr } = await admin
     .from("job_photos")
     .insert({
@@ -169,7 +170,7 @@ export async function uploadJobPhoto(fd: FormData) {
       org_id: profile.org_id,
       storage_path: path,
       caption: caption || null,
-      uploaded_by: null,
+      uploaded_by: profile.id,
     });
 
   if (insertErr) throw new Error(`Photo record failed: ${insertErr.message}`);

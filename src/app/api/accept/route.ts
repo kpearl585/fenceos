@@ -1,5 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import {
@@ -15,27 +14,7 @@ import { sendEmail, estimateAcceptedOwnerEmail, estimateAcceptedCustomerEmail, d
  */
 
 async function createAnonClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // ignore
-          }
-        },
-      },
-    }
-  );
+  return createSupabaseServerClient();
 }
 
 export async function POST(request: NextRequest) {
@@ -271,7 +250,7 @@ export async function POST(request: NextRequest) {
       if (ownerUser?.email) {
         await sendEmail({
           to: ownerUser.email,
-          subject: ` Estimate Accepted — ${customer?.name || name} (${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(est.total))})`,
+          subject: `Estimate Accepted — ${customer?.name || name} (${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(est.total))})`,
           html: estimateAcceptedOwnerEmail({
             ownerEmail: ownerUser.email,
             orgName,
@@ -285,7 +264,7 @@ export async function POST(request: NextRequest) {
         // Deposit reminder email — separate, action-focused
         await sendEmail({
           to: ownerUser.email,
-          subject: ` Next step: collect your deposit from ${customer?.name || name}`,
+          subject: `Next step: collect your deposit from ${customer?.name || name}`,
           html: depositReminderEmail({
             ownerEmail: ownerUser.email,
             customerName: customer?.name || name,

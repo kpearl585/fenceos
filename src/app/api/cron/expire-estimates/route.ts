@@ -14,11 +14,12 @@ export async function GET(req: NextRequest) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+  // Expire estimates that were quoted more than 30 days ago (not created_at).
   const { data, error } = await supabase
     .from("estimates")
     .update({ status: "expired" })
     .eq("status", "quoted")
-    .lt("created_at", thirtyDaysAgo.toISOString())
+    .lt("quoted_at", thirtyDaysAgo.toISOString())
     .select("id");
 
   if (error) {

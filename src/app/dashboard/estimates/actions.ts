@@ -450,7 +450,7 @@ export async function convertToJob(fd: FormData) {
 export async function duplicateEstimate(estimateId: string) {
   "use server";
   const { createAdminClient } = await import("@/lib/supabase/server");
-  const supabase = await createAdminClient();
+  const supabase = createAdminClient();
 
   // Load original estimate
   const { data: original, error } = await supabase
@@ -499,7 +499,7 @@ export async function duplicateEstimate(estimateId: string) {
 export async function expireOldEstimates() {
   "use server";
   const { createAdminClient } = await import("@/lib/supabase/server");
-  const supabase = await createAdminClient();
+  const supabase = createAdminClient();
   const supabaseAuth = await createClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) throw new Error("Not authenticated");
