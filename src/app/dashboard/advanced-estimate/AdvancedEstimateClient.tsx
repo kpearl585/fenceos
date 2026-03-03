@@ -12,6 +12,7 @@ import {
 } from "@/lib/fence-graph/engine";
 import { saveAdvancedEstimate, generateAdvancedEstimatePdf, generateCustomerProposalPdf } from "./actions";
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
+import AiInputTab, { type AiAppliedState } from "./AiInputTab";
 
 const FENCE_TYPES: { value: FenceType; label: string }[] = [
   { value: "vinyl", label: "Vinyl" },
@@ -75,6 +76,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
   const [runs, setRuns] = useState<RunInput[]>([defaultRun()]);
   const [gates, setGates] = useState<GateInput[]>([]);
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
+  const [inputMode, setInputMode] = useState<"manual" | "ai">("manual");
   const [projectName, setProjectName] = useState("New Estimate");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [markupPct, setMarkupPct] = useState(35);
@@ -195,6 +197,37 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
       <div className="lg:col-span-3 space-y-4">
 
         {/* Project Setup */}
+        {/* AI / Manual toggle */}
+        <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+          <button
+            onClick={() => setInputMode("manual")}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors ${inputMode === "manual" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Manual Input
+          </button>
+          <button
+            onClick={() => setInputMode("ai")}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${inputMode === "ai" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+            AI Input
+          </button>
+        </div>
+
+        {/* AI Input Tab */}
+        {inputMode === "ai" && (
+          <AiInputTab onApply={(state: AiAppliedState) => {
+            setFenceType(state.fenceType);
+            setProductLineId(state.productLineId);
+            setSoilType(state.soilType);
+            setWindMode(state.windMode);
+            setRuns(state.runs.length > 0 ? state.runs : [defaultRun()]);
+            setGates(state.gates);
+            setInputMode("manual"); // Switch to manual so they can review/edit
+          }} />
+        )}
+
+        {inputMode === "manual" && (<>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="font-semibold text-fence-900 mb-4">Project Setup</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -425,6 +458,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
           >
             + Add Run
           </button>
+        </div> {/* end runs card */}
         {/* Customer Info */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="font-semibold text-fence-900 mb-1">Customer Info</h2>
@@ -456,7 +490,8 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
             </div>
           </div>
         </div>
-        </div>
+        </>)} {/* end inputMode === "manual" */}
+      </div> {/* end lg:col-span-3 left column */}
 
       {/* ── Right Column: Live Results ─────────────────────────────── */}
       <div className="lg:col-span-2 space-y-4">
