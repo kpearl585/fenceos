@@ -464,7 +464,7 @@ export function onboardingWelcomeEmail(opts: {
   ownerEmail: string;
   dashboardUrl: string;
 }) {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://fenceestimatepro.com";
+  const base = "https://fenceestimatepro.com";
   return `
 <!DOCTYPE html>
 <html>
@@ -476,90 +476,98 @@ export function onboardingWelcomeEmail(opts: {
 
         <!-- Header -->
         <tr><td style="background:#0a1a12;border-radius:12px 12px 0 0;padding:28px 32px;">
-          <div style="display:inline-flex;align-items:center;">
-            <div style="background:#2D6A4F;width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;">
-              <span style="color:white;font-size:18px;"></span>
-            </div>
-            <span style="color:white;font-size:18px;font-weight:800;margin-left:12px;">FenceEstimatePro</span>
-          </div>
+          <span style="color:white;font-size:20px;font-weight:800;letter-spacing:-0.3px;">FenceEstimatePro</span>
         </td></tr>
 
         <!-- Body -->
         <tr><td style="background:white;padding:36px 32px;">
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;">
-            <span style="font-size:22px;margin-right:12px;"></span>
-            <p style="margin:0;color:#15803d;font-weight:700;font-size:15px;">Your account is live, ${opts.orgName}.</p>
-          </div>
 
-          <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7;">
-            Here's how to get your first professional estimate out the door in the next 10 minutes:
+          <h1 style="margin:0 0 8px;color:#111827;font-size:24px;font-weight:800;line-height:1.3;">
+            Welcome to FenceEstimatePro, ${opts.orgName}.
+          </h1>
+          <p style="margin:0 0 28px;color:#6b7280;font-size:15px;line-height:1.6;">
+            Your 14-day free trial is active. Here is everything you have access to right now.
           </p>
 
-          <!-- Steps -->
-          <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;">
-            <tr>
-              <td style="padding-bottom:16px;vertical-align:top;">
-                <table cellpadding="0" cellspacing="0"><tr>
-                  <td style="width:32px;height:32px;background:#2D6A4F;border-radius:50%;text-align:center;vertical-align:middle;">
-                    <span style="color:white;font-size:13px;font-weight:800;">1</span>
-                  </td>
-                  <td style="padding-left:14px;">
-                    <p style="margin:0;color:#111827;font-size:15px;font-weight:700;">Add your first customer</p>
-                    <a href="${base}/dashboard/customers/new" style="color:#2D6A4F;font-size:13px;">${base}/dashboard/customers/new</a>
-                  </td>
-                </tr></table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding-bottom:16px;vertical-align:top;">
-                <table cellpadding="0" cellspacing="0"><tr>
-                  <td style="width:32px;height:32px;background:#2D6A4F;border-radius:50%;text-align:center;vertical-align:middle;">
-                    <span style="color:white;font-size:13px;font-weight:800;">2</span>
-                  </td>
-                  <td style="padding-left:14px;">
-                    <p style="margin:0;color:#111827;font-size:15px;font-weight:700;">Build your first estimate</p>
-                    <a href="${base}/dashboard/estimates/new" style="color:#2D6A4F;font-size:13px;">${base}/dashboard/estimates/new</a>
-                  </td>
-                </tr></table>
-              </td>
-            </tr>
-            <tr>
-              <td style="vertical-align:top;">
-                <table cellpadding="0" cellspacing="0"><tr>
-                  <td style="width:32px;height:32px;background:#2D6A4F;border-radius:50%;text-align:center;vertical-align:middle;">
-                    <span style="color:white;font-size:13px;font-weight:800;">3</span>
-                  </td>
-                  <td style="padding-left:14px;">
-                    <p style="margin:0;color:#111827;font-size:15px;font-weight:700;">Set your target margin in Settings</p>
-                    <a href="${base}/dashboard/settings" style="color:#2D6A4F;font-size:13px;">${base}/dashboard/settings</a>
-                  </td>
-                </tr></table>
-              </td>
-            </tr>
+          <!-- Feature list -->
+          <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:32px;">
+
+            <tr><td style="padding-bottom:20px;vertical-align:top;border-bottom:1px solid #f3f4f6;">
+              <p style="margin:0 0 4px;color:#111827;font-size:15px;font-weight:700;">Professional Estimates</p>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Build accurate estimates for wood, vinyl, chain link, and aluminum fencing. The engine calculates material quantities and labor automatically based on linear footage and fence type. No spreadsheets.</p>
+            </td></tr>
+
+            <tr><td style="padding:20px 0;vertical-align:top;border-bottom:1px solid #f3f4f6;">
+              <p style="margin:0 0 4px;color:#111827;font-size:15px;font-weight:700;">PDF Quotes with Digital Acceptance</p>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Send estimates to customers by email. They can review, sign digitally, and accept online. You get notified the moment they accept. No printing. No chasing signatures.</p>
+            </td></tr>
+
+            <tr><td style="padding:20px 0;vertical-align:top;border-bottom:1px solid #f3f4f6;">
+              <p style="margin:0 0 4px;color:#111827;font-size:15px;font-weight:700;">Job Management Board</p>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Track every job from Scheduled to Active to Complete on a visual board. Drag to update status. Foreman can see their assigned jobs, verify materials, and complete checklists from the field.</p>
+            </td></tr>
+
+            <tr><td style="padding:20px 0;vertical-align:top;border-bottom:1px solid #f3f4f6;">
+              <p style="margin:0 0 4px;color:#111827;font-size:15px;font-weight:700;">Material Verification</p>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Before a job goes active, your foreman confirms all materials are on site. No more starting jobs short on posts or panels. Change orders get tracked against the original estimate automatically.</p>
+            </td></tr>
+
+            <tr><td style="padding:20px 0;vertical-align:top;border-bottom:1px solid #f3f4f6;">
+              <p style="margin:0 0 4px;color:#111827;font-size:15px;font-weight:700;">Margin Tracking (Owner-Only)</p>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">See your gross margin on every estimate and job. Identify which fence types are most profitable. Your crew never sees cost data — only you do.</p>
+            </td></tr>
+
+            <tr><td style="padding:20px 0;vertical-align:top;border-bottom:1px solid #f3f4f6;">
+              <p style="margin:0 0 4px;color:#111827;font-size:15px;font-weight:700;">Customer Database</p>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Store every customer, their contact info, and job history in one place. Import existing customers via CSV. Never lose a lead or forget a follow-up again.</p>
+            </td></tr>
+
+            <tr><td style="padding:20px 0;vertical-align:top;">
+              <p style="margin:0 0 4px;color:#111827;font-size:15px;font-weight:700;">Team Access</p>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Invite your office staff and foremen. Sales reps can build and send estimates. Foremen can manage jobs from their phone. Everyone sees what they need — nothing more.</p>
+            </td></tr>
+
           </table>
 
-          <p style="margin:0 0 8px;color:#374151;font-size:15px;line-height:1.7;">
-            Most contractors send their first professional estimate within 10 minutes of signing up.
-          </p>
-          <p style="margin:0 0 28px;color:#6b7280;font-size:14px;">
-            Need help? Reply to this email. We'll walk you through it.
-          </p>
+          <!-- Getting started -->
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
+            <p style="margin:0 0 12px;color:#14532d;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Get your first estimate out in 10 minutes</p>
+            <table cellpadding="0" cellspacing="0">
+              <tr><td style="padding-bottom:8px;">
+                <span style="display:inline-block;background:#2D6A4F;color:white;font-size:11px;font-weight:800;width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;margin-right:10px;">1</span>
+                <a href="${base}/dashboard/customers/new" style="color:#15803d;font-size:14px;font-weight:600;text-decoration:none;">Add your first customer</a>
+              </td></tr>
+              <tr><td style="padding-bottom:8px;">
+                <span style="display:inline-block;background:#2D6A4F;color:white;font-size:11px;font-weight:800;width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;margin-right:10px;">2</span>
+                <a href="${base}/dashboard/estimates/new" style="color:#15803d;font-size:14px;font-weight:600;text-decoration:none;">Build your first estimate</a>
+              </td></tr>
+              <tr><td>
+                <span style="display:inline-block;background:#2D6A4F;color:white;font-size:11px;font-weight:800;width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;margin-right:10px;">3</span>
+                <a href="${base}/dashboard/settings" style="color:#15803d;font-size:14px;font-weight:600;text-decoration:none;">Set your material prices and target margin</a>
+              </td></tr>
+            </table>
+          </div>
 
           <!-- CTA -->
-          <table width="100%" cellpadding="0" cellspacing="0">
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
             <tr><td align="center">
-              <a href="${opts.dashboardUrl}"
-                style="display:inline-block;background:#2D6A4F;color:white;text-decoration:none;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;">
-                Go to Your Dashboard →
+              <a href="${opts.dashboardUrl}" style="display:inline-block;background:#2D6A4F;color:white;text-decoration:none;font-weight:700;font-size:15px;padding:14px 40px;border-radius:10px;">
+                Open Your Dashboard
               </a>
             </td></tr>
           </table>
+
+          <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;line-height:1.6;">
+            Questions? Reply to this email — we respond same day.<br>
+            Built by a veteran for contractors who run a real business.
+          </p>
+
         </td></tr>
 
         <!-- Footer -->
         <tr><td style="background:#f9fafb;border-radius:0 0 12px 12px;padding:20px 32px;border-top:1px solid #e5e7eb;">
           <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
-            FenceEstimatePro · fenceestimatepro.com
+            FenceEstimatePro &middot; fenceestimatepro.com &middot; Built in Florida
           </p>
         </td></tr>
 
