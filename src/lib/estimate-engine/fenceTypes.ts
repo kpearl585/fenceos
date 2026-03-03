@@ -48,39 +48,32 @@ export const FENCE_TYPE_OPTIONS: { value: FenceType; label: string }[] = [
 ];
 
 /** Required SKUs per fence type — engine will error if any are missing */
+// Only unconditional SKUs (always used regardless of gate count).
+// Gate-specific SKUs are optional — engine skips them when gateCount = 0.
 export const REQUIRED_SKUS: Record<FenceType, string[]> = {
   wood_privacy: [
     "WOOD_PANEL_8FT",
-    "WOOD_POST_4X4_8FT",
-    "CONCRETE_BAG_80LB",
-    "WOOD_GATE_SINGLE",
-    "WOOD_GATE_HARDWARE_SET",
-    "WOOD_FASTENERS_BOX",
+    "WOOD_POST_4X4_8",
+    "CONCRETE_80LB",
+    "SCREWS_1LB",
   ],
   chain_link: [
     "CL_FABRIC_4FT",
-    "CL_TOP_RAIL",
-    "CL_LINE_POST",
-    "CL_TERMINAL_POST",
-    "CL_TENSION_BAND",
-    "CL_TIE_WIRE",
-    "CONCRETE_BAG_80LB",
-    "CL_GATE_SINGLE",
-    "CL_FITTINGS_MISC",
+    "CL_TOPRAIL",
+    "CL_POST_2IN",
+    "CL_POST_TERM",
+    "CL_TENSION_WIRE",
+    "STAPLES_1LB",
+    "CONCRETE_80LB",
   ],
   vinyl: [
     "VINYL_PANEL_8FT",
-    "VINYL_POST_5X5_8FT",
-    "CONCRETE_BAG_80LB",
-    "VINYL_GATE_SINGLE",
-    "VINYL_GATE_HARDWARE_SET",
+    "VINYL_POST_5X5",
+    "CONCRETE_80LB",
   ],
   aluminum: [
     "ALUM_PANEL_4FT",
     "ALUM_POST_2X2",
-    "CONCRETE_BAG_80LB",
-    "GATE_ALUM_4FT",
-    "HINGE_HD",
-    "GATE_LATCH",
+    "CONCRETE_80LB",
   ],
 };

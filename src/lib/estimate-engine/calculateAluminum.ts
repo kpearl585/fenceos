@@ -40,7 +40,7 @@ export function calculateAluminum(
   // Concrete: 2 bags per post
   const concreteBags = posts * cfg.concreteBagsPerPost;
   items.push({
-    sku: "CONCRETE_BAG_80LB",
+    sku: "CONCRETE_80LB",
     name: "Concrete Bag 80lb",
     unit: "bag",
     qty: Math.ceil(concreteBags),

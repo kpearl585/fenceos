@@ -191,9 +191,8 @@ export async function createEstimate(fd: FormData) {
   const result = runEstimateEngine(inputs, materialsMap);
 
   if (result.missingSkus.length > 0) {
-    throw new Error(
-      `Missing material SKUs: ${result.missingSkus.join(", ")}. ` +
-      `Run the materials seed or add them in Materials.`
+    redirect(
+      `/dashboard/estimates/new?error=Missing+materials:+${encodeURIComponent(result.missingSkus.join(", "))}+—+add+them+in+Materials+first.`
     );
   }
 

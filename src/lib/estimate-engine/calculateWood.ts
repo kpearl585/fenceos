@@ -21,7 +21,7 @@ export function calculateWood(inputs: EstimateInputs): MaterialRequirement[] {
   // Posts: rawPanels + 1  (one post per panel boundary)
   const posts = rawPanels + 1;
   items.push({
-    sku: "WOOD_POST_4X4_8FT",
+    sku: "WOOD_POST_4X4_8",
     name: "Wood Post 4x4 8ft",
     unit: "ea",
     qty: posts,
@@ -30,7 +30,7 @@ export function calculateWood(inputs: EstimateInputs): MaterialRequirement[] {
   // Concrete: 2 bags per post
   const concreteBags = posts * cfg.concreteBagsPerPost;
   items.push({
-    sku: "CONCRETE_BAG_80LB",
+    sku: "CONCRETE_80LB",
     name: "Concrete Bag 80lb",
     unit: "bag",
     qty: Math.ceil(concreteBags),
@@ -39,8 +39,8 @@ export function calculateWood(inputs: EstimateInputs): MaterialRequirement[] {
   // Fasteners: 1 box per 5 panels (round up)
   const fastenerBoxes = Math.ceil(panels / 5);
   items.push({
-    sku: "WOOD_FASTENERS_BOX",
-    name: "Wood Fasteners Box",
+    sku: "SCREWS_1LB",
+    name: "Screws 1lb Box",
     unit: "ea",
     qty: fastenerBoxes,
   });
@@ -48,16 +48,16 @@ export function calculateWood(inputs: EstimateInputs): MaterialRequirement[] {
   // Gates
   if (gateCount > 0) {
     items.push({
-      sku: "WOOD_GATE_SINGLE",
-      name: "Wood Gate Single Assembly",
+      sku: "GATE_WOOD_4FT",
+      name: "Wood Gate 4ft",
       unit: "ea",
       qty: gateCount,
     });
     items.push({
-      sku: "WOOD_GATE_HARDWARE_SET",
-      name: "Wood Gate Hardware Set",
+      sku: "HINGE_HD",
+      name: "Heavy Duty Gate Hinge",
       unit: "ea",
-      qty: gateCount,
+      qty: gateCount * 2,
     });
   }
 

@@ -23,7 +23,7 @@ export function calculateVinyl(
   // Posts: rawPanels + 1
   const posts = rawPanels + 1;
   items.push({
-    sku: "VINYL_POST_5X5_8FT",
+    sku: "VINYL_POST_5X5",
     name: "Vinyl Post 5x5 8ft",
     unit: "ea",
     qty: posts,
@@ -32,7 +32,7 @@ export function calculateVinyl(
   // Concrete: 2 bags per post
   const concreteBags = posts * cfg.concreteBagsPerPost;
   items.push({
-    sku: "CONCRETE_BAG_80LB",
+    sku: "CONCRETE_80LB",
     name: "Concrete Bag 80lb",
     unit: "bag",
     qty: Math.ceil(concreteBags),
@@ -41,16 +41,16 @@ export function calculateVinyl(
   // Gates
   if (gateCount > 0) {
     items.push({
-      sku: "VINYL_GATE_SINGLE",
-      name: "Vinyl Gate Single Assembly",
+      sku: "GATE_VINYL_4FT",
+      name: "Vinyl Gate 4ft",
       unit: "ea",
       qty: gateCount,
     });
     items.push({
-      sku: "VINYL_GATE_HARDWARE_SET",
-      name: "Vinyl Gate Hardware Set",
+      sku: "HINGE_HD",
+      name: "Heavy Duty Gate Hinge",
       unit: "ea",
-      qty: gateCount,
+      qty: gateCount * 2,
     });
   }
 
