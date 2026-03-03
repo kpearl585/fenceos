@@ -3,8 +3,8 @@ import Link from "next/link";
 const tiers = [
   {
     name: "Starter",
-    price: 49,
-    annual: 490,
+    price: 29,
+    annual: 290,
     desc: "Perfect for solo operators who need fast, accurate estimates.",
     features: [
       "Unlimited estimates",
@@ -20,8 +20,8 @@ const tiers = [
   },
   {
     name: "Pro",
-    price: 89,
-    annual: 890,
+    price: 79,
+    annual: 790,
     desc: "For contractors running a crew. Everything in Starter, plus job management.",
     features: [
       "Everything in Starter",
@@ -39,8 +39,8 @@ const tiers = [
   },
   {
     name: "Business",
-    price: 179,
-    annual: 1790,
+    price: 149,
+    annual: 1490,
     desc: "For growing operations running multiple crews and high job volume.",
     features: [
       "Everything in Pro",

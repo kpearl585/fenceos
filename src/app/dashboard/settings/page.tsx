@@ -28,9 +28,9 @@ export default async function SettingsPage() {
   ]);
 
   const planLabel: Record<string, string> = {
-    starter: "Starter — $49/mo",
-    pro: "Pro — $89/mo",
-    business: "Business — $179/mo",
+    starter: "Starter — $29/mo",
+    pro: "Pro — $79/mo",
+    business: "Business — $149/mo",
     trial: "Free Trial",
     free: "Free",
   };
