@@ -3,6 +3,7 @@ import type { EstimateInputs, MaterialRequirement } from "./types";
 import { calculateWood } from "./calculateWood";
 import { calculateChainLink } from "./calculateChainLink";
 import { calculateVinyl } from "./calculateVinyl";
+import { calculateAluminum } from "./calculateAluminum";
 
 /**
  * Routes to the correct calculator based on fence type.
@@ -18,6 +19,8 @@ export function buildRequirements(
       return calculateChainLink(inputs);
     case "vinyl":
       return calculateVinyl(inputs);
+    case "aluminum":
+      return calculateAluminum(inputs);
     default: {
       const _exhaustive: never = inputs.fenceType;
       throw new Error(`Unknown fence type: ${_exhaustive}`);
