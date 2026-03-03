@@ -219,14 +219,17 @@ export async function POST(request: NextRequest) {
       });
 
     if (!pdfErr) {
-      const { data: contractUrlData } = supabase.storage
+      // Private bucket — use signed URL (1 year expiry = 31536000 seconds)
+      const { data: contractUrlData } = await supabase.storage
         .from("contracts")
-        .getPublicUrl(contractPath);
+        .createSignedUrl(contractPath, 31536000);
+
+      const contractPdfUrl = contractUrlData?.signedUrl ?? null;
 
       // Update contract PDF URL
       await supabase
         .from("estimates")
-        .update({ contract_pdf_url: contractUrlData.publicUrl })
+        .update({ contract_pdf_url: contractPdfUrl })
         .eq("id", estimateId);
     }
 
@@ -260,12 +263,12 @@ export async function POST(request: NextRequest) {
         // Deposit reminder removed — V2 feature
       }
 
-      // Customer confirmation
+      // Customer confirmation — signed contract link (1 year signed URL)
       const customerEmail = customer?.email || email;
       if (customerEmail) {
         const { data: contractUrl } = await supabase.storage
           .from("contracts")
-          .getPublicUrl(`${est.org_id}/${estimateId}/signed-contract.pdf`);
+          .createSignedUrl(`${est.org_id}/${estimateId}/signed-contract.pdf`, 31536000);
 
         await sendEmail({
           to: customerEmail,
@@ -274,7 +277,7 @@ export async function POST(request: NextRequest) {
             orgName,
             customerName: customer?.name || name,
             total: Number(est.total),
-            contractUrl: contractUrl?.publicUrl,
+            contractUrl: contractUrl?.signedUrl,
           }),
         });
       }
