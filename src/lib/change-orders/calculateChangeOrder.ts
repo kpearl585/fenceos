@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export interface ChangeOrderLineInput {
   sku?: string;
@@ -59,7 +59,7 @@ export async function calculateChangeOrder(
   orgId: string,
   lineInputs: ChangeOrderLineInput[]
 ): Promise<ChangeOrderCalculation> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // 1. Load current job financials
   const { data: job, error: jobErr } = await supabase

@@ -43,20 +43,23 @@ export async function submitChangeOrder(fd: FormData) {
   }
 
   if (!lineInputs || lineInputs.length === 0) {
-    throw new Error("At least one line item is required");
+    return { success: false, error: "At least one line item is required" };
   }
 
-  // Verify job belongs to org and user has access
-  const { data: job } = await supabase
+  // Verify job belongs to org — use admin client to avoid session/RLS issues
+  const admin = createAdminClient();
+  const { data: job, error: jobQueryErr } = await admin
     .from("jobs")
     .select("id, org_id, assigned_foreman_id, status")
     .eq("id", jobId)
     .eq("org_id", profile.org_id)
     .single();
-  if (!job) throw new Error("Job not found");
+  if (jobQueryErr || !job) {
+    return { success: false, error: `Job not found: ${jobQueryErr?.message ?? "unknown"}` };
+  }
 
   if (job.status === "complete" || job.status === "cancelled") {
-    throw new Error("Cannot add change orders to completed/cancelled jobs");
+    return { success: false, error: "Cannot add change orders to completed/cancelled jobs" };
   }
 
   // Foreman can only create COs for assigned jobs
@@ -64,11 +67,16 @@ export async function submitChangeOrder(fd: FormData) {
     profile.role === "foreman" &&
     job.assigned_foreman_id !== user.id
   ) {
-    throw new Error("You can only create change orders for jobs assigned to you");
+    return { success: false, error: "You can only create change orders for jobs assigned to you" };
   }
 
-  // Calculate financials
-  const calc = await calculateChangeOrder(jobId, profile.org_id, lineInputs);
+  // Calculate financials (uses admin client internally)
+  let calc;
+  try {
+    calc = await calculateChangeOrder(jobId, profile.org_id, lineInputs);
+  } catch (e) {
+    return { success: false, error: `Calculation failed: ${e instanceof Error ? e.message : String(e)}` };
+  }
 
   // Determine if owner auto-approve should happen after insert
   const autoApprove = profile.role === "owner" && !calc.requires_owner_approval;
@@ -76,7 +84,6 @@ export async function submitChangeOrder(fd: FormData) {
   // Always insert as "pending" — approveChangeOrder handles the status
   // transition to "approved" and updates job totals. Inserting as "approved"
   // then calling approveChangeOrder throws because it expects "pending".
-  const admin = createAdminClient();
   const { data: co, error: coErr } = await admin
     .from("change_orders")
     .insert({
@@ -94,7 +101,7 @@ export async function submitChangeOrder(fd: FormData) {
     .single();
 
   if (coErr || !co) {
-    throw new Error(`Failed to create change order: ${coErr?.message ?? "unknown"}`);
+    return { success: false, error: `Failed to create change order: ${coErr?.message ?? "unknown"}` };
   }
 
   // Insert line items
@@ -115,13 +122,18 @@ export async function submitChangeOrder(fd: FormData) {
     .insert(coLines);
   if (liErr) {
     await admin.from("change_orders").delete().eq("id", co.id);
-    throw new Error(`Failed to insert line items: ${liErr.message}`);
+    return { success: false, error: `Failed to insert line items: ${liErr.message}` };
   }
 
   // Auto-approve for owners when margin is acceptable: transitions status
   // pending → approved and updates job totals.
   if (autoApprove) {
-    await approveChangeOrder(co.id, user.id);
+    try {
+      await approveChangeOrder(co.id, user.id);
+    } catch (e) {
+      // CO was created; auto-approve failed — return success so user sees it as pending
+      console.error("Auto-approve failed:", e);
+    }
   }
 
   return { success: true, jobId };

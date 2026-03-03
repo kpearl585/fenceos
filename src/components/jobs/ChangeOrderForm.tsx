@@ -85,6 +85,9 @@ export default function ChangeOrderForm({
       if (result?.success) {
         router.push(`/dashboard/jobs/${result.jobId}`);
         router.refresh();
+      } else {
+        setError(result?.error ?? "Something went wrong. Please try again.");
+        setSubmitting(false);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
