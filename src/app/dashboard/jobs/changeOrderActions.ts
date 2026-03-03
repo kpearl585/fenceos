@@ -91,6 +91,7 @@ export async function submitChangeOrder(fd: FormData) {
       job_id: jobId,
       status: "pending",
       created_by: user.id,
+      description: reason || "",
       reason,
       subtotal: calc.subtotal,
       cost_total: calc.cost_total,
