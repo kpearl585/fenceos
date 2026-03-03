@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -16,7 +16,7 @@ export async function approveChangeOrder(
   changeOrderId: string,
   approvedByUserId: string
 ): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Load change order
   const { data: co, error: coErr } = await supabase
@@ -54,7 +54,7 @@ export async function approveChangeOrder(
     .eq("id", changeOrderId);
   if (approveErr) throw new Error(`Failed to approve: ${approveErr.message}`);
 
-  // Update job totals
+  // Update job totals (no updated_at — column does not exist on jobs table)
   const { error: jobUpdateErr } = await supabase
     .from("jobs")
     .update({
@@ -62,7 +62,6 @@ export async function approveChangeOrder(
       total_cost: newCost,
       gross_profit: newProfit,
       gross_margin_pct: newMarginPct,
-      updated_at: new Date().toISOString(),
     })
     .eq("id", co.job_id);
   if (jobUpdateErr) {
