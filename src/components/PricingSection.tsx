@@ -28,6 +28,7 @@ const tiers = [
       "Jobs & foreman board",
       "Foreman mobile access",
       "Change order tracking",
+      "Custom branding on PDFs",
       "3 users",
       "Priority support",
     ],
@@ -44,8 +45,7 @@ const tiers = [
     features: [
       "Everything in Pro",
       "Unlimited users",
-      "Advanced reporting",
-      "Custom branding on PDFs",
+      "Advanced reporting & KPIs",
       "Dedicated onboarding",
       "Phone support",
     ],
@@ -62,8 +62,7 @@ export default function PricingSection() {
         <div className="text-center mb-12">
           <p className="text-fence-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple pricing</p>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900">No contracts. No surprises.</h2>
-          <p className="mt-4 text-gray-500">Start free for 14 days. No credit card required.</p>
-          <p className="mt-4 text-sm text-gray-500">Simple, transparent pricing. Cancel anytime.</p>
+          <p className="mt-4 text-gray-500">Start free for 14 days — full access to every feature. No credit card required.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
