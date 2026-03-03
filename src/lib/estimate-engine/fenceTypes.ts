@@ -52,13 +52,13 @@ export const FENCE_TYPE_OPTIONS: { value: FenceType; label: string }[] = [
 // Gate-specific SKUs are optional — engine skips them when gateCount = 0.
 export const REQUIRED_SKUS: Record<FenceType, string[]> = {
   wood_privacy: [
-    "WOOD_PANEL_8FT",
-    "WOOD_POST_4X4_8",
+    // WOOD_PANEL_6FT or WOOD_PANEL_8FT selected by height
+    // WOOD_POST_4X4_8 or WOOD_POST_4X4_10 selected by height
     "CONCRETE_80LB",
     "SCREWS_1LB",
   ],
   chain_link: [
-    "CL_FABRIC_4FT",
+    // CL_FABRIC_4FT or CL_FABRIC_6FT selected by height — both optional here
     "CL_TOPRAIL",
     "CL_POST_2IN",
     "CL_POST_TERM",
@@ -67,13 +67,15 @@ export const REQUIRED_SKUS: Record<FenceType, string[]> = {
     "CONCRETE_80LB",
   ],
   vinyl: [
-    "VINYL_PANEL_8FT",
+    // VINYL_PANEL_6FT or VINYL_PANEL_8FT selected by height
     "VINYL_POST_5X5",
+    "VINYL_POST_CAP",
     "CONCRETE_80LB",
   ],
   aluminum: [
-    "ALUM_PANEL_4FT",
+    // ALUM_PANEL_4FT or ALUM_PANEL_6FT selected by height
     "ALUM_POST_2X2",
+    "ALUM_POST_CAP",
     "CONCRETE_80LB",
   ],
 };

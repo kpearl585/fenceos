@@ -6,21 +6,27 @@ export function calculateChainLink(
   inputs: EstimateInputs
 ): MaterialRequirement[] {
   const cfg = FENCE_TYPE_CONFIGS.chain_link;
-  const { linearFeet, gateCount, postSpacing, wasteFactorPct } = inputs;
+  const { linearFeet, gateCount, postSpacing, height, wasteFactorPct } = inputs;
   const items: MaterialRequirement[] = [];
 
-  // Fabric: linear feet with waste
+  // ── Fabric: select 4ft or 6ft based on height ──────────────────
+  // Standard rolls: 4ft high for ≤4ft fence, 6ft high for taller fences
+  const fabricSku = height > 4 ? "CL_FABRIC_6FT" : "CL_FABRIC_4FT";
+  const fabricName = height > 4
+    ? "Chain Link Fabric 6ft (per ft)"
+    : "Chain Link Fabric 4ft (per ft)";
+
   const rawFabric = linearFeet;
   const fabric = Math.ceil(rawFabric * (1 + wasteFactorPct));
   items.push({
-    sku: "CL_FABRIC_4FT",
-    name: "Chain Link Fabric 4ft (per ft)",
+    sku: fabricSku,
+    name: fabricName,
     unit: "ft",
     qty: fabric,
-    meta: { rawQty: rawFabric, wasteApplied: true },
+    meta: { rawQty: rawFabric, wasteApplied: true, heightFt: height },
   });
 
-  // Top rail: same length as fabric with waste
+  // ── Top rail: linear feet with waste ──────────────────────────
   const rawTopRail = linearFeet;
   const topRail = Math.ceil(rawTopRail * (1 + wasteFactorPct));
   items.push({
@@ -31,10 +37,11 @@ export function calculateChainLink(
     meta: { rawQty: rawTopRail, wasteApplied: true },
   });
 
-  // Total posts: ceil(linearFeet / postSpacing) + 1
+  // ── Posts ──────────────────────────────────────────────────────
+  // Total posts: one at each interval boundary
   const totalPosts = Math.ceil(linearFeet / postSpacing) + 1;
 
-  // Terminal posts: 2 ends + 2 per gate (each gate needs 2 terminal posts)
+  // Terminal posts: 2 end posts + 2 per gate opening
   const terminalPosts = 2 + gateCount * 2;
   const linePosts = Math.max(0, totalPosts - terminalPosts);
 
@@ -47,28 +54,31 @@ export function calculateChainLink(
 
   items.push({
     sku: "CL_POST_TERM",
-    name: "Chain Link Terminal Post",
+    name: "Chain Link Terminal Post 2.5in",
     unit: "ea",
     qty: terminalPosts,
   });
 
-  // Tension wire: 1 per terminal post
+  // ── Tension wire: 1 roll per 150 linear feet (min 1) ──────────
+  // Bottom tension wire runs full fence length to prevent fabric lift.
+  // Typical spool covers ~150ft; round up.
   items.push({
     sku: "CL_TENSION_WIRE",
-    name: "Chain Link Tension Wire",
+    name: "Chain Link Tension Wire (spool)",
     unit: "ea",
-    qty: terminalPosts,
+    qty: Math.max(1, Math.ceil(linearFeet / 150)),
   });
 
-  // Small hardware / staples: 1 box per 100ft
+  // ── Tie wire / staples: 1 box per 100ft ────────────────────────
   items.push({
     sku: "STAPLES_1LB",
-    name: "Staples 1lb Box",
+    name: "Tie Wire / Fence Staples 1lb",
     unit: "ea",
     qty: Math.ceil(linearFeet / 100),
   });
 
-  // Concrete: bags per post, round up to whole bags
+  // ── Concrete: bags per post ────────────────────────────────────
+  // Chain link: 1.5 bags per post (line posts 1 bag, terminal 2 bags — blended)
   const concreteBags = Math.ceil(totalPosts * cfg.concreteBagsPerPost);
   items.push({
     sku: "CONCRETE_80LB",
@@ -77,19 +87,25 @@ export function calculateChainLink(
     qty: concreteBags,
   });
 
-  // Misc fittings: 1 latch per 50ft
+  // ── Misc hardware (rail ends, brace bands): 1 set per terminal post
   items.push({
     sku: "GATE_LATCH",
-    name: "Gate Latch / Misc Fittings",
+    name: "Misc Fittings (rail ends / brace bands)",
     unit: "ea",
-    qty: Math.ceil(linearFeet / 50),
+    qty: terminalPosts,
   });
 
-  // Gates
+  // ── Gates ──────────────────────────────────────────────────────
   if (gateCount > 0) {
     items.push({
       sku: "GATE_CL_4FT",
-      name: "Chain Link Gate Single 4ft",
+      name: "Chain Link Walk Gate 4ft",
+      unit: "ea",
+      qty: gateCount,
+    });
+    items.push({
+      sku: "GATE_LATCH",
+      name: "Gate Latch",
       unit: "ea",
       qty: gateCount,
     });
