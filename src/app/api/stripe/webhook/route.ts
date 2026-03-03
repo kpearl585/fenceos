@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
           plan,
           plan_status: "active",
           trial_ends_at: null,
-          updated_at: new Date().toISOString(),
         }).eq("id", orgId);
 
         if (updateErr) {
@@ -102,7 +101,6 @@ export async function POST(request: NextRequest) {
       const { error: subUpdateErr } = await supabase.from("organizations").update({
         plan: plan || null,
         plan_status: sub.status,
-        updated_at: new Date().toISOString(),
       }).eq("id", orgId);
 
       if (subUpdateErr) {
@@ -121,7 +119,6 @@ export async function POST(request: NextRequest) {
         plan: "free",
         plan_status: "cancelled",
         stripe_subscription_id: null,
-        updated_at: new Date().toISOString(),
       }).eq("id", orgId);
 
       if (cancelErr) {

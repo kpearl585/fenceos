@@ -20,8 +20,22 @@ export default async function SettingsPage() {
     supabase.from("org_settings").select("*").eq("org_id", profile.org_id).single(),
     supabase.from("org_branding").select("*").eq("org_id", profile.org_id).single(),
     supabase.from("users").select("id, full_name, email, role, created_at").eq("org_id", profile.org_id).order("created_at"),
-    supabase.from("organizations").select("name, slug, id").eq("id", profile.org_id).single(),
+    supabase.from("organizations").select("name, slug, id, plan, plan_status, trial_ends_at").eq("id", profile.org_id).single(),
   ]);
+
+  const planLabel: Record<string, string> = {
+    starter: "Starter — $49/mo",
+    pro: "Pro — $89/mo",
+    business: "Business — $179/mo",
+    trial: "Free Trial",
+    free: "Free",
+  };
+  const planName = planLabel[(org as { plan?: string } | null)?.plan ?? "trial"] ?? "Free Trial";
+  const planStatus = (org as { plan_status?: string } | null)?.plan_status ?? "trialing";
+  const trialEndsAt = (org as { trial_ends_at?: string } | null)?.trial_ends_at;
+  const trialDaysLeft = trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
+    : null;
 
   return (
     <>
@@ -121,15 +135,26 @@ export default async function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-700">Current Plan</p>
-              <p className="text-xs text-gray-400 mt-0.5">Manage your subscription and billing details</p>
+              <p className="text-base font-bold text-fence-700 mt-1">{planName}</p>
+              {planStatus === "trialing" && trialDaysLeft !== null && (
+                <p className="text-xs text-amber-600 mt-0.5">{trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} remaining in trial</p>
+              )}
+              {planStatus === "active" && (
+                <p className="text-xs text-green-600 mt-0.5">Active subscription</p>
+              )}
+              {planStatus === "cancelled" && (
+                <p className="text-xs text-red-500 mt-0.5">Subscription cancelled</p>
+              )}
             </div>
             <div className="flex gap-2">
-              <a
-                href="/dashboard/upgrade"
-                className="border border-fence-600 text-fence-600 hover:bg-fence-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-              >
-                Upgrade Plan
-              </a>
+              {planStatus !== "active" && (
+                <a
+                  href="/dashboard/upgrade"
+                  className="border border-fence-600 text-fence-600 hover:bg-fence-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                >
+                  Upgrade Plan
+                </a>
+              )}
               <BillingPortalButton />
             </div>
           </div>
