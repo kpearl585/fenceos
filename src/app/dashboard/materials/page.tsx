@@ -31,6 +31,10 @@ export default async function MaterialsPage() {
           <h1 className="text-2xl font-bold text-fence-900">Materials</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage your material catalog. These drive estimate line items.</p>
         </div>
+        <a href="/dashboard/materials/price-sync"
+          className="flex-shrink-0 bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors">
+          Sync Supplier Prices
+        </a>
       </div>
 
       {/* Add Material Form */}
