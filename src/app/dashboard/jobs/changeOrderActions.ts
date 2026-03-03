@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
-import { redirect } from "next/navigation";
+
 import {
   calculateChangeOrder,
   type ChangeOrderLineInput,
@@ -124,7 +124,7 @@ export async function submitChangeOrder(fd: FormData) {
     await approveChangeOrder(co.id, user.id);
   }
 
-  redirect(`/dashboard/jobs/${jobId}`);
+  return { success: true, jobId };
 }
 
 /* ------------------------------------------------------------------ */
@@ -141,7 +141,7 @@ export async function approveChangeOrderAction(fd: FormData) {
   }
 
   await approveChangeOrder(changeOrderId, user.id);
-  redirect(`/dashboard/jobs/${jobId}`);
+  return { success: true, jobId };
 }
 
 /* ------------------------------------------------------------------ */
@@ -163,5 +163,5 @@ export async function rejectChangeOrderAction(fd: FormData) {
     .eq("id", changeOrderId);
   if (error) throw new Error(`Failed to reject: ${error.message}`);
 
-  redirect(`/dashboard/jobs/${jobId}`);
+  return { success: true, jobId };
 }

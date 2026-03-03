@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { submitChangeOrder } from "@/app/dashboard/jobs/changeOrderActions";
 
 type Material = {
@@ -32,8 +33,10 @@ export default function ChangeOrderForm({
   jobId: string;
   materials: Material[];
 }) {
+  const router = useRouter();
   const [items, setItems] = useState<LineItem[]>([emptyItem()]);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function addItem() {
     setItems((prev) => [...prev, emptyItem()]);
@@ -76,12 +79,17 @@ export default function ChangeOrderForm({
       }));
     fd.set("lineItems", JSON.stringify(lineItems));
     fd.set("jobId", jobId);
+    setError(null);
     try {
-      await submitChangeOrder(fd);
-    } catch {
-      // redirect throws — that's expected
+      const result = await submitChangeOrder(fd);
+      if (result?.success) {
+        router.push(`/dashboard/jobs/${result.jobId}`);
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   return (
@@ -231,6 +239,9 @@ export default function ChangeOrderForm({
       >
         {submitting ? "Submitting…" : "Submit Change Order"}
       </button>
+      {error && (
+        <p className="text-sm text-red-600 mt-2">{error}</p>
+      )}
     </form>
   );
 }

@@ -1,7 +1,7 @@
 // ── Estimate Engine Types ──────────────────────────────────────
 
 /** Supported fence types for MVP */
-export type FenceType = "wood_privacy" | "chain_link" | "vinyl";
+export type FenceType = "wood_privacy" | "chain_link" | "vinyl" | "aluminum";
 
 /** Inputs required to run the estimate engine */
 export interface EstimateInputs {
