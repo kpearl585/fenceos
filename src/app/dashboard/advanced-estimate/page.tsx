@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AdvancedEstimateClient from "./AdvancedEstimateClient";
-import { getOrgMaterialPrices } from "./actions";
+import { getOrgMaterialPrices, getOrgCalibration } from "./actions";
 
 export const metadata = { title: "Advanced Estimate — FenceEstimatePro" };
 
@@ -10,7 +10,10 @@ export default async function AdvancedEstimatePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const priceMap = await getOrgMaterialPrices();
+  const [priceMap, calibration] = await Promise.all([
+    getOrgMaterialPrices(),
+    getOrgCalibration(),
+  ]);
   const hasPrices = Object.keys(priceMap).length > 0;
 
   return (
@@ -24,6 +27,16 @@ export default async function AdvancedEstimatePage() {
           <p className="text-gray-500 text-sm">
             Run-based estimation engine. Add each fence segment individually for professional-grade accuracy with full material traceability.
           </p>
+          <div className="flex items-center gap-4 mt-2">
+            <a href="/dashboard/advanced-estimate/saved" className="text-sm text-fence-600 font-semibold hover:underline">
+              View Saved Estimates →
+            </a>
+            {calibration.sampleCount > 0 && (
+              <span className="text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded font-semibold">
+                Engine calibrated from {calibration.sampleCount} job{calibration.sampleCount !== 1 ? "s" : ""} · {(calibration.currentFactor * 100).toFixed(1)}% waste
+              </span>
+            )}
+          </div>
           {!hasPrices && (
             <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
               <span className="text-amber-600 text-sm font-semibold flex-shrink-0">No material prices found.</span>
@@ -35,7 +48,7 @@ export default async function AdvancedEstimatePage() {
             </div>
           )}
         </div>
-        <AdvancedEstimateClient priceMap={priceMap} />
+        <AdvancedEstimateClient priceMap={priceMap} defaultWastePct={Math.round(calibration.currentFactor * 100)} />
       </div>
     </main>
   );

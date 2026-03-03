@@ -64,14 +64,14 @@ function defaultRun(): RunInput {
   };
 }
 
-export default function AdvancedEstimateClient({ priceMap = {} }: { priceMap?: Record<string, number> }) {
+export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct = 5 }: { priceMap?: Record<string, number>; defaultWastePct?: number }) {
   const [fenceType, setFenceType] = useState<FenceType>("vinyl");
   const [woodStyle, setWoodStyle] = useState<WoodStyle>("dog_ear_privacy");
   const [productLineId, setProductLineId] = useState("vinyl_privacy_6ft");
   const [soilType, setSoilType] = useState<SoilType>("sandy_loam");
   const [windMode, setWindMode] = useState(false);
   const [laborRate, setLaborRate] = useState(65);
-  const [wastePct, setWastePct] = useState(5);
+  const [wastePct, setWastePct] = useState(defaultWastePct);
   const [runs, setRuns] = useState<RunInput[]>([defaultRun()]);
   const [gates, setGates] = useState<GateInput[]>([]);
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");

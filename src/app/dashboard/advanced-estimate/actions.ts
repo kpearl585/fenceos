@@ -5,6 +5,8 @@ import React from "react";
 import { AdvancedEstimatePdf } from "@/lib/fence-graph/AdvancedEstimatePdf";
 import { estimateFence } from "@/lib/fence-graph/engine";
 import type { FenceProjectInput, FenceEstimateResult } from "@/lib/fence-graph/types";
+import { updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "@/lib/fence-graph/bom/shared";
+import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
 
 // ── Fetch org material prices ─────────────────────────────────────
 // Returns { [sku]: unit_cost } for the current org's materials.
@@ -206,5 +208,115 @@ export async function generateCustomerProposalPdf(
     return { success: true, pdf: Buffer.from(buffer).toString("base64") };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Proposal generation failed" };
+  }
+}
+
+// ── Get org waste calibration ─────────────────────────────────────
+export async function getOrgCalibration(): Promise<WasteCalibration> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return DEFAULT_WASTE_CALIBRATION;
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+    if (!profile) return DEFAULT_WASTE_CALIBRATION;
+
+    const { data: org } = await admin
+      .from("organizations").select("waste_calibration_json").eq("id", profile.org_id).single();
+
+    return (org?.waste_calibration_json as WasteCalibration | null) ?? DEFAULT_WASTE_CALIBRATION;
+  } catch {
+    return DEFAULT_WASTE_CALIBRATION;
+  }
+}
+
+// ── Get a single saved estimate ──────────────────────────────────
+export async function getSavedEstimate(id: string): Promise<{
+  id: string; name: string; input_json: FenceProjectInput;
+  result_json: FenceEstimateResult; labor_rate: number; waste_pct: number;
+  total_lf: number; total_cost: number; status: string;
+  closed_at: string | null; closeout_actual_waste_pct: number | null; closeout_notes: string | null;
+} | null> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+    if (!profile) return null;
+
+    const { data } = await admin
+      .from("fence_graphs")
+      .select("*")
+      .eq("id", id)
+      .eq("org_id", profile.org_id)
+      .single();
+
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Close out an estimate (job complete — record actual waste) ────
+// This is the core of the feedback loop.
+// Contractor enters actual waste %. We update the org EWMA calibration.
+export async function closeoutEstimate(
+  estimateId: string,
+  actualWastePct: number,  // 0–100 (user enters as percent, e.g. 7 = 7%)
+  notes: string
+): Promise<{ success: boolean; newCalibration?: WasteCalibration; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Not authenticated" };
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+    if (!profile) return { success: false, error: "Profile not found" };
+
+    // Validate estimate belongs to this org
+    const { data: est } = await admin
+      .from("fence_graphs").select("id, status")
+      .eq("id", estimateId).eq("org_id", profile.org_id).single();
+    if (!est) return { success: false, error: "Estimate not found" };
+    if (est.status === "closed") return { success: false, error: "Estimate already closed" };
+
+    const actualFactor = actualWastePct / 100;
+
+    // Fetch current calibration
+    const { data: org } = await admin
+      .from("organizations").select("waste_calibration_json").eq("id", profile.org_id).single();
+    const currentCal: WasteCalibration =
+      (org?.waste_calibration_json as WasteCalibration | null) ?? DEFAULT_WASTE_CALIBRATION;
+
+    // EWMA update
+    const newCal = updateWasteCalibration(currentCal, actualFactor);
+
+    // Update org calibration
+    await admin
+      .from("organizations")
+      .update({ waste_calibration_json: newCal as unknown as Record<string, unknown> })
+      .eq("id", profile.org_id);
+
+    // Mark estimate as closed
+    await admin
+      .from("fence_graphs")
+      .update({
+        status: "closed",
+        closed_at: new Date().toISOString(),
+        closeout_actual_waste_pct: actualFactor,
+        closeout_notes: notes || null,
+      })
+      .eq("id", estimateId);
+
+    return { success: true, newCalibration: newCal };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Closeout failed" };
   }
 }
