@@ -46,17 +46,20 @@ export default async function JobsPage({
   let kanbanJobs: KanbanJob[] = (jobs ?? []).map((job: {
     id: string; status: string; total_price: number | null; gross_margin_pct: number | null;
     scheduled_date: string | null; assigned_foreman_id: string | null;
-    customers: { name: string }[] | null; estimates: { fence_type: string; linear_feet: number }[] | null;
-  }) => ({
+    customers: { name: string } | { name: string }[] | null; estimates: { fence_type: string; linear_feet: number } | { fence_type: string; linear_feet: number }[] | null;
+  }) => {
+    const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
+    const estimate = Array.isArray(job.estimates) ? job.estimates[0] : job.estimates;
+    return {
     id: job.id, status: job.status, total_price: job.total_price,
     gross_margin_pct: isOwner ? job.gross_margin_pct : null,
     scheduled_date: job.scheduled_date,
-    customerName: job.customers?.[0]?.name ?? "No customer",
-    fenceType: job.estimates?.[0]?.fence_type?.replace(/_/g, " ") ?? "—",
-    linearFeet: job.estimates?.[0]?.linear_feet ?? 0,
+    customerName: customer?.name ?? "No customer",
+    fenceType: estimate?.fence_type?.replace(/_/g, " ") ?? "—",
+    linearFeet: estimate?.linear_feet ?? 0,
     foremanName: job.assigned_foreman_id ? (foremanMap[job.assigned_foreman_id] ?? "Unassigned") : "Unassigned",
     isOwner,
-  }));
+  };});
 
   if (q) {
     const search = q.toLowerCase();
