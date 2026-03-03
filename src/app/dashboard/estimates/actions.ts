@@ -177,9 +177,9 @@ export async function createEstimate(fd: FormData) {
     customerId = custVal;
   }
 
-  // Customer is required — prevent orphan estimates
+  // Customer is required — redirect with error instead of throwing (native form action)
   if (!customerId) {
-    throw new Error("Customer is required. Please select or create a customer.");
+    redirect("/dashboard/estimates/new?error=A+customer+is+required.+Select+an+existing+customer+or+fill+in+the+new+customer+name.");
   }
 
   const title =
@@ -259,9 +259,9 @@ export async function updateEstimate(fd: FormData) {
     `${FENCE_TYPE_CONFIGS[inputs.fenceType].label} Fence Estimate`;
   const customerId = (fd.get("customerId") as string) || null;
 
-  // Customer is required — prevent orphan estimates
+  // Customer is required — redirect with error instead of throwing (native form action)
   if (!customerId) {
-    throw new Error("Customer is required. Please select or create a customer.");
+    redirect(`/dashboard/estimates/${estimateId}/edit?error=A+customer+is+required.`);
   }
 
   // Re-run engine

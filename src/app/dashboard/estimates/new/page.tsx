@@ -9,7 +9,7 @@ import { FENCE_TYPE_OPTIONS } from "@/lib/estimate-engine";
 export default async function NewEstimatePage({
   searchParams,
 }: {
-  searchParams: Promise<{ customerId?: string }>;
+  searchParams: Promise<{ customerId?: string; error?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -20,7 +20,7 @@ export default async function NewEstimatePage({
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "estimates")) redirect("/dashboard");
 
-  const { customerId = "" } = await searchParams;
+  const { customerId = "", error = "" } = await searchParams;
 
   const { data: customers } = await supabase
     .from("customers")
@@ -42,6 +42,12 @@ export default async function NewEstimatePage({
           New Estimate
         </h1>
       </div>
+
+      {error && (
+        <div className="max-w-2xl mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+          {decodeURIComponent(error)}
+        </div>
+      )}
 
       <form
         action={createEstimate}
