@@ -219,6 +219,10 @@ export default async function JobDetailPage({
     (co: { status: string }) => co.status === "pending"
   );
 
+  // Typed accessors for columns added via migration (not in generated types)
+  const invoiceUrl = (job as unknown as { invoice_url?: string | null }).invoice_url ?? null;
+  const paidAt = (job as unknown as { paid_at?: string | null }).paid_at ?? null;
+
   /*  render  */
   return (
     <>
@@ -261,9 +265,9 @@ export default async function JobDetailPage({
           <span className={`text-xs px-3 py-1 rounded-full font-semibold ${STATUS_STYLES[job.status] || "bg-gray-100 text-gray-600"}`}>
             {job.status.toUpperCase()}
           </span>
-          {job.status === "complete" && (job as Record<string, unknown>).invoice_url && (
+          {job.status === "complete" && invoiceUrl && (
             <a
-              href={(job as Record<string, unknown>).invoice_url as string}
+              href={invoiceUrl!}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-fence-600 text-white rounded-lg font-semibold hover:bg-fence-700 transition-colors"
@@ -275,17 +279,17 @@ export default async function JobDetailPage({
       </div>
 
       {/* Invoice Banner — shown when job is complete and invoice exists */}
-      {job.status === "complete" && (job as Record<string, unknown>).invoice_url && (
+      {job.status === "complete" && invoiceUrl && (
         <div className="mb-6 flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-5 py-4">
           <div>
             <p className="text-sm font-semibold text-green-800">Job Complete — Invoice Sent</p>
             <p className="text-xs text-green-600 mt-0.5">
               Invoice was emailed to the customer.
-              {(job as Record<string, unknown>).paid_at && ` Marked paid ${new Date((job as Record<string, unknown>).paid_at as string).toLocaleDateString()}.`}
+              {paidAt && ` Marked paid ${new Date(paidAt!).toLocaleDateString()}.`}
             </p>
           </div>
           <a
-            href={(job as Record<string, unknown>).invoice_url as string}
+            href={invoiceUrl!}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-shrink-0 text-sm px-4 py-2 bg-green-700 text-white rounded-lg font-semibold hover:bg-green-800 transition-colors"
@@ -1130,9 +1134,9 @@ export default async function JobDetailPage({
               <p className="text-xs text-gray-400 mt-2">Marks job complete, generates PDF invoice, and emails the customer.</p>
             </div>
           )}
-          {job.status === "complete" && (job as Record<string, unknown>).invoice_url && (
+          {job.status === "complete" && invoiceUrl && (
             <a
-              href={(job as Record<string, unknown>).invoice_url as string}
+              href={invoiceUrl!}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block text-sm px-4 py-2 bg-fence-600 text-white rounded-lg font-semibold hover:bg-fence-700 transition-colors"
