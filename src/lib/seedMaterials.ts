@@ -32,10 +32,12 @@ export async function seedMaterials(admin: SupabaseClient, orgId: string): Promi
     { name: "Chain Link Terminal Post 2.5in",sku: "CL_POST_TERM",   category: "chain_link", unit: "ea",   unit_cost: 28.00,  unit_price: 56.00  },
     { name: "Chain Link Top Rail 1.5in x 21ft", sku: "CL_TOPRAIL", category: "chain_link", unit: "ea",   unit_cost: 18.00,  unit_price: 36.00  },
     { name: "Chain Link Tension Wire",       sku: "CL_TENSION_WIRE",category: "chain_link", unit: "roll", unit_cost: 20.00,  unit_price: 40.00  },
-    // Aluminum
+    // Aluminum / Ornamental
     { name: "Aluminum Picket Panel 4ft",  sku: "ALUM_PANEL_4FT",  category: "aluminum",  unit: "ea",  unit_cost: 65.00,  unit_price: 130.00 },
     { name: "Aluminum Picket Panel 6ft",  sku: "ALUM_PANEL_6FT",  category: "aluminum",  unit: "ea",  unit_cost: 85.00,  unit_price: 170.00 },
     { name: "Aluminum Post 2x2x8",        sku: "ALUM_POST_2X2",   category: "aluminum",  unit: "ea",  unit_cost: 28.00,  unit_price: 56.00  },
+    { name: "Aluminum Flat Top Rail 1x1.5x21ft", sku: "ALUM_RAIL_FLAT", category: "aluminum", unit: "ea", unit_cost: 22.00, unit_price: 44.00 },
+    { name: "Aluminum Post Cap 2x2",      sku: "ALUM_POST_CAP",   category: "aluminum",  unit: "ea",  unit_cost: 3.00,   unit_price: 6.00   },
     // Gates
     { name: "Wood Walk Gate 4ft",         sku: "GATE_WOOD_4FT",   category: "gate",       unit: "ea",  unit_cost: 95.00,  unit_price: 190.00 },
     { name: "Wood Walk Gate 6ft",         sku: "GATE_WOOD_6FT",   category: "gate",       unit: "ea",  unit_cost: 120.00, unit_price: 240.00 },

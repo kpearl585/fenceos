@@ -31,12 +31,20 @@ export const FENCE_TYPE_CONFIGS: Record<FenceType, FenceTypeConfig> = {
     laborHoursPer100Ft: 7,
     concreteBagsPerPost: 2,
   },
+  aluminum: {
+    label: "Aluminum / Ornamental",
+    defaultPostSpacing: 6,
+    defaultHeight: 4,
+    laborHoursPer100Ft: 7,
+    concreteBagsPerPost: 2,
+  },
 };
 
 export const FENCE_TYPE_OPTIONS: { value: FenceType; label: string }[] = [
   { value: "wood_privacy", label: "Wood Privacy" },
   { value: "chain_link", label: "Chain Link" },
   { value: "vinyl", label: "Vinyl" },
+  { value: "aluminum", label: "Aluminum / Ornamental" },
 ];
 
 /** Required SKUs per fence type — engine will error if any are missing */
@@ -66,5 +74,13 @@ export const REQUIRED_SKUS: Record<FenceType, string[]> = {
     "CONCRETE_BAG_80LB",
     "VINYL_GATE_SINGLE",
     "VINYL_GATE_HARDWARE_SET",
+  ],
+  aluminum: [
+    "ALUM_PANEL_4FT",
+    "ALUM_POST_2X2",
+    "CONCRETE_BAG_80LB",
+    "GATE_ALUM_4FT",
+    "HINGE_HD",
+    "GATE_LATCH",
   ],
 };

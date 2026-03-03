@@ -3,9 +3,10 @@
 import { useState } from "react";
 
 const PRICING = {
-  "Wood Privacy": { minLF: 28, maxLF: 42, minGate: 350, maxGate: 600 },
-  "Chain Link":   { minLF: 18, maxLF: 28, minGate: 250, maxGate: 450 },
-  "Vinyl":        { minLF: 38, maxLF: 55, minGate: 400, maxGate: 700 },
+  "Wood Privacy":         { minLF: 28, maxLF: 42, minGate: 350, maxGate: 600 },
+  "Chain Link":           { minLF: 18, maxLF: 28, minGate: 250, maxGate: 450 },
+  "Vinyl":                { minLF: 38, maxLF: 55, minGate: 400, maxGate: 700 },
+  "Aluminum / Ornamental":{ minLF: 35, maxLF: 55, minGate: 400, maxGate: 750 },
   "Aluminum":     { minLF: 35, maxLF: 55, minGate: 350, maxGate: 650 },
   "Split Rail":   { minLF: 20, maxLF: 32, minGate: 280, maxGate: 450 },
 };

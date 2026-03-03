@@ -12,7 +12,7 @@ export type EstimateStatus =
 export type JobStatus = 'scheduled' | 'active' | 'complete' | 'cancelled'
 export type UserRole = 'owner' | 'sales' | 'foreman'
 export type ChangeOrderStatus = 'pending' | 'approved' | 'rejected'
-export type FenceType = 'wood_privacy' | 'chain_link' | 'vinyl'
+export type FenceType = 'wood_privacy' | 'chain_link' | 'vinyl' | 'aluminum'
 export type LineItemType = 'material' | 'labor'
 
 export interface Organization {
