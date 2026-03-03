@@ -140,8 +140,9 @@ export async function markJobPaidAndSendInvoice(jobId: string) {
   // Generate PDF buffer
   let pdfBuffer: Buffer;
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pdfBuffer = await renderToBuffer(
-      React.createElement(InvoicePdf, { data: invoiceData })
+      React.createElement(InvoicePdf, { data: invoiceData }) as React.ReactElement<any>
     );
   } catch (e) {
     console.error("PDF generation failed:", e);
