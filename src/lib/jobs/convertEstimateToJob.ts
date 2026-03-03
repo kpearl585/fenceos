@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
 
@@ -20,16 +20,20 @@ export async function convertEstimateToJob(
 ): Promise<{ jobId: string }> {
   const tag = `[convertEstimateToJob][${estimateId.slice(0, 8)}]`;
 
-  const supabase = await createClient();
+  // Auth check via user-scoped client
+  const authSupabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await authSupabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const profile = await ensureProfile(supabase, user);
+  const profile = await ensureProfile(authSupabase, user);
   if (!canAccess(profile.role, "estimates")) {
     throw new Error("You do not have access to convert estimates");
   }
+
+  // Use admin client for all DB operations to bypass RLS
+  const supabase = createAdminClient();
 
   // 1. Load estimate
   const { data: est, error: estErr } = await supabase
@@ -45,19 +49,16 @@ export async function convertEstimateToJob(
   }
 
 
-  // 2. Validate status — must be deposit_paid (or quoted for legacy)
-  if (est.status !== "deposit_paid" && est.status !== "quoted") {
+  // 2. Validate status — allow quoted, accepted, or deposit_paid
+  const allowedStatuses = ["quoted", "accepted", "deposit_paid"];
+  if (!allowedStatuses.includes(est.status)) {
     throw new Error(
-      `Cannot convert estimate with status "${est.status}". Deposit must be paid before job conversion.`
+      `Cannot convert estimate with status "${est.status}".`
     );
   }
 
-  // 3. Enforce deposit gate — block if deposit required but not paid
-  if (est.deposit_required_amount && !est.deposit_paid) {
-    throw new Error(
-      "Deposit must be paid before job conversion. Please collect the deposit first."
-    );
-  }
+  // Deposit gate removed — contractors manage deposits outside the app.
+  // Job conversion is allowed regardless of deposit status.
 
   // 4. Prevent double conversion
   const { data: existingJob } = await supabase

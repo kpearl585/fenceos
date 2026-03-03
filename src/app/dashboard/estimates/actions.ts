@@ -430,15 +430,21 @@ export async function deleteEstimate(fd: FormData) {
 
 export async function convertToJob(fd: FormData) {
   const estimateId = fd.get("estimateId") as string;
-  if (!estimateId) throw new Error("Missing estimateId");
+  if (!estimateId) redirect("/dashboard/estimates?error=missing_id");
 
   const { convertEstimateToJob } = await import(
     "@/lib/jobs/convertEstimateToJob"
   );
 
-  // Do NOT wrap redirect() in try/catch — Next.js throws NEXT_REDIRECT
-  // internally and it must propagate unimpeded.
-  await convertEstimateToJob(estimateId);
+  try {
+    await convertEstimateToJob(estimateId);
+  } catch (e) {
+    const msg = encodeURIComponent(
+      e instanceof Error ? e.message : "Failed to convert estimate"
+    );
+    redirect(`/dashboard/estimates/${estimateId}?error=${msg}`);
+  }
+
   redirect(`/dashboard/jobs`);
 }
 
