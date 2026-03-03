@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
+import UpgradeGate from "@/components/dashboard/UpgradeGate";
+import { getPlanLimits } from "@/lib/planLimits";
 
 function currency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(n);
@@ -54,6 +56,12 @@ export default async function MetricsDashboard() {
   if (!user) redirect("/login");
   const profile = await ensureProfile(supabase, user);
   if (profile.role !== "owner") redirect("/dashboard");
+
+  // Plan gate — advanced reporting requires Business
+  const { data: orgForPlan } = await supabase.from("organizations").select("plan").eq("id", profile.org_id).single();
+  if (!getPlanLimits(orgForPlan?.plan).advancedReporting) {
+    return <UpgradeGate feature="Advanced Reporting" requiredPlan="Business" description="Full KPI dashboard with margin analysis, revenue trends, close rate tracking, and business health scoring. Available on Business." />;
+  }
 
   const admin = createAdminClient();
   const orgId = profile.org_id;

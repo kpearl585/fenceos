@@ -7,6 +7,8 @@ import OrgNameForm from "@/components/settings/OrgNameForm";
 import BrandingForm from "@/components/settings/BrandingForm";
 import TeamMembersSection from "@/components/settings/TeamMembersSection";
 import BillingPortalButton from "@/components/settings/BillingPortalButton";
+import { planHasCustomBranding } from "@/lib/planLimits";
+import Link from "next/link";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -119,13 +121,25 @@ export default async function SettingsPage() {
         {/* Branding */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="font-semibold text-fence-900 mb-4">Branding</h2>
-          <BrandingForm
-            orgId={profile.org_id}
-            initialPrimaryColor={branding?.primary_color || '#2D6A4F'}
-            initialAccentColor={branding?.accent_color || '#4ade80'}
-            initialLogoUrl={branding?.logo_url || ''}
-            initialFooterNote={branding?.footer_note || ''}
-          />
+          {planHasCustomBranding((org as { plan?: string } | null)?.plan) ? (
+            <BrandingForm
+              orgId={profile.org_id}
+              initialPrimaryColor={branding?.primary_color || '#2D6A4F'}
+              initialAccentColor={branding?.accent_color || '#4ade80'}
+              initialLogoUrl={branding?.logo_url || ''}
+              initialFooterNote={branding?.footer_note || ''}
+            />
+          ) : (
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Custom PDF Branding</p>
+                <p className="text-xs text-gray-400 mt-0.5">Add your logo and brand colors to all PDF estimates. Available on Pro and above.</p>
+              </div>
+              <Link href="/dashboard/upgrade" className="bg-fence-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-fence-700 transition-colors whitespace-nowrap">
+                Upgrade to Pro
+              </Link>
+            </div>
+          )}
         </div>
 
 

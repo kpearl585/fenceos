@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
 import Link from "next/link";
 import JobKanban, { type KanbanJob } from "@/components/jobs/JobKanban";
+import UpgradeGate from "@/components/dashboard/UpgradeGate";
+import { planHasJobs } from "@/lib/planLimits";
 
 const STATUS_FILTERS = [
   { value: "", label: "All Jobs" },
@@ -25,6 +27,12 @@ export default async function JobsPage({
   const profile = await ensureProfile(supabase, user);
   if (!canAccess(profile.role, "jobs")) redirect("/dashboard");
   const isOwner = profile.role === "owner";
+
+  // Plan gate — jobs require Pro or above
+  const { data: orgForPlan } = await supabase.from("organizations").select("plan").eq("id", profile.org_id).single();
+  if (!planHasJobs(orgForPlan?.plan)) {
+    return <UpgradeGate feature="Jobs & Foreman Board" requiredPlan="Pro" description="Track every job from scheduled to complete, assign foremen, verify materials, and manage change orders. Available on Pro and Business." />;
+  }
 
   let query = supabase
     .from("jobs")

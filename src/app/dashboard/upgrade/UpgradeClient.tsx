@@ -9,8 +9,8 @@ const PLANS = [
     monthlyPrice: 49,
     annualPrice: 490,
     annualSavings: 98,
-    description: "Perfect for solo operators",
-    features: ["1 user", "20 estimates/month", "Customer portal", "PDF generation", "Email notifications"],
+    description: "Perfect for solo operators who need fast, accurate estimates.",
+    features: ["Unlimited estimates", "Auto material calculations", "Margin protection", "PDF quote generation", "1 user", "Email support"],
     highlighted: false,
   },
   {
@@ -19,8 +19,8 @@ const PLANS = [
     monthlyPrice: 89,
     annualPrice: 890,
     annualSavings: 178,
-    description: "For growing operations",
-    features: ["5 users", "Unlimited estimates", "Foreman access", "Job tracking", "Materials management", "Everything in Starter"],
+    description: "For contractors running a crew. Everything in Starter, plus job management.",
+    features: ["Everything in Starter", "Jobs & foreman board", "Foreman mobile access", "Change order tracking", "Custom branding on PDFs", "3 users", "Priority support"],
     highlighted: true,
   },
   {
@@ -29,8 +29,8 @@ const PLANS = [
     monthlyPrice: 179,
     annualPrice: 1790,
     annualSavings: 358,
-    description: "For established companies",
-    features: ["Unlimited users", "Priority support", "Custom PDF branding", "API access", "Everything in Pro"],
+    description: "For growing operations running multiple crews and high job volume.",
+    features: ["Everything in Pro", "Unlimited users", "Advanced reporting", "Dedicated onboarding", "Phone support"],
     highlighted: false,
   },
 ];
