@@ -11,12 +11,12 @@ export default function CTAFooter() {
             Every job you quote without FenceEstimatePro is a job where your profit is at risk. Fix that today.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/signup"
+            <a
+              href="#waitlist"
               className="inline-flex items-center justify-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold text-lg px-10 py-4 rounded-xl transition-colors"
             >
-              Start Free Trial →
-            </Link>
+              Request Early Access →
+            </a>
             <Link
               href="/login"
               className="inline-flex items-center justify-center border-2 border-fence-600 text-fence-200 hover:border-fence-400 hover:text-white font-semibold text-lg px-10 py-4 rounded-xl transition-colors"
@@ -24,7 +24,7 @@ export default function CTAFooter() {
               Login to Dashboard
             </Link>
           </div>
-          <p className="mt-4 text-fence-400 text-sm">14-day free trial · No credit card · Cancel anytime</p>
+          <p className="mt-4 text-fence-400 text-sm">Currently in private beta — limited spots available</p>
           <div className="mt-5 inline-flex items-center gap-2 bg-fence-800/60 border border-fence-700 rounded-full px-4 py-1.5 text-xs font-semibold">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#c9a84c" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span style={{ color: "#c9a84c" }}>Veteran-Owned &amp; Operated</span>
@@ -47,7 +47,7 @@ export default function CTAFooter() {
             <a href="#how-it-works" className="hover:text-fence-200 transition-colors">How It Works</a>
             <a href="#pricing" className="hover:text-fence-200 transition-colors">Pricing</a>
             <Link href="/login" className="hover:text-fence-200 transition-colors">Login</Link>
-            <Link href="/signup" className="hover:text-fence-200 transition-colors">Start Free Trial</Link>
+            <a href="#waitlist" className="hover:text-fence-200 transition-colors">Request Access</a>
           </div>
           <div className="text-center">
             <p className="text-fence-600 text-xs mb-1">A Pearl Ventures Company</p>

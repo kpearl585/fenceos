@@ -1,39 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { sendEmail, waitlistWelcomeEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
-  if (!email || !email.includes("@")) {
-    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
-  }
-
-  const normalizedEmail = email.toLowerCase().trim();
-
   try {
+    const { email } = await req.json();
+    if (!email?.trim() || !email.includes("@")) {
+      return NextResponse.json({ error: "Valid email required." }, { status: 400 });
+    }
+
     const admin = createAdminClient();
-    const { error } = await admin
+
+    // Save to waitlist table (upsert to avoid duplicates)
+    const { error: dbErr } = await admin
       .from("waitlist")
-      .insert({ email: normalizedEmail, source: "landing_page" });
+      .upsert({ email: email.trim().toLowerCase(), created_at: new Date().toISOString() }, { onConflict: "email" });
 
-    if (error && !error.message.includes("duplicate")) {
-      return NextResponse.json({ error: "Failed" }, { status: 500 });
+    if (dbErr) {
+      console.error("[waitlist] DB error:", dbErr.message);
+      // Non-blocking — still send notification
     }
 
-    // Send Day 0 welcome email — never fail the signup if this errors
-    try {
-      await sendEmail({
-        to: normalizedEmail,
-        subject: "You're on the list. Here's what's coming.",
-        html: waitlistWelcomeEmail({ email: normalizedEmail }),
-      });
-    } catch (emailErr) {
-      console.error("[waitlist] Welcome email failed:", emailErr);
-    }
+    // Notify operator
+    await sendEmail({
+      to: "Pearllabs@icloud.com",
+      subject: `New waitlist signup: ${email}`,
+      html: `<p style="font-family:sans-serif;">New waitlist signup on FenceEstimatePro:<br><br><strong>${email}</strong></p>`,
+    });
+
+    return NextResponse.json({ success: true });
   } catch (err) {
-    // Waitlist table may not exist yet — fail gracefully
-    console.error("[waitlist] Insert error:", err);
+    console.error("[waitlist] error:", err);
+    return NextResponse.json({ error: "Internal error." }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true });
 }

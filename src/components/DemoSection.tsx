@@ -128,8 +128,8 @@ export default function DemoSection() {
         {/* CTA below mockup */}
         <div className="text-center mt-10">
           <p className="text-white/30 text-sm mb-4">Real data. Real margin. Built for contractors who run a real business.</p>
-          <a href="/signup" className="inline-flex items-center gap-2 bg-fence-600 hover:bg-fence-500 text-white font-semibold px-8 py-3.5 rounded-xl transition-colors text-sm">
-            Start Free Trial →
+          <a href="#waitlist" className="inline-flex items-center gap-2 bg-fence-600 hover:bg-fence-500 text-white font-semibold px-8 py-3.5 rounded-xl transition-colors text-sm">
+            Request Early Access →
           </a>
         </div>
       </div>
