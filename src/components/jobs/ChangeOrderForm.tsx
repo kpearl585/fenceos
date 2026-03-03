@@ -83,8 +83,10 @@ export default function ChangeOrderForm({
     try {
       const result = await submitChangeOrder(fd);
       if (result?.success) {
-        router.push(`/dashboard/jobs/${result.jobId}`);
+        // Refresh server data then reset form — router.push to same URL is a no-op
         router.refresh();
+        setItems([emptyItem()]);
+        setSubmitting(false);
       } else {
         setError(result?.error ?? "Something went wrong. Please try again.");
         setSubmitting(false);
