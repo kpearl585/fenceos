@@ -90,7 +90,7 @@ export async function submitChangeOrder(fd: FormData) {
       org_id: profile.org_id,
       job_id: jobId,
       status: "pending",
-      created_by: user.id,
+      created_by: profile.id,
       description: reason || "",
       reason,
       subtotal: calc.subtotal,
@@ -130,7 +130,7 @@ export async function submitChangeOrder(fd: FormData) {
   // pending → approved and updates job totals.
   if (autoApprove) {
     try {
-      await approveChangeOrder(co.id, user.id);
+      await approveChangeOrder(co.id, profile.id);
     } catch (e) {
       // CO was created; auto-approve failed — return success so user sees it as pending
       console.error("Auto-approve failed:", e);
@@ -153,7 +153,7 @@ export async function approveChangeOrderAction(fd: FormData) {
     throw new Error("Only owners can approve change orders");
   }
 
-  await approveChangeOrder(changeOrderId, user.id);
+  await approveChangeOrder(changeOrderId, profile.id);
   redirect(`/dashboard/jobs/${jobId}`);
 }
 
