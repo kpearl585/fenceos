@@ -212,6 +212,9 @@ export default async function JobDetailPage({
     photoUrls[p.id] = data.publicUrl;
   }
 
+  const approvedCOs = changeOrders.filter(
+    (co: { status: string }) => co.status === "approved"
+  );
   const pendingCOs = changeOrders.filter(
     (co: { status: string }) => co.status === "pending"
   );
@@ -1042,10 +1045,108 @@ export default async function JobDetailPage({
         );
       })()}
 
+      {/* Final Invoice Section */}
+      {(job.status === "active" || job.status === "complete") && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+          <h2 className="font-semibold text-fence-900 mb-4 text-base">Final Invoice</h2>
+
+          {/* Original Estimate Line Items */}
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Original Estimate</p>
+            <div className="rounded-lg border border-gray-100 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-xs text-gray-500 font-semibold">Item</th>
+                    <th className="text-right px-3 py-2 text-xs text-gray-500 font-semibold">Qty</th>
+                    <th className="text-right px-3 py-2 text-xs text-gray-500 font-semibold">Unit Price</th>
+                    <th className="text-right px-3 py-2 text-xs text-gray-500 font-semibold">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {materialItems.length === 0 ? (
+                    <tr><td colSpan={4} className="px-3 py-3 text-gray-400 text-xs text-center">No line items</td></tr>
+                  ) : (
+                    materialItems.map((item: { id: string; name: string; qty: number; unit: string; unit_price: number; extended_price: number }) => (
+                      <tr key={item.id}>
+                        <td className="px-3 py-2 text-gray-800">{item.name}</td>
+                        <td className="px-3 py-2 text-right text-gray-600">{item.qty} {item.unit}</td>
+                        <td className="px-3 py-2 text-right text-gray-600">{fmt(item.unit_price)}</td>
+                        <td className="px-3 py-2 text-right font-medium text-gray-800">{fmt(item.extended_price)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Approved Change Orders */}
+          {approvedCOs.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Approved Change Orders</p>
+              {approvedCOs.map((co: { id: string; reason?: string; description?: string; subtotal: number; change_order_line_items?: { id?: string; name: string; qty: number; unit_price: number; extended_price: number }[] }) => (
+                <div key={co.id} className="rounded-lg border border-amber-100 bg-amber-50 overflow-hidden mb-2">
+                  <div className="px-3 py-2 border-b border-amber-100">
+                    <p className="text-xs font-semibold text-amber-800">{co.reason || co.description || "Change Order"}</p>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-amber-100">
+                      {(Array.isArray(co.change_order_line_items) ? co.change_order_line_items : []).map((li, idx) => (
+                        <tr key={li.id ?? idx}>
+                          <td className="px-3 py-2 text-gray-800">{li.name}</td>
+                          <td className="px-3 py-2 text-right text-gray-600">{li.qty}</td>
+                          <td className="px-3 py-2 text-right text-gray-600">{fmt(li.unit_price)}</td>
+                          <td className="px-3 py-2 text-right font-medium text-gray-800">{fmt(li.extended_price)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="px-3 py-2 text-right text-xs font-semibold text-amber-800 border-t border-amber-100">
+                    CO Subtotal: {fmt(co.subtotal)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Invoice Total */}
+          <div className="flex justify-end border-t border-gray-200 pt-3 mb-4">
+            <div className="text-right">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Total Due</p>
+              <p className="text-2xl font-bold text-fence-900">{fmt(job.total_price)}</p>
+            </div>
+          </div>
+
+          {/* Action */}
+          {job.status === "active" && canExecute && (
+            <div>
+              <MarkPaidModal
+                jobId={job.id}
+                jobTitle={job.title}
+                totalDue={Number(job.total_price ?? 0)}
+                customerEmail={customer?.email ?? undefined}
+              />
+              <p className="text-xs text-gray-400 mt-2">Marks job complete, generates PDF invoice, and emails the customer.</p>
+            </div>
+          )}
+          {job.status === "complete" && (job as Record<string, unknown>).invoice_url && (
+            <a
+              href={(job as Record<string, unknown>).invoice_url as string}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-sm px-4 py-2 bg-fence-600 text-white rounded-lg font-semibold hover:bg-fence-700 transition-colors"
+            >
+              Download Invoice PDF
+            </a>
+          )}
+        </div>
+      )}
+
       {/* Status Transitions */}
       {job.status !== "complete" && job.status !== "cancelled" && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <h2 className="font-semibold text-fence-900 mb-3">Status</h2>
+          <h2 className="font-semibold text-fence-900 mb-3">Job Actions</h2>
           <div className="flex flex-wrap gap-2">
             {job.status === "scheduled" && canExecute && (
               <form action={transitionJobStatus}>
@@ -1058,14 +1159,6 @@ export default async function JobDetailPage({
                   Start Job
                 </button>
               </form>
-            )}
-            {job.status === "active" && canExecute && (
-              <MarkPaidModal
-                jobId={job.id}
-                jobTitle={job.title}
-                totalDue={Number(job.total_price ?? 0)}
-                customerEmail={customer?.email ?? undefined}
-              />
             )}
             {canManage && (
               <form action={transitionJobStatus}>
@@ -1083,12 +1176,6 @@ export default async function JobDetailPage({
           {!allMaterialsVerified && job.status === "scheduled" && (
             <p className="text-xs text-amber-600 mt-2">
               All materials must be verified before starting.
-            </p>
-          )}
-          {!allRequiredDone && job.status === "active" && (
-            <p className="text-xs text-amber-600 mt-2">
-              All required checklist items must be completed before marking
-              complete.
             </p>
           )}
         </div>
