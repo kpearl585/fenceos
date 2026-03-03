@@ -25,13 +25,14 @@ export async function seedMaterials(admin: SupabaseClient, orgId: string): Promi
     { name: "Vinyl Post 5x5x10",       sku: "VINYL_POST_5X5",   category: "vinyl_post",    unit: "ea",  unit_cost: 35.00,  unit_price: 70.00  },
     { name: "Vinyl Post Cap",          sku: "VINYL_POST_CAP",   category: "vinyl_post",    unit: "ea",  unit_cost: 4.00,   unit_price: 8.00   },
     { name: "Vinyl Rail 8ft",          sku: "VINYL_RAIL_8FT",   category: "vinyl_rail",    unit: "ea",  unit_cost: 18.00,  unit_price: 36.00  },
-    // Chain Link
-    { name: "Chain Link Fabric 4ft x 50ft",  sku: "CL_FABRIC_4FT",  category: "chain_link", unit: "roll", unit_cost: 85.00,  unit_price: 170.00 },
-    { name: "Chain Link Fabric 6ft x 50ft",  sku: "CL_FABRIC_6FT",  category: "chain_link", unit: "roll", unit_cost: 120.00, unit_price: 240.00 },
-    { name: "Chain Link Post 2in x 10ft",    sku: "CL_POST_2IN",    category: "chain_link", unit: "ea",   unit_cost: 22.00,  unit_price: 44.00  },
-    { name: "Chain Link Terminal Post 2.5in",sku: "CL_POST_TERM",   category: "chain_link", unit: "ea",   unit_cost: 28.00,  unit_price: 56.00  },
-    { name: "Chain Link Top Rail 1.5in x 21ft", sku: "CL_TOPRAIL", category: "chain_link", unit: "ea",   unit_cost: 18.00,  unit_price: 36.00  },
-    { name: "Chain Link Tension Wire",       sku: "CL_TENSION_WIRE",category: "chain_link", unit: "roll", unit_cost: 20.00,  unit_price: 40.00  },
+    // Chain Link — fabric & top rail priced PER FOOT (engine calculates in linear ft)
+    // $85/50ft roll = $1.70/ft cost; $18/21ft section = $0.86/ft cost
+    { name: "Chain Link Fabric 4ft (per ft)", sku: "CL_FABRIC_4FT",  category: "chain_link", unit: "ft",  unit_cost: 1.70,   unit_price: 3.40  },
+    { name: "Chain Link Fabric 6ft (per ft)", sku: "CL_FABRIC_6FT",  category: "chain_link", unit: "ft",  unit_cost: 2.40,   unit_price: 4.80  },
+    { name: "Chain Link Post 2in x 10ft",     sku: "CL_POST_2IN",    category: "chain_link", unit: "ea",  unit_cost: 22.00,  unit_price: 44.00 },
+    { name: "Chain Link Terminal Post 2.5in", sku: "CL_POST_TERM",   category: "chain_link", unit: "ea",  unit_cost: 28.00,  unit_price: 56.00 },
+    { name: "Chain Link Top Rail (per ft)",   sku: "CL_TOPRAIL",     category: "chain_link", unit: "ft",  unit_cost: 0.90,   unit_price: 1.80  },
+    { name: "Chain Link Tension Wire",        sku: "CL_TENSION_WIRE",category: "chain_link", unit: "ea",  unit_cost: 20.00,  unit_price: 40.00 },
     // Aluminum / Ornamental
     { name: "Aluminum Picket Panel 4ft",  sku: "ALUM_PANEL_4FT",  category: "aluminum",  unit: "ea",  unit_cost: 65.00,  unit_price: 130.00 },
     { name: "Aluminum Picket Panel 6ft",  sku: "ALUM_PANEL_6FT",  category: "aluminum",  unit: "ea",  unit_cost: 85.00,  unit_price: 170.00 },
