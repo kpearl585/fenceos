@@ -1,7 +1,6 @@
 "use client";
 
 import PhoneInput from "@/components/ui/PhoneInput";
-import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { createCustomer } from "../actions";
 
 const inputClass =
@@ -47,18 +46,21 @@ export default function CustomerForm() {
         />
       </div>
 
-      {/* Address — Google Places autocomplete */}
-      <div>
+      {/* Address */}
+      <div className="space-y-3">
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
           Address
         </label>
-        <AddressAutocomplete
-          streetName="address"
-          cityName="city"
-          stateName="state"
-          zipName="zip"
+        <input
+          name="address"
+          placeholder="Street address"
           className={inputClass}
         />
+        <div className="grid grid-cols-3 gap-3">
+          <input name="city"  placeholder="City"  className={inputClass} />
+          <input name="state" placeholder="ST" maxLength={2} className={inputClass} />
+          <input name="zip"   placeholder="ZIP"   className={inputClass} />
+        </div>
       </div>
 
       {/* Notes */}
