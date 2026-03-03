@@ -64,7 +64,7 @@ function defaultRun(): RunInput {
   };
 }
 
-export default function AdvancedEstimateClient() {
+export default function AdvancedEstimateClient({ priceMap = {} }: { priceMap?: Record<string, number> }) {
   const [fenceType, setFenceType] = useState<FenceType>("vinyl");
   const [woodStyle, setWoodStyle] = useState<WoodStyle>("dog_ear_privacy");
   const [productLineId, setProductLineId] = useState("vinyl_privacy_6ft");
@@ -77,6 +77,7 @@ export default function AdvancedEstimateClient() {
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
   const [projectName, setProjectName] = useState("New Estimate");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [markupPct, setMarkupPct] = useState(35); // default 35% markup over cost
   const [pdfStatus, setPdfStatus] = useState<"idle" | "generating" | "error">("idle");
   const [isPending, startTransition] = useTransition();
 
@@ -98,11 +99,11 @@ export default function AdvancedEstimateClient() {
   const result: FenceEstimateResult | null = useMemo(() => {
     if (input.runs.length === 0) return null;
     try {
-      return estimateFence(input, { fenceType, woodStyle, laborRatePerHr: laborRate, wastePct: wastePct / 100 });
+      return estimateFence(input, { fenceType, woodStyle, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
     } catch {
       return null;
     }
-  }, [productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates]);
+  }, [productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates, priceMap]);
 
   function updateRun(id: string, patch: Partial<RunInput>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -134,10 +135,12 @@ export default function AdvancedEstimateClient() {
   const totalLF = runs.reduce((s, r) => s + (r.linearFeet || 0), 0);
   const hasValidInput = input.runs.length > 0;
 
+  const bidPrice = result ? Math.round(result.totalCost * (1 + markupPct / 100)) : 0;
+
   async function handleSave() {
     if (!result) return;
     setSaveStatus("saving");
-    const res = await saveAdvancedEstimate(input, result, projectName, laborRate, wastePct / 100);
+    const res = await saveAdvancedEstimate(input, { ...result, projectName, bidPrice } as typeof result & { bidPrice: number }, projectName, laborRate, wastePct / 100);
     setSaveStatus(res.success ? "saved" : "error");
     setTimeout(() => setSaveStatus("idle"), 3000);
   }
@@ -248,6 +251,14 @@ export default function AdvancedEstimateClient() {
               <input
                 type="number" min={1} max={20} value={wastePct}
                 onChange={(e) => setWastePct(Number(e.target.value))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Markup Over Cost (%)</label>
+              <input
+                type="number" min={0} max={200} value={markupPct}
+                onChange={(e) => setMarkupPct(Number(e.target.value))}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
               />
             </div>
@@ -401,25 +412,55 @@ export default function AdvancedEstimateClient() {
           <>
             <div className="bg-fence-950 rounded-xl p-5 text-white">
               <p className="text-fence-400 text-xs font-semibold uppercase tracking-widest mb-3">Estimate Summary</p>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              {/* Cost breakdown */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
-                  <p className="text-fence-400 text-xs">Materials</p>
-                  <p className="text-2xl font-bold">{fmt(result.totalMaterialCost)}</p>
+                  <p className="text-fence-400 text-xs">Materials Cost</p>
+                  <p className="text-xl font-bold">{fmt(result.totalMaterialCost)}</p>
                 </div>
                 <div>
                   <p className="text-fence-400 text-xs">Labor ({result.totalLaborHrs}h)</p>
-                  <p className="text-2xl font-bold">{fmt(result.totalLaborCost)}</p>
+                  <p className="text-xl font-bold">{fmt(result.totalLaborCost)}</p>
                 </div>
               </div>
-              <div className="border-t border-fence-800 pt-3 flex justify-between items-center">
-                <p className="text-fence-300 text-sm font-semibold">Total Cost</p>
-                <p className="text-3xl font-bold text-white">{fmt(result.totalCost)}</p>
+              <div className="border-t border-fence-800 pt-3 mb-3 flex justify-between items-center">
+                <p className="text-fence-400 text-sm">Total Cost</p>
+                <p className="text-xl font-semibold text-fence-200">{fmt(result.totalCost)}</p>
               </div>
+              {/* Bid price */}
+              {result.totalCost > 0 && (() => {
+                const bidPrice = Math.round(result.totalCost * (1 + markupPct / 100));
+                const grossProfit = bidPrice - result.totalCost;
+                const grossMargin = Math.round((grossProfit / bidPrice) * 100);
+                const pricePerLF = totalLF > 0 ? Math.round(bidPrice / totalLF) : 0;
+                return (
+                  <div className="bg-fence-800 rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-fence-300 text-xs font-semibold uppercase tracking-wide">Bid Price ({markupPct}% markup)</p>
+                      <p className="text-2xl font-bold text-white">{fmt(bidPrice)}</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <p className="text-fence-500 text-xs">Gross Profit</p>
+                        <p className="text-sm font-bold text-green-400">{fmt(grossProfit)}</p>
+                      </div>
+                      <div>
+                        <p className="text-fence-500 text-xs">Gross Margin</p>
+                        <p className="text-sm font-bold text-green-400">{grossMargin}%</p>
+                      </div>
+                      <div>
+                        <p className="text-fence-500 text-xs">Per LF</p>
+                        <p className="text-sm font-bold text-fence-200">{fmt(pricePerLF)}/LF</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="mt-3 flex justify-between text-xs text-fence-500">
                 <span>Confidence: {Math.round(result.overallConfidence * 100)}%</span>
-                <span>{totalLF} LF · {result.bom.length} materials</span>
+                <span>{totalLF} LF · {result.bom.length} line items</span>
                 {result.redFlagItems.length > 0 && (
-                  <span className="text-amber-400">{result.redFlagItems.length} red flags</span>
+                  <span className="text-amber-400">{result.redFlagItems.length} unpriced</span>
                 )}
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
@@ -469,22 +510,35 @@ export default function AdvancedEstimateClient() {
 
               {activeTab === "bom" && (
                 <div className="divide-y divide-gray-50">
+                  {/* Header */}
+                  <div className="px-4 py-2 bg-gray-50 grid grid-cols-12 gap-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    <span className="col-span-5">Material</span>
+                    <span className="col-span-2 text-right">Qty</span>
+                    <span className="col-span-2 text-right">Unit $</span>
+                    <span className="col-span-3 text-right">Ext. Cost</span>
+                  </div>
                   {result.bom.map((item, i) => (
-                    <div key={i} className="px-4 py-2.5 hover:bg-gray-50">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 min-w-0 pr-2">
-                          <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
-                          <p className="text-xs text-gray-400 truncate">{item.traceability}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-bold text-gray-900">{item.qty} {item.unit}</p>
-                          {item.confidence < 0.8 && (
-                            <span className="text-xs text-amber-500">Low confidence</span>
-                          )}
-                        </div>
+                    <div key={i} className="px-4 py-2.5 hover:bg-gray-50 grid grid-cols-12 gap-1 items-center">
+                      <div className="col-span-5 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
+                        <p className="text-xs text-gray-400 truncate">{item.traceability}</p>
                       </div>
+                      <p className="col-span-2 text-sm font-bold text-gray-900 text-right">{item.qty} <span className="text-xs text-gray-400 font-normal">{item.unit}</span></p>
+                      <p className="col-span-2 text-xs text-gray-500 text-right">
+                        {item.unitCost != null ? fmt(item.unitCost) : <span className="text-amber-400">—</span>}
+                      </p>
+                      <p className="col-span-3 text-sm font-semibold text-right">
+                        {item.extCost != null && item.extCost > 0
+                          ? <span className="text-gray-900">{fmt(item.extCost)}</span>
+                          : <span className="text-amber-400 text-xs">No price</span>}
+                      </p>
                     </div>
                   ))}
+                  {/* BOM subtotal */}
+                  <div className="px-4 py-3 bg-gray-50 flex justify-between items-center">
+                    <p className="text-sm font-bold text-gray-700">Materials Total</p>
+                    <p className="text-sm font-bold text-fence-700">{fmt(result.totalMaterialCost)}</p>
+                  </div>
                 </div>
               )}
 

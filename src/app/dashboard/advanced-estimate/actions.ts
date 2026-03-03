@@ -1,11 +1,43 @@
 "use server";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { AdvancedEstimatePdf } from "@/lib/fence-graph/AdvancedEstimatePdf";
 import { estimateFence } from "@/lib/fence-graph/engine";
 import type { FenceProjectInput, FenceEstimateResult } from "@/lib/fence-graph/types";
+
+// ── Fetch org material prices ─────────────────────────────────────
+// Returns { [sku]: unit_cost } for the current org's materials.
+// Used to populate dollar amounts in the BOM engine.
+export async function getOrgMaterialPrices(): Promise<Record<string, number>> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return {};
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("org_id")
+      .eq("auth_id", user.id)
+      .single();
+    if (!profile) return {};
+
+    const { data: materials } = await admin
+      .from("materials")
+      .select("sku, unit_cost")
+      .eq("org_id", profile.org_id);
+
+    if (!materials) return {};
+    return Object.fromEntries(
+      materials
+        .filter(m => m.unit_cost != null)
+        .map(m => [m.sku, Number(m.unit_cost)])
+    );
+  } catch {
+    return {};
+  }
+}
 
 // ── Save estimate to DB ───────────────────────────────────────────
 export async function saveAdvancedEstimate(

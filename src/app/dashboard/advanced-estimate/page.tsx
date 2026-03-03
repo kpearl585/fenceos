@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AdvancedEstimateClient from "./AdvancedEstimateClient";
+import { getOrgMaterialPrices } from "./actions";
 
 export const metadata = { title: "Advanced Estimate — FenceEstimatePro" };
 
@@ -8,6 +9,9 @@ export default async function AdvancedEstimatePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const priceMap = await getOrgMaterialPrices();
+  const hasPrices = Object.keys(priceMap).length > 0;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -20,8 +24,18 @@ export default async function AdvancedEstimatePage() {
           <p className="text-gray-500 text-sm">
             Run-based estimation engine. Add each fence segment individually for professional-grade accuracy with full material traceability.
           </p>
+          {!hasPrices && (
+            <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+              <span className="text-amber-600 text-sm font-semibold flex-shrink-0">No material prices found.</span>
+              <span className="text-amber-700 text-sm">
+                Quantities will be accurate but dollar amounts will show $0. Set unit costs in{" "}
+                <a href="/dashboard/materials" className="underline font-semibold">Materials</a>{" "}
+                to enable cost and bid pricing.
+              </span>
+            </div>
+          )}
         </div>
-        <AdvancedEstimateClient />
+        <AdvancedEstimateClient priceMap={priceMap} />
       </div>
     </main>
   );
