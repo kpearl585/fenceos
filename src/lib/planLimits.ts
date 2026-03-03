@@ -19,7 +19,8 @@ export interface PlanLimits {
   changeOrders: boolean;               // change order module
   materialVerification: boolean;       // material verification on jobs
   customPdfBranding: boolean;          // logo + colors on PDF output
-  advancedReporting: boolean;          // metrics/KPI dashboard (full)
+  pnlDashboard: boolean;               // owner P&L dashboard (/dashboard/owner)
+  advancedReporting: boolean;          // metrics/KPI dashboard (/dashboard/metrics)
 }
 
 const LIMITS: Record<PlanKey, PlanLimits> = {
@@ -32,9 +33,10 @@ const LIMITS: Record<PlanKey, PlanLimits> = {
     changeOrders: true,
     materialVerification: true,
     customPdfBranding: true,
+    pnlDashboard: true,
     advancedReporting: true,
   },
-  // Estimates-only — unlimited estimates, materials, PDF, margin. No jobs.
+  // Estimates-only — unlimited estimates, materials, PDF, margin. No jobs, no P&L.
   starter: {
     maxUsers: 1,
     maxEstimatesPerMonth: null,
@@ -43,9 +45,10 @@ const LIMITS: Record<PlanKey, PlanLimits> = {
     changeOrders: false,
     materialVerification: false,
     customPdfBranding: false,
+    pnlDashboard: false,
     advancedReporting: false,
   },
-  // Full operations — jobs, foreman, change orders, custom PDF branding
+  // Full operations — jobs, foreman, change orders, custom PDF branding, P&L
   pro: {
     maxUsers: 3,
     maxEstimatesPerMonth: null,
@@ -54,9 +57,10 @@ const LIMITS: Record<PlanKey, PlanLimits> = {
     changeOrders: true,
     materialVerification: true,
     customPdfBranding: true,
+    pnlDashboard: true,
     advancedReporting: false,
   },
-  // Scale — everything in pro + unlimited users + full reporting
+  // Scale — everything in pro + unlimited users + full KPI reporting
   business: {
     maxUsers: Infinity,
     maxEstimatesPerMonth: null,
@@ -65,6 +69,7 @@ const LIMITS: Record<PlanKey, PlanLimits> = {
     changeOrders: true,
     materialVerification: true,
     customPdfBranding: true,
+    pnlDashboard: true,
     advancedReporting: true,
   },
   // Expired/downgraded
@@ -76,6 +81,7 @@ const LIMITS: Record<PlanKey, PlanLimits> = {
     changeOrders: false,
     materialVerification: false,
     customPdfBranding: false,
+    pnlDashboard: false,
     advancedReporting: false,
   },
 };

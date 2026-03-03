@@ -1,8 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
 import ExportCSV from "@/components/dashboard/ExportCSV";
+import UpgradeGate from "@/components/dashboard/UpgradeGate";
+import { getPlanLimits } from "@/lib/planLimits";
 
 /* ── Types ── */
 interface SummaryData {
@@ -84,6 +87,18 @@ export default async function OwnerDashboardPage() {
 
   // Server-side role guard — strict owner-only
   if (!canAccess(profile.role, "owner")) {
+    redirect("/dashboard");
+  }
+
+  // Plan gate — P&L dashboard requires Pro or above
+  const adminForPlan = createAdminClient();
+  const { data: orgForPlan } = await adminForPlan.from("organizations").select("plan").eq("id", profile.org_id).single();
+  if (!getPlanLimits(orgForPlan?.plan).pnlDashboard) {
+    return <UpgradeGate feature="Owner P&L Dashboard" requiredPlan="Pro" description="Full financial overview across all jobs and estimates — revenue, gross profit, margin tracking, and jobs at risk. Available on Pro and Business." />;
+  }
+
+  // (original role guard — now handled above, this block intentionally removed)
+  if (false) {
     redirect("/dashboard");
   }
 
