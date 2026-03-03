@@ -115,7 +115,30 @@ export async function listAdvancedEstimates(): Promise<{
   }
 }
 
-// ── Generate PDF and return as base64 ────────────────────────────
+// ── Fetch org branding ────────────────────────────────────────────
+async function getOrgInfo(userId: string): Promise<{
+  orgId: string; orgName: string; orgPhone: string; orgEmail: string; orgAddress: string;
+}> {
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles").select("org_id").eq("auth_id", userId).single();
+  if (!profile) return { orgId: "", orgName: "Your Company", orgPhone: "", orgEmail: "", orgAddress: "" };
+
+  const { data: org } = await admin
+    .from("organizations").select("name").eq("id", profile.org_id).single();
+  const { data: branding } = await admin
+    .from("org_branding").select("phone, email, address").eq("org_id", profile.org_id).single();
+
+  return {
+    orgId: profile.org_id,
+    orgName: org?.name ?? "Your Company",
+    orgPhone: branding?.phone ?? "",
+    orgEmail: branding?.email ?? "",
+    orgAddress: branding?.address ?? "",
+  };
+}
+
+// ── Generate Internal BOM PDF ────────────────────────────────────
 export async function generateAdvancedEstimatePdf(
   input: FenceProjectInput,
   laborRate: number,
@@ -127,37 +150,61 @@ export async function generateAdvancedEstimatePdf(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
 
-    const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("org_id")
-      .eq("auth_id", user.id)
-      .single();
-
-    let orgName = "Your Organization";
-    if (profile) {
-      const { data: org } = await admin
-        .from("organizations")
-        .select("name")
-        .eq("id", profile.org_id)
-        .single();
-      if (org) orgName = org.name;
-    }
-
-    const result = estimateFence(input, laborRate, wastePct / 100);
+    const { orgName } = await getOrgInfo(user.id);
+    const priceMap = await getOrgMaterialPrices();
+    const result = estimateFence(input, { laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
 
     const pdfElement = React.createElement(AdvancedEstimatePdf, {
-      result,
-      projectName,
-      orgName,
+      result, projectName, orgName,
       date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
     });
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const buffer = await renderToBuffer(pdfElement as React.ReactElement<any>);
-    const base64 = Buffer.from(buffer).toString("base64");
-    return { success: true, pdf: base64 };
+    return { success: true, pdf: Buffer.from(buffer).toString("base64") };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "PDF generation failed" };
+  }
+}
+
+// ── Generate Customer Proposal PDF ──────────────────────────────
+export async function generateCustomerProposalPdf(
+  input: FenceProjectInput,
+  laborRate: number,
+  wastePct: number,
+  markupPct: number,
+  projectName: string,
+  fenceType: string,
+  customer: {
+    name?: string; address?: string; city?: string; phone?: string; email?: string;
+  }
+): Promise<{ success: boolean; pdf?: string; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Not authenticated" };
+
+    const { orgName, orgPhone, orgEmail, orgAddress } = await getOrgInfo(user.id);
+    const priceMap = await getOrgMaterialPrices();
+    const result = estimateFence(input, { fenceType: fenceType as import("@/lib/fence-graph/bom/index").FenceType, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
+    const bidPrice = Math.round(result.totalCost * (1 + markupPct / 100));
+    const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
+
+    const { CustomerProposalPdf } = await import("@/lib/fence-graph/CustomerProposalPdf");
+    const proposalElement = React.createElement(CustomerProposalPdf, {
+      data: {
+        result, projectName, fenceType, bidPrice, markupPct, totalLF,
+        orgName, orgPhone, orgEmail, orgAddress,
+        customerName: customer.name, customerAddress: customer.address,
+        customerCity: customer.city, customerPhone: customer.phone, customerEmail: customer.email,
+        date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+        proposalNumber: `P-${Date.now().toString().slice(-6)}`,
+        validDays: 30,
+      },
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buffer = await renderToBuffer(proposalElement as React.ReactElement<any>);
+    return { success: true, pdf: Buffer.from(buffer).toString("base64") };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Proposal generation failed" };
   }
 }

@@ -10,7 +10,7 @@ import {
   type FenceType,
   type WoodStyle,
 } from "@/lib/fence-graph/engine";
-import { saveAdvancedEstimate, generateAdvancedEstimatePdf } from "./actions";
+import { saveAdvancedEstimate, generateAdvancedEstimatePdf, generateCustomerProposalPdf } from "./actions";
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
 
 const FENCE_TYPES: { value: FenceType; label: string }[] = [
@@ -77,7 +77,9 @@ export default function AdvancedEstimateClient({ priceMap = {} }: { priceMap?: R
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
   const [projectName, setProjectName] = useState("New Estimate");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [markupPct, setMarkupPct] = useState(35); // default 35% markup over cost
+  const [markupPct, setMarkupPct] = useState(35);
+  const [customer, setCustomer] = useState({ name: "", address: "", city: "", phone: "", email: "" });
+  const [proposalStatus, setProposalStatus] = useState<"idle" | "generating" | "error">("idle");
   const [pdfStatus, setPdfStatus] = useState<"idle" | "generating" | "error">("idle");
   const [isPending, startTransition] = useTransition();
 
@@ -136,6 +138,28 @@ export default function AdvancedEstimateClient({ priceMap = {} }: { priceMap?: R
   const hasValidInput = input.runs.length > 0;
 
   const bidPrice = result ? Math.round(result.totalCost * (1 + markupPct / 100)) : 0;
+
+  async function handleProposalDownload() {
+    if (!result) return;
+    setProposalStatus("generating");
+    const res = await generateCustomerProposalPdf(
+      input, laborRate, wastePct, markupPct, projectName, fenceType, customer
+    );
+    if (res.success && res.pdf) {
+      const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${projectName.replace(/\s+/g, "-")}-proposal.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setProposalStatus("idle");
+    } else {
+      setProposalStatus("error");
+      setTimeout(() => setProposalStatus("idle"), 3000);
+    }
+  }
 
   async function handleSave() {
     if (!result) return;
@@ -401,8 +425,38 @@ export default function AdvancedEstimateClient({ priceMap = {} }: { priceMap?: R
           >
             + Add Run
           </button>
+        {/* Customer Info */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-fence-900 mb-1">Customer Info</h2>
+          <p className="text-xs text-gray-400 mb-4">Optional — populates the customer proposal PDF</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Customer Name</label>
+              <input type="text" placeholder="Jane Smith"
+                value={customer.name} onChange={e => setCustomer(c => ({ ...c, name: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Street Address</label>
+              <input type="text" placeholder="123 Main St"
+                value={customer.address} onChange={e => setCustomer(c => ({ ...c, address: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">City, State, Zip</label>
+              <input type="text" placeholder="Orlando, FL 32801"
+                value={customer.city} onChange={e => setCustomer(c => ({ ...c, city: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Phone</label>
+              <input type="text" placeholder="(555) 000-0000"
+                value={customer.phone} onChange={e => setCustomer(c => ({ ...c, phone: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
+            </div>
+          </div>
         </div>
-      </div>
+        </div>
 
       {/* ── Right Column: Live Results ─────────────────────────────── */}
       <div className="lg:col-span-2 space-y-4">
@@ -463,21 +517,33 @@ export default function AdvancedEstimateClient({ priceMap = {} }: { priceMap?: R
                   <span className="text-amber-400">{result.redFlagItems.length} unpriced</span>
                 )}
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="mt-4 space-y-2">
                 <button
                   onClick={handleSave}
                   disabled={saveStatus === "saving"}
-                  className="py-2 rounded-lg text-xs font-semibold bg-fence-700 hover:bg-fence-600 text-white transition-colors disabled:opacity-60"
+                  className="w-full py-2 rounded-lg text-xs font-semibold bg-fence-700 hover:bg-fence-600 text-white transition-colors disabled:opacity-60"
                 >
                   {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error" : "Save Estimate"}
                 </button>
-                <button
-                  onClick={handlePdfDownload}
-                  disabled={pdfStatus === "generating"}
-                  className="py-2 rounded-lg text-xs font-semibold bg-white text-fence-900 hover:bg-fence-50 transition-colors disabled:opacity-60"
-                >
-                  {pdfStatus === "generating" ? "Generating..." : pdfStatus === "error" ? "Failed" : "Export PDF"}
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handlePdfDownload}
+                    disabled={pdfStatus === "generating"}
+                    title="Internal BOM with costs, margins, and audit trail"
+                    className="py-2 rounded-lg text-xs font-semibold bg-fence-800 hover:bg-fence-700 text-fence-100 transition-colors disabled:opacity-60"
+                  >
+                    {pdfStatus === "generating" ? "Generating..." : "Internal BOM"}
+                  </button>
+                  <button
+                    onClick={handleProposalDownload}
+                    disabled={proposalStatus === "generating"}
+                    title="Clean customer-facing proposal — no cost exposure"
+                    className="py-2 rounded-lg text-xs font-semibold bg-white text-fence-900 border border-fence-200 hover:bg-fence-50 transition-colors disabled:opacity-60"
+                  >
+                    {proposalStatus === "generating" ? "Generating..." : proposalStatus === "error" ? "Failed" : "Customer Proposal"}
+                  </button>
+                </div>
+                <p className="text-xs text-fence-600 text-center">Internal BOM shows costs · Proposal shows bid price only</p>
               </div>
             </div>
 
