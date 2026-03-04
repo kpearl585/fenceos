@@ -49,6 +49,17 @@ export function generateVinylBom(
   bom.push(makeBomItem("VINYL_RAIL_8FT", "Vinyl Rail 8ft", "rails", "ea", railCutPlan.stockPiecesNeeded, 0.92,
     railCutPlan.explanation, p("VINYL_RAIL_8FT")));
 
+  // Rail brackets — only for plain-rail (picket) systems; routed privacy rails slot into posts (no brackets)
+  // Each section has railCount rails, each rail needs 2 brackets (one at each post end)
+  if (productLine.railType === "plain") {
+    const totalSectionsForBrackets = segEdges.reduce((s, e) => s + (e.sections?.length ?? 0), 0);
+    const bracketCount = totalSectionsForBrackets * productLine.railCount * 2;
+    bom.push(makeBomItem("VINYL_RAIL_BRACKET", "Vinyl Rail Bracket (L-bracket)", "vinyl_hardware", "ea",
+      bracketCount, 0.98,
+      `${totalSectionsForBrackets} sections × ${productLine.railCount} rails × 2 ends (plain-rail system)`, p("VINYL_RAIL_BRACKET")));
+    audit.push(`Vinyl picket plain-rail: ${bracketCount} L-brackets needed`);
+  }
+
   // Concrete + gravel
   const { totalBags, totalGravelBags, perPostCalc } = calcTotalConcrete(nodes, installRules, siteConfig, wastePct);
   bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", totalBags, 0.95,

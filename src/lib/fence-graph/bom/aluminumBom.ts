@@ -78,6 +78,12 @@ export function generateAluminumBom(
     bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", doubles * 2, 0.95, `1/leaf × ${doubles}`, p("GATE_LATCH")));
   }
 
+  // Set screws — lock panels to posts (4 per post; standard aluminum fence installation)
+  bom.push(makeBomItem("ALUM_SET_SCREW", "Aluminum Fence Set Screw #14", "alum_hardware", "ea",
+    nodes.length * 4, 0.98,
+    `4 set screws per post × ${nodes.length} posts`, p("ALUM_SET_SCREW")));
+  audit.push(`Aluminum set screws: ${nodes.length * 4} (${nodes.length} posts × 4)`);
+
   // Reinforcement
   if (windMode) {
     bom.push(makeBomItem("ALUM_INSERT", "Aluminum Post Insert", "hardware", "ea", nodes.length, 0.90, `Wind mode: all posts`));

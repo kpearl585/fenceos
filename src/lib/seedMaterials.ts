@@ -48,12 +48,27 @@ export async function seedMaterials(admin: SupabaseClient, orgId: string): Promi
     { name: "Vinyl Walk Gate 4ft",        sku: "GATE_VINYL_4FT",  category: "gate",       unit: "ea",  unit_cost: 130.00, unit_price: 260.00 },
     { name: "Aluminum Walk Gate 4ft",     sku: "GATE_ALUM_4FT",   category: "gate",       unit: "ea",  unit_cost: 110.00, unit_price: 220.00 },
     // Hardware & Concrete
-    { name: "Post Concrete 80lb Bag",     sku: "CONCRETE_80LB",   category: "hardware",   unit: "bag", unit_cost: 7.00,   unit_price: 14.00  },
-    { name: "Hinge Heavy Duty Pair",      sku: "HINGE_HD",        category: "hardware",   unit: "pr",  unit_cost: 18.00,  unit_price: 36.00  },
-    { name: "Gate Latch",                 sku: "GATE_LATCH",      category: "hardware",   unit: "ea",  unit_cost: 12.00,  unit_price: 24.00  },
-    { name: "Post Cap 4x4",               sku: "POST_CAP_4X4",    category: "hardware",   unit: "ea",  unit_cost: 3.50,   unit_price: 7.00   },
-    { name: "Fence Screws 1lb",           sku: "SCREWS_1LB",      category: "hardware",   unit: "lb",  unit_cost: 6.00,   unit_price: 12.00  },
-    { name: "Fence Staples 1lb",          sku: "STAPLES_1LB",     category: "hardware",   unit: "lb",  unit_cost: 5.00,   unit_price: 10.00  },
+    { name: "Post Concrete 80lb Bag",     sku: "CONCRETE_80LB",       category: "hardware",      unit: "bag", unit_cost: 7.00,  unit_price: 14.00 },
+    { name: "Hinge Heavy Duty Pair",      sku: "HINGE_HD",            category: "hardware",      unit: "pr",  unit_cost: 18.00, unit_price: 36.00 },
+    { name: "Gate Latch",                 sku: "GATE_LATCH",          category: "hardware",      unit: "ea",  unit_cost: 12.00, unit_price: 24.00 },
+    { name: "Post Cap 4x4",               sku: "POST_CAP_4X4",        category: "hardware",      unit: "ea",  unit_cost: 3.50,  unit_price: 7.00  },
+    { name: "Fence Screws 1lb",           sku: "SCREWS_1LB",          category: "hardware",      unit: "lb",  unit_cost: 6.00,  unit_price: 12.00 },
+    { name: "Fence Staples 1lb",          sku: "STAPLES_1LB",         category: "hardware",      unit: "lb",  unit_cost: 5.00,  unit_price: 10.00 },
+    // Gravel
+    { name: "Drainage Gravel 40lb Bag",   sku: "GRAVEL_40LB",         category: "concrete",      unit: "bag", unit_cost: 5.50,  unit_price: 11.00 },
+    // Chain Link Specific Hardware
+    { name: "CL Tension Bar",             sku: "CL_TENSION_BAR",      category: "cl_hardware",   unit: "ea",  unit_cost: 4.50,  unit_price: 9.00  },
+    { name: "CL Tension Band",            sku: "CL_TENSION_BAND",     category: "cl_hardware",   unit: "ea",  unit_cost: 0.85,  unit_price: 1.70  },
+    { name: "CL Brace Band",              sku: "CL_BRACE_BAND",       category: "cl_hardware",   unit: "ea",  unit_cost: 1.20,  unit_price: 2.40  },
+    { name: "CL Loop Cap (line post)",    sku: "CL_LOOP_CAP",         category: "cl_hardware",   unit: "ea",  unit_cost: 0.65,  unit_price: 1.30  },
+    { name: "CL Rail End Fitting",        sku: "CL_RAIL_END",         category: "cl_hardware",   unit: "ea",  unit_cost: 2.00,  unit_price: 4.00  },
+    // Vinyl Rail Brackets (picket / plain-rail systems only)
+    { name: "Vinyl Rail Bracket (L)",     sku: "VINYL_RAIL_BRACKET",  category: "vinyl_hardware", unit: "ea", unit_cost: 1.25,  unit_price: 2.50  },
+    // Wood Structural Hardware
+    { name: "Hurricane Tie / Joist Hngr", sku: "WOOD_HURRICANE_TIE",  category: "wood_hardware", unit: "ea",  unit_cost: 0.75,  unit_price: 1.50  },
+    { name: "Carriage Bolt 3/8\"×3.5\"",  sku: "WOOD_CARRIAGE_BOLT",  category: "wood_hardware", unit: "ea",  unit_cost: 0.45,  unit_price: 0.90  },
+    // Aluminum Set Screws
+    { name: "Alum Fence Set Screw #14",   sku: "ALUM_SET_SCREW",      category: "alum_hardware", unit: "ea",  unit_cost: 0.15,  unit_price: 0.30  },
   ];
 
   const rows = materials.map((m) => ({ ...m, org_id: orgId }));

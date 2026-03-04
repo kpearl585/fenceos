@@ -83,6 +83,32 @@ export function generateChainLinkBom(
     Math.max(1, Math.ceil(tiePoints / TIE_WIRE_BOX_USES)), 0.85,
     `~${tiePoints} tie points ÷ ${TIE_WIRE_BOX_USES} per box`));
 
+  // ── Terminal post hardware (tension bars, tension bands, brace bands, rail ends) ──
+  // Each terminal post needs:
+  //   1 tension bar (fabric termination)
+  //   3-4 tension bands (clamp tension bar to post; 3 for 4ft, 4 for 6ft)
+  //   2 brace bands (hold top rail at end posts)
+  //   1 rail end fitting (where top rail meets terminal post)
+  const tensionBandsPerPost = heightFt > 4 ? 4 : 3;
+  bom.push(makeBomItem("CL_TENSION_BAR", "Chain Link Tension Bar", "cl_hardware", "ea",
+    terminalPosts.length, 0.98,
+    `1 per terminal post × ${terminalPosts.length} terminal posts`, p("CL_TENSION_BAR")));
+  bom.push(makeBomItem("CL_TENSION_BAND", "Chain Link Tension Band", "cl_hardware", "ea",
+    terminalPosts.length * tensionBandsPerPost, 0.98,
+    `${tensionBandsPerPost} per terminal post × ${terminalPosts.length} (${heightFt}ft fence)`, p("CL_TENSION_BAND")));
+  bom.push(makeBomItem("CL_BRACE_BAND", "Chain Link Brace Band", "cl_hardware", "ea",
+    terminalPosts.length * 2, 0.98,
+    `2 per terminal post × ${terminalPosts.length}`, p("CL_BRACE_BAND")));
+  bom.push(makeBomItem("CL_RAIL_END", "Chain Link Rail End Fitting", "cl_hardware", "ea",
+    terminalPosts.length, 0.98,
+    `1 per terminal post × ${terminalPosts.length}`, p("CL_RAIL_END")));
+
+  // ── Line post hardware (loop caps hold top rail on each line post) ──
+  bom.push(makeBomItem("CL_LOOP_CAP", "Chain Link Loop Cap", "cl_hardware", "ea",
+    linePostCount, 0.98,
+    `1 per line post × ${linePostCount} line posts`, p("CL_LOOP_CAP")));
+  audit.push(`CL terminal hardware: ${terminalPosts.length} tension bars, ${terminalPosts.length * tensionBandsPerPost} tension bands, ${terminalPosts.length * 2} brace bands, ${terminalPosts.length} rail ends`);
+
   // Concrete + gravel — uses adjusted install rules for terminal vs line posts
   const allNodes = [
     ...Array(terminalPosts.length).fill({ type: "end", reinforced: false }),

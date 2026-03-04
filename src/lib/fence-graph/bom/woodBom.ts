@@ -89,6 +89,14 @@ export function generateWoodBom(
   bom.push(makeBomItem("SCREWS_1LB", "Screws (1lb box)", "hardware", "ea", Math.ceil(totalRails / 10), 0.90,
     `${totalRails} rails ÷ 10 rails per box`));
 
+  // Hurricane ties / joist hangers — structural rail-to-post connection (2 per rail piece, each end)
+  // Florida building code requires for wind resistance; best practice everywhere
+  const hurricaneTies = totalRails * 2;
+  bom.push(makeBomItem("WOOD_HURRICANE_TIE", "Hurricane Tie / Joist Hanger", "wood_hardware", "ea",
+    hurricaneTies, 0.98,
+    `${totalRails} rail pieces × 2 connections each (both ends)`, p("WOOD_HURRICANE_TIE")));
+  audit.push(`Hurricane ties: ${hurricaneTies} (${totalRails} rails × 2 ends)`);
+
   // Gates
   const gateEdges = edges.filter(e => e.type === "gate");
   let singles = 0, doubles = 0;
@@ -97,6 +105,7 @@ export function generateWoodBom(
     if (g.gateSpec.gateType === "single") singles++;
     else doubles++;
   }
+  const totalGateLeaves = singles + doubles * 2;
   if (singles > 0) {
     bom.push(makeBomItem("GATE_WOOD_4FT", "Wood Walk Gate (single)", "gates", "ea", singles, 0.92, `${singles} single gates`, p("GATE_WOOD_4FT")));
     bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", singles * 2, 0.95, `2 pairs × ${singles}`, p("HINGE_HD")));
@@ -106,6 +115,13 @@ export function generateWoodBom(
     bom.push(makeBomItem("GATE_WOOD_DBL", "Wood Double Drive Gate", "gates", "ea", doubles, 0.90, `${doubles} double gates`, p("GATE_WOOD_DBL")));
     bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", doubles * 4, 0.95, `2 pairs/leaf × 2 × ${doubles}`, p("HINGE_HD")));
     bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", doubles * 2, 0.95, `1/leaf × ${doubles}`, p("GATE_LATCH")));
+  }
+  // Carriage bolts for gate frame assembly (4 per gate leaf — corner braces + Z-brace connections)
+  if (totalGateLeaves > 0) {
+    bom.push(makeBomItem("WOOD_CARRIAGE_BOLT", "Carriage Bolt 3/8\"×3.5\" w/ Nut", "wood_hardware", "ea",
+      totalGateLeaves * 4, 0.98,
+      `4 bolts per gate leaf × ${totalGateLeaves} leaf/leaves`, p("WOOD_CARRIAGE_BOLT")));
+    audit.push(`Gate carriage bolts: ${totalGateLeaves * 4} (${totalGateLeaves} leaves × 4)`);
   }
 
   if (windMode) {
