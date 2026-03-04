@@ -11,6 +11,7 @@ import {
   type WoodStyle,
 } from "@/lib/fence-graph/engine";
 import { saveAdvancedEstimate, generateAdvancedEstimatePdf, generateCustomerProposalPdf } from "./actions";
+import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/exportBomExcel";
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
 import AiInputTab, { type AiAppliedState } from "./AiInputTab";
 
@@ -579,6 +580,27 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
                   </button>
                 </div>
                 <p className="text-xs text-fence-600 text-center">Internal BOM shows costs · Proposal shows bid price only</p>
+                {/* Excel exports */}
+                <div className="border-t border-fence-800 pt-2 mt-1">
+                  <p className="text-xs text-fence-500 text-center mb-2">Excel / Spreadsheet</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => result && downloadInternalBom(result, projectName, markupPct, totalLF)}
+                      title="Full BOM with costs, margins, labor — internal use only"
+                      className="py-2 rounded-lg text-xs font-semibold bg-fence-800 hover:bg-fence-700 text-fence-100 border border-fence-700 transition-colors"
+                    >
+                      Internal BOM (.xlsx)
+                    </button>
+                    <button
+                      onClick={() => result && downloadSupplierPO(result, projectName, totalLF, undefined, customer.address ? `${customer.address}, ${customer.city}` : undefined)}
+                      title="Clean purchase order for your supplier — no costs shown"
+                      className="py-2 rounded-lg text-xs font-semibold bg-white text-fence-900 border border-fence-200 hover:bg-fence-50 transition-colors"
+                    >
+                      Supplier PO (.xlsx)
+                    </button>
+                  </div>
+                  <p className="text-xs text-fence-500 text-center mt-1">Internal shows margins · Supplier PO shows quantities only</p>
+                </div>
               </div>
             </div>
 
