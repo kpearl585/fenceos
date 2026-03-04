@@ -2,18 +2,18 @@ export default function HowItWorks() {
   const steps = [
     {
       number: "01",
-      title: "Enter your job details",
-      body: "Linear footage, fence type, gates, terrain. Takes 2 minutes on your phone, on-site.",
+      title: "Map your fence runs",
+      body: "Define each segment between corners, gates, and endpoints. The engine models your fence the way it actually gets built — not just total linear footage.",
     },
     {
       number: "02",
-      title: "Materials + margin auto-calculate",
-      body: "Every post, panel, bag of concrete, and gate kit counted automatically. Your margin is locked before you touch the quote.",
+      title: "Engine calculates everything",
+      body: "Post types auto-derived. Concrete volume calculated per hole. Panel cuts optimized. Gate hardware, rebar, and soil depth handled automatically.",
     },
     {
       number: "03",
-      title: "Send a professional quote",
-      body: "One tap. PDF or link. Customer gets a branded estimate that looks like you run a real operation — because you do.",
+      title: "Send a professional proposal",
+      body: "One tap. Customer gets a clean branded proposal — no costs exposed. You keep the internal BOM with full audit trail.",
     },
   ];
 
@@ -22,8 +22,8 @@ export default function HowItWorks() {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-14">
           <p className="text-fence-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple by design</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">From job site to quote in 5 minutes</h2>
-          <p className="mt-4 text-gray-500 max-w-xl mx-auto">No training. No spreadsheets. No guessing. Built for contractors who are on a job site, not in an office.</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">From job site to winning quote in 5 minutes</h2>
+          <p className="mt-4 text-gray-500 max-w-xl mx-auto">No training. No spreadsheets. No guessing quantities. Built for contractors on the job site — not accountants in an office.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step, i) => (

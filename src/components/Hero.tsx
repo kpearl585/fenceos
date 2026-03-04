@@ -9,17 +9,17 @@ export default function Hero() {
           <div>
             <div className="inline-flex items-center gap-2 bg-fence-700/50 border border-fence-600/50 rounded-full px-4 py-1.5 mb-6">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-              <span className="text-xs font-semibold text-fence-200 uppercase tracking-wide">Built for fence contractors</span>
+              <span className="text-xs font-semibold text-fence-200 uppercase tracking-wide">The only run-based fence estimation engine</span>
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-              Know Your Profit<br />
-              <span className="text-fence-400">Before You Hand</span><br />
-              Over the Quote.
+              Stop Guessing<br />
+              <span className="text-fence-400">Quantities.</span><br />
+              Start Winning Jobs.
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-fence-200 leading-relaxed max-w-xl">
-              FenceEstimatePro calculates your materials, locks in your margin, and builds a professional quote — before you leave the driveway.
+              FenceEstimatePro&apos;s FenceGraph engine models your fence run by run — auto-deriving post types, calculating exact concrete volume, and locking your margin before you ever touch the quote.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -57,13 +57,13 @@ export default function Hero() {
               </div>
               <div className="w-px bg-fence-700"></div>
               <div>
-                <p className="text-2xl font-bold text-white">$1,200+</p>
-                <p className="text-xs text-fence-400 mt-0.5">Avg saved per underbid job</p>
+                <p className="text-2xl font-bold text-white">Run-based</p>
+                <p className="text-xs text-fence-400 mt-0.5">Not a per-foot formula</p>
               </div>
               <div className="w-px bg-fence-700"></div>
               <div>
-                <p className="text-2xl font-bold text-white">Florida</p>
-                <p className="text-xs text-fence-400 mt-0.5">Veteran-built &amp; operated</p>
+                <p className="text-2xl font-bold text-white">Self-calibrating</p>
+                <p className="text-xs text-fence-400 mt-0.5">Gets tighter every job</p>
               </div>
               <div className="w-px bg-fence-700"></div>
               <div className="flex items-center gap-2">

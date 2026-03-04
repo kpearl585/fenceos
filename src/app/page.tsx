@@ -3,6 +3,7 @@ import Hero from "@/components/Hero";
 import ProblemSection from "@/components/ProblemSection";
 import HowItWorks from "@/components/HowItWorks";
 import SolutionSection from "@/components/SolutionSection";
+import EngineSection from "@/components/EngineSection";
 import EstimateDemo from "@/components/EstimateDemo";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import DemoSection from "@/components/DemoSection";
@@ -45,6 +46,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <EngineSection />
       <PricingSection />
         <FAQSection />
         <WaitlistSection />
