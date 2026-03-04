@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PrintButton from "./PrintButton";
 
 export const metadata: Metadata = {
   title: "FenceEstimatePro — Feature Overview",
@@ -10,12 +11,7 @@ export default function PitchPage() {
     <div className="bg-white min-h-screen font-sans print:text-sm">
       {/* Print button — hidden when printing */}
       <div className="print:hidden fixed top-4 right-4 z-50 flex gap-2">
-        <button
-          onClick={() => window.print()}
-          className="bg-[#2D6A4F] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-lg hover:bg-[#1e4d38] transition-colors"
-        >
-          Save as PDF
-        </button>
+        <PrintButton />
         <a
           href="https://fenceestimatepro.com"
           className="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold shadow hover:bg-gray-50 transition-colors"
