@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { extractFromText, extractFromImage } from "./aiActions";
-import type { AiExtractionResult, AiExtractedRun } from "@/lib/fence-graph/ai-extract/types";
+import type { AiExtractionResult, AiExtractedRun, CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import type { RunInput, GateInput, FenceType } from "@/lib/fence-graph/engine";
 import type { SoilType, GateType } from "@/lib/fence-graph/types";
 
@@ -99,6 +99,10 @@ export default function AiInputTab({ onApply }: Props) {
   const [additionalContext, setAdditionalContext] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AiExtractionResult | null>(null);
+  const [critique, setCritique] = useState<CritiqueResult | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [blocked, setBlocked] = useState(false);
+  const [rateRemaining, setRateRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -107,6 +111,9 @@ export default function AiInputTab({ onApply }: Props) {
     setLoading(true);
     setError(null);
     setResult(null);
+    setCritique(null);
+    setValidationErrors([]);
+    setBlocked(false);
     setApplied(false);
 
     const res = mode === "text"
@@ -120,6 +127,10 @@ export default function AiInputTab({ onApply }: Props) {
       return;
     }
     setResult(res.result);
+    setCritique(res.critique ?? null);
+    setValidationErrors(res.validationErrors ?? []);
+    setBlocked(res.blocked ?? false);
+    if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
   }
 
   function handleApply() {
@@ -245,6 +256,10 @@ export default function AiInputTab({ onApply }: Props) {
         ) : "Extract Runs with AI"}
       </button>
 
+      {rateRemaining !== null && rateRemaining <= 5 && (
+        <p className="text-xs text-amber-600 text-center">{rateRemaining} extraction{rateRemaining !== 1 ? "s" : ""} remaining this hour</p>
+      )}
+
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
           <p className="text-sm text-red-700 font-semibold">Extraction failed</p>
@@ -264,10 +279,34 @@ export default function AiInputTab({ onApply }: Props) {
             <span className="text-2xl font-bold flex-shrink-0">{Math.round(result.confidence * 100)}%</span>
           </div>
 
-          {/* Flags */}
+          {/* Critical blockers */}
+          {(blocked || (critique?.criticalBlockers?.length ?? 0) > 0) && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">Cannot apply — resolve first</p>
+              <ul className="space-y-1">
+                {[...(critique?.criticalBlockers ?? []), ...validationErrors.filter(e => e.includes("blocked"))].map((b, i) => (
+                  <li key={i} className="text-xs text-red-800 flex gap-2"><span className="font-bold">!</span><span>{b}</span></li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Auto-corrections */}
+          {validationErrors.filter(e => !e.includes("blocked")).length > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-2">Auto-corrected</p>
+              <ul className="space-y-1">
+                {validationErrors.filter(e => !e.includes("blocked")).map((e, i) => (
+                  <li key={i} className="text-xs text-orange-800 flex gap-2"><span className="text-orange-400">—</span><span>{e}</span></li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Flags / assumptions */}
           {result.flags.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Assumptions made</p>
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Verify before sending bid</p>
               <ul className="space-y-1">
                 {result.flags.map((f, i) => (
                   <li key={i} className="text-xs text-amber-800 flex gap-2">
@@ -326,9 +365,11 @@ export default function AiInputTab({ onApply }: Props) {
                 ) : (
                   <button
                     onClick={handleApply}
-                    className="px-4 py-2 bg-fence-600 text-white text-sm font-bold rounded-lg hover:bg-fence-700 transition-colors"
+                    disabled={blocked}
+                    title={blocked ? "Resolve critical blockers before applying" : undefined}
+                    className="px-4 py-2 bg-fence-600 text-white text-sm font-bold rounded-lg hover:bg-fence-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    Apply to Estimate
+                    {blocked ? "Blocked" : "Apply to Estimate"}
                   </button>
                 )}
               </div>

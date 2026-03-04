@@ -66,7 +66,7 @@ function defaultRun(): RunInput {
   };
 }
 
-export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct = 5 }: { priceMap?: Record<string, number>; defaultWastePct?: number }) {
+export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct = 5, aiAvailable = true }: { priceMap?: Record<string, number>; defaultWastePct?: number; aiAvailable?: boolean }) {
   const [fenceType, setFenceType] = useState<FenceType>("vinyl");
   const [woodStyle, setWoodStyle] = useState<WoodStyle>("dog_ear_privacy");
   const [productLineId, setProductLineId] = useState("vinyl_privacy_6ft");
@@ -208,7 +208,8 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
           </button>
           <button
             onClick={() => setInputMode("ai")}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${inputMode === "ai" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            disabled={!aiAvailable}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${inputMode === "ai" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
             AI Input

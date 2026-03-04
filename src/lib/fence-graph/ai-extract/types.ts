@@ -1,6 +1,4 @@
-// ── AI Extraction Types ───────────────────────────────────────────
-// These are the types that GPT-4o outputs.
-// They map directly to FenceProjectInput for the engine.
+// ── AI Extraction Types ────────────────────────────────────────────
 
 export interface AiExtractedGate {
   widthFt: number;
@@ -22,15 +20,34 @@ export interface AiExtractedRun {
 
 export interface AiExtractionResult {
   runs: AiExtractedRun[];
-  confidence: number;       // 0–1
-  flags: string[];          // assumptions, missing info, warnings
+  confidence: number;       // 0–1 overall
+  flags: string[];          // assumptions, unknowns, questions
   rawSummary: string;
+}
+
+export interface CritiqueUncertainField {
+  field: string;
+  runIndex?: number;
+  issue: string;
+  suggestedAction: string;
+}
+
+export interface CritiqueResult {
+  uncertainFields: CritiqueUncertainField[];
+  questionsForContractor: string[];
+  confidenceByField: Record<string, number>;
+  overallReadyToApply: boolean;
+  criticalBlockers: string[];
 }
 
 export interface AiExtractionResponse {
   success: boolean;
   result?: AiExtractionResult;
+  critique?: CritiqueResult;
+  validationErrors?: string[];
+  blocked?: boolean;           // true if Zod validation found critical blockers
   error?: string;
   inputTokens?: number;
   outputTokens?: number;
+  rateRemaining?: number;      // extractions remaining this hour
 }
