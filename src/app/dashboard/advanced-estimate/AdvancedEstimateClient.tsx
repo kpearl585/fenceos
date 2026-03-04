@@ -11,6 +11,7 @@ import {
   type WoodStyle,
 } from "@/lib/fence-graph/engine";
 import { saveAdvancedEstimate, generateAdvancedEstimatePdf, generateCustomerProposalPdf } from "./actions";
+import { createEstimateFromFenceGraph } from "./convertActions";
 import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/exportBomExcel";
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
 import AiInputTab, { type AiAppliedState } from "./AiInputTab";
@@ -85,6 +86,8 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
   const [proposalStatus, setProposalStatus] = useState<"idle" | "generating" | "error">("idle");
   const [pdfStatus, setPdfStatus] = useState<"idle" | "generating" | "error">("idle");
   const [isPending, startTransition] = useTransition();
+  const [convertStatus, setConvertStatus] = useState<"idle" | "converting" | "done" | "error">("idle");
+  const [convertError, setConvertError] = useState<string | null>(null);
 
   const productLine = PRODUCT_LINES[productLineId];
   const postSize = productLine?.postSize ?? "5x5";
@@ -161,6 +164,33 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
     } else {
       setProposalStatus("error");
       setTimeout(() => setProposalStatus("idle"), 3000);
+    }
+  }
+
+  async function handleConvertToEstimate() {
+    if (!result) return;
+    if (!customer.name.trim()) {
+      setConvertError("Enter a customer name above before creating an estimate.");
+      return;
+    }
+    setConvertStatus("converting");
+    setConvertError(null);
+    const res = await createEstimateFromFenceGraph({
+      result,
+      projectName,
+      laborRate,
+      markupPct,
+      totalLF,
+      fenceType,
+      customer,
+    });
+    if (res.success && res.estimateId) {
+      setConvertStatus("done");
+      window.location.href = `/dashboard/estimates/${res.estimateId}`;
+    } else {
+      setConvertStatus("error");
+      setConvertError(res.error ?? "Conversion failed");
+      setTimeout(() => setConvertStatus("idle"), 4000);
     }
   }
 
@@ -555,12 +585,28 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
                 )}
               </div>
               <div className="mt-4 space-y-2">
+                {/* PRIMARY CTA — Convert to sendable estimate */}
+                <button
+                  onClick={handleConvertToEstimate}
+                  disabled={convertStatus === "converting" || convertStatus === "done"}
+                  className="w-full py-3 rounded-lg text-sm font-bold bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-60 shadow-sm"
+                >
+                  {convertStatus === "converting" ? "Creating Estimate..." :
+                   convertStatus === "done" ? "Redirecting..." :
+                   "Create Estimate & Send to Customer"}
+                </button>
+                {convertError && (
+                  <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">{convertError}</p>
+                )}
+                {convertStatus === "idle" && (
+                  <p className="text-xs text-fence-500 text-center">Requires customer name in Customer Info above</p>
+                )}
                 <button
                   onClick={handleSave}
                   disabled={saveStatus === "saving"}
                   className="w-full py-2 rounded-lg text-xs font-semibold bg-fence-700 hover:bg-fence-600 text-white transition-colors disabled:opacity-60"
                 >
-                  {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error" : "Save Estimate"}
+                  {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error" : "Save Draft"}
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <button
