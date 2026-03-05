@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Terms of Service | FenceEstimatePro" };
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description:
+    "FenceEstimatePro terms of service. Subscription terms, acceptable use, data ownership, and liability for fence contractor SaaS platform.",
+  alternates: { canonical: "/terms" },
+  robots: { index: true, follow: true },
+};
 
 const EFFECTIVE = "February 28, 2026";
 

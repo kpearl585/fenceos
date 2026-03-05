@@ -74,10 +74,12 @@ function makeNode(
   if (isGate) holeDepth = Math.max(holeDepth, holeDepth + 6);
   if (windMode) holeDepth = Math.max(holeDepth, 36);
 
+  // Pass isGatePost=false because we already adjusted holeDepth above;
+  // calcConcretePerPost would double-add the gate depth otherwise.
   const concreteCalc = calcConcretePerPost(
     { ...rules, holeDepth_in: holeDepth },
     { soilConcreteFactor: site.soilConcreteFactor, soilType: site.soilType as never, hurricaneZone: windMode, floodZone: false, existingFenceRemoval: false, surfaceType: "ground", obstacleCt: 0 },
-    isGate
+    false
   );
 
   return {

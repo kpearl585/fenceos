@@ -3,11 +3,27 @@ import CalculatorClient from "./CalculatorClient";
 import SiteNav from "@/components/SiteNav";
 
 export const metadata: Metadata = {
-  title: "Free Fence Cost Calculator 2026 | FenceEstimatePro",
-  description: "How much does a fence cost? Use our free calculator to get an instant estimate for wood, chain link, vinyl, or aluminum fencing. Takes 60 seconds.",
+  title: "Free Fence Cost Calculator 2026",
+  description:
+    "How much does a fence cost? Use our free calculator to get an instant estimate for wood, chain link, vinyl, or aluminum fencing. Takes 60 seconds.",
+  alternates: { canonical: "/calculator" },
+  keywords: [
+    "fence cost calculator",
+    "fence estimate calculator",
+    "fence material calculator",
+    "how much does a fence cost",
+    "fence price calculator",
+  ],
   openGraph: {
     title: "Free Fence Cost Calculator 2026 | FenceEstimatePro",
-    description: "How much does a fence cost? Get an instant estimate in 60 seconds.",
+    description:
+      "How much does a fence cost? Get an instant estimate for wood, chain link, vinyl, or aluminum fencing in 60 seconds.",
+    url: "https://fenceestimatepro.com/calculator",
+  },
+  twitter: {
+    title: "Free Fence Cost Calculator 2026 | FenceEstimatePro",
+    description:
+      "Free fence cost calculator — instant estimates for wood, chain link, vinyl, or aluminum. 60 seconds.",
   },
 };
 

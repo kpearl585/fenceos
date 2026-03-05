@@ -33,8 +33,10 @@ export function calcConcretePerPost(
     holeDepth = Math.max(holeDepth, FLORIDA_DEPTH_OVERRIDE_IN);
   }
   // Gate posts: extra 6 inches for leverage/weight
+  // NOTE: Only apply if the caller hasn't already adjusted depth (e.g. builder.ts
+  // pre-adjusts depth before calling). The flag isGatePost controls this.
   if (isGatePost) {
-    holeDepth = Math.max(holeDepth, holeDepth + 6);
+    holeDepth += 6;
   }
 
   const postSizeNum = holeDia === 10 ? 5 : 4; // 5x5 or 4x4 post nominal

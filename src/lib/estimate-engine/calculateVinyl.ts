@@ -15,7 +15,9 @@ export function calculateVinyl(
     ? "Vinyl Privacy Panel 8ft"
     : "Vinyl Privacy Panel 6ft";
 
-  const rawPanels = Math.ceil(linearFeet / 8);
+  // Deduct gate openings (4ft each) from panel LF
+  const panelLF = Math.max(0, linearFeet - gateCount * 4);
+  const rawPanels = Math.ceil(panelLF / 8);
   const panels = Math.ceil(rawPanels * (1 + wasteFactorPct));
   items.push({
     sku: panelSku,

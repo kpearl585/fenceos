@@ -15,8 +15,9 @@ export function calculateWood(inputs: EstimateInputs): MaterialRequirement[] {
     ? "Wood Privacy Panel 8ft"
     : "Wood Privacy Panel 6ft";
 
-  // Panel width = 8ft; calculate sections needed
-  const rawPanels = Math.ceil(linearFeet / 8);
+  // Panel width = 8ft; deduct gate openings (4ft each) from panel LF
+  const panelLF = Math.max(0, linearFeet - gateCount * 4);
+  const rawPanels = Math.ceil(panelLF / 8);
   const panels = Math.ceil(rawPanels * (1 + wasteFactorPct));
   items.push({
     sku: panelSku,

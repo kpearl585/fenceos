@@ -196,7 +196,7 @@ export async function markJobPaidAndSendInvoice(jobId: string) {
     sent_at: now.toISOString(),
   });
 
-  // Mark job as paid + complete
+  // Mark job as paid + complete — scoped to org
   await admin
     .from("jobs")
     .update({
@@ -205,7 +205,8 @@ export async function markJobPaidAndSendInvoice(jobId: string) {
       completed_at: now.toISOString(),
       invoice_url: pdfUrl,
     })
-    .eq("id", jobId);
+    .eq("id", jobId)
+    .eq("org_id", profile.org_id);
 
   // Send invoice email to customer
   if (customer?.email) {

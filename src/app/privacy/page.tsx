@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Privacy Policy | FenceEstimatePro" };
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description:
+    "FenceEstimatePro privacy policy. How we collect, use, and protect your data. We never sell personal information. Hosted on secure US infrastructure.",
+  alternates: { canonical: "/privacy" },
+  robots: { index: true, follow: true },
+};
 
 const EFFECTIVE = "February 28, 2026";
 

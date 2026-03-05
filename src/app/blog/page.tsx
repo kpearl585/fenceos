@@ -2,15 +2,57 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Fence Business Insights | FenceEstimatePro Blog",
-  description: "Practical guides for fence contractors who want to run a more profitable operation. Estimating, materials, business systems.",
+  title: "Fence Business Insights — Blog",
+  description:
+    "Practical guides for fence contractors: estimating tips, material breakdowns, pricing strategies, and business systems to run a more profitable operation.",
+  alternates: { canonical: "/blog" },
+  keywords: [
+    "fence contractor blog",
+    "fence estimating tips",
+    "fence business guide",
+    "fence contractor advice",
+  ],
   openGraph: {
     title: "Fence Business Insights | FenceEstimatePro Blog",
-    description: "Practical guides for fence contractors who want to run a more profitable operation.",
+    description:
+      "Practical guides for fence contractors who want to run a more profitable operation.",
+    url: "https://fenceestimatepro.com/blog",
+  },
+  twitter: {
+    title: "Fence Business Insights | FenceEstimatePro Blog",
+    description:
+      "Practical guides for fence contractors: estimating, materials, pricing, and business systems.",
   },
 };
 
 const articles = [
+  {
+    slug: "how-to-estimate-a-fence-job",
+    title: "How to Estimate a Fence Job: The Complete Contractor Guide",
+    description: "Step-by-step material takeoff process for fence contractors — post spacing math, concrete calculation, common mistakes, and how software eliminates guesswork.",
+    date: "March 4, 2026",
+    readTime: "8 min read",
+    category: "Estimating",
+    categoryColor: "bg-blue-500/20 text-blue-300",
+  },
+  {
+    slug: "fence-contractor-software",
+    title: "Best Fence Contractor Software in 2026: What Actually Works",
+    description: "Honest breakdown of fence contractor software options — spreadsheets, generic tools, and purpose-built platforms. What to look for and what to avoid.",
+    date: "March 4, 2026",
+    readTime: "7 min read",
+    category: "Software",
+    categoryColor: "bg-purple-500/20 text-purple-300",
+  },
+  {
+    slug: "fence-estimate-calculator",
+    title: "Free Fence Estimate Calculator: How the Math Actually Works",
+    description: "The real math behind fence estimation — post counts, panel optimization, concrete volume formulas, and why per-foot calculators get it wrong.",
+    date: "March 4, 2026",
+    readTime: "6 min read",
+    category: "Estimating",
+    categoryColor: "bg-green-500/20 text-green-300",
+  },
   {
     slug: "fence-estimating-software-for-contractors",
     title: "The Best Fence Estimating Software for Contractors in 2026",

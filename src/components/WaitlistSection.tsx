@@ -32,19 +32,19 @@ export default function WaitlistSection() {
   }
 
   return (
-    <section id="waitlist" className="bg-fence-950 py-20 px-6">
+    <section id="waitlist" className="bg-[#080808] py-20 px-6">
       <div className="max-w-xl mx-auto text-center">
-        <p className="text-fence-400 text-sm font-semibold uppercase tracking-widest mb-3">Early Access</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+        <p className="text-[#16A34A] text-sm font-semibold uppercase tracking-widest mb-3">Early Access</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-[#F2F2F2] font-display mb-4">
           Join the Waitlist
         </h2>
-        <p className="text-fence-300 text-lg mb-8">
+        <p className="text-[#6B7280] text-lg mb-8">
           FenceEstimatePro is currently in private beta. Enter your email and we will reach out when your spot opens.
         </p>
 
         {status === "success" ? (
-          <div className="bg-fence-800 border border-fence-600 rounded-xl px-6 py-5">
-            <p className="text-white font-semibold">{message}</p>
+          <div className="bg-[rgba(22,163,74,0.1)] border border-[rgba(22,163,74,0.3)] rounded-xl px-6 py-5">
+            <p className="text-[#F2F2F2] font-semibold">{message}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
@@ -55,12 +55,12 @@ export default function WaitlistSection() {
               placeholder="your@email.com"
               required
               disabled={status === "loading"}
-              className="flex-1 px-4 py-3 rounded-xl bg-fence-900 border border-fence-700 text-white placeholder-fence-500 focus:outline-none focus:ring-2 focus:ring-fence-500 text-sm"
+              className="flex-1 px-4 py-3 rounded-xl bg-[#161616] border border-[rgba(255,255,255,0.07)] text-[#F2F2F2] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#16A34A] text-sm"
             />
             <button
               type="submit"
               disabled={status === "loading"}
-              className="bg-fence-500 hover:bg-fence-400 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm whitespace-nowrap"
+              className="bg-[#16A34A] hover:bg-[#22C55E] disabled:opacity-60 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm whitespace-nowrap"
             >
               {status === "loading" ? "Submitting..." : "Request Access"}
             </button>
@@ -68,10 +68,10 @@ export default function WaitlistSection() {
         )}
 
         {status === "error" && (
-          <p className="mt-3 text-red-400 text-sm">{message}</p>
+          <p className="mt-3 text-[#EF4444] text-sm">{message}</p>
         )}
 
-        <p className="mt-5 text-sm text-fence-500">No spam. No credit card. Just early access.</p>
+        <p className="mt-5 text-sm text-[#6B7280]">No spam. No credit card. Just early access.</p>
       </div>
     </section>
   );

@@ -170,10 +170,12 @@ export async function rejectChangeOrderAction(fd: FormData) {
     throw new Error("Only owners can reject change orders");
   }
 
+  // Explicit org ownership check — don't rely solely on RLS
   const { error } = await supabase
     .from("change_orders")
     .update({ status: "rejected" })
-    .eq("id", changeOrderId);
+    .eq("id", changeOrderId)
+    .eq("org_id", profile.org_id);
   if (error) throw new Error(`Failed to reject: ${error.message}`);
 
   redirect(`/dashboard/jobs/${jobId}`);

@@ -16,7 +16,9 @@ export function calculateChainLink(
     ? "Chain Link Fabric 6ft (per ft)"
     : "Chain Link Fabric 4ft (per ft)";
 
-  const rawFabric = linearFeet;
+  // Deduct gate openings from fabric/rail LF (each gate ~ 4ft opening)
+  const netLF = Math.max(0, linearFeet - gateCount * 4);
+  const rawFabric = netLF;
   const fabric = Math.ceil(rawFabric * (1 + wasteFactorPct));
   items.push({
     sku: fabricSku,
@@ -27,7 +29,7 @@ export function calculateChainLink(
   });
 
   // ── Top rail: linear feet with waste ──────────────────────────
-  const rawTopRail = linearFeet;
+  const rawTopRail = netLF;
   const topRail = Math.ceil(rawTopRail * (1 + wasteFactorPct));
   items.push({
     sku: "CL_TOPRAIL",
@@ -89,9 +91,9 @@ export function calculateChainLink(
 
   // ── Misc hardware (rail ends, brace bands): 1 set per terminal post
   items.push({
-    sku: "GATE_LATCH",
+    sku: "CL_FITTINGS",
     name: "Misc Fittings (rail ends / brace bands)",
-    unit: "ea",
+    unit: "set",
     qty: terminalPosts,
   });
 

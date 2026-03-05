@@ -38,7 +38,7 @@ export function generateVinylBom(
     totalCuts += edge.sections.filter(s => s.isPartial).length;
     audit.push(`Edge ${edge.id}: ${(edge.length_in / 12).toFixed(1)}ft → ${count} panels`);
   }
-  const panelSku = productLine.panelHeight_in >= 90 ? "VINYL_PANEL_8FT" : "VINYL_PANEL_6FT";
+  const panelSku = productLine.panelHeight_in >= 96 ? "VINYL_PANEL_8FT" : "VINYL_PANEL_6FT";
   bom.push(makeBomItem(panelSku, `Vinyl Privacy Panel ${productLine.panelHeight_in / 12}ft`, "panels", "ea",
     Math.ceil(totalPanels * (1 + wastePct)), 0.95,
     `${totalPanels} sections + ${Math.round(wastePct * 100)}% waste; ${totalScrap}"  det. scrap`, p(panelSku)));

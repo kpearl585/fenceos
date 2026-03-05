@@ -2,8 +2,21 @@ import type { Metadata } from "next";
 import PrintButton from "./PrintButton";
 
 export const metadata: Metadata = {
-  title: "FenceEstimatePro — Feature Overview",
-  description: "The only run-based fence estimation engine built specifically for fence contractors.",
+  title: "Feature Overview — Fence Estimation Software",
+  description:
+    "FenceEstimatePro feature overview: FenceGraph engine, margin lock, digital proposals, job tracking, and supplier price sync. Built for fence contractors.",
+  alternates: { canonical: "/pitch" },
+  openGraph: {
+    title: "FenceEstimatePro — Feature Overview",
+    description:
+      "The only run-based fence estimation engine built specifically for fence contractors. See every feature in one page.",
+    url: "https://fenceestimatepro.com/pitch",
+  },
+  twitter: {
+    title: "FenceEstimatePro — Feature Overview",
+    description:
+      "Run-based fence estimation, margin lock, digital proposals, job tracking. Built for fence contractors.",
+  },
 };
 
 export default function PitchPage() {
