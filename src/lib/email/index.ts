@@ -392,61 +392,54 @@ export function waitlistDaySevenEmail(opts: { email: string }) {
 
         <!-- Body -->
         <tr><td style="background:white;padding:36px 32px;">
-          <p style="margin:0 0 6px;color:#2D6A4F;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">Early Access Update</p>
-          <h1 style="margin:0 0 20px;color:#111827;font-size:24px;font-weight:800;">Early access is almost here — sneak peek inside</h1>
+          <p style="margin:0 0 6px;color:#2D6A4F;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">FenceEstimatePro is live</p>
+          <h1 style="margin:0 0 20px;color:#111827;font-size:24px;font-weight:800;line-height:1.3;">Your 14-day free trial is ready right now.</h1>
 
-          <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7;">We're getting close.</p>
+          <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7;">
+            You signed up for the waitlist. The platform is live and your spot is open.
+            Start your free trial today — no credit card required.
+          </p>
 
-          <!-- Dashboard preview -->
+          <!-- What's inside -->
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:24px;margin-bottom:24px;">
-            <p style="margin:0 0 14px;color:#14532d;font-size:14px;font-weight:700;">Here's what you'll see when you log in for the first time:</p>
+            <p style="margin:0 0 14px;color:#14532d;font-size:14px;font-weight:700;">Everything included in your trial:</p>
             <table cellpadding="0" cellspacing="0" width="100%">
               <tr><td style="padding-bottom:10px;">
-                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;"></span>
-                <span style="color:#374151;font-size:14px;"><strong>KPI Cards</strong> — revenue, margin, jobs in progress at a glance</span>
+                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;">✓</span>
+                <span style="color:#374151;font-size:14px;"><strong>Estimate builder</strong> — wood, vinyl, chain link, aluminum with auto material calc</span>
               </td></tr>
               <tr><td style="padding-bottom:10px;">
-                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;"></span>
-                <span style="color:#374151;font-size:14px;"><strong>Estimate Builder</strong> — line-item pricing with real-time margin tracking</span>
+                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;">✓</span>
+                <span style="color:#374151;font-size:14px;"><strong>PDF quotes + digital signatures</strong> — customers accept online, you get notified</span>
               </td></tr>
               <tr><td style="padding-bottom:10px;">
-                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;"></span>
-                <span style="color:#374151;font-size:14px;"><strong>Job Kanban</strong> — track every job from estimate to completion</span>
+                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;">✓</span>
+                <span style="color:#374151;font-size:14px;"><strong>Jobs board</strong> — track every job from estimate to payment</span>
               </td></tr>
               <tr><td>
-                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;"></span>
-                <span style="color:#374151;font-size:14px;"><strong>P&amp;L View</strong> — actual vs. estimated profit on every job</span>
+                <span style="color:#2D6A4F;font-weight:700;margin-right:8px;">✓</span>
+                <span style="color:#374151;font-size:14px;"><strong>Margin tracking</strong> — see your real profit before you send the quote</span>
               </td></tr>
             </table>
           </div>
 
-          <!-- Early access perks -->
-          <p style="margin:0 0 12px;color:#111827;font-size:15px;font-weight:700;">Early access members get:</p>
-          <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-            <tr><td style="padding-bottom:8px;color:#374151;font-size:14px;">→ Priority onboarding support — we'll walk you through it personally</td></tr>
-            <tr><td style="padding-bottom:8px;color:#374151;font-size:14px;">→ Locked-in early pricing — never goes up as long as you stay</td></tr>
-            <tr><td style="color:#374151;font-size:14px;">→ Direct line to the product team — your feedback shapes the roadmap</td></tr>
-          </table>
-
-          <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.7;background:#fef9c3;border-radius:8px;padding:14px 18px;">
-             <strong>We're keeping the first cohort small.</strong> If you referred anyone, now's the time.
-          </p>
-
           <!-- CTA -->
-          <table width="100%" cellpadding="0" cellspacing="0">
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
             <tr><td align="center">
-              <a href="https://fenceestimatepro.com"
-                style="display:inline-block;background:#2D6A4F;color:white;text-decoration:none;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;">
-                You're confirmed for early access →
+              <a href="https://fenceestimatepro.com/signup"
+                style="display:inline-block;background:#2D6A4F;color:white;text-decoration:none;font-weight:700;font-size:15px;padding:16px 40px;border-radius:10px;">
+                Start My Free Trial →
               </a>
             </td></tr>
           </table>
+
+          <p style="margin:0;color:#6b7280;font-size:13px;text-align:center;">No credit card. 14 days free. Full access.</p>
         </td></tr>
 
         <!-- Footer -->
         <tr><td style="background:#f9fafb;border-radius:0 0 12px 12px;padding:20px 32px;border-top:1px solid #e5e7eb;">
           <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
-            FenceEstimatePro · fenceestimatepro.com
+            FenceEstimatePro · fenceestimatepro.com · Built by a veteran, for contractors who run a real business.
           </p>
         </td></tr>
 
@@ -669,24 +662,61 @@ export function trialDay7Email(opts: { email: string; orgName: string; trialEnds
   const days = Math.max(0, Math.ceil((new Date(opts.trialEndsAt).getTime() - Date.now()) / 86400000));
   return {
     to: opts.email,
-    subject: "How's FenceEstimatePro working for you?",
+    subject: `${opts.orgName}, your trial ends in ${days} days — here's what to do now`,
     html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f9fafb;font-family:system-ui,sans-serif;">
 <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
   <div style="background:#1a3a2a;padding:32px 40px;">
     <div style="color:#6fcf97;font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;">FenceEstimatePro</div>
-    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Week 1 check-in</h1>
+    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">You have ${days} days left. Make them count.</h1>
   </div>
   <div style="padding:32px 40px;">
-    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Hey ${opts.orgName},</p>
-    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">You've been on FenceEstimatePro for a week. A few things worth knowing:</p>
-    <ul style="color:#374151;line-height:1.8;padding-left:20px;margin:0 0 20px;">
-      <li>Your trial has <strong>${days} days remaining</strong></li>
-      <li>Contractors using FEP average <strong>35%+ gross margin</strong> on estimates</li>
-      <li>The biggest win: knowing your number <em>before</em> you hand over the quote</li>
-    </ul>
-    <p style="color:#374151;line-height:1.6;margin:0 0 24px;">Questions? Just reply to this email — I read every one.</p>
-    <a href="https://fenceestimatepro.com/dashboard" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:14px;padding:14px 28px;border-radius:8px;text-decoration:none;">Open Dashboard →</a>
-    <p style="color:#9ca3af;font-size:12px;margin:28px 0 0;">FenceEstimatePro · <a href="https://fenceestimatepro.com/unsubscribe" style="color:#9ca3af;">Unsubscribe</a></p>
+    <p style="color:#374151;line-height:1.6;margin:0 0 20px;">Hey ${opts.orgName},</p>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 20px;">
+      Here's the thing most contractors figure out too late: the first estimate you send through FenceEstimatePro
+      usually pays for the entire year. One job. One accurate number. The margin protection alone covers it.
+    </p>
+
+    <!-- What you should have done by now -->
+    <div style="background:#f9fafb;border-left:4px solid #2D6A4F;border-radius:0 8px 8px 0;padding:20px 24px;margin:0 0 24px;">
+      <p style="color:#111827;font-weight:700;font-size:15px;margin:0 0 12px;">Before your trial ends, make sure you've done these 3 things:</p>
+      <table cellpadding="0" cellspacing="0" width="100%">
+        <tr><td style="padding-bottom:10px;">
+          <span style="color:#2D6A4F;font-weight:800;margin-right:8px;">→</span>
+          <span style="color:#374151;font-size:14px;"><a href="https://fenceestimatepro.com/dashboard/settings" style="color:#2D6A4F;font-weight:600;text-decoration:none;">Set your material prices</a> — so every estimate hits your actual costs</span>
+        </td></tr>
+        <tr><td style="padding-bottom:10px;">
+          <span style="color:#2D6A4F;font-weight:800;margin-right:8px;">→</span>
+          <span style="color:#374151;font-size:14px;"><a href="https://fenceestimatepro.com/dashboard/estimates/new" style="color:#2D6A4F;font-weight:600;text-decoration:none;">Send a real estimate to a real customer</a> — let them accept it online</span>
+        </td></tr>
+        <tr><td>
+          <span style="color:#2D6A4F;font-weight:800;margin-right:8px;">→</span>
+          <span style="color:#374151;font-size:14px;"><a href="https://fenceestimatepro.com/dashboard/margin" style="color:#2D6A4F;font-weight:600;text-decoration:none;">Check your margin report</a> — see which fence types actually make you money</span>
+        </td></tr>
+      </table>
+    </div>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 8px;">
+      If you've done those three things, you already know whether this tool works for you. Most contractors do.
+    </p>
+    <p style="color:#374151;line-height:1.6;margin:0 0 28px;">
+      <strong>Keep your data. Keep your estimates. Keep your margin tracking.</strong> Upgrade before your trial ends and nothing changes — you just keep working.
+    </p>
+
+    <!-- Pricing highlight -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px 24px;margin:0 0 28px;">
+      <p style="color:#166534;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 12px;">Most popular plan</p>
+      <p style="color:#14532d;font-size:18px;font-weight:800;margin:0 0 4px;">Pro — $89/month</p>
+      <p style="color:#166534;font-size:13px;margin:0 0 12px;">Unlimited estimates · 5 users · Jobs board · Foreman access · Digital signatures</p>
+      <p style="color:#6b7280;font-size:12px;margin:0;">Or start at <strong>$49/month</strong> on Starter if it's just you.</p>
+    </div>
+
+    <a href="https://fenceestimatepro.com/dashboard/upgrade" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">Lock In Your Plan →</a>
+
+    <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:24px 0 0;border-top:1px solid #f3f4f6;padding-top:20px;">
+      Questions before you commit? Reply to this email. I'm Keegan — I built this. I respond personally.
+    </p>
+    <p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">FenceEstimatePro · <a href="https://fenceestimatepro.com/unsubscribe" style="color:#9ca3af;">Unsubscribe</a></p>
   </div>
 </div></body></html>`,
   };
@@ -724,18 +754,89 @@ export function trialDay12Email(opts: { email: string; orgName: string }) {
 export function trialExpiredEmail(opts: { email: string; orgName: string }) {
   return {
     to: opts.email,
-    subject: "Your FenceEstimatePro trial has ended",
+    subject: "Your FenceEstimatePro trial has ended — your data is still here",
     html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f9fafb;font-family:system-ui,sans-serif;">
 <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
   <div style="background:#1a3a2a;padding:32px 40px;">
-    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Your trial has ended</h1>
+    <div style="color:#f87171;font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;">Trial Ended</div>
+    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Your account is paused — not gone.</h1>
   </div>
   <div style="padding:32px 40px;">
     <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Hey ${opts.orgName},</p>
-    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Your 14-day trial is up. Your data is safe — we hold it for 30 days. Pick a plan to get back to work.</p>
-    <a href="https://fenceestimatepro.com/dashboard/upgrade" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:14px;padding:14px 28px;border-radius:8px;text-decoration:none;margin-bottom:16px;">Choose a Plan →</a>
-    <p style="color:#6b7280;font-size:13px;margin:0;">Starting at $49/month. Cancel anytime.</p>
-    <p style="color:#9ca3af;font-size:12px;margin:28px 0 0;">FenceEstimatePro · <a href="https://fenceestimatepro.com/unsubscribe" style="color:#9ca3af;">Unsubscribe</a></p>
+    <p style="color:#374151;line-height:1.6;margin:0 0 20px;">
+      Your 14-day trial ended today. Your estimates, customers, and job history are
+      <strong>still saved</strong> — we hold everything for 30 days.
+    </p>
+    <p style="color:#374151;line-height:1.6;margin:0 0 24px;">
+      Pick a plan and you're back in under 60 seconds. No re-setup. No data loss.
+    </p>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 20px;margin:0 0 24px;">
+      <table cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+          <td style="padding-bottom:10px;border-bottom:1px solid #dcfce7;padding-bottom:12px;margin-bottom:12px;">
+            <p style="margin:0;color:#166534;font-weight:700;font-size:14px;">Starter — $49/mo</p>
+            <p style="margin:4px 0 0;color:#4b7c5e;font-size:13px;">Unlimited estimates · PDF quotes · Margin tracking · 1 user</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-top:12px;">
+            <p style="margin:0;color:#166534;font-weight:700;font-size:14px;">Pro — $89/mo &nbsp;<span style="background:#166534;color:white;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;">MOST POPULAR</span></p>
+            <p style="margin:4px 0 0;color:#4b7c5e;font-size:13px;">Everything + jobs board · 5 users · Foreman access · Digital signatures</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <a href="https://fenceestimatepro.com/dashboard/upgrade" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;margin-bottom:16px;">Reactivate My Account →</a>
+    <p style="color:#9ca3af;font-size:12px;margin:24px 0 0;">FenceEstimatePro · <a href="https://fenceestimatepro.com/unsubscribe" style="color:#9ca3af;">Unsubscribe</a></p>
+  </div>
+</div></body></html>`,
+  };
+}
+
+export function trialWinbackEmail(opts: { email: string; orgName: string }) {
+  return {
+    to: opts.email,
+    subject: "Still thinking about it? Your data deletes in 3 weeks.",
+    html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f9fafb;font-family:system-ui,sans-serif;">
+<div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <div style="background:#1a3a2a;padding:32px 40px;">
+    <div style="color:#fbbf24;font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;">FenceEstimatePro</div>
+    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Your estimates delete in 21 days.</h1>
+  </div>
+  <div style="padding:32px 40px;">
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Hey ${opts.orgName},</p>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">
+      It's been a week since your trial ended. Your account is still here — estimates, customers, job history, all of it.
+      But we only hold it for 30 days total.
+    </p>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 20px;">
+      After that it's gone. No recovery.
+    </p>
+
+    <!-- Real talk section -->
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px 24px;margin:0 0 24px;">
+      <p style="color:#92400e;font-weight:700;font-size:14px;margin:0 0 10px;">Real talk from other fence contractors:</p>
+      <p style="color:#78350f;font-size:14px;font-style:italic;line-height:1.7;margin:0 0 12px;">
+        "I tried it, didn't upgrade right away, then came back 3 weeks later and my stuff was gone. Biggest mistake I made — had to redo 6 estimates from scratch."
+      </p>
+      <p style="color:#9ca3af;font-size:12px;margin:0;">— Marcus T., fence contractor, Central Florida</p>
+    </div>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 8px;">
+      If the price was the issue — <strong>Starter is $49/month.</strong> That's one extra line item on one estimate.
+    </p>
+    <p style="color:#374151;line-height:1.6;margin:0 0 28px;">
+      If something wasn't working — reply to this email and tell me. I'll fix it or answer whatever question held you back.
+    </p>
+
+    <a href="https://fenceestimatepro.com/dashboard/upgrade" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;margin-bottom:20px;">Reactivate Before Data is Deleted →</a>
+
+    <p style="color:#6b7280;font-size:13px;line-height:1.6;border-top:1px solid #f3f4f6;padding-top:20px;margin:8px 0 0;">
+      I'm Keegan. I built this product. If something wasn't right, I want to know. Just hit reply.
+    </p>
+    <p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">FenceEstimatePro · <a href="https://fenceestimatepro.com/unsubscribe" style="color:#9ca3af;">Unsubscribe</a></p>
   </div>
 </div></body></html>`,
   };
