@@ -53,6 +53,7 @@ export default function LogoUpload({ orgId, currentLogoUrl }: { orgId: string; c
 
       {logoUrl ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={logoUrl} alt="Company logo" style={{ height: '56px', maxWidth: '180px', objectFit: 'contain', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '0.5rem', background: '#f9fafb' }} />
           <button type="button" onClick={() => inputRef.current?.click()} style={{ fontSize: '0.8rem', color: '#2D6A4F', background: 'none', border: '1px solid #2D6A4F', padding: '0.4rem 0.875rem', borderRadius: '6px', cursor: 'pointer' }}>
             Replace

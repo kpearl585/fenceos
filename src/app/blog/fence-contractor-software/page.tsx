@@ -311,7 +311,7 @@ export default function ArticlePage() {
                 Request early access to FenceEstimatePro
               </Link>{" "}
               &mdash; the only fence estimation tool built on run-based geometry.
-              Plans start at $29/mo. No credit card required to start.
+              Plans start at $49/mo. No credit card required to start.
             </p>
           </div>
         </div>

@@ -19,17 +19,27 @@ export default async function OnboardingChecklist({ userId, orgId, userCreatedAt
     { count: customerCount },
     { count: estimateCount },
     { count: quotedCount },
+    { data: orgSettings },
   ] = await Promise.all([
     supabase.from("customers").select("id", { count: "exact", head: true }).eq("org_id", orgId),
     supabase.from("estimates").select("id", { count: "exact", head: true }).eq("org_id", orgId),
     supabase.from("estimates").select("id", { count: "exact", head: true }).eq("org_id", orgId).in("status", ["quoted", "approved"]),
+    supabase.from("org_settings").select("id, target_margin, payment_terms").eq("org_id", orgId).single(),
   ]);
+
+  // Company profile is "done" if they've set at least a target margin or payment terms
+  const profileDone = !!(orgSettings?.target_margin || orgSettings?.payment_terms);
 
   const steps = [
     {
       label: "Account created",
       done: true,
       href: null,
+    },
+    {
+      label: "Set up company profile",
+      done: profileDone,
+      href: "/dashboard/settings",
     },
     {
       label: "Add your first customer",
@@ -45,11 +55,6 @@ export default async function OnboardingChecklist({ userId, orgId, userCreatedAt
       label: "Send estimate to customer",
       done: (quotedCount ?? 0) > 0,
       href: "/dashboard/estimates",
-    },
-    {
-      label: "Set up company profile",
-      done: false,
-      href: "/dashboard/settings",
     },
   ];
 

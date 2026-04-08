@@ -213,7 +213,7 @@ export default function PitchPage() {
             {[
               {
                 name: "Starter",
-                price: "$29",
+                price: "$49",
                 period: "/mo",
                 highlight: false,
                 features: ["Unlimited estimates", "Materials auto-calc", "Digital acceptance", "PDF proposals", "1 user"],
@@ -221,7 +221,7 @@ export default function PitchPage() {
               },
               {
                 name: "Pro",
-                price: "$79",
+                price: "$89",
                 period: "/mo",
                 highlight: true,
                 features: ["Everything in Starter", "Job tracking board", "Change orders", "Foreman access", "Custom PDF branding", "3 users", "P&L dashboard"],

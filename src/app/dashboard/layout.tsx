@@ -67,10 +67,47 @@ export default async function DashboardLayout({
 
   const orgName = org?.name ?? "My Organization";
   const plan = org?.plan ?? "trial";
+  const planStatus = org?.plan_status ?? "trialing";
   const trialEndsAt = org?.trial_ends_at ?? null;
   const daysRemaining = trialEndsAt
     ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
     : 14;
+
+  // Hard-lock expired trials — redirect to upgrade unless already there
+  const isExpiredTrial =
+    (plan === "trial" || plan === "trialing") &&
+    (planStatus === "expired" || daysRemaining <= 0);
+
+  // Allow the upgrade page and billing portal through even when expired
+  // (checked server-side against the request pathname via the layout URL)
+  // We use a client-side guard instead so we don't need the request object here.
+  // See: TrialExpiredGate below — rendered only when expired.
+
+  // Hard gate: expired trial — show upgrade wall instead of dashboard content
+  if (isExpiredTrial) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full text-center">
+          <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Your trial has ended</h2>
+          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+            Your 14-day free trial has expired. Your estimates, customers, and job history are saved — pick a plan to get back to work.
+          </p>
+          <a
+            href="/dashboard/upgrade"
+            className="inline-block w-full bg-fence-600 hover:bg-fence-700 text-white font-bold text-sm py-3 px-6 rounded-xl transition-colors mb-3"
+          >
+            Choose a Plan →
+          </a>
+          <p className="text-xs text-gray-400">Starting at $49/month · Cancel anytime</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

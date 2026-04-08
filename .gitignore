@@ -4,4 +4,10 @@ node_modules
 .env.local
 .DS_Store
 .env.local.save
-.env.local
+
+# Sentry
+.sentryclirc
+.sentrycli.log
+
+# Sentry Config File
+.env.sentry-build-plugin

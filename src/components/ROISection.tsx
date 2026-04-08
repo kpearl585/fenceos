@@ -4,7 +4,7 @@ export default function ROISection() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-accent font-semibold text-sm uppercase tracking-widest mb-3">Do the math</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-text font-display">$29/month vs. one underbid job</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-text font-display">$49/month vs. one underbid job</h2>
           <p className="mt-4 text-muted max-w-xl mx-auto">This isn&apos;t a software expense. It&apos;s an insurance policy on every job you quote.</p>
         </div>
 
@@ -30,7 +30,7 @@ export default function ROISection() {
               <li className="flex items-start gap-2"><span className="mt-0.5">&bull;</span>Margin locked before every quote</li>
               <li className="flex items-start gap-2"><span className="mt-0.5">&bull;</span>Materials auto-calculated &mdash; zero guessing</li>
               <li className="flex items-start gap-2"><span className="mt-0.5">&bull;</span>Change orders recalculate automatically</li>
-              <li className="flex items-start gap-2 font-bold text-accent-light"><span className="mt-0.5">&bull;</span>Cost: $29/month = $348/year</li>
+              <li className="flex items-start gap-2 font-bold text-accent-light"><span className="mt-0.5">&bull;</span>Cost: $49/month = $588/year</li>
             </ul>
           </div>
         </div>

@@ -111,7 +111,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
     } catch {
       return null;
     }
-  }, [productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates, priceMap]);
+  }, [input, productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates, priceMap]);
 
   function updateRun(id: string, patch: Partial<RunInput>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));

@@ -7,13 +7,13 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Create Account | FenceEstimatePro" };
 
 export default async function SignupPage(props: {
-  searchParams: Promise<{ error?: string; message?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; ref?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect("/dashboard");
 
-  const { error, message } = await props.searchParams;
+  const { error, message, ref } = await props.searchParams;
 
   return (
     <div className="min-h-screen flex bg-fence-950">
@@ -69,6 +69,7 @@ export default async function SignupPage(props: {
           )}
 
           <form action={signup} className="space-y-4">
+            {ref && <input type="hidden" name="ref" value={ref} />}
             <div>
               <label className="block text-white/70 text-sm mb-1.5">Email address</label>
               <input

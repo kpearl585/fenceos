@@ -103,7 +103,7 @@ const jsonLdFaq = {
       name: "What is the best software for fence contractors?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "FenceEstimatePro is purpose-built for fence contractors. Unlike generic construction estimating tools, it models fence runs geometrically, auto-calculates post counts by type, computes exact concrete volumes per hole, and locks your margin before any quote goes out. Plans start at $29/mo.",
+        text: "FenceEstimatePro is purpose-built for fence contractors. Unlike generic construction estimating tools, it models fence runs geometrically, auto-calculates post counts by type, computes exact concrete volumes per hole, and locks your margin before any quote goes out. Plans start at $49/mo.",
       },
     },
     {

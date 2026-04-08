@@ -1,10 +1,14 @@
+import Image from 'next/image';
+
 export default function FounderStrip() {
   return (
     <section className="bg-[#0F0F0F] border-y border-[rgba(255,255,255,0.07)] py-16 px-6">
       <div className="max-w-[760px] mx-auto flex gap-10 items-center flex-wrap">
-        <img
+        <Image
           src="/keegan-pearl.jpg"
           alt="Keegan Pearl - Founder"
+          width={100}
+          height={100}
           className="w-[100px] h-[100px] rounded-full object-cover object-top border-2 border-[rgba(22,163,74,0.4)] flex-shrink-0"
         />
         <div className="flex-1 min-w-[260px]">

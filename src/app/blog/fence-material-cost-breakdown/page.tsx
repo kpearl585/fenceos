@@ -50,7 +50,7 @@ export default function ArticlePage() {
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 my-6">
             <p className="font-bold text-gray-900 mb-3">Material cost breakdown per linear foot (6ft privacy, treated pine):</p>
             <ul className="text-gray-700 text-sm space-y-1.5 m-0 pl-0 list-none">
-              <li>• Dog-ear pickets (5/8" × 5.5" × 6ft): $2.80–4.20/LF</li>
+              <li>• Dog-ear pickets (5/8&quot; × 5.5&quot; × 6ft): $2.80–4.20/LF</li>
               <li>• Posts (4×4 × 8ft pressure treated, every 8ft): $1.80–2.60/LF</li>
               <li>• Rails (2×4, 2 per section): $1.40–2.00/LF</li>
               <li>• Concrete (2 bags per post): $0.80–1.20/LF</li>
@@ -70,8 +70,8 @@ export default function ArticlePage() {
             <p className="font-bold text-gray-900 mb-3">Material cost per linear foot (4ft residential, galvanized):</p>
             <ul className="text-gray-700 text-sm space-y-1.5 m-0 pl-0 list-none">
               <li>• Chain link fabric (11 gauge, 4ft roll): $2.40–3.80/LF</li>
-              <li>• Line posts (1-3/8" × 10ft, every 10ft): $1.20–2.00/LF</li>
-              <li>• Terminal posts (2" end/corner posts): $0.60–1.00/LF</li>
+              <li>• Line posts (1-3/8&quot; × 10ft, every 10ft): $1.20–2.00/LF</li>
+              <li>• Terminal posts (2&quot; end/corner posts): $0.60–1.00/LF</li>
               <li>• Top rail: $0.60–1.00/LF</li>
               <li>• Fittings and tension bands: $0.50–0.80/LF</li>
               <li>• Concrete: $0.40–0.60/LF</li>
@@ -80,7 +80,7 @@ export default function ArticlePage() {
           </div>
 
           <p className="text-gray-700"><strong>Galvanized vs. vinyl-coated:</strong> Vinyl-coated chain link adds $2–4/LF to material cost but commands a $4–8/LF price premium in most markets. It&apos;s worth having the upsell conversation — the margin on vinyl-coated is often better than galvanized.</p>
-          <p className="text-gray-700">For 6ft commercial (9-gauge fabric, 2-3/8" posts), material costs jump to $15–22/LF. Know which spec you&apos;re quoting before you price it.</p>
+          <p className="text-gray-700">For 6ft commercial (9-gauge fabric, 2-3/8&quot; posts), material costs jump to $15–22/LF. Know which spec you&apos;re quoting before you price it.</p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">Vinyl Fence</h2>
           <p className="text-gray-700">Vinyl is not &quot;just plastic.&quot; Quality varies enormously between manufacturers and the cost difference is significant — and visible after a few years in the field.</p>
@@ -89,7 +89,7 @@ export default function ArticlePage() {
             <p className="font-bold text-gray-900 mb-3">Material cost per linear foot (6ft privacy vinyl):</p>
             <ul className="text-gray-700 text-sm space-y-1.5 m-0 pl-0 list-none">
               <li>• Privacy panels (6ft sections): $14–22/LF depending on brand/thickness</li>
-              <li>• Vinyl posts (5" × 5"): $3.50–5.50/LF allocated</li>
+              <li>• Vinyl posts (5&quot; × 5&quot;): $3.50–5.50/LF allocated</li>
               <li>• Post sleeves and inserts: $1.00–1.80/LF</li>
               <li>• Concrete: $0.80–1.20/LF</li>
               <li>• Cap and trim: $0.80–1.20/LF</li>

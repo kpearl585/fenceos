@@ -25,7 +25,7 @@ function ResetForm() {
       if (event === "PASSWORD_RECOVERY") setReady(true);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase.auth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
