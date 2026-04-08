@@ -10,15 +10,16 @@ export interface UserProfile {
 }
 
 const ACCESS_MATRIX: Record<string, Role[]> = {
-  "":          ["owner", "sales", "foreman"],
-  customers:   ["owner", "sales", "foreman"],
-  estimates:   ["owner", "sales", "foreman"],
-  jobs:        ["owner", "sales", "foreman"],
-  materials:   ["owner", "foreman"],
-  leads:       ["owner"],
-  margin:      ["owner"],
-  owner:       ["owner"],
-  settings:    ["owner"],
+  "":                 ["owner", "sales", "foreman"],
+  customers:          ["owner", "sales", "foreman"],
+  estimates:          ["owner", "sales", "foreman"],
+  "advanced-estimate": ["owner", "sales", "foreman"],
+  jobs:               ["owner", "sales", "foreman"],
+  materials:          ["owner", "foreman"],
+  leads:              ["owner"],
+  margin:             ["owner"],
+  owner:              ["owner"],
+  settings:           ["owner"],
 };
 
 export type NavIcon = "home" | "users" | "calculator" | "briefcase" | "package" | "trending-up" | "settings" | "bar-chart" | "mail";
