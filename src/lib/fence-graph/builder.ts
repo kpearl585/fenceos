@@ -27,26 +27,38 @@ function chooseSlopeMethod(slopeDeg: number, maxRackAngle: number): SlopeMethod 
 }
 
 function buildGateSpec(gate: GateInput): GateSpec {
-  const totalWidth_in = gate.widthFt * 12;
+  // widthFt is the CLEAR OPENING WIDTH (post-to-post clear span)
+  const openingWidth_in = gate.widthFt * 12;
+  const hingeGap = 0.75;  // Standard hinge gap
+  const latchGap = 0.5;   // Standard latch gap
+
   if (gate.gateType === "single") {
+    // Single gate: leaf width = opening - gaps
+    const leafWidth = openingWidth_in - hingeGap - latchGap;
     return {
       gateType: "single",
-      leftLeafWidth_in: totalWidth_in,
-      totalOpening_in: totalWidth_in + 0.75 + 0.5, // hinge + latch gap
-      hingeGap_in: 0.75,
-      latchGap_in: 0.5,
+      openingWidth_in,
+      leftLeafWidth_in: leafWidth,
+      totalOpening_in: openingWidth_in, // Same as clear opening for single
+      hingeGap_in: hingeGap,
+      latchGap_in: latchGap,
       dropRodRequired: false,
       isPoolGate: gate.isPoolGate,
     };
   } else {
-    const leafWidth = totalWidth_in / 2;
+    // Double gate: each leaf = (opening - all gaps) / 2
+    const centerGap = 1.0;  // Center gap between leaves
+    const totalGaps = hingeGap + latchGap + centerGap;
+    const leafWidth = (openingWidth_in - totalGaps) / 2;
     return {
       gateType: "double",
+      openingWidth_in,
       leftLeafWidth_in: leafWidth,
       rightLeafWidth_in: leafWidth,
-      totalOpening_in: totalWidth_in + 0.75 + 0.5 + 1.0, // gaps
-      hingeGap_in: 0.75,
-      latchGap_in: 0.5,
+      totalOpening_in: openingWidth_in,
+      hingeGap_in: hingeGap,
+      latchGap_in: latchGap,
+      centerGap_in: centerGap,
       dropRodRequired: true,
       isPoolGate: gate.isPoolGate,
     };

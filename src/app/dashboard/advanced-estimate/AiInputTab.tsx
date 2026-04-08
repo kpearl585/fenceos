@@ -4,6 +4,7 @@ import { extractFromText, extractFromImage } from "./aiActions";
 import type { AiExtractionResult, AiExtractedRun, CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import type { RunInput, GateInput, FenceType } from "@/lib/fence-graph/engine";
 import type { SoilType, GateType } from "@/lib/fence-graph/types";
+import { QUICK_TEMPLATES } from "@/lib/fence-graph/ai-extract/templates";
 
 export interface AiAppliedState {
   fenceType: FenceType;
@@ -183,6 +184,27 @@ export default function AiInputTab({ onApply }: Props) {
       {/* Text input */}
       {mode === "text" && (
         <div>
+          {/* Quick Templates */}
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Quick Start Templates</label>
+            <div className="grid grid-cols-2 gap-2">
+              {QUICK_TEMPLATES.map(template => (
+                <button
+                  key={template.id}
+                  onClick={() => setText(template.prompt)}
+                  className="text-left border border-gray-200 rounded-lg px-3 py-2 hover:border-fence-400 hover:bg-fence-50 transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">{template.icon}</span>
+                    <span className="text-xs font-semibold text-fence-900">{template.name}</span>
+                  </div>
+                  <p className="text-xs text-gray-500">{template.description}</p>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Tap a template to prefill, then customize as needed</p>
+          </div>
+
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Describe the job</label>
           <textarea
             rows={5}
@@ -311,6 +333,20 @@ export default function AiInputTab({ onApply }: Props) {
                 {result.flags.map((f, i) => (
                   <li key={i} className="text-xs text-amber-800 flex gap-2">
                     <span className="flex-shrink-0 text-amber-400">—</span><span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Hidden Cost Flags */}
+          {result.hiddenCostFlags && result.hiddenCostFlags.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">⚠️ Potential Additional Costs</p>
+              <ul className="space-y-1">
+                {result.hiddenCostFlags.map((f, i) => (
+                  <li key={i} className="text-xs text-red-800 flex gap-2">
+                    <span className="flex-shrink-0 text-red-400">•</span><span>{f}</span>
                   </li>
                 ))}
               </ul>

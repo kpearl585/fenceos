@@ -6,6 +6,7 @@ import { CRITIQUE_SYSTEM_PROMPT, CRITIQUE_USER_PROMPT } from "@/lib/fence-graph/
 import { EXTRACTION_JSON_SCHEMA, CRITIQUE_JSON_SCHEMA, validateExtraction } from "@/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph/ai-extract/types";
 import type { CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
+import { detectHiddenCosts } from "@/lib/fence-graph/ai-extract/hiddenCostDetection";
 import crypto from "crypto";
 
 // ── Rate limiting constants ────────────────────────────────────────
@@ -294,6 +295,9 @@ export async function extractFromText(
       result.flags = [...(result.flags ?? []), ...critique.questionsForContractor.slice(0, 3)];
     }
 
+    // Detect hidden cost flags
+    result.hiddenCostFlags = detectHiddenCosts(description, result);
+
     // Persist audit (non-blocking)
     void persistAudit({
       orgId: auth.orgId,
@@ -375,6 +379,9 @@ export async function extractFromImage(
     if (critique?.questionsForContractor?.length) {
       result.flags = [...(result.flags ?? []), ...critique.questionsForContractor.slice(0, 3)];
     }
+
+    // Detect hidden cost flags (use additionalText if available)
+    result.hiddenCostFlags = detectHiddenCosts(additionalText || "", result);
 
     // Persist audit
     void persistAudit({

@@ -3,6 +3,7 @@ import type { FenceGraph, BomItem, LaborDriver } from "../types";
 import { calcTotalConcrete } from "../concrete";
 import { countPanelsToBuy } from "../segmentation";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
+import { mergePrices } from "../pricing/defaultPrices";
 
 export function generateVinylBom(
   graph: FenceGraph,
@@ -13,7 +14,9 @@ export function generateVinylBom(
   const audit: string[] = [];
   const { nodes, edges, productLine, installRules, siteConfig, windMode } = graph;
 
-  const p = (sku: string) => priceMap[sku];
+  // Merge user prices with defaults (user prices override defaults)
+  const prices = mergePrices(priceMap);
+  const p = (sku: string) => prices[sku];
 
   const linePosts = nodes.filter(n => n.type === "line");
   const endPosts = nodes.filter(n => n.type === "end");
@@ -27,21 +30,98 @@ export function generateVinylBom(
   bom.push(makeBomItem("VINYL_POST_CAP", "Vinyl Post Cap 5x5", "hardware", "ea", nodes.length, 0.95,
     `1 cap × ${nodes.length} posts`, p("VINYL_POST_CAP")));
 
-  // Panels
+  // Post sleeves (ground contact protection for posts in ground)
+  const sleeveCount = nodes.filter(n => n.type !== "tie_in").length; // All posts except tie-ins go in ground
+  bom.push(makeBomItem("POST_SLEEVE_5X5", "Vinyl Post Sleeve 48\" (ground contact)", "posts", "ea", sleeveCount, 0.98,
+    `${sleeveCount} posts in ground (excludes tie-ins)`, p("POST_SLEEVE_5X5")));
+
+  // Panels - determine if pre-fab or component-based system
   const segEdges = edges.filter(e => e.type === "segment");
   let totalPanels = 0, totalScrap = 0, totalCuts = 0;
+  let totalLinearFeet = 0;
+  let slopeAdjustmentFactor = 0;
+
   for (const edge of segEdges) {
     if (!edge.sections) continue;
     const count = countPanelsToBuy({ sections: edge.sections, totalScrap_in: 0, cutOperations: 0, score: 0, explanation: "" });
     totalPanels += count;
     totalScrap += edge.sections.reduce((s, sec) => s + sec.scrap_in, 0);
     totalCuts += edge.sections.filter(s => s.isPartial).length;
+    totalLinearFeet += edge.length_in / 12;
+
+    // Calculate slope adjustment for racked sections
+    if (edge.slopeMethod === "racked" && edge.slopeDeg > 0) {
+      const angleRad = (edge.slopeDeg * Math.PI) / 180;
+      const hypotenuseMultiplier = 1 / Math.cos(angleRad);
+      const sectionCount = edge.sections?.length ?? 0;
+      slopeAdjustmentFactor += sectionCount * (hypotenuseMultiplier - 1);
+      audit.push(`Edge ${edge.id}: ${edge.slopeDeg}° slope → ${(hypotenuseMultiplier * 100 - 100).toFixed(1)}% material increase`);
+    }
+
     audit.push(`Edge ${edge.id}: ${(edge.length_in / 12).toFixed(1)}ft → ${count} panels`);
   }
-  const panelSku = productLine.panelHeight_in >= 96 ? "VINYL_PANEL_8FT" : "VINYL_PANEL_6FT";
-  bom.push(makeBomItem(panelSku, `Vinyl Privacy Panel ${productLine.panelHeight_in / 12}ft`, "panels", "ea",
-    Math.ceil(totalPanels * (1 + wastePct)), 0.95,
-    `${totalPanels} sections + ${Math.round(wastePct * 100)}% waste; ${totalScrap}"  det. scrap`, p(panelSku)));
+
+  // Apply slope adjustment to panel count
+  const slopeAdjustedPanels = Math.ceil(totalPanels + slopeAdjustmentFactor);
+
+  // Component-based system: privacy fence with routed rails (pickets inserted individually)
+  // Pre-fab system: picket fence or privacy with pre-assembled panels
+  const isComponentSystem = productLine.panelStyle === "privacy" && productLine.railType === "routed";
+
+  if (isComponentSystem) {
+    // Component system: calculate individual pickets with slope adjustment
+    const picketsPerFoot = 2; // Standard 6" on-center spacing
+    const slopeAdjustedLF = totalLinearFeet * (1 + (slopeAdjustmentFactor / totalPanels));
+    const picketCount = Math.ceil(slopeAdjustedLF * picketsPerFoot * (1 + wastePct + 0.05)); // +5% extra for damage
+
+    const picketSku = productLine.panelHeight_in >= 96 ? "VINYL_PICKET_8FT" :
+                      productLine.panelHeight_in >= 72 ? "VINYL_PICKET_6FT" : "VINYL_PICKET_4FT";
+
+    const slopeNote = slopeAdjustmentFactor > 0 ? ` + ${(slopeAdjustmentFactor / totalPanels * 100).toFixed(0)}% slope adj` : "";
+    bom.push(makeBomItem(
+      picketSku,
+      `Vinyl Privacy Picket ${productLine.panelHeight_in / 12}ft`,
+      "pickets",
+      "ea",
+      picketCount,
+      0.90,
+      `${Math.round(totalLinearFeet)}ft × ${picketsPerFoot} pickets/ft${slopeNote} + ${Math.round((wastePct + 0.05) * 100)}% waste`,
+      p(picketSku)
+    ));
+
+    // U-channel for picket retention (slides into routed rails)
+    const channelLengthNeeded = slopeAdjustedLF * productLine.railCount;
+    bom.push(makeBomItem(
+      "VINYL_U_CHANNEL_8FT",
+      "Vinyl U-Channel 8ft (picket retention)",
+      "vinyl_hardware",
+      "ea",
+      Math.ceil(channelLengthNeeded / 8 * (1 + wastePct)),
+      0.92,
+      `${Math.round(channelLengthNeeded)}ft channel ÷ 8ft pieces + ${Math.round(wastePct * 100)}% waste`,
+      p("VINYL_U_CHANNEL_8FT")
+    ));
+
+    audit.push(`Component system: ${picketCount} individual pickets (slope-adjusted), ${Math.ceil(channelLengthNeeded / 8)} U-channel pieces`);
+  } else {
+    // Pre-fab panels with slope adjustment
+    const panelSku = productLine.panelHeight_in >= 96 ? "VINYL_PANEL_8FT" : "VINYL_PANEL_6FT";
+    const finalPanelCount = Math.ceil(slopeAdjustedPanels * (1 + wastePct));
+    const slopeNote = slopeAdjustmentFactor > 0 ? ` + ${Math.ceil(slopeAdjustmentFactor)} slope adj` : "";
+
+    bom.push(makeBomItem(
+      panelSku,
+      `Vinyl ${productLine.panelStyle} Panel ${productLine.panelHeight_in / 12}ft`,
+      "panels",
+      "ea",
+      finalPanelCount,
+      0.95,
+      `${totalPanels} sections${slopeNote} + ${Math.round(wastePct * 100)}% waste; ${totalScrap}" det. scrap`,
+      p(panelSku)
+    ));
+
+    audit.push(`Pre-fab system: ${finalPanelCount} panels (${totalPanels} base + slope adj + waste)`);
+  }
 
   // Rails — cutting-stock optimizer
   const railLengths_ft = segEdges.map(e => e.length_in / 12);
@@ -60,12 +140,20 @@ export function generateVinylBom(
     audit.push(`Vinyl picket plain-rail: ${bracketCount} L-brackets needed`);
   }
 
-  // Concrete + gravel
+  // Concrete + gravel with slope and waste adjustments
   const { totalBags, totalGravelBags, perPostCalc } = calcTotalConcrete(nodes, installRules, siteConfig, wastePct);
-  bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", totalBags, 0.95,
-    `${nodes.length} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor})`, p("CONCRETE_80LB")));
+  // Add slope adjustment: sloped installations need ~10% more concrete for proper setting
+  const hasSlopedSections = segEdges.some(e => e.slopeDeg > 5);
+  const slopeConcreteMultiplier = hasSlopedSections ? 1.10 : 1.0;
+  // Add realistic waste factor for concrete (spillage, post wobble, field conditions)
+  const concreteWasteFactor = 0.25; // 25% waste is industry standard
+  const finalConcreteBags = Math.ceil(totalBags * slopeConcreteMultiplier * (1 + concreteWasteFactor));
+
+  const slopeConcreteNote = hasSlopedSections ? " + 10% slope adj" : "";
+  bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", finalConcreteBags, 0.95,
+    `${nodes.length} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor})${slopeConcreteNote} + 25% waste`, p("CONCRETE_80LB")));
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
-    `4" gravel base per post × ${nodes.length} posts`));
+    `4" gravel base per post × ${nodes.length} posts`, p("GRAVEL_40LB")));
 
   // Gates
   const gateEdges = edges.filter(e => e.type === "gate");
@@ -80,14 +168,17 @@ export function generateVinylBom(
     bom.push(makeBomItem("GATE_VINYL_4FT", "Vinyl Walk Gate", "gates", "ea", singles, 0.92, `${singles} single gates`, p("GATE_VINYL_4FT")));
     bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", singles * 2, 0.95, `2 pairs × ${singles} gates`, p("HINGE_HD")));
     bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", singles, 0.95, `1 × ${singles} single gates`, p("GATE_LATCH")));
+    bom.push(makeBomItem("GATE_STOP", "Gate Stop (pair)", "hardware", "ea", singles, 0.95, `1 pair × ${singles} gates`, p("GATE_STOP")));
   }
   if (doubles > 0) {
     bom.push(makeBomItem("GATE_VINYL_4FT", "Vinyl Drive Gate (double — 2× single)", "gates", "ea", doubles * 2, 0.90, `${doubles} double gates × 2 leaves`, p("GATE_VINYL_4FT")));
     bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", doubles * 4, 0.95, `2 pairs × 2 leaves × ${doubles}`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", doubles * 2, 0.95, `1 per leaf × ${doubles} doubles`, p("GATE_LATCH")));
+    bom.push(makeBomItem("GATE_LATCH", "Gate Latch (center)", "hardware", "ea", doubles, 0.95, `1 center latch × ${doubles} double gates`, p("GATE_LATCH")));
+    bom.push(makeBomItem("DROP_ROD", "Drop Rod (cane bolt)", "hardware", "ea", doubles, 0.95, `1 × ${doubles} double gates (secures inactive leaf)`, p("DROP_ROD")));
+    bom.push(makeBomItem("GATE_STOP", "Gate Stop (pair)", "hardware", "ea", doubles, 0.95, `1 pair × ${doubles} double gates`, p("GATE_STOP")));
   }
   if (poolGates > 0) {
-    bom.push(makeBomItem("GATE_LATCH", "Pool-Code Self-Closing Latch (FL)", "hardware", "ea", poolGates, 0.95, `Florida pool code — ${poolGates} pool gates`, p("GATE_LATCH")));
+    bom.push(makeBomItem("GATE_LATCH_POOL", "Pool-Code Self-Closing Latch (FL)", "hardware", "ea", poolGates, 0.95, `Florida pool code — ${poolGates} pool gates`, p("GATE_LATCH_POOL")));
   }
 
   // Reinforcement
@@ -101,7 +192,11 @@ export function generateVinylBom(
 
   // Fasteners
   const totalSections = segEdges.reduce((s, e) => s + (e.sections?.length ?? 0), 0);
-  bom.push(makeBomItem("SCREWS_1LB", "Screws (1lb box)", "hardware", "ea", Math.ceil(totalSections / 8), 0.90, `${totalSections} sections ÷ 8 per box`));
+  // Each section needs: ~20-25 screws (rail connections, panel attachments)
+  // 1lb box ≈ 150 screws, so ~6 sections per box (conservative)
+  const screwBoxes = Math.ceil(totalSections / 6 * (1 + wastePct));
+  bom.push(makeBomItem("SCREWS_1LB", "Screws (1lb box ~150ct)", "hardware", "ea", screwBoxes, 0.90,
+    `${totalSections} sections × ~25 screws/section ÷ 150/box + ${Math.round(wastePct * 100)}% waste`, p("SCREWS_1LB")));
 
   // Labor
   const rackedSections = segEdges.filter(e => e.slopeMethod === "racked").reduce((s, e) => s + (e.sections?.length ?? 0), 0);

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:ai-extraction": "tsx scripts/test-ai-extraction.ts",
+    "test:ai-extraction:high": "tsx scripts/test-ai-extraction.ts high"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

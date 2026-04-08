@@ -3,6 +3,7 @@ import type { FenceGraph, BomItem, LaborDriver } from "../types";
 import { calcTotalConcrete } from "../concrete";
 import { countPanelsToBuy } from "../segmentation";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
+import { mergePrices } from "../pricing/defaultPrices";
 
 export type WoodStyle = "dog_ear_privacy" | "flat_top_privacy" | "picket" | "board_on_board";
 
@@ -16,7 +17,9 @@ export function generateWoodBom(
   const audit: string[] = [];
   const { nodes, edges, productLine, installRules, siteConfig, windMode } = graph;
 
-  const p = (sku: string) => priceMap[sku];
+  // Merge user prices with defaults (user prices override defaults)
+  const prices = mergePrices(priceMap);
+  const p = (sku: string) => prices[sku];
   const heightFt = productLine.panelHeight_in / 12;
   const isHeavy = heightFt > 6; // 6x6 posts for 8ft+ fence
   const railCount = heightFt <= 5 ? 2 : heightFt <= 6 ? 3 : 4;

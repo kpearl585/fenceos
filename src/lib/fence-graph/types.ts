@@ -56,11 +56,13 @@ export interface Section {
 
 export interface GateSpec {
   gateType: GateType;
-  leftLeafWidth_in: number;
-  rightLeafWidth_in?: number;  // double gates only
-  totalOpening_in: number;
-  hingeGap_in: number;
-  latchGap_in: number;
+  openingWidth_in: number;        // Clear opening between posts (user input)
+  leftLeafWidth_in: number;       // Actual gate leaf to order (opening - gaps)
+  rightLeafWidth_in?: number;     // Double gates only
+  totalOpening_in: number;        // Total space including all gaps
+  hingeGap_in: number;            // Hinge-side gap
+  latchGap_in: number;            // Latch-side gap
+  centerGap_in?: number;          // Center gap for double gates
   dropRodRequired: boolean;
   isPoolGate: boolean;
 }

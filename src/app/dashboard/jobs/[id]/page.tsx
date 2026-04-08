@@ -29,6 +29,8 @@ import {
   requestMaterialVerification,
   approveMaterialVerification,
 } from "./verifyActions";
+import { getJobOutcome } from "../outcomeActions";
+import JobOutcomeForm from "@/components/jobs/JobOutcomeForm";
 
 function fmt(v: number | string | null) {
   return new Intl.NumberFormat("en-US", {
@@ -150,6 +152,9 @@ export default async function JobDetailPage({
     .eq("job_id", id)
     .order("created_at", { ascending: false });
   const changeOrders = changeOrderItems ?? [];
+
+  // Fetch job outcome if job is complete
+  const jobOutcome = job.status === "complete" ? await getJobOutcome(id) : null;
 
   let materialsCatalog: {
     sku: string;
@@ -323,6 +328,16 @@ export default async function JobDetailPage({
           </div>
         </div>
       )}
+
+      {/* Job Outcome Tracker — OWNER ONLY, COMPLETE JOBS */}
+      {isOwner && job.status === "complete" && (
+        <JobOutcomeForm
+          jobId={job.id}
+          estimatedTotal={job.total_price || 0}
+          existingOutcome={jobOutcome}
+        />
+      )}
+
       {/* Price + schedule for non-owners */}
       {!isOwner && (
         <div className="grid grid-cols-2 gap-4 mb-6">

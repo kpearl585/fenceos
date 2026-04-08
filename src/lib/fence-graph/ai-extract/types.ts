@@ -22,6 +22,7 @@ export interface AiExtractionResult {
   runs: AiExtractedRun[];
   confidence: number;       // 0–1 overall
   flags: string[];          // assumptions, unknowns, questions
+  hiddenCostFlags?: string[];  // potential additional costs detected
   rawSummary: string;
 }
 
