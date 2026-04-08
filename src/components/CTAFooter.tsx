@@ -24,7 +24,7 @@ export default function CTAFooter() {
               Login to Dashboard
             </Link>
           </div>
-          <p className="mt-4 text-[#6B7280] text-sm">Currently in private beta &mdash; limited spots available</p>
+          <p className="mt-4 text-[#6B7280] text-sm">Currently in private beta - limited spots available</p>
           <div className="mt-5 inline-flex items-center gap-2 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] rounded-full px-4 py-1.5 text-xs font-semibold">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#c9a84c"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span style={{ color: "#c9a84c" }}>Veteran-Owned &amp; Operated</span>

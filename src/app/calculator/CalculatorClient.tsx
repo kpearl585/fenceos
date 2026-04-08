@@ -178,12 +178,12 @@ export default function CalculatorClient() {
             {submitted ? (
               <div className="text-center py-2">
                 <p className="text-green-400 font-bold text-lg">Check your inbox!</p>
-                <p className="text-fence-200 text-sm mt-1">Also — you&apos;re on the FenceEstimatePro waitlist.</p>
+                <p className="text-fence-200 text-sm mt-1">Also — you're on the FenceEstimatePro waitlist.</p>
               </div>
             ) : (
               <>
                 <p className="text-white font-bold mb-1">Want the detailed breakdown?</p>
-                <p className="text-fence-300 text-sm mb-4">We&apos;ll send a full cost breakdown with material-by-material estimates.</p>
+                <p className="text-fence-300 text-sm mb-4">We'll send a full cost breakdown with material-by-material estimates.</p>
                 <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="email"

@@ -29,7 +29,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white font-semibold text-lg mb-3">1. Acceptance of Terms</h2>
-            <p>By accessing or using FenceEstimatePro (&ldquo;Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service. These terms apply to all users, including contractors, foremen, and sales representatives.</p>
+            <p>By accessing or using FenceEstimatePro ("Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service. These terms apply to all users, including contractors, foremen, and sales representatives.</p>
           </section>
 
           <section>
@@ -57,7 +57,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white font-semibold text-lg mb-3">5. Acceptable Use</h2>
-            <p>You agree not to: use the Service for any unlawful purpose; attempt to gain unauthorized access to any portion of the Service; reverse engineer, copy, or resell any part of the Service; upload malicious code or interfere with the Service&apos;s infrastructure; use the Service to store or transmit infringing, defamatory, or otherwise unlawful content.</p>
+            <p>You agree not to: use the Service for any unlawful purpose; attempt to gain unauthorized access to any portion of the Service; reverse engineer, copy, or resell any part of the Service; upload malicious code or interfere with the Service's infrastructure; use the Service to store or transmit infringing, defamatory, or otherwise unlawful content.</p>
           </section>
 
           <section>
@@ -72,7 +72,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white font-semibold text-lg mb-3">8. Disclaimers</h2>
-            <p>The Service is provided &ldquo;as is&rdquo; without warranties of any kind. Estimate calculations are based on the inputs you provide — FenceEstimatePro does not guarantee the accuracy or profitability of any estimate. You are solely responsible for the quotes you provide to your customers.</p>
+            <p>The Service is provided "as is" without warranties of any kind. Estimate calculations are based on the inputs you provide — FenceEstimatePro does not guarantee the accuracy or profitability of any estimate. You are solely responsible for the quotes you provide to your customers.</p>
           </section>
 
           <section>

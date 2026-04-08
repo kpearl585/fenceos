@@ -51,7 +51,7 @@ export default async function OnboardingPage(props: {
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Set up your company</h1>
             <p className="text-white/45 text-sm leading-relaxed">
-              This takes 2 minutes. We&apos;ll use these details to pre-fill your estimates and configure your margin targets.
+              This takes 2 minutes. We'll use these details to pre-fill your estimates and configure your margin targets.
             </p>
           </div>
 
@@ -162,7 +162,7 @@ export default async function OnboardingPage(props: {
 
             {/* What you get */}
             <div className="bg-fence-500/5 border border-fence-500/15 rounded-xl p-4">
-              <p className="text-fence-300 text-xs font-medium mb-2">After setup you&apos;ll be able to:</p>
+              <p className="text-fence-300 text-xs font-medium mb-2">After setup you'll be able to:</p>
               <ul className="space-y-1.5">
                 {[
                   "Build your first estimate in under 5 minutes",

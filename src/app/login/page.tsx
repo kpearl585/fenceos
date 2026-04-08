@@ -23,7 +23,7 @@ export default async function LoginPage(props: {
         </div>
         <div>
           <blockquote className="text-white/80 text-xl font-medium leading-relaxed mb-6">
-            &ldquo;Know your profit before you hand over the quote.&rdquo;
+            "Know your profit before you hand over the quote."
           </blockquote>
           <div className="flex gap-6">
             {[["$1,200+", "avg. job profit protected"], ["35%", "avg. margin maintained"], ["5 min", "to build a quote"]].map(([val, label]) => (
@@ -81,7 +81,7 @@ export default async function LoginPage(props: {
           </form>
 
           <p className="mt-6 text-center text-sm text-white/40">
-            Don&apos;t have an account?{" "}
+            Don't have an account?{" "}
             <Link href="/signup" className="text-fence-400 hover:text-fence-300 font-medium">Start free trial</Link>
           </p>
         </div>

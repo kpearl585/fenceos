@@ -21,7 +21,7 @@ export default function ArticlePage() {
           </Link>
           <span className="inline-block bg-blue-500/20 text-blue-300 text-xs font-bold px-3 py-1 rounded-full mb-4">Estimating</span>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
-            How to Price a Fence Job: A Contractor&apos;s Complete Guide
+            How to Price a Fence Job: A Contractor's Complete Guide
           </h1>
           <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-fence-300">
             <span>March 1, 2026</span>
@@ -66,7 +66,7 @@ export default function ArticlePage() {
             <li>All fasteners and hardware at your actual cost, not a round number</li>
           </ul>
           <p className="text-gray-700">
-            Once you have quantities, price each item against your current supplier costs — not last quarter&apos;s costs, not what you remember paying. Material prices move, and estimating from memory is how a job that looked profitable on paper comes in at break-even when the invoice arrives.
+            Once you have quantities, price each item against your current supplier costs — not last quarter's costs, not what you remember paying. Material prices move, and estimating from memory is how a job that looked profitable on paper comes in at break-even when the invoice arrives.
           </p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">Step 3: Calculate Your True Labor Cost</h2>
@@ -76,7 +76,7 @@ export default function ArticlePage() {
           <ul className="text-gray-700 space-y-2 pl-6 list-disc">
             <li>Hourly wages for each crew member</li>
             <li>Employer payroll taxes</li>
-            <li>Workers&apos; compensation insurance</li>
+            <li>Workers' compensation insurance</li>
             <li>Any drive time you are covering</li>
             <li>Estimated hours based on your production rate for that fence type and terrain</li>
           </ul>

@@ -117,7 +117,7 @@ export default function PitchPage() {
         <div className="mb-10">
           <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-2">
             <span className="w-1 h-6 bg-[#2D6A4F] rounded-full inline-block"></span>
-            Everything you need — nothing you don&apos;t
+            Everything you need — nothing you don't
           </h3>
           <div className="grid grid-cols-3 gap-3">
             {[

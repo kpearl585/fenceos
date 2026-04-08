@@ -208,7 +208,7 @@ export default function PriceSyncClient() {
         <p className="text-sm font-semibold text-gray-600 mb-1">
           {parsing ? "Parsing..." : "Upload supplier CSV"}
         </p>
-        <p className="text-xs text-gray-400">HD Pro, Lowe&apos;s Pro, or any CSV with product names and prices</p>
+        <p className="text-xs text-gray-400">HD Pro, Lowe's Pro, or any CSV with product names and prices</p>
       </div>
       <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
       {error && <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}

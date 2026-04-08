@@ -59,10 +59,10 @@ export default function ArticlePage() {
           style={{ lineHeight: "1.8", fontFamily: "Inter, sans-serif" }}
         >
           <p style={{ fontSize: "1.125rem", color: "#374151" }}>
-            Search &ldquo;fence estimate calculator&rdquo; and you&rsquo;ll find
+            Search "fence estimate calculator" and you'll find
             dozens of simple tools that ask for total linear feet and fence type,
             then spit out a number. The problem: that number is wrong. Not
-            slightly wrong &mdash; structurally wrong. Here&rsquo;s why, and
+            slightly wrong - structurally wrong. Here's why, and
             what the math actually looks like.
           </p>
 
@@ -78,8 +78,8 @@ export default function ArticlePage() {
             Why Per-Foot Calculators Fail
           </h2>
           <p style={{ color: "#4b5563" }}>
-            A per-foot calculator does this: Total LF &times; cost per foot =
-            estimate. The &ldquo;cost per foot&rdquo; is an average that bakes
+            A per-foot calculator does this: Total LF × cost per foot =
+            estimate. The "cost per foot" is an average that bakes
             in assumptions about post spacing, concrete usage, and material
             waste. Every assumption is wrong for your specific job.
           </p>
@@ -129,7 +129,7 @@ export default function ArticlePage() {
           <p style={{ color: "#4b5563" }}>
             A proper fence estimate calculator works run by run. Each straight
             segment between corners, gates, or endpoints is calculated
-            independently. Here&rsquo;s the actual math:
+            independently. Here's the actual math:
           </p>
 
           <h3
@@ -156,11 +156,11 @@ export default function ArticlePage() {
           >
             <p>Line posts = floor(run_length / post_spacing) - 1</p>
             <p style={{ marginTop: "0.25rem" }}>
-              End/corner/gate posts = determined by what&rsquo;s at each end of
+              End/corner/gate posts = determined by what's at each end of
               the run
             </p>
             <p style={{ marginTop: "0.75rem" }}>
-              Example: 48 LF run, 8&rsquo; spacing, corner on left, gate on
+              Example: 48 LF run, 8' spacing, corner on left, gate on
               right
             </p>
             <p>Line posts = floor(48/8) - 1 = 5</p>
@@ -191,25 +191,25 @@ export default function ArticlePage() {
               color: "#1f2937",
             }}
           >
-            <p>hole_volume = &pi; &times; (hole_diameter/2)&sup2; &times; depth</p>
-            <p>post_volume = post_width &times; post_depth &times; hole_depth</p>
+            <p>hole_volume = &pi; × (hole_diameter/2)² × depth</p>
+            <p>post_volume = post_width × post_depth × hole_depth</p>
             <p>concrete_needed = hole_volume - post_volume</p>
             <p style={{ marginTop: "0.75rem" }}>
-              Line post (8&rdquo; hole, 36&rdquo; deep, 4x4 post):
+              Line post (8" hole, 36" deep, 4x4 post):
             </p>
-            <p>&pi; &times; 16 &times; 36 = 1,810 in&sup3; - 576 in&sup3; = 1,234 in&sup3; = 0.71 ft&sup3;</p>
+            <p>&pi; × 16 × 36 = 1,810 in³ - 576 in³ = 1,234 in³ = 0.71 ft³</p>
             <p style={{ marginTop: "0.5rem" }}>
-              Corner post (10&rdquo; hole, 36&rdquo; deep, 6x6 post):
+              Corner post (10" hole, 36" deep, 6x6 post):
             </p>
-            <p>&pi; &times; 25 &times; 36 = 2,827 in&sup3; - 1,296 in&sup3; = 1,531 in&sup3; = 0.89 ft&sup3;</p>
+            <p>&pi; × 25 × 36 = 2,827 in³ - 1,296 in³ = 1,531 in³ = 0.89 ft³</p>
             <p style={{ marginTop: "0.5rem" }}>
-              Gate post (12&rdquo; hole, 42&rdquo; deep, 6x6 post):
+              Gate post (12" hole, 42" deep, 6x6 post):
             </p>
-            <p>&pi; &times; 36 &times; 42 = 4,750 in&sup3; - 1,512 in&sup3; = 3,238 in&sup3; = 1.87 ft&sup3;</p>
+            <p>&pi; × 36 × 42 = 4,750 in³ - 1,512 in³ = 3,238 in³ = 1.87 ft³</p>
           </div>
           <p style={{ color: "#4b5563" }}>
-            That gate post hole needs 2.6&times; more concrete than the line post
-            hole. A &ldquo;1 bag per post&rdquo; rule misses this completely.
+            That gate post hole needs 2.6× more concrete than the line post
+            hole. A "1 bag per post" rule misses this completely.
           </p>
 
           <h3
@@ -224,8 +224,8 @@ export default function ArticlePage() {
             Panel Waste Calculation
           </h3>
           <p style={{ color: "#4b5563" }}>
-            Standard panels are 8&rsquo; wide. For any run that isn&rsquo;t a
-            perfect multiple of 8, you&rsquo;re cutting a panel:
+            Standard panels are 8' wide. For any run that isn't a
+            perfect multiple of 8, you're cutting a panel:
           </p>
           <div
             style={{
@@ -239,13 +239,13 @@ export default function ArticlePage() {
             }}
           >
             <p>panels_needed = ceil(run_length / panel_width)</p>
-            <p>waste = (panels_needed &times; panel_width) - run_length</p>
+            <p>waste = (panels_needed × panel_width) - run_length</p>
             <p style={{ marginTop: "0.75rem" }}>50 LF run: ceil(50/8) = 7 panels</p>
             <p>waste = 56 - 50 = 6 feet of panel scrap</p>
           </div>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
             With 4 runs on a job, you might generate 15-20 feet of scrap.
-            That&rsquo;s $60-150 in material cost that never shows up on a
+            That's $60-150 in material cost that never shows up on a
             per-foot calculator.
           </p>
 
@@ -268,8 +268,8 @@ export default function ArticlePage() {
             >
               free fence cost calculator
             </Link>{" "}
-            that gives homeowners quick ballpark estimates. It&rsquo;s
-            intentionally simplified &mdash; for contractor-grade accuracy with
+            that gives homeowners quick ballpark estimates. It's
+            intentionally simplified - for contractor-grade accuracy with
             run-based geometry, volumetric concrete, and margin protection,
             you need the full FenceGraph engine inside FenceEstimatePro.
           </p>
@@ -292,10 +292,10 @@ export default function ArticlePage() {
             waste are what separate a guess from a real estimate.
           </p>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
-            If you&rsquo;re a fence contractor sending quotes based on per-foot
-            math, you&rsquo;re leaving $200-800 on the table on every job that
-            isn&rsquo;t a straight line. That&rsquo;s not a rounding error
-            &mdash; it&rsquo;s the difference between 35% margin and 20%.
+            If you're a fence contractor sending quotes based on per-foot
+            math, you're leaving $200-800 on the table on every job that
+            isn't a straight line. That's not a rounding error
+            - it's the difference between 35% margin and 20%.
           </p>
 
           <div

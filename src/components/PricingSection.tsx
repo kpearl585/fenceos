@@ -67,7 +67,7 @@ export default function PricingSection() {
         <div className="text-center mb-12">
           <p className="text-[#16A34A] font-semibold text-sm uppercase tracking-widest mb-3">Simple pricing</p>
           <h2 className="text-3xl md:text-4xl font-bold text-[#F2F2F2] font-display">No contracts. No surprises.</h2>
-          <p className="mt-4 text-[#6B7280]">Start free for 14 days &mdash; full access to every feature. No credit card required.</p>
+          <p className="mt-4 text-[#6B7280]">Start free for 14 days - full access to every feature. No credit card required.</p>
         </div>
 
         {/* Annual toggle */}
@@ -142,7 +142,7 @@ export default function PricingSection() {
           })}
         </div>
 
-        <p className="text-center text-[#6B7280] text-sm mt-8">All plans include a 14-day free trial &middot; Cancel anytime &middot; No setup fees</p>
+        <p className="text-center text-[#6B7280] text-sm mt-8">All plans include a 14-day free trial • Cancel anytime • No setup fees</p>
       </div>
     </section>
   );

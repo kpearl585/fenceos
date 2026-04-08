@@ -120,7 +120,7 @@ export default function ArticlePage() {
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">Systems Create Options</h2>
           <p className="text-gray-700">
-            Running a fence business on instinct and experience works — until it does not. The day your best estimator leaves, or you try to take a week off, or you want to bring on a second crew, everything that lived in someone&apos;s head becomes a liability.
+            Running a fence business on instinct and experience works — until it does not. The day your best estimator leaves, or you try to take a week off, or you want to bring on a second crew, everything that lived in someone's head becomes a liability.
           </p>
           <p className="text-gray-700">
             Systems are how you build something that can grow beyond its founder. They are also the best fence contractor business tips you will ever get — not because they sound impressive, but because they are the actual mechanism behind every profitable fence operation.

@@ -22,7 +22,7 @@ export default function Hero() {
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-muted leading-relaxed max-w-xl">
-              FenceEstimatePro&apos;s FenceGraph engine models your fence run by run &mdash; auto-deriving post types, calculating exact concrete volume, and locking your margin before you ever touch the quote.
+              FenceEstimatePro's FenceGraph engine models your fence run by run - auto-deriving post types, calculating exact concrete volume, and locking your margin before you ever touch the quote.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -40,7 +40,7 @@ export default function Hero() {
               </a>
             </div>
 
-            <p className="mt-4 text-sm text-muted">No credit card &middot; 14-day free trial &middot; Cancel anytime</p>
+            <p className="mt-4 text-sm text-muted">No credit card • 14-day free trial • Cancel anytime</p>
 
             {/* Quick stats */}
             <div className="mt-10 flex flex-wrap gap-6">
@@ -83,7 +83,7 @@ export default function Hero() {
                 {/* Mock FenceGraph interface */}
                 <div className="p-5 space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-[#F2F2F2] font-semibold text-sm font-display">New Estimate &mdash; 127 Oak Street</p>
+                    <p className="text-[#F2F2F2] font-semibold text-sm font-display">New Estimate - 127 Oak Street</p>
                     <span className="bg-[rgba(22,163,74,0.2)] text-[#22C55E] text-xs font-bold px-2.5 py-0.5 rounded-full animate-pulse">CALCULATING</span>
                   </div>
 

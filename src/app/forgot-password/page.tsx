@@ -30,7 +30,7 @@ export default async function ForgotPasswordPage(props: {
           <span className="text-white font-bold">FenceEstimatePro</span>
         </Link>
         <h1 className="text-2xl font-bold text-white mb-2">Reset your password</h1>
-        <p className="text-white/50 text-sm mb-8">Enter your email and we&apos;ll send a reset link.</p>
+        <p className="text-white/50 text-sm mb-8">Enter your email and we'll send a reset link.</p>
         {error && <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
         {message && <div className="mb-5 p-3.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-sm">{message}</div>}
         <form action={resetPassword} className="space-y-4">

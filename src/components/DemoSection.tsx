@@ -19,7 +19,7 @@ export default function DemoSection() {
             From estimate to signed contract<br className="hidden sm:block" /> in under 10 minutes.
           </h2>
           <p className="text-[#6B7280] text-lg max-w-xl mx-auto">
-            Everything a fence contractor needs &mdash; nothing they don&apos;t.
+            Everything a fence contractor needs. Nothing extra.
           </p>
         </div>
 

@@ -29,7 +29,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-white font-semibold text-lg mb-3">1. Overview</h2>
-            <p>Pearl Ventures (&ldquo;we&rdquo;, &ldquo;us&rdquo;) operates FenceEstimatePro. This Privacy Policy explains how we collect, use, and protect your information. We are committed to handling your data with integrity — we do not sell personal data, period.</p>
+            <p>Pearl Ventures ("we", "us") operates FenceEstimatePro. This Privacy Policy explains how we collect, use, and protect your information. We are committed to handling your data with integrity — we do not sell personal data, period.</p>
           </section>
 
           <section>
@@ -99,7 +99,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">9. Children&apos;s Privacy</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">9. Children's Privacy</h2>
             <p>FenceEstimatePro is a business tool intended for adults. We do not knowingly collect data from anyone under 18. If you believe a minor has created an account, contact us immediately.</p>
           </section>
 

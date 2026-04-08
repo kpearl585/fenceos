@@ -14,10 +14,10 @@ export default function SolutionSection() {
         <div className="text-center mb-14">
           <p className="text-[#16A34A] font-semibold text-sm uppercase tracking-widest mb-3">Everything you need</p>
           <h2 className="text-3xl md:text-4xl font-bold text-[#F2F2F2] font-display">
-            The math other tools skip &mdash;{" "}
+            The math other tools skip -{" "}
             <span className="text-[#22C55E]">built in</span> from the start
           </h2>
-          <p className="mt-4 text-[#6B7280] max-w-xl mx-auto">Built specifically for fence contractors. Run-based geometry, real material math, margin protection &mdash; no spreadsheets required.</p>
+          <p className="mt-4 text-[#6B7280] max-w-xl mx-auto">Built specifically for fence contractors. Run-based geometry, real material math, margin protection. No spreadsheets required.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((f) => (

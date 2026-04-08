@@ -32,7 +32,7 @@ export default function ProblemSection() {
           ))}
         </div>
         <p className="text-center mt-10 text-[#6B7280] text-sm">
-          The average fence contractor loses <strong className="text-[#F2F2F2]">$1,200&ndash;$2,400 per month</strong> to underbid jobs and bad estimates. That&apos;s $14,000&ndash;$28,000 a year.
+          The average fence contractor loses <strong className="text-[#F2F2F2]">$1,200-$2,400 per month</strong> to underbid jobs and bad estimates. That's $14,000-$28,000 a year.
         </p>
       </div>
     </section>

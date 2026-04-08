@@ -6,10 +6,10 @@ export default function EngineSection() {
         <div className="text-center mb-16">
           <p className="text-[#16A34A] font-semibold text-sm uppercase tracking-widest mb-3">Under the hood</p>
           <h2 className="text-3xl md:text-4xl font-bold text-[#F2F2F2] font-display leading-tight">
-            Built on real fence geometry &mdash;<br className="hidden md:block" /> not a spreadsheet formula
+            Built on real fence geometry -<br className="hidden md:block" /> not a spreadsheet formula
           </h2>
           <p className="mt-4 text-[#6B7280] max-w-2xl mx-auto text-lg">
-            Every other tool multiplies linear footage by an average. FenceGraph models your fence the way a master estimator thinks &mdash; run by run, post by post.
+            Every other tool multiplies linear footage by an average. FenceGraph models your fence the way a master estimator thinks - run by run, post by post.
           </p>
         </div>
 

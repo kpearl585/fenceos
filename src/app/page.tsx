@@ -7,6 +7,7 @@ import SolutionSection from "@/components/SolutionSection";
 import EngineSection from "@/components/EngineSection";
 import EstimateDemo from "@/components/EstimateDemo";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import CustomerTestimonials from "@/components/CustomerTestimonials";
 import DemoSection from "@/components/DemoSection";
 import ROISection from "@/components/ROISection";
 import PricingSection from "@/components/PricingSection";
@@ -17,18 +18,18 @@ import FounderStrip from "@/components/FounderStrip";
 import CrossSell from "@/components/CrossSell";
 
 export const metadata: Metadata = {
-  title: "FenceEstimatePro \u2014 Fence Estimation Software for Contractors",
+  title: "FenceEstimatePro -Fence Estimation Software for Contractors",
   description:
-    "FenceGraph engine calculates every post, panel, and bag of concrete from your fence runs. Run-based geometry, margin protection, and digital proposals \u2014 built for fence contractors.",
+    "FenceGraph engine calculates every post, panel, and bag of concrete from your fence runs. Run-based geometry, margin protection, and digital proposals -built for fence contractors.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "FenceEstimatePro \u2014 Fence Estimation Software for Contractors",
+    title: "FenceEstimatePro -Fence Estimation Software for Contractors",
     description:
-      "FenceGraph engine calculates every post, panel, and bag of concrete from your fence runs. Run-based geometry, margin protection, and digital proposals \u2014 built for fence contractors.",
+      "FenceGraph engine calculates every post, panel, and bag of concrete from your fence runs. Run-based geometry, margin protection, and digital proposals -built for fence contractors.",
     url: "https://fenceestimatepro.com",
   },
   twitter: {
-    title: "FenceEstimatePro \u2014 Fence Estimation Software for Contractors",
+    title: "FenceEstimatePro -Fence Estimation Software for Contractors",
     description:
       "Run-based fence estimation engine. Auto-derives posts, calculates concrete, locks margin. Built for fence contractors.",
   },
@@ -46,6 +47,7 @@ export default function Home() {
         <EstimateDemo />
         <DemoSection />
         <TestimonialsSection />
+        <CustomerTestimonials />
         <ROISection />
         <FounderStrip />
         <EngineSection />

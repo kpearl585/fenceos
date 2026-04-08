@@ -60,9 +60,9 @@ export default function ArticlePage() {
         >
           <p style={{ fontSize: "1.125rem", color: "#374151" }}>
             Most fence contractors run their business on a combination of
-            spreadsheets, paper notes, and memory. It works &mdash; until it
-            doesn&rsquo;t. The question isn&rsquo;t whether you need software.
-            It&rsquo;s whether the software available actually solves fence-specific
+            spreadsheets, paper notes, and memory. It works - until it
+            doesn't. The question isn't whether you need software.
+            It's whether the software available actually solves fence-specific
             problems or just adds another login to your day.
           </p>
 
@@ -78,8 +78,8 @@ export default function ArticlePage() {
             Option 1: Spreadsheets (Excel / Google Sheets)
           </h2>
           <p style={{ color: "#4b5563" }}>
-            The most common &ldquo;software&rdquo; fence contractors use.
-            You&rsquo;ve probably got a spreadsheet template you&rsquo;ve refined
+            The most common "software" fence contractors use.
+            You've probably got a spreadsheet template you've refined
             over years. It works for basic calculations, and the price is right.
           </p>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
@@ -87,9 +87,9 @@ export default function ArticlePage() {
             control the formulas. No subscription fee.
           </p>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
-            <strong>Where it breaks:</strong> No post type derivation &mdash;
+            <strong>Where it breaks:</strong> No post type derivation -
             you manually count ends, corners, and gate posts. No volumetric
-            concrete calculation. No margin protection (it&rsquo;ll let you send
+            concrete calculation. No margin protection (it'll let you send
             a 5% margin quote without blinking). No customer-facing proposals. No
             job tracking. Every new estimate is a copy-paste exercise where one
             wrong cell reference cascades errors through the whole sheet.
@@ -112,8 +112,8 @@ export default function ArticlePage() {
           </h2>
           <p style={{ color: "#4b5563" }}>
             Tools like Jobber, Housecall Pro, Estimate Rocket, and similar
-            platforms. These are designed for general contractors &mdash;
-            plumbing, HVAC, landscaping, handyman &mdash; and fence work is
+            platforms. These are designed for general contractors -
+            plumbing, HVAC, landscaping, handyman - and fence work is
             technically a use case they support.
           </p>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
@@ -123,12 +123,12 @@ export default function ArticlePage() {
           </p>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
             <strong>Where they break for fence contractors:</strong> They
-            don&rsquo;t understand fence geometry. There&rsquo;s no concept of a
-            &ldquo;run,&rdquo; no post type derivation, no concrete volume
+            don't understand fence geometry. There's no concept of a
+            "run," no post type derivation, no concrete volume
             calculator, no panel optimization. You end up entering line items
-            manually &mdash; which means you&rsquo;re doing the estimation in
+            manually - which means you're doing the estimation in
             your head or on a spreadsheet anyway, then typing the results into
-            the tool. You&rsquo;re paying $40-80/month for a fancy invoice
+            the tool. You're paying $40-80/month for a fancy invoice
             generator.
           </p>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
@@ -149,7 +149,7 @@ export default function ArticlePage() {
           </h2>
           <p style={{ color: "#4b5563" }}>
             This is where the landscape gets thin. Very few tools are purpose-built
-            for fence contractors. Most &ldquo;fence estimating software&rdquo;
+            for fence contractors. Most "fence estimating software"
             is a generic tool with a fence template bolted on. The difference
             between a generic tool and a purpose-built one comes down to a single
             question: <strong>does the software understand fence geometry?</strong>
@@ -173,7 +173,7 @@ export default function ArticlePage() {
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
               Calculate concrete volume per hole based on hole diameter and depth
-              &mdash; not a flat bag count
+              - not a flat bag count
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
               Optimize panel layouts to minimize waste and cut operations
@@ -198,9 +198,9 @@ export default function ArticlePage() {
             What Makes FenceEstimatePro Different
           </h2>
           <p style={{ color: "#4b5563" }}>
-            FenceEstimatePro is built on the FenceGraph engine &mdash; a
+            FenceEstimatePro is built on the FenceGraph engine - a
             run-based geometry system designed specifically for fence estimation.
-            It&rsquo;s not a generic calculator with fence fields. The
+            It's not a generic calculator with fence fields. The
             architecture itself models fence work:
           </p>
           <ul
@@ -221,7 +221,7 @@ export default function ArticlePage() {
               No manual counting.
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <strong>Volumetric concrete:</strong> &pi; &times; r&sup2; &times;
+              <strong>Volumetric concrete:</strong> &pi; × r² ×
               depth per hole, accounting for post displacement. Florida sandy soil
               and wind load modes adjust hole depth requirements automatically.
             </li>
@@ -232,7 +232,7 @@ export default function ArticlePage() {
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
               <strong>Margin Lock:</strong> Set your target gross margin. The
-              system won&rsquo;t let a quote go out below it without an explicit
+              system won't let a quote go out below it without an explicit
               override.
             </li>
           </ul>
@@ -262,12 +262,12 @@ export default function ArticlePage() {
             }}
           >
             <li style={{ marginBottom: "0.75rem" }}>
-              <strong>Does it understand runs?</strong> If you can&rsquo;t model
-              individual fence segments, it&rsquo;s a generic tool.
+              <strong>Does it understand runs?</strong> If you can't model
+              individual fence segments, it's a generic tool.
             </li>
             <li style={{ marginBottom: "0.75rem" }}>
-              <strong>Does it derive post types?</strong> If you&rsquo;re
-              manually entering end/corner/line post counts, the tool isn&rsquo;t
+              <strong>Does it derive post types?</strong> If you're
+              manually entering end/corner/line post counts, the tool isn't
               doing the hard work.
             </li>
             <li style={{ marginBottom: "0.75rem" }}>
@@ -276,11 +276,11 @@ export default function ArticlePage() {
             </li>
             <li style={{ marginBottom: "0.75rem" }}>
               <strong>Can you protect your margin?</strong> If it lets you send a
-              quote at any margin without warning, you&rsquo;re unprotected.
+              quote at any margin without warning, you're unprotected.
             </li>
             <li style={{ marginBottom: "0.75rem" }}>
               <strong>Does the estimate flow into the proposal?</strong> If you
-              re-type numbers from one screen to another, you&rsquo;re losing
+              re-type numbers from one screen to another, you're losing
               time and introducing errors.
             </li>
           </ol>
@@ -310,7 +310,7 @@ export default function ArticlePage() {
               >
                 Request early access to FenceEstimatePro
               </Link>{" "}
-              &mdash; the only fence estimation tool built on run-based geometry.
+              - the only fence estimation tool built on run-based geometry.
               Plans start at $49/mo. No credit card required to start.
             </p>
           </div>

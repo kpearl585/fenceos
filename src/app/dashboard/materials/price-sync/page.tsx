@@ -18,7 +18,7 @@ export default async function PriceSyncPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-fence-950">Material Price Sync</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Import prices from HD Pro, Lowe&apos;s Pro, or any supplier. Keep your BOM dollar amounts accurate as material costs change.
+            Import prices from HD Pro, Lowe's Pro, or any supplier. Keep your BOM dollar amounts accurate as material costs change.
           </p>
         </div>
 
@@ -62,7 +62,7 @@ export default async function PriceSyncPage() {
               </ol>
             </div>
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-              <p className="text-sm font-bold text-blue-900 mb-2">Lowe&apos;s Pro</p>
+              <p className="text-sm font-bold text-blue-900 mb-2">Lowe's Pro</p>
               <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
                 <li>Log in at lowes.com/l/pro</li>
                 <li>Go to My Lists or Order History</li>

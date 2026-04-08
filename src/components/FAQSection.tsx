@@ -10,15 +10,15 @@ export default function FAQSection() {
     },
     {
       q: "Does it work on mobile?",
-      a: "Yes &mdash; FenceEstimatePro is a Progressive Web App (PWA). Install it on your phone and use it on job sites, even offline. Works great on iOS and Android.",
+      a: "Yes - FenceEstimatePro is a Progressive Web App (PWA). Install it on your phone and use it on job sites, even offline. Works great on iOS and Android.",
     },
     {
       q: "How long does setup take?",
-      a: "Most contractors are up and running in under 10 minutes. No training required. Add your first customer, build your first estimate, and you&apos;re off.",
+      a: "Most contractors are up and running in under 10 minutes. No training required. Add your first customer, build your first estimate, and you're off.",
     },
     {
       q: "What if I have multiple crews?",
-      a: "Pro plan supports up to 5 users with foreman access. Business plan is unlimited &mdash; perfect for companies running multiple crews simultaneously.",
+      a: "Pro plan supports up to 5 users with foreman access. Business plan is unlimited - perfect for companies running multiple crews simultaneously.",
     },
   ];
 

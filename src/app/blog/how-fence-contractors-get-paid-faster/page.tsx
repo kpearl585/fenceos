@@ -43,45 +43,45 @@ export default function ArticlePage() {
 
           <p className="text-gray-700 text-lg">Cash flow is the lifeblood of any contracting business. You can have a full schedule, great crews, and loyal customers — and still struggle to make payroll if your payment cycle is too slow. For fence contractors, the problem usually starts at the estimate.</p>
 
-          <p className="text-gray-700">The traditional estimate-to-payment flow looks like this: drive to the job, measure, go back to the office, build a quote in Excel or Word, print it, email a PDF, wait for the customer to respond, collect a check at the start of the job, deposit it, wait for it to clear. Best case, 10 days. Worst case, three weeks — if the customer doesn&apos;t ghost you.</p>
+          <p className="text-gray-700">The traditional estimate-to-payment flow looks like this: drive to the job, measure, go back to the office, build a quote in Excel or Word, print it, email a PDF, wait for the customer to respond, collect a check at the start of the job, deposit it, wait for it to clear. Best case, 10 days. Worst case, three weeks — if the customer doesn't ghost you.</p>
 
-          <p className="text-gray-700">Digital estimates compress every step in that chain. Here&apos;s how.</p>
+          <p className="text-gray-700">Digital estimates compress every step in that chain. Here's how.</p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">1. Digital Signatures Mean No More Chasing Approvals</h2>
-          <p className="text-gray-700">When you send a PDF and ask a customer to sign it, you&apos;re adding friction. They have to print it, sign it, scan it (or take a photo), and email it back. Most won&apos;t. They&apos;ll say &quot;looks good&quot; in a reply email and you&apos;re stuck chasing a formal approval that never comes.</p>
+          <p className="text-gray-700">When you send a PDF and ask a customer to sign it, you're adding friction. They have to print it, sign it, scan it (or take a photo), and email it back. Most won't. They'll say "looks good" in a reply email and you're stuck chasing a formal approval that never comes.</p>
 
-          <p className="text-gray-700">Digital estimates with built-in e-signatures remove all of that. Your customer receives a link, reviews the estimate on their phone, taps &quot;Approve,&quot; and you get an immediate notification. The approval is timestamped, legally binding, and stored automatically. No back-and-forth. No ambiguity.</p>
+          <p className="text-gray-700">Digital estimates with built-in e-signatures remove all of that. Your customer receives a link, reviews the estimate on their phone, taps "Approve," and you get an immediate notification. The approval is timestamped, legally binding, and stored automatically. No back-and-forth. No ambiguity.</p>
 
           <p className="text-gray-700">Better yet, customers respond faster. When the action required is a single tap instead of a multi-step process, approval rates go up and response time goes down. Contractors using digital estimates report customers approving jobs within a few hours of receiving the quote — compared to 3–5 days for email-based PDF quotes.</p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">2. Collect Deposits at the Point of Approval</h2>
-          <p className="text-gray-700">The biggest cash flow improvement isn&apos;t faster approval — it&apos;s tying deposit collection directly to the approval. When a customer approves your estimate, they can pay the deposit in the same flow, on the same screen, without a separate conversation.</p>
+          <p className="text-gray-700">The biggest cash flow improvement isn't faster approval — it's tying deposit collection directly to the approval. When a customer approves your estimate, they can pay the deposit in the same flow, on the same screen, without a separate conversation.</p>
 
-          <p className="text-gray-700">This matters for several reasons. First, the customer is already in a &quot;yes&quot; mindset — they just said yes to your estimate. Converting that momentum into a payment is natural. Second, you eliminate the awkward &quot;okay I&apos;ll send you a Venmo&quot; conversation and the 48-hour wait that follows.</p>
+          <p className="text-gray-700">This matters for several reasons. First, the customer is already in a "yes" mindset — they just said yes to your estimate. Converting that momentum into a payment is natural. Second, you eliminate the awkward "okay I'll send you a Venmo" conversation and the 48-hour wait that follows.</p>
 
-          <p className="text-gray-700">Most fence contractors set deposits at 30–50% of the total job value. On a $12,000 fence install, that&apos;s $3,600–$6,000 hitting your account the day the job is sold, not the day it starts. That money covers materials, and you&apos;re no longer financing the job out of your own pocket.</p>
+          <p className="text-gray-700">Most fence contractors set deposits at 30–50% of the total job value. On a $12,000 fence install, that's $3,600–$6,000 hitting your account the day the job is sold, not the day it starts. That money covers materials, and you're no longer financing the job out of your own pocket.</p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">3. The Estimate-to-Invoice Flow</h2>
-          <p className="text-gray-700">Digital estimates don&apos;t just improve the approval step — they make the entire flow from estimate to final payment cleaner and faster.</p>
+          <p className="text-gray-700">Digital estimates don't just improve the approval step — they make the entire flow from estimate to final payment cleaner and faster.</p>
 
           <p className="text-gray-700">When your estimate is already in your system, converting it to a job and eventually to a final invoice requires zero re-entry. The line items are there, the customer info is there, the pricing is locked. You mark the job complete, generate the final invoice, and send it. The customer pays the balance online, and the job is closed.</p>
 
           <p className="text-gray-700">Compare that to the manual approach: after the job, you rebuild the invoice from scratch (or copy-paste from the old estimate), attach it to an email, and wait. Every hour of delay after job completion is a day closer to the customer forgetting what they owed or the invoice getting buried in their inbox.</p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">4. Professional Presentation Drives Faster Decisions</h2>
-          <p className="text-gray-700">There&apos;s a psychological element here too. When a customer receives a polished, professional estimate with clear line items, photos, and a clean signature flow, they trust the contractor more. Trust accelerates decisions.</p>
+          <p className="text-gray-700">There's a psychological element here too. When a customer receives a polished, professional estimate with clear line items, photos, and a clean signature flow, they trust the contractor more. Trust accelerates decisions.</p>
 
-          <p className="text-gray-700">When your estimate looks like it was built in the 90s — a Word doc with misaligned columns and a generic &quot;Thanks for your business&quot; footer — customers hesitate. They wonder if this contractor is organized enough to actually manage their project. That hesitation costs you days.</p>
+          <p className="text-gray-700">When your estimate looks like it was built in the 90s — a Word doc with misaligned columns and a generic "Thanks for your business" footer — customers hesitate. They wonder if this contractor is organized enough to actually manage their project. That hesitation costs you days.</p>
 
-          <p className="text-gray-700">A digital estimate signals that you run a professional operation. It says: we track everything, we&apos;re organized, and your project is in good hands. That credibility translates directly to faster approvals and lower price resistance.</p>
+          <p className="text-gray-700">A digital estimate signals that you run a professional operation. It says: we track everything, we're organized, and your project is in good hands. That credibility translates directly to faster approvals and lower price resistance.</p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">5. Automate Follow-Ups on Open Estimates</h2>
-          <p className="text-gray-700">One of the most expensive things a fence contractor can do is send out quotes and forget about them. Industry data suggests that 30–40% of declined jobs were actually just &quot;never followed up with.&quot; The customer didn&apos;t say no — they just didn&apos;t hear back, got busy, and moved on.</p>
+          <p className="text-gray-700">One of the most expensive things a fence contractor can do is send out quotes and forget about them. Industry data suggests that 30–40% of declined jobs were actually just "never followed up with." The customer didn't say no — they just didn't hear back, got busy, and moved on.</p>
 
-          <p className="text-gray-700">Digital estimate platforms can automatically flag estimates that haven&apos;t been opened, remind you to follow up, or even send automated nudges to the customer. That follow-up system, running in the background, recovers revenue that used to disappear into the void.</p>
+          <p className="text-gray-700">Digital estimate platforms can automatically flag estimates that haven't been opened, remind you to follow up, or even send automated nudges to the customer. That follow-up system, running in the background, recovers revenue that used to disappear into the void.</p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">The Numbers Add Up Fast</h2>
-          <p className="text-gray-700">Let&apos;s say you do 8 jobs per month at an average of $9,000. With manual processes, you collect deposits 10 days after the sale on average — that&apos;s $72,000 in deposits floating out of your hands at any given time. With digital estimates, you collect within 24 hours. You just freed up 9 days of cash flow on every single job.</p>
+          <p className="text-gray-700">Let's say you do 8 jobs per month at an average of $9,000. With manual processes, you collect deposits 10 days after the sale on average — that's $72,000 in deposits floating out of your hands at any given time. With digital estimates, you collect within 24 hours. You just freed up 9 days of cash flow on every single job.</p>
 
           <p className="text-gray-700">For a $1M/year fence operation, that difference in cash flow timing is worth more than most equipment purchases.</p>
 

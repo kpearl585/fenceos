@@ -60,7 +60,7 @@ export default function ArticlePage() {
         >
           <p style={{ fontSize: "1.125rem", color: "#374151" }}>
             Every fence contractor has a story about the job they underbid. Maybe
-            the gate posts needed 12&rdquo; holes instead of 8&rdquo;. Maybe
+            the gate posts needed 12" holes instead of 8". Maybe
             corner posts got counted as line posts. Maybe the concrete was short
             by four bags. Whatever the specifics, the root cause is almost always
             the same: the estimate was a guess, not a calculation.
@@ -74,7 +74,7 @@ export default function ArticlePage() {
             }}
           >
             This guide walks through the complete material takeoff process for
-            fence jobs &mdash; the math, the decisions, and the mistakes that
+            fence jobs - the math, the decisions, and the mistakes that
             cost contractors money.
           </p>
 
@@ -90,8 +90,8 @@ export default function ArticlePage() {
             Step 1: Measure and Map Every Run
           </h2>
           <p style={{ color: "#4b5563" }}>
-            A &ldquo;run&rdquo; is a straight segment of fence between decision
-            points &mdash; corners, gates, grade changes, or property line
+            A "run" is a straight segment of fence between decision
+            points - corners, gates, grade changes, or property line
             offsets. The single biggest mistake contractors make is treating the
             entire fence as one linear footage number. A 200 LF fence with four
             corners and two gates is not the same as a 200 LF straight run.
@@ -109,15 +109,15 @@ export default function ArticlePage() {
             }}
           >
             <li style={{ marginBottom: "0.5rem" }}>
-              Record each run length in feet (not &ldquo;about 50 feet&rdquo;
-              &mdash; measure it)
+              Record each run length in feet (not "about 50 feet"
+              - measure it)
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
               Note what happens at each end: corner, gate, end post, tie-in to
               structure
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              Flag grade changes &mdash; stepped panels need different post
+              Flag grade changes - stepped panels need different post
               heights
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
@@ -139,7 +139,7 @@ export default function ArticlePage() {
           </h2>
           <p style={{ color: "#4b5563" }}>
             This is where most estimates go wrong. A per-foot formula gives you
-            one post count for the whole fence. But posts aren&rsquo;t all the
+            one post count for the whole fence. But posts aren't all the
             same. You need to derive the <strong>type</strong> of every post:
           </p>
           <ul
@@ -151,26 +151,26 @@ export default function ArticlePage() {
           >
             <li style={{ marginBottom: "0.5rem" }}>
               <strong>End posts</strong>: At the start and end of each
-              non-connected run. Typically 4x4 for wood, 2-3/8&rdquo; for chain
+              non-connected run. Typically 4x4 for wood, 2-3/8" for chain
               link.
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
               <strong>Corner posts</strong>: Where two runs meet at an angle.
-              Often need larger diameter &mdash; 6x6 for wood privacy, 2-7/8&rdquo;
+              Often need larger diameter - 6x6 for wood privacy, 2-7/8"
               terminal for chain link.
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <strong>Line posts</strong>: Every 8&rsquo; (wood) or 10&rsquo;
+              <strong>Line posts</strong>: Every 8' (wood) or 10'
               (chain link) along a straight run. The bulk of your count.
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
               <strong>Gate posts (hinge &amp; latch)</strong>: Must support gate
-              weight and swing load. Usually oversized &mdash; 6x6 minimum for
+              weight and swing load. Usually oversized - 6x6 minimum for
               wood gates.
             </li>
           </ul>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
-            For a 48 LF run with 8&rsquo; spacing: 48 &divide; 8 = 6
+            For a 48 LF run with 8' spacing: 48 &divide; 8 = 6
             sections, so 6 + 1 = 7 posts total. But if one end is a corner and
             the other meets a gate, you have 1 corner post + 5 line posts + 1
             gate hinge post. Three different SKUs, three different prices, three
@@ -189,7 +189,7 @@ export default function ArticlePage() {
             Step 3: Concrete Calculation
           </h2>
           <p style={{ color: "#4b5563" }}>
-            Most contractors estimate concrete as &ldquo;1-2 bags per post.&rdquo;
+            Most contractors estimate concrete as "1-2 bags per post."
             This is inaccurate. The correct method is <strong>volumetric</strong>:
           </p>
           <div
@@ -204,31 +204,31 @@ export default function ArticlePage() {
             }}
           >
             <p>
-              <strong>Volume per hole</strong> = &pi; &times; r&sup2; &times;
+              <strong>Volume per hole</strong> = &pi; × r² ×
               depth
             </p>
             <p style={{ marginTop: "0.5rem" }}>
-              For a 10&rdquo; diameter hole, 36&rdquo; deep:
+              For a 10" diameter hole, 36" deep:
             </p>
             <p>
-              &pi; &times; 5&sup2; &times; 36 = 2,827 cubic inches = 1.64 cubic
+              &pi; × 5² × 36 = 2,827 cubic inches = 1.64 cubic
               feet
             </p>
             <p style={{ marginTop: "0.5rem" }}>
-              Subtract the post volume (e.g., 4&rdquo; &times; 4&rdquo; &times;
-              36&rdquo; = 576 in&sup3; = 0.33 ft&sup3;)
+              Subtract the post volume (e.g., 4" × 4" ×
+              36" = 576 in³ = 0.33 ft³)
             </p>
             <p>
-              <strong>Net concrete needed</strong>: 1.31 ft&sup3; per hole =
-              ~2.4 bags (60 lb bags at 0.45 ft&sup3; each)
+              <strong>Net concrete needed</strong>: 1.31 ft³ per hole =
+              ~2.4 bags (60 lb bags at 0.45 ft³ each)
             </p>
           </div>
           <p style={{ color: "#4b5563" }}>
-            The difference between a 8&rdquo; hole and a 12&rdquo; hole is
+            The difference between a 8" hole and a 12" hole is
             massive in concrete volume. Gate posts and corner posts typically need
-            larger holes. If you&rsquo;re in Florida, sandy soil and wind load
-            requirements may mandate deeper holes &mdash; 42&rdquo; or even
-            48&rdquo; instead of the standard 36&rdquo;.
+            larger holes. If you're in Florida, sandy soil and wind load
+            requirements may mandate deeper holes - 42" or even
+            48" instead of the standard 36".
           </p>
 
           <h2
@@ -243,9 +243,9 @@ export default function ArticlePage() {
             Step 4: Panel and Rail Calculation
           </h2>
           <p style={{ color: "#4b5563" }}>
-            Standard wood privacy panels are 8&rsquo; wide. For a 50 LF run:
-            50 &divide; 8 = 6.25. You need 7 panels, with one cut to 2&rsquo;.
-            That means 6&rsquo; of waste from the cut panel unless you can use
+            Standard wood privacy panels are 8' wide. For a 50 LF run:
+            50 &divide; 8 = 6.25. You need 7 panels, with one cut to 2'.
+            That means 6' of waste from the cut panel unless you can use
             that offcut elsewhere.
           </p>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
@@ -298,18 +298,18 @@ export default function ArticlePage() {
               requirements.
             </li>
             <li style={{ marginBottom: "0.75rem" }}>
-              <strong>Flat-rate concrete per post.</strong> A 10&rdquo; hole at
-              36&rdquo; deep needs 2.4 bags. A 12&rdquo; hole at 42&rdquo; needs
+              <strong>Flat-rate concrete per post.</strong> A 10" hole at
+              36" deep needs 2.4 bags. A 12" hole at 42" needs
               4.1 bags. The difference adds up fast.
             </li>
             <li style={{ marginBottom: "0.75rem" }}>
               <strong>Ignoring panel waste.</strong> Every cut panel generates
-              scrap. If you don&rsquo;t account for it, you&rsquo;re absorbing
+              scrap. If you don't account for it, you're absorbing
               the material cost.
             </li>
             <li style={{ marginBottom: "0.75rem" }}>
               <strong>Forgetting hardware.</strong> Post caps, hinges, latches,
-              tension bands &mdash; $200-400 of &ldquo;small&rdquo; items that
+              tension bands - $200-400 of "small" items that
               erode your margin.
             </li>
             <li style={{ marginBottom: "0.75rem" }}>
@@ -338,7 +338,7 @@ export default function ArticlePage() {
             leaves room for errors on every line.
           </p>
           <p style={{ color: "#4b5563", marginTop: "1rem" }}>
-            FenceEstimatePro&rsquo;s FenceGraph engine models every run
+            FenceEstimatePro's FenceGraph engine models every run
             independently. You enter the run lengths, mark corners and gates, and
             the engine auto-derives every post type, calculates exact concrete
             volume per hole, optimizes panel layouts to minimize waste, and totals

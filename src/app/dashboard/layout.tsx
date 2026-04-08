@@ -34,7 +34,7 @@ export default async function DashboardLayout({
         <div className="text-center max-w-md px-4">
           <h1 className="text-xl font-bold text-fence-900 mb-2">Account setup failed</h1>
           <p className="text-sm text-gray-500 mb-4">
-            We couldn&apos;t finish setting up your account. This is usually a temporary issue.
+            We couldn't finish setting up your account. This is usually a temporary issue.
           </p>
           {process.env.NODE_ENV !== "production" && (
             <p className="text-xs text-red-400 mb-4 font-mono break-all">{message}</p>

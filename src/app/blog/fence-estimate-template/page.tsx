@@ -95,7 +95,7 @@ export default function ArticlePage() {
           </ul>
 
           <p className="text-gray-700">
-            A free fence estimate template can hold most of that information if you fill it in correctly every time. The problem is that &quot;correctly every time&quot; is the variable. Under pressure, in a busy season, with ten jobs in progress and three more to quote, the manual steps get skipped and the errors creep in.
+            A free fence estimate template can hold most of that information if you fill it in correctly every time. The problem is that "correctly every time" is the variable. Under pressure, in a busy season, with ten jobs in progress and three more to quote, the manual steps get skipped and the errors creep in.
           </p>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">The Real Cost of Template-Based Estimating</h2>
@@ -103,7 +103,7 @@ export default function ArticlePage() {
             The cost of a fence estimate template is not the time it takes to fill it out, though that is real. The cost is the margin you lose when it is filled out incorrectly — and the absence of any mechanism to catch the error before it becomes a committed price.
           </p>
           <p className="text-gray-700">
-            Run this calculation on your own operation: pick three completed jobs from last year where you felt like you &quot;should have made more.&quot; Pull the original estimates and compare them to what you actually spent. In most cases, the gap between estimated cost and actual cost is larger than it should be, and at least part of it traces back to something that was not properly accounted for in the estimate.
+            Run this calculation on your own operation: pick three completed jobs from last year where you felt like you "should have made more." Pull the original estimates and compare them to what you actually spent. In most cases, the gap between estimated cost and actual cost is larger than it should be, and at least part of it traces back to something that was not properly accounted for in the estimate.
           </p>
           <p className="text-gray-700">
             That gap, multiplied across every job in a season, is what the fence estimate template is costing you. Not in template fees — in margin erosion on jobs that were priced from incomplete or inaccurate inputs.
