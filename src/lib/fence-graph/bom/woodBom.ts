@@ -37,7 +37,7 @@ export function generateWoodBom(
   bom.push(makeBomItem(postSku, postName, "posts", "ea", nodes.length, 0.95,
     `${nodes.length} posts (${heightFt}ft fence → ${postSku})`, p(postSku)));
   bom.push(makeBomItem("POST_CAP_4X4", "Wood Post Cap", "hardware", "ea", nodes.length, 0.90,
-    `1 cap × ${nodes.length} posts`));
+    `1 cap × ${nodes.length} posts`, p("POST_CAP_4X4")));
 
   // Rails — 2x4 pressure treated, cutting-stock optimizer
   const segEdges = edges.filter(e => e.type === "segment");
@@ -51,7 +51,7 @@ export function generateWoodBom(
   if (!isPicket) {
     bom.push(makeBomItem("WOOD_RAIL_BOT_8", "Bottom Rail / Kick Board 1x6x8", "rails", "ea",
       Math.ceil(segEdges.reduce((s, e) => s + e.length_in / 12, 0) / 8 * (1 + wastePct)), 0.90,
-      `Kick board: total run LF ÷ 8ft stock + ${Math.round(wastePct * 100)}% waste`));
+      `Kick board: total run LF ÷ 8ft stock + ${Math.round(wastePct * 100)}% waste`, p("WOOD_RAIL_BOT_8")));
   }
 
   // Boards/pickets
@@ -85,12 +85,12 @@ export function generateWoodBom(
   bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", totalBags, 0.95,
     `${nodes.length} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor})`, p("CONCRETE_80LB")));
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
-    `4" gravel base × ${nodes.length} posts`));
+    `4" gravel base × ${nodes.length} posts`, p("GRAVEL_40LB")));
 
   // Fasteners
   const totalRails = railCutPlan.stockPiecesNeeded;
   bom.push(makeBomItem("SCREWS_1LB", "Screws (1lb box)", "hardware", "ea", Math.ceil(totalRails / 10), 0.90,
-    `${totalRails} rails ÷ 10 rails per box`));
+    `${totalRails} rails ÷ 10 rails per box`, p("SCREWS_1LB")));
 
   // Hurricane ties / joist hangers — structural rail-to-post connection (2 per rail piece, each end)
   // Florida building code requires for wind resistance; best practice everywhere
@@ -128,22 +128,23 @@ export function generateWoodBom(
   }
 
   if (windMode) {
-    bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", nodes.length, 0.90, `Wind mode: all posts`));
+    bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", nodes.length, 0.90, `Wind mode: all posts`, p("REBAR_4_3FT")));
   }
 
   const totalSections = segEdges.reduce((s, e) => s + (e.sections?.length ?? 0), 0);
   const totalCuts = segEdges.reduce((s, e) => s + (e.sections?.filter(sec => sec.isPartial).length ?? 0), 0);
   const rackedSections = segEdges.filter(e => e.slopeMethod === "racked").reduce((s, e) => s + (e.sections?.length ?? 0), 0);
 
+  // Labor rates adjusted to realistic contractor baselines (1.5-2.5 hrs per 10 LF)
   const laborDrivers: LaborDriver[] = [
-    { activity: "Hole Digging", count: nodes.length, rateHrs: 0.75, totalHrs: nodes.length * 0.75 },
-    { activity: "Post Setting", count: nodes.length, rateHrs: 0.50, totalHrs: nodes.length * 0.50 },
-    { activity: "Rail Installation", count: totalRails, rateHrs: 0.30, totalHrs: totalRails * 0.30 },
-    { activity: "Board/Panel Nailing", count: totalSections || 1, rateHrs: 1.20, totalHrs: (totalSections || 1) * 1.20 },
-    { activity: "Cutting Operations", count: totalCuts, rateHrs: 0.25, totalHrs: totalCuts * 0.25 },
-    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 2.00, totalHrs: gateEdges.length * 2.00 },
-    { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: 0.50, totalHrs: rackedSections * 0.50 },
-    { activity: "Concrete Pour", count: nodes.length, rateHrs: 0.10, totalHrs: nodes.length * 0.10 },
+    { activity: "Hole Digging", count: nodes.length, rateHrs: 0.25, totalHrs: nodes.length * 0.25 },
+    { activity: "Post Setting", count: nodes.length, rateHrs: 0.20, totalHrs: nodes.length * 0.20 },
+    { activity: "Rail Installation", count: totalRails, rateHrs: 0.10, totalHrs: totalRails * 0.10 },
+    { activity: "Board/Panel Nailing", count: totalSections || 1, rateHrs: 0.40, totalHrs: (totalSections || 1) * 0.40 },
+    { activity: "Cutting Operations", count: totalCuts, rateHrs: 0.15, totalHrs: totalCuts * 0.15 },
+    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 1.50, totalHrs: gateEdges.length * 1.50 },
+    { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: 0.30, totalHrs: rackedSections * 0.30 },
+    { activity: "Concrete Pour", count: nodes.length, rateHrs: 0.08, totalHrs: nodes.length * 0.08 },
   ];
 
   return { bom, laborDrivers, auditTrail: audit };

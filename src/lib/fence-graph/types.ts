@@ -13,9 +13,9 @@ export type PostType =
 export type PanelStyle = "privacy" | "picket" | "semi_privacy" | "lattice_top";
 export type SlopeMethod = "racked" | "stepped" | "level";
 export type GateType = "single" | "double";
-export type PostSize = "4x4" | "5x5";
+export type PostSize = "4x4" | "5x5" | "2in";
 export type PanelHeight = 4 | 5 | 6 | 8;
-export type SoilType = "sandy" | "sandy_loam" | "clay" | "rocky" | "wet";
+export type SoilType = "sandy" | "sandy_loam" | "clay" | "rocky" | "wet" | "standard";
 
 export interface FenceNode {
   id: string;
@@ -360,14 +360,26 @@ export const INSTALL_RULES: Record<PostSize, InstallRules> = {
     maxRackAngle_deg: 18,
     slopeThresholdForStepped_deg: 18,
   },
+  "2in": {
+    maxPostCenters_in: 120,          // Chain link: 10ft OC standard
+    preferredPostCenters_in: 120,
+    holeDiameter_in: 6,               // 2" post needs 6" hole
+    holeDepth_in: 24,                 // 24" depth for chain link (shallower than wood/vinyl)
+    gravelBase_in: 4,
+    groundClearance_in: 2,
+    thermalGap_in: 0,                 // Not applicable to chain link
+    maxRackAngle_deg: 0,              // Chain link doesn't rack
+    slopeThresholdForStepped_deg: 0,  // Chain link doesn't step
+  },
 };
 
 export const SOIL_CONCRETE_FACTORS: Record<SoilType, number> = {
+  standard: 1.0,      // Default/average soil conditions
   clay: 1.0,
   rocky: 1.0,
-  sandy_loam: 1.25,
-  sandy: 1.5,
-  wet: 1.75,
+  sandy_loam: 1.10,   // 10% more concrete (depth override already handles main adjustment)
+  sandy: 1.20,        // 20% more concrete (depth override already handles main adjustment)
+  wet: 1.25,          // 25% more concrete for drainage and stability
 };
 
 export const FLORIDA_DEPTH_OVERRIDE_IN = 42; // sandy Florida soil min depth

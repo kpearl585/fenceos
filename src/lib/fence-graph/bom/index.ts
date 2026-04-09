@@ -6,6 +6,7 @@ import { generateVinylBom } from "./vinylBom";
 import { generateWoodBom, type WoodStyle } from "./woodBom";
 import { generateChainLinkBom } from "./chainLinkBom";
 import { generateAluminumBom } from "./aluminumBom";
+import { assertValidEstimate } from "../validation";
 
 export type FenceType = "vinyl" | "wood" | "chain_link" | "aluminum";
 
@@ -61,7 +62,7 @@ export function generateBom(
   const totalScrap = segEdges.reduce((s, e) =>
     s + (e.sections?.reduce((ss, sec) => ss + sec.scrap_in, 0) ?? 0), 0);
 
-  return {
+  const result: FenceEstimateResult = {
     projectId: graph.projectId,
     projectName: "Estimate",
     graph,
@@ -77,6 +78,12 @@ export function generateBom(
     redFlagItems,
     auditTrail,
   };
+
+  // ── VALIDATION LAYER: Block bad outputs ──
+  // Throws error if estimate has NaN, negative values, or missing critical data
+  assertValidEstimate(result);
+
+  return result;
 }
 
 export type { WoodStyle };

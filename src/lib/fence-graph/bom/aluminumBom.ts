@@ -3,6 +3,7 @@ import type { FenceGraph, BomItem, LaborDriver } from "../types";
 import { calcTotalConcrete } from "../concrete";
 import { countPanelsToBuy } from "../segmentation";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
+import { mergePrices } from "../pricing/defaultPrices";
 
 export function generateAluminumBom(
   graph: FenceGraph,
@@ -13,7 +14,9 @@ export function generateAluminumBom(
   const audit: string[] = [];
   const { nodes, edges, productLine, installRules, siteConfig, windMode } = graph;
 
-  const p = (sku: string) => priceMap[sku];
+  // Merge user prices with defaults (user prices override defaults)
+  const prices = mergePrices(priceMap);
+  const p = (sku: string) => prices[sku];
   const heightFt = productLine.panelHeight_in / 12;
 
   const linePosts = nodes.filter(n => n.type === "line");

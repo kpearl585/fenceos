@@ -25,15 +25,21 @@ export function generateVinylBom(
 
   audit.push(`Posts: ${linePosts.length} line + ${endPosts.length} end + ${cornerPosts.length} corner + ${gatePosts.length} gate = ${nodes.length} total`);
 
-  bom.push(makeBomItem("VINYL_POST_5X5", "Vinyl Post 5x5 10ft", "posts", "ea", nodes.length, 0.95,
-    `${linePosts.length}L + ${endPosts.length}E + ${cornerPosts.length}C + ${gatePosts.length}G posts`, p("VINYL_POST_5X5")));
-  bom.push(makeBomItem("VINYL_POST_CAP", "Vinyl Post Cap 5x5", "hardware", "ea", nodes.length, 0.95,
+  // Determine post SKU based on product line post size
+  const is4x4 = productLine.postSize === "4x4";
+  const postSku = is4x4 ? "VINYL_POST_4X4" : "VINYL_POST_5X5";
+  const postLabel = is4x4 ? "4x4" : "5x5";
+  const sleeveSku = is4x4 ? "POST_SLEEVE_4X4" : "POST_SLEEVE_5X5";
+
+  bom.push(makeBomItem(postSku, `Vinyl Post ${postLabel} 10ft`, "posts", "ea", nodes.length, 0.95,
+    `${linePosts.length}L + ${endPosts.length}E + ${cornerPosts.length}C + ${gatePosts.length}G posts`, p(postSku)));
+  bom.push(makeBomItem("VINYL_POST_CAP", `Vinyl Post Cap ${postLabel}`, "hardware", "ea", nodes.length, 0.95,
     `1 cap × ${nodes.length} posts`, p("VINYL_POST_CAP")));
 
   // Post sleeves (ground contact protection for posts in ground)
   const sleeveCount = nodes.filter(n => n.type !== "tie_in").length; // All posts except tie-ins go in ground
-  bom.push(makeBomItem("POST_SLEEVE_5X5", "Vinyl Post Sleeve 48\" (ground contact)", "posts", "ea", sleeveCount, 0.98,
-    `${sleeveCount} posts in ground (excludes tie-ins)`, p("POST_SLEEVE_5X5")));
+  bom.push(makeBomItem(sleeveSku, `Vinyl Post Sleeve 48\" (ground contact)`, "posts", "ea", sleeveCount, 0.98,
+    `${sleeveCount} posts in ground (excludes tie-ins)`, p(sleeveSku)));
 
   // Panels - determine if pre-fab or component-based system
   const segEdges = edges.filter(e => e.type === "segment");
@@ -105,7 +111,8 @@ export function generateVinylBom(
     audit.push(`Component system: ${picketCount} individual pickets (slope-adjusted), ${Math.ceil(channelLengthNeeded / 8)} U-channel pieces`);
   } else {
     // Pre-fab panels with slope adjustment
-    const panelSku = productLine.panelHeight_in >= 96 ? "VINYL_PANEL_8FT" : "VINYL_PANEL_6FT";
+    const panelSku = productLine.panelHeight_in >= 96 ? "VINYL_PANEL_8FT" :
+                      productLine.panelHeight_in >= 72 ? "VINYL_PANEL_6FT" : "VINYL_PANEL_4FT";
     const finalPanelCount = Math.ceil(slopeAdjustedPanels * (1 + wastePct));
     const slopeNote = slopeAdjustmentFactor > 0 ? ` + ${Math.ceil(slopeAdjustmentFactor)} slope adj` : "";
 
@@ -184,10 +191,10 @@ export function generateVinylBom(
   // Reinforcement
   const reinforced = nodes.filter(n => n.reinforced);
   if (reinforced.length > 0) {
-    bom.push(makeBomItem("ALUM_INSERT", "Aluminum Post Insert", "hardware", "ea", reinforced.length, 0.90, `${reinforced.length} reinforced posts`));
+    bom.push(makeBomItem("ALUM_INSERT", "Aluminum Post Insert", "hardware", "ea", reinforced.length, 0.90, `${reinforced.length} reinforced posts`, p("ALUM_INSERT")));
   }
   if (windMode) {
-    bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", nodes.length, 0.90, `Wind mode: all ${nodes.length} posts`));
+    bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", nodes.length, 0.90, `Wind mode: all ${nodes.length} posts`, p("REBAR_4_3FT")));
   }
 
   // Fasteners
@@ -200,14 +207,15 @@ export function generateVinylBom(
 
   // Labor
   const rackedSections = segEdges.filter(e => e.slopeMethod === "racked").reduce((s, e) => s + (e.sections?.length ?? 0), 0);
+  // Labor rates adjusted to realistic contractor baselines (1.5-2.5 hrs per 10 LF)
   const laborDrivers: LaborDriver[] = [
-    { activity: "Hole Digging", count: nodes.length, rateHrs: 0.75, totalHrs: nodes.length * 0.75 },
-    { activity: "Post Setting", count: nodes.length, rateHrs: 0.50, totalHrs: nodes.length * 0.50 },
-    { activity: "Section Installation", count: totalSections, rateHrs: 1.50, totalHrs: totalSections * 1.50 },
-    { activity: "Cutting Operations", count: totalCuts, rateHrs: 0.25, totalHrs: totalCuts * 0.25 },
-    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 2.00, totalHrs: gateEdges.length * 2.00 },
-    { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: 0.50, totalHrs: rackedSections * 0.50 },
-    { activity: "Concrete Pour", count: nodes.length, rateHrs: 0.10, totalHrs: nodes.length * 0.10 },
+    { activity: "Hole Digging", count: nodes.length, rateHrs: 0.25, totalHrs: nodes.length * 0.25 },
+    { activity: "Post Setting", count: nodes.length, rateHrs: 0.20, totalHrs: nodes.length * 0.20 },
+    { activity: "Section Installation", count: totalSections, rateHrs: 0.50, totalHrs: totalSections * 0.50 },
+    { activity: "Cutting Operations", count: totalCuts, rateHrs: 0.15, totalHrs: totalCuts * 0.15 },
+    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 1.50, totalHrs: gateEdges.length * 1.50 },
+    { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: 0.30, totalHrs: rackedSections * 0.30 },
+    { activity: "Concrete Pour", count: nodes.length, rateHrs: 0.08, totalHrs: nodes.length * 0.08 },
   ];
 
   return { bom, laborDrivers, auditTrail: audit };

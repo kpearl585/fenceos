@@ -5,7 +5,7 @@
 
 import type {
   FenceProjectInput, FenceGraph, FenceNode, FenceEdge,
-  RunInput, GateInput, PostType, SlopeMethod,
+  RunInput, GateInput, PostType, PostSize, SlopeMethod,
   GateSpec, Section, InstallRules,
 } from "./types";
 import {
@@ -73,7 +73,7 @@ function makeNode(
   site: { soilConcreteFactor: number; soilType: string },
   windMode: boolean,
   reinforced: boolean,
-  postSize: "4x4" | "5x5"
+  postSize: PostSize
 ): FenceNode {
   const isGate = type === "gate_hinge" || type === "gate_latch";
   const isStructural = type === "corner" || type === "end" || isGate;

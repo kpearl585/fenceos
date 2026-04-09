@@ -10,6 +10,7 @@
 import type { FenceGraph, BomItem, LaborDriver } from "../types";
 import { calcTotalConcrete } from "../concrete";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
+import { mergePrices } from "../pricing/defaultPrices";
 
 const LINE_POST_OC_FT = 10; // line posts every 10ft (standard residential)
 const TOP_RAIL_STOCK_FT = 21; // standard top rail length sold in 21ft sections
@@ -25,7 +26,9 @@ export function generateChainLinkBom(
   const audit: string[] = [];
   const { nodes, edges, productLine, installRules, siteConfig, windMode } = graph;
 
-  const p = (sku: string) => priceMap[sku];
+  // Merge user prices with defaults (user prices override defaults)
+  const prices = mergePrices(priceMap);
+  const p = (sku: string) => prices[sku];
   const heightFt = productLine.panelHeight_in / 12;
   const fabricSku = heightFt > 4 ? "CL_FABRIC_6FT" : "CL_FABRIC_4FT";
   const fabricName = heightFt > 4 ? "Chain Link Fabric 6ft" : "Chain Link Fabric 4ft";
@@ -81,7 +84,7 @@ export function generateChainLinkBom(
   const tiePoints = totalPostCount + Math.ceil(totalLF / TOP_RAIL_STOCK_FT * 5); // ~5 tie points per rail section
   bom.push(makeBomItem("STAPLES_1LB", "Tie Wire Box", "hardware", "ea",
     Math.max(1, Math.ceil(tiePoints / TIE_WIRE_BOX_USES)), 0.85,
-    `~${tiePoints} tie points ÷ ${TIE_WIRE_BOX_USES} per box`));
+    `~${tiePoints} tie points ÷ ${TIE_WIRE_BOX_USES} per box`, p("STAPLES_1LB")));
 
   // ── Terminal post hardware (tension bars, tension bands, brace bands, rail ends) ──
   // Each terminal post needs:
@@ -120,7 +123,7 @@ export function generateChainLinkBom(
   bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", totalBags, 0.95,
     `${totalPostCount} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor})`, p("CONCRETE_80LB")));
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
-    `4" gravel base × ${totalPostCount} posts`));
+    `4" gravel base × ${totalPostCount} posts`, p("GRAVEL_40LB")));
 
   // Gates
   let singles = 0, doubles = 0;
@@ -144,13 +147,14 @@ export function generateChainLinkBom(
     bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", terminalPosts.length, 0.90, `Wind mode: terminal posts only`));
   }
 
+  // Labor rates adjusted to realistic contractor baselines (0.8-1.3 hrs per 10 LF)
   const laborDrivers: LaborDriver[] = [
-    { activity: "Hole Digging", count: totalPostCount, rateHrs: 0.75, totalHrs: totalPostCount * 0.75 },
-    { activity: "Post Setting", count: totalPostCount, rateHrs: 0.50, totalHrs: totalPostCount * 0.50 },
-    { activity: "Top Rail Installation", count: railCutPlan.stockPiecesNeeded, rateHrs: 0.40, totalHrs: railCutPlan.stockPiecesNeeded * 0.40 },
-    { activity: "Fabric Unrolling & Stretching", count: segEdges.length, rateHrs: 2.00, totalHrs: segEdges.length * 2.00, notes: "Per run" },
-    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 2.00, totalHrs: gateEdges.length * 2.00 },
-    { activity: "Tie Wire / Fastening", count: totalPostCount, rateHrs: 0.20, totalHrs: totalPostCount * 0.20 },
+    { activity: "Hole Digging", count: totalPostCount, rateHrs: 0.25, totalHrs: totalPostCount * 0.25 },
+    { activity: "Post Setting", count: totalPostCount, rateHrs: 0.20, totalHrs: totalPostCount * 0.20 },
+    { activity: "Top Rail Installation", count: railCutPlan.stockPiecesNeeded, rateHrs: 0.20, totalHrs: railCutPlan.stockPiecesNeeded * 0.20 },
+    { activity: "Fabric Unrolling & Stretching", count: segEdges.length, rateHrs: 1.50, totalHrs: segEdges.length * 1.50, notes: "Per run" },
+    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 1.75, totalHrs: gateEdges.length * 1.75 },
+    { activity: "Tie Wire / Fastening", count: totalPostCount, rateHrs: 0.15, totalHrs: totalPostCount * 0.15 },
     { activity: "Concrete Pour", count: totalPostCount, rateHrs: 0.10, totalHrs: totalPostCount * 0.10 },
   ];
 
