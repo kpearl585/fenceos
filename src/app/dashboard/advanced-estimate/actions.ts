@@ -7,6 +7,8 @@ import { estimateFence } from "@/lib/fence-graph/engine";
 import type { FenceProjectInput, FenceEstimateResult } from "@/lib/fence-graph/types";
 import { updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "@/lib/fence-graph/bom/shared";
 import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
+import { SaveEstimateSchema } from "@/lib/validation/schemas";
+import { z } from "zod";
 
 // ── Fetch org material prices ─────────────────────────────────────
 // Returns { [sku]: unit_cost } for the current org's materials.
@@ -50,6 +52,15 @@ export async function saveAdvancedEstimate(
   wastePct: number
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
+    // ✅ SECURITY: Validate all inputs server-side
+    const validated = SaveEstimateSchema.parse({
+      name,
+      laborRate,
+      wastePct,
+      input,
+      result,
+    });
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };

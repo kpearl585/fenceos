@@ -114,7 +114,8 @@ export async function updateMemberRole(profileId: string, orgId: string, role: '
 }
 
 // Export all account data (GDPR/CCPA compliance)
-export async function exportAccountData() {
+// Returns data as JSON string for client-side download
+export async function exportAccountData(): Promise<{ success: boolean; data?: string; filename?: string; error?: string }> {
   const { profile } = await getAuthContext();
   const admin = createAdminClient();
 
@@ -138,12 +139,8 @@ export async function exportAccountData() {
       branding: orgBranding.data || {},
     };
 
-    // Convert to JSON and trigger download
     const jsonString = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
 
-    // Return success - client will need to handle download
     return {
       success: true,
       data: jsonString,
@@ -168,34 +165,27 @@ export async function deleteAccount() {
     throw new Error('Only organization owners can delete accounts');
   }
 
-  try {
-    // Mark organization for deletion (soft delete)
-    const deletionDate = new Date();
-    const permanentDeletionDate = new Date(deletionDate);
-    permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 30);
+  // Mark organization for deletion (soft delete)
+  const deletionDate = new Date();
+  const permanentDeletionDate = new Date(deletionDate);
+  permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 30);
 
-    await admin
-      .from('organizations')
-      .update({
-        plan_status: 'cancelled',
-        deleted_at: deletionDate.toISOString(),
-        permanent_deletion_at: permanentDeletionDate.toISOString(),
-      })
-      .eq('id', profile.org_id);
+  await admin
+    .from('organizations')
+    .update({
+      plan_status: 'cancelled',
+      deleted_at: deletionDate.toISOString(),
+      permanent_deletion_at: permanentDeletionDate.toISOString(),
+    })
+    .eq('id', profile.org_id);
 
-    // TODO: Cancel Stripe subscription if active
-    // const subscription = await getStripeSubscription(profile.org_id);
-    // if (subscription) await stripe.subscriptions.cancel(subscription.id);
+  // TODO: Cancel Stripe subscription if active
+  // const subscription = await getStripeSubscription(profile.org_id);
+  // if (subscription) await stripe.subscriptions.cancel(subscription.id);
 
-    // Sign out user
-    await supabase.auth.signOut();
+  // Sign out user
+  await supabase.auth.signOut();
 
-    // Redirect to goodbye page
-    redirect('/account-deleted');
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Account deletion failed'
-    };
-  }
+  // Redirect to goodbye page
+  redirect('/account-deleted');
 }

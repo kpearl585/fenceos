@@ -2,11 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
-import { saveOrgSettings, deleteAccount, exportAccountData } from "./actions";
+import { saveOrgSettings, deleteAccount } from "./actions";
 import OrgNameForm from "@/components/settings/OrgNameForm";
 import BrandingForm from "@/components/settings/BrandingForm";
 import TeamMembersSection from "@/components/settings/TeamMembersSection";
 import BillingPortalButton from "@/components/settings/BillingPortalButton";
+import ExportDataButton from "@/components/settings/ExportDataButton";
 import { planHasCustomBranding } from "@/lib/planLimits";
 import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -195,14 +196,7 @@ export default async function SettingsPage() {
                 <p className="text-sm font-medium text-gray-700">Export Your Data</p>
                 <p className="text-xs text-gray-500 mt-0.5">Download all your estimates, customers, and materials as JSON</p>
               </div>
-              <form action={exportAccountData}>
-                <button
-                  type="submit"
-                  className="bg-fence-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-fence-700 transition-colors whitespace-nowrap"
-                >
-                  Export Data
-                </button>
-              </form>
+              <ExportDataButton />
             </div>
           </div>
         </div>
