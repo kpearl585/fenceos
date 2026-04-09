@@ -4,6 +4,7 @@ import { calcTotalConcrete } from "../concrete";
 import { countPanelsToBuy } from "../segmentation";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
 import { mergePrices } from "../pricing/defaultPrices";
+import { calculateAllGateCosts } from "../gatePricing";
 
 export function generateAluminumBom(
   graph: FenceGraph,
@@ -62,23 +63,79 @@ export function generateAluminumBom(
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
     `4" gravel base × ${nodes.length} posts`));
 
-  // Gates
+  // Gates (deterministic pricing engine)
   const gateEdges = edges.filter(e => e.type === "gate");
-  let singles = 0, doubles = 0;
-  for (const g of gateEdges) {
-    if (!g.gateSpec) continue;
-    if (g.gateSpec.gateType === "single") singles++;
-    else doubles++;
-  }
-  if (singles > 0) {
-    bom.push(makeBomItem("GATE_ALUM_4FT", "Aluminum Walk Gate", "gates", "ea", singles, 0.92, `${singles} single gates`, p("GATE_ALUM_4FT")));
-    bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", singles * 2, 0.95, `2 pairs × ${singles}`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", singles, 0.95, `1 × ${singles}`, p("GATE_LATCH")));
-  }
-  if (doubles > 0) {
-    bom.push(makeBomItem("GATE_ALUM_4FT", "Aluminum Gate (double — 2× single)", "gates", "ea", doubles * 2, 0.90, `${doubles} double gates × 2 leaves`, p("GATE_ALUM_4FT")));
-    bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", doubles * 4, 0.95, `2 pairs/leaf × ${doubles}`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", doubles * 2, 0.95, `1/leaf × ${doubles}`, p("GATE_LATCH")));
+  const gateSpecs = gateEdges.map(e => e.gateSpec).filter(spec => spec !== undefined);
+  let totalGateLaborHours = 0;
+
+  if (gateSpecs.length > 0) {
+    const gateCosts = calculateAllGateCosts(gateSpecs, "aluminum", prices, 65);
+
+    // Aggregate by SKU using Map
+    const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
+
+    for (const gateCost of gateCosts.gates) {
+      const hw = gateCost.hardware;
+
+      // Gate (single 4ft or double set)
+      const gateKey = hw.gateSku;
+      if (!gateSkuMap.has(gateKey)) {
+        const gateDesc = hw.gateQty === 2 ? "Aluminum Gate (double — 2× single)" : "Aluminum Walk Gate";
+        gateSkuMap.set(gateKey, { qty: 0, desc: gateDesc, unitCost: hw.gateUnitPrice });
+      }
+      gateSkuMap.get(gateKey)!.qty += hw.gateQty;
+
+      // Hinges
+      const hingeKey = hw.hingeSku;
+      if (!gateSkuMap.has(hingeKey)) {
+        gateSkuMap.set(hingeKey, { qty: 0, desc: "Heavy Duty Hinge (pair)", unitCost: hw.hingeUnitPrice });
+      }
+      gateSkuMap.get(hingeKey)!.qty += hw.hingeQty;
+
+      // Latch
+      const latchKey = hw.latchSku;
+      if (!gateSkuMap.has(latchKey)) {
+        const latchDesc = hw.latchSku === "GATE_LATCH_POOL" ? "Pool Gate Latch (self-closing)" : "Gate Latch";
+        gateSkuMap.set(latchKey, { qty: 0, desc: latchDesc, unitCost: hw.latchUnitPrice });
+      }
+      gateSkuMap.get(latchKey)!.qty += hw.latchQty;
+
+      // Gate stop
+      if (hw.stopSku && hw.stopQty) {
+        const stopKey = hw.stopSku;
+        if (!gateSkuMap.has(stopKey)) {
+          gateSkuMap.set(stopKey, { qty: 0, desc: "Gate Stop (pair)", unitCost: hw.stopUnitPrice! });
+        }
+        gateSkuMap.get(stopKey)!.qty += hw.stopQty;
+      }
+
+      // Drop rod (for double gates)
+      if (hw.dropRodSku && hw.dropRodQty) {
+        const dropKey = hw.dropRodSku;
+        if (!gateSkuMap.has(dropKey)) {
+          gateSkuMap.set(dropKey, { qty: 0, desc: "Drop Rod (cane bolt)", unitCost: hw.dropRodUnitPrice! });
+        }
+        gateSkuMap.get(dropKey)!.qty += hw.dropRodQty;
+      }
+
+      // Spring closer
+      if (hw.springCloserSku && hw.springCloserQty) {
+        const springKey = hw.springCloserSku;
+        if (!gateSkuMap.has(springKey)) {
+          gateSkuMap.set(springKey, { qty: 0, desc: "Spring Closer (pool code)", unitCost: hw.springCloserUnitPrice! });
+        }
+        gateSkuMap.get(springKey)!.qty += hw.springCloserQty;
+      }
+
+      totalGateLaborHours += gateCost.laborHours;
+    }
+
+    // Add aggregated BOM items
+    for (const [sku, data] of Array.from(gateSkuMap)) {
+      bom.push(makeBomItem(sku, data.desc, "gates", "ea", data.qty, 0.95, `${gateSpecs.length} gates`, data.unitCost));
+    }
+
+    audit.push(`Gates: ${gateSpecs.length} total (deterministic pricing: $${gateCosts.totalMaterial.toFixed(2)} material, ${totalGateLaborHours}hrs labor)`);
   }
 
   // Set screws — lock panels to posts (4 per post; standard aluminum fence installation)
@@ -100,7 +157,7 @@ export function generateAluminumBom(
     { activity: "Post Setting", count: nodes.length, rateHrs: 0.50, totalHrs: nodes.length * 0.50 },
     { activity: "Panel + Rail Installation", count: totalSections, rateHrs: 1.25, totalHrs: totalSections * 1.25, notes: "Aluminum faster than vinyl — no routing" },
     { activity: "Cutting Operations", count: totalCuts, rateHrs: 0.20, totalHrs: totalCuts * 0.20, notes: "Aluminum cuts fast with chop saw" },
-    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 2.00, totalHrs: gateEdges.length * 2.00 },
+    { activity: "Gate Installation", count: gateSpecs.length, rateHrs: 0, totalHrs: totalGateLaborHours },
     { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: 0.40, totalHrs: rackedSections * 0.40 },
     { activity: "Concrete Pour", count: nodes.length, rateHrs: 0.10, totalHrs: nodes.length * 0.10 },
   ];

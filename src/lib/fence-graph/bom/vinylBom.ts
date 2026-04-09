@@ -4,6 +4,7 @@ import { calcTotalConcrete } from "../concrete";
 import { countPanelsToBuy } from "../segmentation";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
 import { mergePrices } from "../pricing/defaultPrices";
+import { calculateAllGateCosts } from "../gatePricing";
 
 export function generateVinylBom(
   graph: FenceGraph,
@@ -23,6 +24,20 @@ export function generateVinylBom(
   const cornerPosts = nodes.filter(n => n.type === "corner");
   const gatePosts = nodes.filter(n => n.type === "gate_hinge" || n.type === "gate_latch");
 
+  // Determine system type early for audit trail
+  const isComponentSystem = productLine.panelStyle === "privacy" && productLine.railType === "routed";
+  const isPicketSystem = productLine.panelStyle === "picket";
+
+  // Pricing class indicator
+  if (isComponentSystem) {
+    audit.push(`Pricing Class: PREMIUM COMPONENT SYSTEM (+15% vs pre-fab)`);
+  } else if (isPicketSystem) {
+    audit.push(`Pricing Class: PREMIUM PICKET SYSTEM (+45% vs pre-fab)`);
+  } else {
+    audit.push(`Pricing Class: STANDARD PRE-FAB SYSTEM (baseline)`);
+  }
+
+  audit.push(`System Type: ${isComponentSystem ? "COMPONENT (routed rails + individual pickets)" : "PRE-FAB (assembled panels)"}`);
   audit.push(`Posts: ${linePosts.length} line + ${endPosts.length} end + ${cornerPosts.length} corner + ${gatePosts.length} gate = ${nodes.length} total`);
 
   // Determine post SKU based on product line post size
@@ -72,8 +87,6 @@ export function generateVinylBom(
 
   // Component-based system: privacy fence with routed rails (pickets inserted individually)
   // Pre-fab system: picket fence or privacy with pre-assembled panels
-  const isComponentSystem = productLine.panelStyle === "privacy" && productLine.railType === "routed";
-
   if (isComponentSystem) {
     // Component system: calculate individual pickets with slope adjustment
     const picketsPerFoot = 2; // Standard 6" on-center spacing
@@ -162,30 +175,78 @@ export function generateVinylBom(
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
     `4" gravel base per post × ${nodes.length} posts`, p("GRAVEL_40LB")));
 
-  // Gates
+  // Gates - Using deterministic gate pricing engine
   const gateEdges = edges.filter(e => e.type === "gate");
-  let singles = 0, doubles = 0, poolGates = 0;
-  for (const g of gateEdges) {
-    if (!g.gateSpec) continue;
-    if (g.gateSpec.gateType === "single") singles++;
-    else doubles++;
-    if (g.gateSpec.isPoolGate) poolGates++;
-  }
-  if (singles > 0) {
-    bom.push(makeBomItem("GATE_VINYL_4FT", "Vinyl Walk Gate", "gates", "ea", singles, 0.92, `${singles} single gates`, p("GATE_VINYL_4FT")));
-    bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", singles * 2, 0.95, `2 pairs × ${singles} gates`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", singles, 0.95, `1 × ${singles} single gates`, p("GATE_LATCH")));
-    bom.push(makeBomItem("GATE_STOP", "Gate Stop (pair)", "hardware", "ea", singles, 0.95, `1 pair × ${singles} gates`, p("GATE_STOP")));
-  }
-  if (doubles > 0) {
-    bom.push(makeBomItem("GATE_VINYL_4FT", "Vinyl Drive Gate (double — 2× single)", "gates", "ea", doubles * 2, 0.90, `${doubles} double gates × 2 leaves`, p("GATE_VINYL_4FT")));
-    bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", doubles * 4, 0.95, `2 pairs × 2 leaves × ${doubles}`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch (center)", "hardware", "ea", doubles, 0.95, `1 center latch × ${doubles} double gates`, p("GATE_LATCH")));
-    bom.push(makeBomItem("DROP_ROD", "Drop Rod (cane bolt)", "hardware", "ea", doubles, 0.95, `1 × ${doubles} double gates (secures inactive leaf)`, p("DROP_ROD")));
-    bom.push(makeBomItem("GATE_STOP", "Gate Stop (pair)", "hardware", "ea", doubles, 0.95, `1 pair × ${doubles} double gates`, p("GATE_STOP")));
-  }
-  if (poolGates > 0) {
-    bom.push(makeBomItem("GATE_LATCH_POOL", "Pool-Code Self-Closing Latch (FL)", "hardware", "ea", poolGates, 0.95, `Florida pool code — ${poolGates} pool gates`, p("GATE_LATCH_POOL")));
+  const gateSpecs = gateEdges.map(e => e.gateSpec).filter(spec => spec !== undefined);
+
+  let totalGateLaborHours = 0;
+
+  if (gateSpecs.length > 0) {
+    const gateCosts = calculateAllGateCosts(gateSpecs, "vinyl", prices, 65);
+
+    // Add gate material to BOM (aggregated by SKU)
+    const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
+
+    for (const gateCost of gateCosts.gates) {
+      const hw = gateCost.hardware;
+
+      // Gate panels
+      const gateKey = hw.gateSku;
+      if (!gateSkuMap.has(gateKey)) {
+        gateSkuMap.set(gateKey, { qty: 0, desc: `Vinyl Gate ${hw.gateQty > 1 ? '(double)' : '(single)'}`, unitCost: hw.gateUnitPrice });
+      }
+      gateSkuMap.get(gateKey)!.qty += hw.gateQty;
+
+      // Hinges
+      const hingeKey = hw.hingeSku;
+      if (!gateSkuMap.has(hingeKey)) {
+        gateSkuMap.set(hingeKey, { qty: 0, desc: "Heavy Duty Hinge (pair)", unitCost: hw.hingeUnitPrice });
+      }
+      gateSkuMap.get(hingeKey)!.qty += hw.hingeQty;
+
+      // Latch
+      const latchKey = hw.latchSku;
+      if (!gateSkuMap.has(latchKey)) {
+        gateSkuMap.set(latchKey, { qty: 0, desc: hw.latchSku === "GATE_LATCH_POOL" ? "Pool-Code Self-Closing Latch" : "Gate Latch", unitCost: hw.latchUnitPrice });
+      }
+      gateSkuMap.get(latchKey)!.qty += hw.latchQty;
+
+      // Stop
+      if (hw.stopSku && hw.stopQty) {
+        const stopKey = hw.stopSku;
+        if (!gateSkuMap.has(stopKey)) {
+          gateSkuMap.set(stopKey, { qty: 0, desc: "Gate Stop (pair)", unitCost: hw.stopUnitPrice! });
+        }
+        gateSkuMap.get(stopKey)!.qty += hw.stopQty;
+      }
+
+      // Drop rod
+      if (hw.dropRodSku && hw.dropRodQty) {
+        const dropKey = hw.dropRodSku;
+        if (!gateSkuMap.has(dropKey)) {
+          gateSkuMap.set(dropKey, { qty: 0, desc: "Drop Rod (cane bolt)", unitCost: hw.dropRodUnitPrice! });
+        }
+        gateSkuMap.get(dropKey)!.qty += hw.dropRodQty;
+      }
+
+      // Spring closer
+      if (hw.springCloserSku && hw.springCloserQty) {
+        const springKey = hw.springCloserSku;
+        if (!gateSkuMap.has(springKey)) {
+          gateSkuMap.set(springKey, { qty: 0, desc: "Spring Closer (pool code)", unitCost: hw.springCloserUnitPrice! });
+        }
+        gateSkuMap.get(springKey)!.qty += hw.springCloserQty;
+      }
+
+      totalGateLaborHours += gateCost.laborHours;
+    }
+
+    // Add aggregated BOM items
+    for (const [sku, data] of Array.from(gateSkuMap)) {
+      bom.push(makeBomItem(sku, data.desc, "gates", "ea", data.qty, 0.95, `${gateSpecs.length} gates`, data.unitCost));
+    }
+
+    audit.push(`Gates: ${gateSpecs.length} total (deterministic pricing: $${gateCosts.totalMaterial.toFixed(2)} material, ${totalGateLaborHours}hrs labor)`);
   }
 
   // Reinforcement
@@ -213,7 +274,7 @@ export function generateVinylBom(
     { activity: "Post Setting", count: nodes.length, rateHrs: 0.20, totalHrs: nodes.length * 0.20 },
     { activity: "Section Installation", count: totalSections, rateHrs: 0.50, totalHrs: totalSections * 0.50 },
     { activity: "Cutting Operations", count: totalCuts, rateHrs: 0.15, totalHrs: totalCuts * 0.15 },
-    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 1.50, totalHrs: gateEdges.length * 1.50 },
+    { activity: "Gate Installation", count: gateSpecs.length, rateHrs: 0, totalHrs: totalGateLaborHours },
     { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: 0.30, totalHrs: rackedSections * 0.30 },
     { activity: "Concrete Pour", count: nodes.length, rateHrs: 0.08, totalHrs: nodes.length * 0.08 },
   ];

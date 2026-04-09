@@ -7,6 +7,7 @@ import { generateWoodBom, type WoodStyle } from "./woodBom";
 import { generateChainLinkBom } from "./chainLinkBom";
 import { generateAluminumBom } from "./aluminumBom";
 import { assertValidEstimate } from "../validation";
+import { detectEdgeCases, addEdgeCaseSummary } from "../edgeCaseDetection";
 
 export type FenceType = "vinyl" | "wood" | "chain_link" | "aluminum";
 
@@ -78,6 +79,14 @@ export function generateBom(
     redFlagItems,
     auditTrail,
   };
+
+  // ── EDGE CASE DETECTION: Identify known patterns from validation ──
+  // Non-invasive: Adds flags to audit trail but does not modify pricing
+  const edgeCaseFlags = detectEdgeCases(result, graph, fenceType);
+  if (edgeCaseFlags.length > 0) {
+    result.edgeCaseFlags = edgeCaseFlags;
+    addEdgeCaseSummary(result, edgeCaseFlags);
+  }
 
   // ── VALIDATION LAYER: Block bad outputs ──
   // Throws error if estimate has NaN, negative values, or missing critical data

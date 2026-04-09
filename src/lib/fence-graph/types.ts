@@ -175,6 +175,13 @@ export interface LaborDriver {
   notes?: string;
 }
 
+export interface EdgeCaseFlag {
+  type: "long_run_economics" | "gate_dominant_short_run" | "ultra_high_gate_density";
+  severity: "info" | "warning";
+  message: string;
+  details: Record<string, any>;
+}
+
 export interface FenceEstimateResult {
   projectId: string;
   projectName: string;
@@ -191,6 +198,8 @@ export interface FenceEstimateResult {
   // Confidence
   overallConfidence: number;
   redFlagItems: BomItem[];  // items with confidence < 0.8
+  // Edge case detection (v1.0.0 production guardrails)
+  edgeCaseFlags?: EdgeCaseFlag[];
   // Audit
   auditTrail: string[];
 }

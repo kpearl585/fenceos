@@ -11,6 +11,7 @@ import type { FenceGraph, BomItem, LaborDriver } from "../types";
 import { calcTotalConcrete } from "../concrete";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
 import { mergePrices } from "../pricing/defaultPrices";
+import { calculateAllGateCosts } from "../gatePricing";
 
 const LINE_POST_OC_FT = 10; // line posts every 10ft (standard residential)
 const TOP_RAIL_STOCK_FT = 21; // standard top rail length sold in 21ft sections
@@ -125,26 +126,82 @@ export function generateChainLinkBom(
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
     `4" gravel base × ${totalPostCount} posts`, p("GRAVEL_40LB")));
 
-  // Gates
-  let singles = 0, doubles = 0;
-  for (const g of gateEdges) {
-    if (!g.gateSpec) continue;
-    if (g.gateSpec.gateType === "single") singles++;
-    else doubles++;
-  }
-  if (singles > 0) {
-    bom.push(makeBomItem("GATE_CL_4FT", "Chain Link Walk Gate", "gates", "ea", singles, 0.92, `${singles} single gates`, p("GATE_CL_4FT")));
-    bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", singles * 2, 0.95, `2 pairs × ${singles}`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", singles, 0.95, `1 × ${singles}`, p("GATE_LATCH")));
-  }
-  if (doubles > 0) {
-    bom.push(makeBomItem("GATE_CL_DBL", "Chain Link Double Drive Gate", "gates", "ea", doubles, 0.90, `${doubles} double gates`, p("GATE_CL_DBL")));
-    bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", doubles * 4, 0.95, `2 pairs/leaf × ${doubles}`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", doubles * 2, 0.95, `1/leaf × ${doubles}`, p("GATE_LATCH")));
+  // Gates (deterministic pricing engine)
+  const gateSpecs = gateEdges.map(e => e.gateSpec).filter(spec => spec !== undefined);
+  let totalGateLaborHours = 0;
+
+  if (gateSpecs.length > 0) {
+    const gateCosts = calculateAllGateCosts(gateSpecs, "chain_link", prices, 65);
+
+    // Aggregate by SKU using Map
+    const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
+
+    for (const gateCost of gateCosts.gates) {
+      const hw = gateCost.hardware;
+
+      // Gate (single 4ft or double set)
+      const gateKey = hw.gateSku;
+      if (!gateSkuMap.has(gateKey)) {
+        const gateDesc = hw.gateQty === 2 ? "Chain Link Double Drive Gate" : "Chain Link Walk Gate";
+        gateSkuMap.set(gateKey, { qty: 0, desc: gateDesc, unitCost: hw.gateUnitPrice });
+      }
+      gateSkuMap.get(gateKey)!.qty += hw.gateQty;
+
+      // Hinges
+      const hingeKey = hw.hingeSku;
+      if (!gateSkuMap.has(hingeKey)) {
+        gateSkuMap.set(hingeKey, { qty: 0, desc: "Heavy Duty Hinge (pair)", unitCost: hw.hingeUnitPrice });
+      }
+      gateSkuMap.get(hingeKey)!.qty += hw.hingeQty;
+
+      // Latch
+      const latchKey = hw.latchSku;
+      if (!gateSkuMap.has(latchKey)) {
+        const latchDesc = hw.latchSku === "GATE_LATCH_POOL" ? "Pool Gate Latch (self-closing)" : "Gate Latch";
+        gateSkuMap.set(latchKey, { qty: 0, desc: latchDesc, unitCost: hw.latchUnitPrice });
+      }
+      gateSkuMap.get(latchKey)!.qty += hw.latchQty;
+
+      // Gate stop
+      if (hw.stopSku && hw.stopQty) {
+        const stopKey = hw.stopSku;
+        if (!gateSkuMap.has(stopKey)) {
+          gateSkuMap.set(stopKey, { qty: 0, desc: "Gate Stop (pair)", unitCost: hw.stopUnitPrice! });
+        }
+        gateSkuMap.get(stopKey)!.qty += hw.stopQty;
+      }
+
+      // Drop rod (for double gates)
+      if (hw.dropRodSku && hw.dropRodQty) {
+        const dropKey = hw.dropRodSku;
+        if (!gateSkuMap.has(dropKey)) {
+          gateSkuMap.set(dropKey, { qty: 0, desc: "Drop Rod (cane bolt)", unitCost: hw.dropRodUnitPrice! });
+        }
+        gateSkuMap.get(dropKey)!.qty += hw.dropRodQty;
+      }
+
+      // Spring closer
+      if (hw.springCloserSku && hw.springCloserQty) {
+        const springKey = hw.springCloserSku;
+        if (!gateSkuMap.has(springKey)) {
+          gateSkuMap.set(springKey, { qty: 0, desc: "Spring Closer (pool code)", unitCost: hw.springCloserUnitPrice! });
+        }
+        gateSkuMap.get(springKey)!.qty += hw.springCloserQty;
+      }
+
+      totalGateLaborHours += gateCost.laborHours;
+    }
+
+    // Add aggregated BOM items
+    for (const [sku, data] of Array.from(gateSkuMap)) {
+      bom.push(makeBomItem(sku, data.desc, "gates", "ea", data.qty, 0.95, `${gateSpecs.length} gates`, data.unitCost));
+    }
+
+    audit.push(`Gates: ${gateSpecs.length} total (deterministic pricing: $${gateCosts.totalMaterial.toFixed(2)} material, ${totalGateLaborHours}hrs labor)`);
   }
 
   if (windMode) {
-    bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", terminalPosts.length, 0.90, `Wind mode: terminal posts only`));
+    bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", terminalPosts.length, 0.90, `Wind mode: terminal posts only`, p("REBAR_4_3FT")));
   }
 
   // Labor rates adjusted to realistic contractor baselines (0.8-1.3 hrs per 10 LF)
@@ -153,7 +210,7 @@ export function generateChainLinkBom(
     { activity: "Post Setting", count: totalPostCount, rateHrs: 0.20, totalHrs: totalPostCount * 0.20 },
     { activity: "Top Rail Installation", count: railCutPlan.stockPiecesNeeded, rateHrs: 0.20, totalHrs: railCutPlan.stockPiecesNeeded * 0.20 },
     { activity: "Fabric Unrolling & Stretching", count: segEdges.length, rateHrs: 1.50, totalHrs: segEdges.length * 1.50, notes: "Per run" },
-    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 1.75, totalHrs: gateEdges.length * 1.75 },
+    { activity: "Gate Installation", count: gateSpecs.length, rateHrs: 0, totalHrs: totalGateLaborHours },
     { activity: "Tie Wire / Fastening", count: totalPostCount, rateHrs: 0.15, totalHrs: totalPostCount * 0.15 },
     { activity: "Concrete Pour", count: totalPostCount, rateHrs: 0.10, totalHrs: totalPostCount * 0.10 },
   ];
