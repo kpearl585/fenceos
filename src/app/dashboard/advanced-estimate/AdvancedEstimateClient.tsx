@@ -600,7 +600,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
                   <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">{convertError}</p>
                 )}
                 {convertStatus === "idle" && (
-                  <p className="text-xs text-fence-400 text-center">Requires customer name in Customer Info above</p>
+                  <p className="text-xs text-fence-300 text-center">Requires customer name in Customer Info above</p>
                 )}
                 <button
                   onClick={handleSave}
