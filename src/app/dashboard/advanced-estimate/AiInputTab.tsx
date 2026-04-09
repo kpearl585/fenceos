@@ -164,7 +164,7 @@ export default function AiInputTab({ onApply }: Props) {
           <p className="text-sm font-bold">AI Estimate Assistant</p>
           <span className="text-xs bg-fence-800 text-fence-300 px-2 py-0.5 rounded font-semibold">GPT-4o</span>
         </div>
-        <p className="text-xs text-fence-400">
+        <p className="text-xs text-fence-300">
           Describe the job or upload a site photo, sketch, or plan. AI extracts the runs — the engine does all the math.
         </p>
       </div>

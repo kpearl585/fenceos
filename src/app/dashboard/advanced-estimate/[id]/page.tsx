@@ -42,23 +42,23 @@ export default async function SavedEstimateDetailPage({ params }: { params: Prom
             <div className="bg-fence-950 text-white rounded-xl p-5">
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                  <p className="text-fence-400 text-xs">Total LF</p>
+                  <p className="text-fence-300 text-xs">Total LF</p>
                   <p className="text-2xl font-bold">{est.total_lf}</p>
                 </div>
                 <div>
-                  <p className="text-fence-400 text-xs">Estimated Cost</p>
+                  <p className="text-fence-300 text-xs">Estimated Cost</p>
                   <p className="text-2xl font-bold">{fmt(est.total_cost ?? 0)}</p>
                 </div>
                 <div>
-                  <p className="text-fence-400 text-xs">Created</p>
+                  <p className="text-fence-300 text-xs">Created</p>
                   <p className="text-lg font-semibold">{new Date(result.graph.audit.extractionDate).toLocaleDateString()}</p>
                 </div>
               </div>
               {isClosed && est.closeout_actual_waste_pct != null && (
                 <div className="border-t border-fence-800 pt-3">
-                  <p className="text-fence-400 text-xs mb-1">Actual Waste Recorded</p>
+                  <p className="text-fence-300 text-xs mb-1">Actual Waste Recorded</p>
                   <p className="text-xl font-bold text-green-400">{(est.closeout_actual_waste_pct * 100).toFixed(1)}%</p>
-                  {est.closeout_notes && <p className="text-fence-400 text-xs mt-1">{est.closeout_notes}</p>}
+                  {est.closeout_notes && <p className="text-fence-300 text-xs mt-1">{est.closeout_notes}</p>}
                 </div>
               )}
             </div>

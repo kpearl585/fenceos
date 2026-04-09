@@ -55,7 +55,7 @@ export default async function SavedAdvancedEstimatesPage() {
         {cal ? (
           <div className="bg-fence-950 text-white rounded-xl p-4 mb-6 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-fence-400 uppercase tracking-widest mb-1">Engine Calibration Active</p>
+              <p className="text-xs font-semibold text-fence-300 uppercase tracking-widest mb-1">Engine Calibration Active</p>
               <p className="text-sm text-fence-100">
                 Waste factor: <span className="font-bold text-white">{(cal.currentFactor * 100).toFixed(1)}%</span>
                 {" "}·{" "}
@@ -63,7 +63,7 @@ export default async function SavedAdvancedEstimatesPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-fence-500">New estimates use your calibrated waste factor automatically</p>
+              <p className="text-xs text-fence-300">New estimates use your calibrated waste factor automatically</p>
             </div>
           </div>
         ) : (

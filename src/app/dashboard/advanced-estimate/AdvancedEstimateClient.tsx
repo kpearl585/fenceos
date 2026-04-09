@@ -533,20 +533,20 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
         {result ? (
           <>
             <div className="bg-fence-950 rounded-xl p-5 text-white">
-              <p className="text-fence-400 text-xs font-semibold uppercase tracking-widest mb-3">Estimate Summary</p>
+              <p className="text-fence-300 text-xs font-semibold uppercase tracking-widest mb-3">Estimate Summary</p>
               {/* Cost breakdown */}
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
-                  <p className="text-fence-400 text-xs">Materials Cost</p>
+                  <p className="text-fence-300 text-xs">Materials Cost</p>
                   <p className="text-xl font-bold">{fmt(result.totalMaterialCost)}</p>
                 </div>
                 <div>
-                  <p className="text-fence-400 text-xs">Labor ({result.totalLaborHrs}h)</p>
+                  <p className="text-fence-300 text-xs">Labor ({result.totalLaborHrs}h)</p>
                   <p className="text-xl font-bold">{fmt(result.totalLaborCost)}</p>
                 </div>
               </div>
               <div className="border-t border-fence-800 pt-3 mb-3 flex justify-between items-center">
-                <p className="text-fence-400 text-sm">Total Cost</p>
+                <p className="text-fence-300 text-sm">Total Cost</p>
                 <p className="text-xl font-semibold text-fence-200">{fmt(result.totalCost)}</p>
               </div>
               {/* Bid price */}
@@ -558,31 +558,31 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
                 return (
                   <div className="bg-fence-800 rounded-lg p-3">
                     <div className="flex justify-between items-center mb-2">
-                      <p className="text-fence-300 text-xs font-semibold uppercase tracking-wide">Bid Price ({markupPct}% markup)</p>
+                      <p className="text-fence-200 text-xs font-semibold uppercase tracking-wide">Bid Price ({markupPct}% markup)</p>
                       <p className="text-2xl font-bold text-white">{fmt(bidPrice)}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <p className="text-fence-500 text-xs">Gross Profit</p>
+                        <p className="text-fence-300 text-xs">Gross Profit</p>
                         <p className="text-sm font-bold text-green-400">{fmt(grossProfit)}</p>
                       </div>
                       <div>
-                        <p className="text-fence-500 text-xs">Gross Margin</p>
+                        <p className="text-fence-300 text-xs">Gross Margin</p>
                         <p className="text-sm font-bold text-green-400">{grossMargin}%</p>
                       </div>
                       <div>
-                        <p className="text-fence-500 text-xs">Per LF</p>
+                        <p className="text-fence-300 text-xs">Per LF</p>
                         <p className="text-sm font-bold text-fence-200">{fmt(pricePerLF)}/LF</p>
                       </div>
                     </div>
                   </div>
                 );
               })()}
-              <div className="mt-3 flex justify-between text-xs text-fence-500">
+              <div className="mt-3 flex justify-between text-xs text-fence-300">
                 <span>Confidence: {Math.round(result.overallConfidence * 100)}%</span>
                 <span>{totalLF} LF · {result.bom.length} line items</span>
                 {result.redFlagItems.length > 0 && (
-                  <span className="text-amber-400">{result.redFlagItems.length} unpriced</span>
+                  <span className="text-amber-300">{result.redFlagItems.length} unpriced</span>
                 )}
               </div>
               <div className="mt-4 space-y-2">
@@ -600,7 +600,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
                   <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">{convertError}</p>
                 )}
                 {convertStatus === "idle" && (
-                  <p className="text-xs text-fence-500 text-center">Requires customer name in Customer Info above</p>
+                  <p className="text-xs text-fence-400 text-center">Requires customer name in Customer Info above</p>
                 )}
                 <button
                   onClick={handleSave}
@@ -627,10 +627,10 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
                     {proposalStatus === "generating" ? "Generating..." : proposalStatus === "error" ? "Failed" : "Customer Proposal"}
                   </button>
                 </div>
-                <p className="text-xs text-fence-600 text-center">Internal BOM shows costs · Proposal shows bid price only</p>
+                <p className="text-xs text-fence-300 text-center">Internal BOM shows costs · Proposal shows bid price only</p>
                 {/* Excel exports */}
                 <div className="border-t border-fence-800 pt-2 mt-1">
-                  <p className="text-xs text-fence-500 text-center mb-2">Excel / Spreadsheet</p>
+                  <p className="text-xs text-fence-300 text-center mb-2">Excel / Spreadsheet</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => result && downloadInternalBom(result, projectName, markupPct, totalLF)}
@@ -647,7 +647,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
                       Supplier PO (.xlsx)
                     </button>
                   </div>
-                  <p className="text-xs text-fence-500 text-center mt-1">Internal shows margins · Supplier PO shows quantities only</p>
+                  <p className="text-xs text-fence-300 text-center mt-1">Internal shows margins · Supplier PO shows quantities only</p>
                 </div>
               </div>
             </div>
