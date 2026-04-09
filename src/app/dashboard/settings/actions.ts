@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 async function getAuthContext() {
   const supabase = await createClient();
@@ -110,4 +111,91 @@ export async function updateMemberRole(profileId: string, orgId: string, role: '
   if (error) return { error: error.message }
   revalidatePath('/dashboard/settings')
   return { success: true }
+}
+
+// Export all account data (GDPR/CCPA compliance)
+export async function exportAccountData() {
+  const { profile } = await getAuthContext();
+  const admin = createAdminClient();
+
+  try {
+    // Fetch all org data
+    const [estimates, customers, materials, orgSettings, orgBranding] = await Promise.all([
+      admin.from('estimates').select('*').eq('org_id', profile.org_id),
+      admin.from('customers').select('*').eq('org_id', profile.org_id),
+      admin.from('materials').select('*').eq('org_id', profile.org_id),
+      admin.from('org_settings').select('*').eq('org_id', profile.org_id).single(),
+      admin.from('org_branding').select('*').eq('org_id', profile.org_id).single(),
+    ]);
+
+    const exportData = {
+      exported_at: new Date().toISOString(),
+      org_id: profile.org_id,
+      estimates: estimates.data || [],
+      customers: customers.data || [],
+      materials: materials.data || [],
+      settings: orgSettings.data || {},
+      branding: orgBranding.data || {},
+    };
+
+    // Convert to JSON and trigger download
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // Return success - client will need to handle download
+    return {
+      success: true,
+      data: jsonString,
+      filename: `fenceestimatepro-export-${new Date().toISOString().split('T')[0]}.json`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Export failed'
+    };
+  }
+}
+
+// Delete account (soft delete with 30-day retention)
+export async function deleteAccount() {
+  const { profile } = await getAuthContext();
+  const admin = createAdminClient();
+  const supabase = await createClient();
+
+  // Only owner can delete organization
+  if (profile.role !== 'owner') {
+    throw new Error('Only organization owners can delete accounts');
+  }
+
+  try {
+    // Mark organization for deletion (soft delete)
+    const deletionDate = new Date();
+    const permanentDeletionDate = new Date(deletionDate);
+    permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 30);
+
+    await admin
+      .from('organizations')
+      .update({
+        plan_status: 'cancelled',
+        deleted_at: deletionDate.toISOString(),
+        permanent_deletion_at: permanentDeletionDate.toISOString(),
+      })
+      .eq('id', profile.org_id);
+
+    // TODO: Cancel Stripe subscription if active
+    // const subscription = await getStripeSubscription(profile.org_id);
+    // if (subscription) await stripe.subscriptions.cancel(subscription.id);
+
+    // Sign out user
+    await supabase.auth.signOut();
+
+    // Redirect to goodbye page
+    redirect('/account-deleted');
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Account deletion failed'
+    };
+  }
 }

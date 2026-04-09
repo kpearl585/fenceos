@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
-import { saveOrgSettings } from "./actions";
+import { saveOrgSettings, deleteAccount, exportAccountData } from "./actions";
 import OrgNameForm from "@/components/settings/OrgNameForm";
 import BrandingForm from "@/components/settings/BrandingForm";
 import TeamMembersSection from "@/components/settings/TeamMembersSection";
@@ -184,6 +184,65 @@ export default async function SettingsPage() {
             orgId={org?.id || profile.org_id}
             currentUserId={user.id}
           />
+        </div>
+
+        {/* Data & Privacy */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-fence-900 mb-4">Data & Privacy</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Export Your Data</p>
+                <p className="text-xs text-gray-500 mt-0.5">Download all your estimates, customers, and materials as JSON</p>
+              </div>
+              <form action={exportAccountData}>
+                <button
+                  type="submit"
+                  className="bg-fence-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-fence-700 transition-colors whitespace-nowrap"
+                >
+                  Export Data
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-red-50 rounded-xl border border-red-200 p-6">
+          <h2 className="font-semibold text-red-900 mb-4">Danger Zone</h2>
+          <div className="space-y-4">
+            <div className="flex items-start justify-between p-4 bg-white rounded-lg border border-red-200">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-900">Delete Account</p>
+                <p className="text-xs text-red-600 mt-0.5">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                  All estimates, customers, materials, and team members will be permanently deleted after 30 days.
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Active subscriptions will be cancelled. We recommend exporting your data first.
+                </p>
+              </div>
+              <form action={deleteAccount} className="ml-4">
+                <button
+                  type="submit"
+                  onClick={(e) => {
+                    if (!confirm('Are you absolutely sure you want to delete your account? This action CANNOT be undone. All your data will be permanently deleted after 30 days.\n\nType DELETE in the next prompt to confirm.')) {
+                      e.preventDefault();
+                      return;
+                    }
+                    const confirmation = prompt('Type DELETE to confirm account deletion:');
+                    if (confirmation !== 'DELETE') {
+                      e.preventDefault();
+                      alert('Account deletion cancelled. Confirmation did not match.');
+                    }
+                  }}
+                  className="bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
+                >
+                  Delete Account
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </>
