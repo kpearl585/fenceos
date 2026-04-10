@@ -107,7 +107,8 @@ export async function saveAdvancedEstimate(
   } catch (err: unknown) {
     if (err instanceof z.ZodError) {
       // ✅ SECURITY: Validation error - return sanitized message
-      return { success: false, error: `Validation failed: ${err.errors[0]?.message || "Invalid input"}` };
+      const firstError = err.issues[0];
+      return { success: false, error: `Validation failed: ${firstError?.message || "Invalid input"}` };
     }
     console.error("Unexpected error saving estimate:", err);
     return { success: false, error: "An unexpected error occurred. Please try again." };
@@ -375,7 +376,8 @@ export async function closeoutEstimate(
     return { success: true, newCalibration: newCal };
   } catch (err: unknown) {
     if (err instanceof z.ZodError) {
-      return { success: false, error: `Validation failed: ${err.errors[0]?.message || "Invalid input"}` };
+      const firstError = err.issues[0];
+      return { success: false, error: `Validation failed: ${firstError?.message || "Invalid input"}` };
     }
     console.error("Closeout error:", err);
     return { success: false, error: "Failed to close estimate. Please try again." };
