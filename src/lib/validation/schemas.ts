@@ -1,0 +1,225 @@
+/**
+ * Security validation schemas for FenceEstimatePro
+ *
+ * All user inputs from forms and API calls must be validated
+ * server-side to prevent injection attacks and data corruption.
+ */
+
+import { z } from "zod";
+
+// ═══════════════════════════════════════════════════════════════
+// ADVANCED ESTIMATE VALIDATION
+// ═══════════════════════════════════════════════════════════════
+
+export const SaveEstimateSchema = z.object({
+  name: z.string()
+    .min(1, "Estimate name required")
+    .max(200, "Estimate name too long")
+    .trim(),
+
+  laborRate: z.number()
+    .min(0, "Labor rate cannot be negative")
+    .max(500, "Labor rate unreasonably high")
+    .finite(),
+
+  wastePct: z.number()
+    .min(0, "Waste % cannot be negative")
+    .max(100, "Waste % cannot exceed 100%")
+    .finite(),
+
+  input: z.object({
+    customer: z.object({
+      name: z.string().max(200).trim(),
+      email: z.string().email().max(255).optional().or(z.literal("")),
+      phone: z.string().max(20).trim().optional().or(z.literal("")),
+      address: z.string().max(500).trim().optional().or(z.literal("")),
+    }),
+
+    fenceType: z.enum([
+      "vinyl_privacy",
+      "vinyl_semi_privacy",
+      "wood_privacy",
+      "wood_picket",
+      "chain_link",
+      "aluminum_ornamental"
+    ]),
+
+    height: z.enum(["4ft", "5ft", "6ft", "8ft"]),
+
+    runs: z.array(z.object({
+      id: z.string(),
+      linearFeet: z.number().min(1).max(10000).finite(),
+      slope: z.enum(["flat", "gentle", "moderate", "steep"]),
+      terrain: z.enum(["standard", "rocky", "sandy_loam", "sandy", "wet"]),
+      options: z.array(z.string()).optional(),
+    })).min(1, "At least one run required").max(100, "Too many runs"),
+
+    gates: z.array(z.object({
+      id: z.string(),
+      type: z.enum(["single_walk", "double_walk", "single_drive", "double_drive"]),
+      width: z.enum(["4ft", "6ft", "10ft", "12ft", "16ft"]),
+      quantity: z.number().int().min(1).max(50).finite(),
+    })).max(100, "Too many gates"),
+
+    extras: z.array(z.object({
+      id: z.string(),
+      name: z.string().max(200).trim(),
+      quantity: z.number().int().min(1).max(1000).finite(),
+      unitCost: z.number().min(0).max(100000).finite(),
+    })).max(200, "Too many extras"),
+  }),
+
+  result: z.object({
+    bom: z.array(z.any()),
+    labor: z.array(z.any()),
+    totalCost: z.number().min(0).max(10000000).finite(),
+  }),
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOMER VALIDATION
+// ═══════════════════════════════════════════════════════════════
+
+export const CustomerSchema = z.object({
+  name: z.string()
+    .min(1, "Customer name required")
+    .max(200, "Customer name too long")
+    .trim(),
+
+  email: z.string()
+    .email("Invalid email address")
+    .max(255, "Email too long")
+    .trim()
+    .optional()
+    .or(z.literal("")),
+
+  phone: z.string()
+    .max(20, "Phone number too long")
+    .trim()
+    .optional()
+    .or(z.literal("")),
+
+  address: z.string()
+    .max(500, "Address too long")
+    .trim()
+    .optional()
+    .or(z.literal("")),
+
+  notes: z.string()
+    .max(5000, "Notes too long")
+    .trim()
+    .optional()
+    .or(z.literal("")),
+});
+
+// ═══════════════════════════════════════════════════════════════
+// MATERIAL VALIDATION
+// ═══════════════════════════════════════════════════════════════
+
+export const MaterialSchema = z.object({
+  sku: z.string()
+    .min(1, "SKU required")
+    .max(100, "SKU too long")
+    .trim()
+    .regex(/^[a-zA-Z0-9_-]+$/, "SKU must be alphanumeric"),
+
+  name: z.string()
+    .min(1, "Material name required")
+    .max(200, "Material name too long")
+    .trim(),
+
+  category: z.string()
+    .min(1, "Category required")
+    .max(100, "Category too long")
+    .trim(),
+
+  unit: z.string()
+    .max(20, "Unit too long")
+    .trim(),
+
+  unit_cost: z.number()
+    .min(0, "Cost cannot be negative")
+    .max(100000, "Cost unreasonably high")
+    .finite()
+    .nullable(),
+
+  supplier_name: z.string()
+    .max(200, "Supplier name too long")
+    .trim()
+    .optional()
+    .or(z.literal("")),
+
+  supplier_sku: z.string()
+    .max(100, "Supplier SKU too long")
+    .trim()
+    .optional()
+    .or(z.literal("")),
+});
+
+// ═══════════════════════════════════════════════════════════════
+// AI EXTRACTION VALIDATION
+// ═══════════════════════════════════════════════════════════════
+
+export const AIExtractionSchema = z.object({
+  text: z.string()
+    .min(10, "Input too short for AI extraction")
+    .max(50000, "Input too long (50KB max)")
+    .trim(),
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SEARCH/FILTER VALIDATION
+// ═══════════════════════════════════════════════════════════════
+
+export const SearchSchema = z.object({
+  query: z.string()
+    .max(200, "Search query too long")
+    .trim(),
+
+  limit: z.number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(50),
+
+  offset: z.number()
+    .int()
+    .min(0)
+    .max(10000)
+    .default(0),
+});
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Sanitize string input to prevent XSS
+ * React escapes by default, but use for raw HTML or dangerous contexts
+ */
+export function sanitizeString(input: string): string {
+  return input
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;")
+    .replace(/\//g, "&#x2F;");
+}
+
+/**
+ * Validate and sanitize file upload
+ */
+export function validateFileUpload(file: File): { valid: boolean; error?: string } {
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+  if (file.size > MAX_SIZE) {
+    return { valid: false, error: "File too large (10MB max)" };
+  }
+
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return { valid: false, error: "File type not allowed" };
+  }
+
+  return { valid: true };
+}

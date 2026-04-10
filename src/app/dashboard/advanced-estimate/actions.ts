@@ -8,6 +8,7 @@ import type { FenceProjectInput, FenceEstimateResult } from "@/lib/fence-graph/t
 import { updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "@/lib/fence-graph/bom/shared";
 import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
 import { SaveEstimateSchema } from "@/lib/validation/schemas";
+import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
 
 // ── Fetch org material prices ─────────────────────────────────────
@@ -75,26 +76,41 @@ export async function saveAdvancedEstimate(
 
     const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
 
+    // ✅ SECURITY: Rate limit estimate creation
+    const rateLimit = RateLimiters.estimateCreation(profile.org_id);
+    if (!rateLimit.success) {
+      return { success: false, error: rateLimit.error };
+    }
+
     const { data, error } = await admin
       .from("fence_graphs")
       .insert({
         org_id: profile.org_id,
-        name,
-        input_json: input as unknown as Record<string, unknown>,
-        result_json: result as unknown as Record<string, unknown>,
-        labor_rate: laborRate,
-        waste_pct: wastePct,
+        name: validated.name,
+        input_json: validated.input as unknown as Record<string, unknown>,
+        result_json: validated.result as unknown as Record<string, unknown>,
+        labor_rate: validated.laborRate,
+        waste_pct: validated.wastePct,
         total_lf: totalLF,
-        total_cost: result.totalCost,
+        total_cost: validated.result.totalCost,
         status: "draft",
       })
       .select("id")
       .single();
 
-    if (error) return { success: false, error: error.message };
+    if (error) {
+      // ✅ SECURITY: Don't leak database error details to client
+      console.error("Database error saving estimate:", error);
+      return { success: false, error: "Failed to save estimate. Please try again." };
+    }
     return { success: true, id: data.id };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+    if (err instanceof z.ZodError) {
+      // ✅ SECURITY: Validation error - return sanitized message
+      return { success: false, error: `Validation failed: ${err.errors[0]?.message || "Invalid input"}` };
+    }
+    console.error("Unexpected error saving estimate:", err);
+    return { success: false, error: "An unexpected error occurred. Please try again." };
   }
 }
 
@@ -163,7 +179,14 @@ export async function generateAdvancedEstimatePdf(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
 
-    const { orgName } = await getOrgInfo(user.id);
+    const { orgId, orgName } = await getOrgInfo(user.id);
+
+    // ✅ SECURITY: Rate limit PDF generation
+    const rateLimit = RateLimiters.pdfGeneration(orgId);
+    if (!rateLimit.success) {
+      return { success: false, error: rateLimit.error };
+    }
+
     const priceMap = await getOrgMaterialPrices();
     const result = estimateFence(input, { laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
 
@@ -196,7 +219,14 @@ export async function generateCustomerProposalPdf(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
 
-    const { orgName, orgPhone, orgEmail, orgAddress } = await getOrgInfo(user.id);
+    const { orgId, orgName, orgPhone, orgEmail, orgAddress } = await getOrgInfo(user.id);
+
+    // ✅ SECURITY: Rate limit PDF generation
+    const rateLimit = RateLimiters.pdfGeneration(orgId);
+    if (!rateLimit.success) {
+      return { success: false, error: rateLimit.error };
+    }
+
     const priceMap = await getOrgMaterialPrices();
     const result = estimateFence(input, { fenceType: fenceType as import("@/lib/fence-graph/bom/index").FenceType, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
     const bidPrice = Math.round(result.totalCost * (1 + markupPct / 100));
@@ -251,6 +281,10 @@ export async function getSavedEstimate(id: string): Promise<{
   closed_at: string | null; closeout_actual_waste_pct: number | null; closeout_notes: string | null;
 } | null> {
   try {
+    // ✅ SECURITY: Validate UUID format to prevent injection
+    const uuidSchema = z.string().uuid("Invalid estimate ID");
+    const validatedId = uuidSchema.parse(id);
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
@@ -260,15 +294,19 @@ export async function getSavedEstimate(id: string): Promise<{
       .from("profiles").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return null;
 
+    // ✅ SECURITY: org_id filter prevents unauthorized access
     const { data } = await admin
       .from("fence_graphs")
       .select("*")
-      .eq("id", id)
+      .eq("id", validatedId)
       .eq("org_id", profile.org_id)
       .single();
 
     return data ?? null;
-  } catch {
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      console.error("Invalid estimate ID format:", id);
+    }
     return null;
   }
 }
@@ -282,6 +320,14 @@ export async function closeoutEstimate(
   notes: string
 ): Promise<{ success: boolean; newCalibration?: WasteCalibration; error?: string }> {
   try {
+    // ✅ SECURITY: Validate inputs
+    const closeoutSchema = z.object({
+      estimateId: z.string().uuid("Invalid estimate ID"),
+      actualWastePct: z.number().min(0).max(100).finite("Waste % must be 0-100"),
+      notes: z.string().max(5000, "Notes too long"),
+    });
+    const validated = closeoutSchema.parse({ estimateId, actualWastePct, notes });
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
@@ -291,14 +337,14 @@ export async function closeoutEstimate(
       .from("profiles").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
 
-    // Validate estimate belongs to this org
+    // ✅ SECURITY: Validate estimate belongs to this org (authorization check)
     const { data: est } = await admin
       .from("fence_graphs").select("id, status")
-      .eq("id", estimateId).eq("org_id", profile.org_id).single();
+      .eq("id", validated.estimateId).eq("org_id", profile.org_id).single();
     if (!est) return { success: false, error: "Estimate not found" };
     if (est.status === "closed") return { success: false, error: "Estimate already closed" };
 
-    const actualFactor = actualWastePct / 100;
+    const actualFactor = validated.actualWastePct / 100;
 
     // Fetch current calibration
     const { data: org } = await admin
@@ -322,12 +368,16 @@ export async function closeoutEstimate(
         status: "closed",
         closed_at: new Date().toISOString(),
         closeout_actual_waste_pct: actualFactor,
-        closeout_notes: notes || null,
+        closeout_notes: validated.notes.trim() || null,
       })
-      .eq("id", estimateId);
+      .eq("id", validated.estimateId);
 
     return { success: true, newCalibration: newCal };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Closeout failed" };
+    if (err instanceof z.ZodError) {
+      return { success: false, error: `Validation failed: ${err.errors[0]?.message || "Invalid input"}` };
+    }
+    console.error("Closeout error:", err);
+    return { success: false, error: "Failed to close estimate. Please try again." };
   }
 }
