@@ -135,7 +135,29 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_result jsonb;
+  v_fence_type_breakdown jsonb;
 BEGIN
+  -- First, get fence type breakdown separately to avoid nested aggregates
+  SELECT jsonb_object_agg(
+    fence_type,
+    jsonb_build_object(
+      'count', count,
+      'avg_variance_pct', avg_variance_pct
+    )
+  ) INTO v_fence_type_breakdown
+  FROM (
+    SELECT
+      fence_type,
+      COUNT(*) as count,
+      ROUND(AVG(total_cost_variance_pct)::numeric, 2) as avg_variance_pct
+    FROM estimate_accuracy_analytics
+    WHERE org_id = p_org_id
+      AND closed_at >= NOW() - (p_days || ' days')::interval
+      AND fence_type IS NOT NULL
+    GROUP BY fence_type
+  ) fence_stats;
+
+  -- Then get overall averages
   SELECT jsonb_build_object(
     'period_days', p_days,
     'total_closed_jobs', COUNT(*),
@@ -144,20 +166,7 @@ BEGIN
     'avg_labor_cost_variance_pct', ROUND(AVG(labor_cost_variance_pct)::numeric, 2),
     'avg_total_cost_variance_pct', ROUND(AVG(total_cost_variance_pct)::numeric, 2),
     'avg_waste_variance_pct', ROUND(AVG(waste_variance_pct)::numeric, 2),
-    'accuracy_by_fence_type', (
-      SELECT jsonb_object_agg(
-        fence_type,
-        jsonb_build_object(
-          'count', COUNT(*),
-          'avg_variance_pct', ROUND(AVG(total_cost_variance_pct)::numeric, 2)
-        )
-      )
-      FROM estimate_accuracy_analytics
-      WHERE org_id = p_org_id
-        AND closed_at >= NOW() - (p_days || ' days')::interval
-        AND fence_type IS NOT NULL
-      GROUP BY fence_type
-    )
+    'accuracy_by_fence_type', v_fence_type_breakdown
   ) INTO v_result
   FROM estimate_accuracy_analytics
   WHERE org_id = p_org_id
