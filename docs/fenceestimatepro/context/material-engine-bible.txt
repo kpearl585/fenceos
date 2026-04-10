@@ -1,0 +1,930 @@
+
+FENCEESTIMATEPRO
+Material Engine Bible
+Build-Ready Engineering Specification
+Version 1.0 — April 9, 2026
+Perspective: 20-Year Master Fence Builder + Production Foreman + Systems Engineer
+
+Every fastener. Every bag of concrete. Every tension band.
+If a crew would notice it on a jobsite, it’s in here.
+
+PHASE 1: THE TOP 6 FENCE TYPES
+
+1. Wood Privacy Fence
+Market Share: ~45% of all residential installations. The #1 fence type in America.
+Price Range: $25–$55/LF installed. Cedar: $35–$55. PT Pine: $25–$38. Redwood: $45–$65.
+Heights: 4’, 5’, 6’ (most common), 8’ (commercial)
+
+Subtypes: Dog-ear privacy, flat-top privacy, board-on-board (shadow box), cap-and-trim (good neighbor), horizontal slat, stockade, French Gothic.
+Typical use cases: Backyard privacy, property boundary, pet containment, pool enclosure, wind/noise reduction.
+
+2. Vinyl / PVC Fence
+Market Share: ~20% of residential installations. Growing steadily. Dominant in HOA communities.
+Price Range: $28–$60/LF installed. Basic white privacy: $28–$40. Textured/colored: $38–$55.
+Heights: 3’, 4’, 5’, 6’, 8’. Panel widths: 6’ or 8’ (manufacturer-specific)
+
+Subtypes: Privacy (solid panel), semi-privacy (alternating or lattice-top), picket, ranch rail (2/3/4-rail), pool fence.
+
+3. Chain Link Fence
+Market Share: ~20% combined (residential ~12%, commercial ~40%). The workhorse for security and containment.
+Price Range: $12–$35/LF installed. Residential galv 4’: $12–$18. Commercial 6’ vinyl-coated: $22–$35.
+Heights: 3’, 3.5’, 4’, 5’, 6’, 8’, 10’, 12’ (commercial)
+
+Subtypes: Galvanized, vinyl-coated (black, green, brown), commercial-grade, with privacy slats, with barbed wire/razor wire.
+
+4. Aluminum Ornamental Fence
+Market Share: ~8% of residential installations. Dominant for pool fencing and decorative front-yard.
+Price Range: $28–$55/LF installed. Residential: $28–$40. Commercial: $38–$55.
+Heights: 3’, 4’ (pool standard), 5’, 6’, 8’. Panels: 6’ or 8’
+
+5. Steel / Wrought Iron Fence
+Market Share: ~4% residential, ~10% commercial/industrial. Heavier, stronger than aluminum.
+Price Range: $35–$100+/LF installed. Tubular residential: $35–$55. Custom wrought iron: $60–$100+.
+Heights: 4’, 5’, 6’, 8’. Custom heights common.
+
+6. Composite Fence (Trex, SimTek)
+Market Share: ~3% and growing rapidly. Premium market positioning.
+Price Range: $45–$85/LF installed. Trex Seclusions: $45–$65. SimTek: $50–$75.
+Heights: 6’, 8’ (most common). Limited options vs. wood.
+
+
+PHASE 2: FULL MATERIAL BREAKDOWN
+
+FENCE TYPE 1: Wood Privacy (6’ Dog-Ear)
+The industry standard. This is the fence 60% of your residential jobs will be.
+
+1. Posts
+Option
+Size
+Use Case
+4x4x8’ PT Pine
+Actual: 3.5″ × 3.5″
+Standard line post (most common)
+4x4x8’ Cedar
+Actual: 3.5″ × 3.5″
+Premium, naturally rot-resistant
+6x6x8’ PT Pine
+Actual: 5.5″ × 5.5″
+Gate posts, corners in high-wind
+6x6x8’ Cedar
+Actual: 5.5″ × 5.5″
+Premium gate posts
+Steel PostMaster
+With wood sleeve
+Eliminates rot at ground level
+
+Spacing: Standard 8’ OC. Acceptable range 6’–8’ OC. Never exceed 8’ — rails will sag.
+Depth: Minimum 24″. Standard 30″–36″. Frost zones: Zone 1 (South) 12″–18″, Zone 2 (Mid-Atlantic) 24″–36″, Zone 3 (Midwest/NE) 36″–48″, Zone 4 (Northern) 42″–60″.
+Post types: Line = 4x4. Corner = 4x4 or 6x6. End = 4x4 or 6x6. Gate = 6x6 MINIMUM for walk gates. 6x6 or 8x8 for drive gates.
+
+2. Rails / Stringers
+Fence Height
+Rails
+Material
+Fastening
+4’
+2 (top + bottom)
+2x4x8’ PT/Cedar
+Brackets or toe-screw
+5’
+2 or 3
+2x4x8’ PT/Cedar
+Brackets recommended
+6’
+3 (top + mid + bottom)
+2x4x8’ PT/Cedar
+Metal fence brackets (standard)
+8’
+3 minimum
+2x4x8’–16’
+Brackets + Simpson Strong-Tie
+
+Rail quantity: Total rails = total bays × rails_per_bay. If using 8’ lumber for 8’ bays, waste is near zero.
+
+3. Pickets / Boards
+Standard: 1x6x6’ dog-ear (actual: 5/8″ × 5.5″ × 72″). The #1 selling fence board in America.
+
+Style
+Calculation
+Per 8’ Bay
+Privacy (no gap)
+bay_width / picket_width
+96″ / 5.5″ = 17.45 → 18
+Overlapped (¼″)
+bay_width / (picket_width - overlap)
+96″ / 5.25″ = 18.3 → 19
+Semi-privacy (1″ gap)
+bay_width / (picket_width + gap)
+96″ / 6.5″ = 14.8 → 15
+Board-on-board
+front + back boards
+12 + 12 = 24 per bay
+
+Waste factors: 5% standard, 8% complex layouts, 10% severe terrain. Stepped sections add 5% per section.
+
+4. Fasteners
+Type
+Count Formula
+Per Bay (3-rail, 18 pickets)
+2″ galv ring-shank nails
+2 per picket per rail
+18 × 6 = 108 nails
+1-5/8″ exterior screws
+2 per picket per rail
+Same count, stronger
+Fence brackets
+2 per rail end
+3 rails × 2 ends × 2 = 12 brackets
+Bracket screws
+4 per bracket
+12 × 4 = 48 screws
+
+Critical: Pressure-treated wood requires ACQ-compatible fasteners (hot-dipped galvanized or stainless). Standard zinc-plated WILL corrode. This is a code requirement.
+
+5. Concrete
+Volumetric calculation: πr²h minus post displacement, divided by bag volume.
+
+Post Size
+Hole
+Concrete Needed
+80-lb Bags
+4x4 in 10″×36″ hole
+π×(5″)²×36″ = 1.64 ft³
+1.64 - 0.255 = 1.385 ft³
+3 bags per post
+6x6 in 12″×42″ hole
+π×(6″)²×42″ = 2.75 ft³
+2.75 - 0.735 = 2.015 ft³
+4 bags per post
+
+Soil Type
+Adjustment
+Sandy/loose
+Increase hole diameter by 2″. Add ~0.5 bags/post.
+Rocky
+May need foam fill instead of concrete. Irregular holes.
+High water table
+Use fast-set concrete (sets 20–40 min). Same volume, different SKU.
+Clay
+Standard calculations. Allow 48-hour cure time.
+
+6. Gates
+Gate Type
+Width
+Hinges
+Hardware
+Posts
+Walk gate
+3’–4’
+2× T-hinges
+Thumb/gravity latch, frame kit
+6x6 minimum
+Single drive
+5’–8’
+3× strap hinges
+Cane bolt, wheel kit if >6’
+6x6 or 8x8
+Double drive
+10’–16’
+6× (3/leaf)
+Center latch, 2× drop rods, anti-sag
+6x6 or 8x8, steel-reinforced
+
+Pool Code: Self-closing + self-latching. Latch ≥54″ from ground (pool side). No openings >1.75″ within 18″ of latch. Gate opens outward (away from pool).
+
+7. Hardware & Accessories
+• Post caps: 1 per post. Flat ($2–$5), pyramid ($3–$8), copper ($8–$15), solar ($15–$35).
+• Kickboard: 1x6 or 1x8 PT board at ground level, 1 per bay. Prevents picket rot.
+• Fence brackets: 2 per rail connection, galvanized steel. 4 screws per bracket.
+• Trim/cap board: 1x4 or 1x6 across top per bay (for cap-and-trim style).
+
+8. Finishing
+Option
+Coverage
+Cost/Gallon
+Lifespan
+Semi-transparent stain
+150–300 sq.ft./gal
+$25–$40
+3–5 years
+Solid stain
+200–400 sq.ft./gal
+$30–$45
+5–7 years
+Clear sealer
+200–350 sq.ft./gal
+$20–$35
+1–2 years
+No finish
+N/A
+$0
+Grays naturally
+
+Coverage formula: fence_LF × height × 2 sides × 1.15 (posts/rails) / coverage_rate = gallons needed.
+
+FENCE TYPE 2: Vinyl / PVC Privacy (6’)
+Key Concept: Vinyl is a manufacturer-specific system. Unlike wood, you cannot mix and match components across brands. Every post, panel, rail, and bracket is designed to work together.
+
+1. Posts
+Material: Extruded PVC, 5″×5″ with internal aluminum reinforcement.
+Critical spacing rule: Post spacing MUST match panel width EXACTLY. You cannot adjust spacing like wood. If panel is 72″, posts are 72″ OC inside-to-inside.
+
+Aluminum inserts: REQUIRED for gate posts (always), corner/end posts (recommended), all posts in high-wind zones.
+
+2. Rails & Panels
+In most vinyl privacy systems, rails and panels are an INTEGRATED unit. You order a “6’ privacy panel” and it arrives pre-assembled. You do NOT calculate rails separately.
+
+Panels are NOT field-cuttable in width. If a run doesn’t divide evenly, you need a custom-width panel or adjust post placement.
+Panel count: 1 panel per bay, by definition. Custom panels for non-standard widths.
+
+3. Fasteners & Brackets
+Panel-to-post: PVC brackets that snap/screw into pre-routed slots. 2 brackets per rail connection. 8 brackets per panel (standard 2-rail).
+Fasteners: #8 × 1″ stainless steel screws. 2 per bracket.
+
+4. Gates
+Pre-assembled from manufacturer. Cannot be field-built. Gate posts require HEAVY aluminum insert (mandatory). Hinges and latches are manufacturer-specific.
+
+5. Finishing
+None required. UV inhibitors built into PVC. Color is throughout material. This is a key selling point.
+
+FENCE TYPE 3: Chain Link (Residential 4’ & Commercial 6’)
+Key Concept: Chain link is a tension-based system. It has more unique hardware components than any other fence type. Missing ONE piece can halt an entire installation.
+
+1. Posts
+Type
+Residential 4’
+Commercial 6’
+Terminal (end/corner/gate)
+2-3/8″ OD × 0.065″ wall × 8’
+2-7/8″ OD × 0.065″ wall × 10’
+Line post
+1-5/8″ OD × 0.065″ wall × 8’
+2-3/8″ OD × 0.065″ wall × 10’
+Spacing
+Line: 10’ OC
+Line: 10’ OC
+
+2. Top Rail
+Sizes: Residential: 1-3/8″ OD. Commercial: 1-5/8″ OD. Sold in 10.5’ or 21’ lengths.
+Connections: Rail sleeves at joints, loop caps on line posts, rail end fittings on terminal posts.
+Calculation: Total rail feet = fence length × 1.05. Number of 21’ rails = total / 21, rounded up.
+
+3. Chain Link Fabric (Mesh)
+Specs: Residential 11.5-gauge, 2″×2″ mesh, 50’ rolls. Commercial: 9-gauge, 2″×2″.
+Quantity: Linear feet needed = fence length + 1’ per terminal post. Rolls = ceil(total / 50).
+
+4. Tension System Hardware (Per Terminal Post)
+This Is Where Chain Link Gets Complex: Every terminal post needs a complete tension assembly. This is the #1 area where software fails.
+
+Component
+Quantity Per Terminal Post
+Purpose
+Tension bar
+1 (or 2 at corners)
+Flat bar threaded through fabric end
+Tension bands
+fence_height_ft - 1 (e.g., 4’ = 3, 6’ = 5)
+Clamp tension bar to post
+Brace band
+1
+Holds rail end fitting to post
+Rail end cup
+1
+Top rail slides into this
+Carriage bolts
+1 per band (5/16″ × 1-1/4″)
+Secures bands to post
+
+Per Line Post:
+• 1× loop cap (rail slides through)
+• Tie wires: 1 per 12″ of fence height (4’ fence = 4 ties, 6’ = 6 ties)
+
+Per Top Rail Bay:
+• Tie wires along top rail: 1 per 24″ of rail length. For 10’ spacing: 5 ties per bay.
+• Rail sleeves: 1 per joint between rails.
+
+5. Gates
+Type
+Frame
+Hardware
+Posts
+Walk (3’–4’)
+Pre-fab 1-5/8″ OD frame
+Male/female hinges, fork latch
+Terminal post size
+Drive (10’–20’)
+Heavy pre-fab, double-swing
+Industrial hinges, drop rod, center latch
+2-7/8″ min, 4″ for wide
+Cantilever/Sliding (20’+)
+Track-based, 1.5× opening width
+Guide rollers, V-groove track
+Heavy-gauge terminal
+
+FENCE TYPE 4: Aluminum Ornamental (4’ Pool / 6’ Residential)
+Section-based system, similar to vinyl. Components are manufacturer-specific.
+
+1. Posts & Panels
+Posts: Extruded aluminum 2″×2″ (residential) or 2.5″×2.5″ (commercial). Powder-coated. Black = 80%+ market share.
+Panels: Factory-welded or assembled. 6’ or 8’ sections. Picket spacing 3.5″–4″ OC. Pool code requires <4″ gap.
+Panel count: 1 per bay. No cutting. Custom-width panels for non-standard bays.
+
+2. Brackets
+Per panel: 2 brackets per rail-to-post connection. 2-rail panel = 8 brackets/panel. 3-rail = 12 brackets/panel. Self-tapping stainless screws.
+
+3. Gates
+Factory-assembled walk gates with self-closing hinges (pool code). Magna-latch for pool-code compliance. ADA: 36″ clear opening, max 5 lbs force, lever hardware.
+
+FENCE TYPE 5: Steel / Wrought Iron
+
+Posts: Hot-rolled steel tube. Residential: 2″×2″. Commercial: 3″×3″ or 4″×4″. MUST be set in concrete (no exceptions).
+Panels: Welded steel. 5/8″ or 3/4″ solid round pickets. 2–3× heavier than equivalent aluminum.
+Key difference: ALL steel MUST be finished or it rusts. Factory: hot-dipped galvanized + powder coat (15–25 yr warranty). Field: prime + 2 coats enamel (3–5 yr).
+
+Critical: Steel gates >6’ wide almost always need wheel/roller support due to weight. Automated gates require motor ($500–$2,000), photo eyes, keypad, battery backup, and electrical conduit.
+
+FENCE TYPE 6: Composite (Trex, SimTek)
+
+System
+Posts
+Panels
+Key Detail
+Trex Seclusions
+5″×5″ galv steel + composite sleeve
+8’ wide, T&G boards in rail channels
+Field-assembled on-site. 12 boards per 6’ panel.
+SimTek
+5″×5″ steel in composite stone shell
+6’ wide, pre-cast polymer/stone
+~90 lbs per panel. Two-person minimum.
+
+Hardware: All proprietary. Trex: brackets, caps, stainless fasteners. SimTek: minimal — panels gravity-sit in post grooves.
+Concrete: 3–4 bags of 80-lb per post for 5″×5″ steel in 12″ hole.
+
+PHASE 3: VARIATIONS & EDGE CASES
+
+Slope Handling
+Method
+How It Works
+Material Impact
+Labor Impact
+Racked (follow grade)
+Panels lean to follow slope
+No extra material (wood). Rackable SKU (vinyl/aluminum).
+1.1–1.2×
+Stepped (stairstep)
+Panels level, fence steps down
+Longer posts on downhill. Gap fillers may be needed.
+1.2–1.5×
+Stepped with fill
+Stepped + triangular fill at bottom
+Add 10–15% picket waste for fill pieces.
+1.3–1.6×
+
+Corner Configurations
+Angle
+Wood
+Vinyl
+Chain Link
+Aluminum
+90° (standard)
+Rails butt into post faces
+Corner brackets/post
+Fabric wraps terminal
+Standard brackets
+45°
+Rails cut at 22.5° angles
+Angle brackets (if available)
+Terminal + restart
+Swivel brackets
+Non-standard
+Custom-cut rails. Labor-intensive.
+May not be possible
+Terminal approach
+Swivel brackets (>30°)
+
+Soil Types
+Soil
+Digging
+Concrete
+Labor Multiplier
+Sand/loose
+Holes collapse. Temporary forms.
++2″ diameter, +0.5 bags/post
+1.2×
+Clay
+Holds shape well.
+Standard. 48-hr cure.
+1.0×
+Rocky
+Bar + hammer or jackhammer.
+May need foam fill.
+1.5–2.0×
+High water table
+Water seeps in before concrete.
+Fast-set concrete (different SKU).
+1.3×
+
+Wind Load / Code Variations
+• Florida Building Code: fence posts must withstand 150+ mph.
+• Solutions: deeper embedment (42″–48″), larger posts, closer spacing (6’ OC), steel reinforcement.
+• Height restrictions: 6’ max rear/side, 4’ front yard, 3’ sight triangle. Pool: min 48″.
+
+PHASE 4: MATERIAL CALCULATION LOGIC
+
+Universal Inputs (All Fence Types)
+fence_type: enum
+height: decimal (feet)
+total_linear_feet: decimal
+runs[]: array of {length, terrain_grade_pct, material_type, height}
+gates[]: array of {type, width, hardware_level}
+corners[]: array of {angle_degrees}
+end_count: integer
+soil_type: enum
+frost_zone: integer (1-4)
+wind_zone: enum (standard, high, hurricane)
+
+Wood Privacy — Calculation Formulas
+
+Post Count
+For each run:
+  bays = ceil(run_length / max_post_spacing)
+  adjusted_spacing = run_length / bays
+  post_count = bays + 1  (includes both end posts)
+ 
+BUT: shared posts at corners counted once, not twice.
+Total unique posts = sum(run_post_counts) - shared_corners - shared_ends
+ 
+Line posts = total - corners - ends - gate_posts
+Gate posts = sum(gates) × 2
+Corner posts = count of corners
+End posts = count of free-standing ends
+
+Rail Count
+rails_per_bay = (height <= 4) ? 2 : 3
+total_rails = total_bays × rails_per_bay
+ 
+Optimal length selection:
+  If adjusted_spacing <= 8’: use 8’ rails (minimal waste)
+  If adjusted_spacing <= 10’: use 10’ rails
+  Waste per rail = rail_length - adjusted_spacing
+  Rail waste % = total_waste / total_purchased
+
+Picket Count
+Privacy (no gap):
+  pickets_per_bay = ceil(spacing_inches / picket_width_inches)
+  total = sum(pickets_per_bay) × waste_factor
+ 
+Board-on-board:
+  front = ceil(spacing / (picket_width + gap))
+  back = front (offset to cover gaps)
+  total = (front + back) × bays × waste_factor
+
+Concrete
+For each post:
+  hole_diameter = (post == "4x4") ? 10 : 12  (inches)
+  hole_depth = frost_depth + 6  (min 24")
+  hole_volume = π × (diameter/2)² × depth  (cu.in.)
+  post_displacement = actual_width² × depth
+  concrete_volume = (hole - post) / 1728  (cu.ft.)
+  bags_80lb = ceil(volume / 0.6)
+ 
+Total = sum(bags) × 1.05 (5% overage)
+
+Gate Hardware
+walk gate:
+  hinges=2, latch=1, frame_kit=1, posts=2×6x6
+  pickets = ceil(gate_width_inches / picket_width)
+ 
+single_drive:
+  hinges=3, latch=1, cane_bolt=1
+  wheel_kit = (width > 72") ? 1 : 0
+  posts = 2×6x6 or 8x8
+ 
+double_drive:
+  hinges=6, center_latch=1, drop_rod=1
+  cane_bolts=2, frame_kits=2, anti_sag=2
+  posts = 2×6x6 or 8x8
+
+Vinyl — Calculation Formulas
+Post spacing MUST equal panel width exactly.
+panels_per_run = floor(run_length / panel_width)
+remaining = run_length - (panels × panel_width)
+if remaining > 0: need 1 custom-width panel
+posts_per_run = panels + 1
+ 
+Brackets per panel = rails × 2 × 2 = 8 standard
+Aluminum inserts: gate posts (always), corners (recommended)
+
+Chain Link — Calculation Formulas
+terminal_posts = (2 × ends) + corners + (2 × gates) + run_starts_ends
+line_posts = ceil(total_feet / 10) - 1 (per section)
+ 
+Fabric rolls = ceil(total_feet / 50)
+Top rail = total_feet × 1.05 / 21 (for 21’ rails)
+ 
+Per terminal post:
+  tension_bars=1, tension_bands=height_ft-1
+  brace_band=1, rail_end_cup=1
+  bolts = bands + 1
+ 
+Per line post:
+  loop_cap=1, tie_wires=ceil(height_inches/12)
+
+PHASE 5: DATA MODEL DESIGN
+
+FenceType
+FenceType {
+  id: string (e.g., "wood_privacy")
+  name: string
+  category: enum [wood, vinyl, chain_link, aluminum, steel, composite]
+  default_height_ft: decimal
+  available_heights: decimal[]
+  default_post_spacing_ft: decimal
+  max_post_spacing_ft: decimal
+  rails_by_height: { height: integer }
+  spacing_adjustable: boolean (true=wood, false=vinyl/aluminum)
+  slope_rackable: boolean
+  max_rack_angle_degrees: decimal
+  requires_manufacturer_match: boolean
+}
+
+FenceSection
+FenceSection {
+  id: UUID
+  design_id: UUID (FK → FenceDesign)
+  sequence: integer
+  start_node_id: UUID (FK → FenceNode)
+  end_node_id: UUID (FK → FenceNode)
+  length_ft: decimal
+  fence_type_id: string (FK → FenceType)
+  height_ft: decimal
+  style: string (e.g., "dog_ear")
+  terrain_grade_pct: decimal
+  slope_method: enum [racked, stepped, flat]
+  post_spacing_ft: decimal (calculated optimal)
+  bay_count: integer (calculated)
+}
+
+PostConfig
+PostConfig {
+  id: UUID
+  fence_type_id: string
+  post_position: enum [line, corner, end, gate]
+  material: string
+  nominal_size: string (e.g., "4x4", "2-3/8_OD")
+  actual_width_inches: decimal
+  is_round: boolean (steel pipe posts)
+  length_ft: decimal
+  requires_reinforcement: boolean
+  hole_diameter_inches: integer
+  min_depth_inches: integer
+  concrete_bags_80lb: integer
+  sku_template: string
+}
+
+RailConfig, PanelConfig, GateConfig
+RailConfig {
+  material: string, nominal_size: string
+  available_lengths_ft: decimal[]
+  rails_per_bay: integer
+  attachment_method: enum [toe_nail, bracket, sleeve, integrated]
+  is_continuous: boolean (chain link top rail)
+}
+ 
+PanelConfig {
+  panel_type: enum [individual_pickets, pre_assembled, fabric_roll]
+  width_inches: decimal, height_inches: decimal
+  gap_inches: decimal
+  is_field_adjustable: boolean
+  roll_length_ft: decimal (chain link)
+  waste_factor_default: decimal
+}
+ 
+GateConfig {
+  gate_type: enum [walk, single_drive, double_drive, sliding, cantilever]
+  width_ft: decimal, height_ft: decimal
+  frame_type: enum [wood_site_built, metal_frame_kit, factory_assembled]
+  hinge_count: integer, latch_type: enum [...]
+  self_closing: boolean, drop_rod_required: boolean
+  wheel_required: boolean, anti_sag_required: boolean
+  requires_oversized_posts: boolean
+}
+
+HardwareKit & ConcreteRule
+HardwareKit {
+  fence_type_id: string
+  kit_type: enum [per_bay, per_post, per_gate, per_terminal, per_line_post]
+  items: HardwareItem[]
+}
+ 
+HardwareItem {
+  description: string, sku_template: string
+  quantity_formula: string (e.g., "fence_height_ft - 1")
+  unit: enum [each, box, roll, lb]
+  category: enum [fastener, bracket, cap, tie, band, bar, misc]
+}
+ 
+ConcreteRule {
+  post_config_id: UUID
+  frost_zone: integer (1-4)
+  soil_type: enum [normal, sandy, clay, rocky]
+  hole_diameter_inches: integer
+  hole_depth_inches: integer
+  bags_80lb: integer, bags_50lb: integer
+  use_fast_set: boolean
+}
+
+Entity Relationships
+FenceDesign
+  └─ has many FenceSections
+       ├─ references FenceType
+       ├─ has many FenceNodes (via start/end)
+       └─ generates BOMLines
+ 
+FenceType
+  ├─ has many PostConfigs (per position)
+  ├─ has one RailConfig
+  ├─ has one PanelConfig
+  ├─ has many GateConfigs (per gate type)
+  ├─ has many HardwareKits
+  └─ has many ConcreteRules (per frost×soil)
+ 
+BOM
+  └─ has many BOMLines
+       ├─ each references a SKU
+       ├─ each traces to a FenceSection or Gate
+       └─ each carries calculation_notes
+
+PHASE 6: SKU / BOM GENERATION SYSTEM
+
+Supplier Catalog Model
+SupplierCatalog { supplier_id, supplier_name, items[] }
+ 
+SupplierItem {
+  sku: string (supplier’s actual part number)
+  description: string
+  category: enum [post, rail, panel, picket, concrete, gate, hardware, fastener, accessory]
+  fence_type_compatibility: string[]
+  material: string, dimensions: string
+  unit: enum [each, linear_ft, roll, bag, box, lb]
+  unit_price: decimal, pack_size: integer
+  in_stock: boolean, last_price_update: timestamp
+}
+
+SKU Resolution Logic
+1. Template match: "post_4x4x8_pt" → search catalog for category=post, material=PT, dimensions=4x4+8’.
+2. Multiple matches: prefer lowest price (or preferred supplier).
+3. No match: flag “SKU not found — manual resolution required.”
+4. Caching: SKU resolution cached per supplier. Recalculated only when catalog updated.
+
+BOM Line Example
+BOMLine {
+  description: "4x4x8’ Pressure-Treated Post"
+  sku: "PT4488" (resolved from supplier)
+  raw_quantity: 24
+  waste_factor: 0.0 (posts = 0% waste)
+  insurance_quantity: 2 (always add 2 extra per job)
+  order_quantity: 26
+  unit_price: $14.50
+  extended_price: $377.00
+  calculation_notes: "20 line + 2 corner + 2 end + 2 insurance = 26"
+}
+
+Dynamic Waste Calculation
+
+Cut Waste (Rails)
+offcut_per_rail = rail_purchase_length - adjusted_bay_width
+total_offcut = offcut × total_rails
+waste_pct = total_offcut / total_purchased
+ 
+Optimization: two 5’ bays from one 12’ rail → waste → zero
+
+Corner Waste (Pickets)
+For each non-90° corner:
+  angle_offset = picket_width × tan(90 - corner_angle)
+  wasted_pickets = ceil(offset / picket_width)
+  Typically 1–3 extra pickets per corner
+
+Terrain Waste (Stepped)
+For each stepped bay:
+  step_height = bay_width × grade_decimal
+  if step_height > 2" tolerance:
+    waste_factor_addition = 0.03 to 0.05 per bay
+
+Final Waste Factor
+total_waste = cut + corner + terrain + defect (2%)
+order_quantity = raw_quantity × (1 + total_waste_factor)
+
+Supplier Variation Handling
+• Multi-supplier: each job can have a preferred supplier.
+• SKU alternates: if primary is out of stock, show alternates with price comparison.
+• Pack optimization: brackets in 10-packs, need 32 → order 4 packs (40 total).
+• Regional availability: redwood (West Coast only), certain vinyl brands are regional.
+
+PHASE 7: USER INPUT → SYSTEM OUTPUT FLOW
+
+What the User Inputs
+
+Required (Minimum Viable Estimate)
+• total_linear_feet OR drawn fence line segments on map
+• fence_type (dropdown: Wood, Vinyl, Chain Link, Aluminum, Steel, Composite)
+• height (dropdown filtered by fence type)
+• gate_count and gate_types (walk, drive, double drive)
+
+Recommended (Improves Accuracy)
+• terrain (flat, slight, moderate, steep)
+• soil_type (normal, clay, sandy, rocky)
+• existing_fence (determines demo need)
+• corner_count and corner_angles
+
+Optional (For Precision)
+• Per-run material assignments (mixed fence types)
+• Specific wood species / vinyl color / aluminum finish
+• Gate hardware level (standard, heavy-duty, premium, automated)
+• Stain/finish preference
+
+Default Assumptions
+defaults = {
+  terrain: "flat",
+  soil_type: "normal",
+  frost_zone: auto_from_zip_code,
+  wind_zone: "standard",
+  corner_angle: 90,
+  slope_method: "racked" (if <8%), "stepped" (if ≥8%),
+  picket_gap: 0 (privacy default),
+  waste_factor: per category (or 5% flat if insufficient data),
+  concrete_bag_size: "80lb",
+  fastener_type: "ring_shank_galvanized_nail",
+  gate_hardware: "standard",
+  post_caps: "flat" (1 per post),
+  stain: "none"
+}
+
+Sample System Output
+
+Full BOM (Bill of Materials)
+Category
+Item
+Qty
+Unit Price
+Extended
+POSTS
+4x4x8’ PT Post
+24
+$14.50
+$348.00
+POSTS
+6x6x8’ PT Post (gates)
+4
+$22.00
+$88.00
+POSTS
+Insurance extra
+2
+$14.50
+$29.00
+RAILS
+2x4x8’ PT Rail
+72
+$6.75
+$486.00
+PICKETS
+1x6x6’ Dog-Ear Cedar (incl 5.2% waste)
+420
+$3.25
+$1,365.00
+CONCRETE
+80-lb Quikrete (incl 5% overage)
+82
+$6.50
+$533.00
+GATES
+Metal Gate Frame Kit
+2
+$45.00
+$90.00
+GATES
+Heavy-Duty T-Hinge
+4
+$8.50
+$34.00
+GATES
+Gravity Latch
+2
+$14.00
+$28.00
+HARDWARE
+Post Cap (4x4)
+28
+$3.00
+$84.00
+HARDWARE
+Post Cap (6x6)
+4
+$5.00
+$20.00
+HARDWARE
+1-lb box 2″ Ring-Shank Nails
+3
+$8.50
+$25.50
+
+Total Material: $3,130.50
+
+Price Summary
+Material Cost:    $3,130.50
+Labor Cost:       $2,030.60
+Overhead (15%):   $774.17
+Subtotal:         $5,935.27
+Target Margin:    20%
+Total Price:      $7,419.08
+Price Per Foot:   $37.10/LF
+
+Editable Overrides
+Every calculated value can be overridden by the user. Overrides are logged with original value, new value, user, and timestamp. System shows a warning: “Override detected: concrete changed from 82 to 70 bags. This reduces per-post from 2.85 to 2.43. Are you sure?”
+
+PHASE 8: ERROR PREVENTION SYSTEM
+
+Missing Hardware Detection
+[BLOCK] gate_count > 0 AND gate_hardware == 0 — "2 gates but no gate hardware in BOM. Calculation error."
+[WARN] post_count > 0 AND post_caps == 0 — "28 posts but no post caps. Add post caps? [Yes/Skip]"
+[BLOCK] chain_link AND terminal_posts > 0 AND tension_bars == 0 — "Chain link has 6 terminal posts but 0 tension bars. Cannot install."
+[BLOCK] chain_link AND top_rail > 0 AND loop_caps == 0 — "Has top rail but 0 loop caps. Line posts need loop caps."
+[WARN] wood AND height >= 6 AND rails < 3 — "6’ wood with only 2 rails. 3 rails recommended."
+[BLOCK] vinyl AND gate_posts_no_insert — "Vinyl gate posts require aluminum insert. None in BOM."
+
+Invalid Spacing Detection
+[BLOCK] wood AND spacing > 8’ — "Post spacing 9.2’ exceeds max 8’. Rails will sag."
+[BLOCK] vinyl AND spacing != panel_width — "Spacing 7.5’ doesn’t match panel width 6’. Panels won’t fit."
+[WARN] chain_link AND line_spacing > 10’ — "Line spacing 11’ exceeds standard 10’. Fabric may sag."
+[WARN] ANY AND spacing < 4’ — "Spacing 3.5’ is unusually close. Verify design."
+
+Gate Support Validation
+[WARN] walk gate AND posts < 6x6 — "Walk gate on 4x4 posts. 6x6 recommended."
+[BLOCK] double_drive AND posts < 6x6 — "Double drive requires 6x6 minimum. 8x8 recommended."
+[WARN] gate > 6’ AND no wheel kit — "6’+ gate without wheel kit. Will likely sag and drag."
+[BLOCK] double_drive AND no drop rod — "Double drive without drop rod. One leaf can’t be secured."
+[BLOCK] pool_code AND not self_closing — "Pool code requires self-closing gate. Current hardware is not."
+
+Concrete Underestimation Flags
+[WARN] frost_zone >= 3 AND depth < 36" — "Frost zone 3 requires min 36″. Current: 30″. Posts may heave."
+[WARN] concrete < 1.5 bags/post — "Less than 1.5 bags per post. May not be enough for stability."
+[WARN] sandy soil AND hole < 12" — "Sandy soil. Recommend 12″ diameter (currently 10″)."
+[WARN] historical > estimated by 15% — "Your estimates have been 15% low over last 20 jobs. Consider increasing."
+
+Cross-Validation Checks
+[BLOCK] BOM posts != design graph nodes — "Post count mismatch: BOM has 26, design has 24."
+[BLOCK] rail count != bays × rails_per_bay — "Rail count mismatch."
+[WARN] price/LF outside 50%–150% of avg — "Price $58/ft is 45% above your avg of $40/ft. Review."
+[WARN] material > 55% of job price — "Material is 62% of job price. Unusually high. Check markup."
+
+PHASE 9: WHAT 99% OF SOFTWARE GETS WRONG
+
+1. Oversimplified Post Spacing
+What They Do Wrong: Divide total footage by 8, round up, add 1. Done.
+
+What’s Actually Required: Account for shared corners (don’t double-count), gate posts (offset from expected position), run-specific optimization (redistribute to avoid stubs), and end conditions (freestanding vs. attached).
+
+Our System: Graph-based calculation. Every node is typed. Shared nodes counted once. Spacing optimized per-run. Gate posts calculated from width and clearance.
+
+2. Ignoring Terrain
+What They Do Wrong: Treat every job as flat ground. Same post length, same concrete, same labor.
+
+Our System: Every run carries terrain_grade_pct. Post depths calculated per-position. Stepped vs. racked per-run. Labor multipliers compound.
+
+3. Missing Gate Hardware
+What They Do Wrong: A gate is “1 gate.” Maybe hinges. They forget: frame kits, latches, drop rods, cane bolts, wheels, self-closing hardware, gate post upsizing, additional concrete for oversized holes.
+
+Our System: Gate wizard forces complete configuration. Hardware resolver traverses requirement tree. Missing components trigger BLOCK errors. Impossible to generate a BOM with a gate and no hinges.
+
+4. Static Waste Factors
+What They Do Wrong: Apply 5% to everything. Doesn’t matter what the job looks like.
+
+Our System: Waste calculated from actual design: cut lengths, corner angles, terrain steps, defect rates. The waste factor on the BOM is a computed result, not an assumed input.
+
+5. “2 Bags Per Post” Concrete
+What They Do Wrong: Flat assumption. Doesn’t matter if it’s 4x4 in 10″ hole at 24″ or 6x6 in 12″ hole at 42″.
+
+Our System: πr²h minus post displacement. Per-post. Per-position. Frost depth from NOAA by zip code. Soil adjustments applied.
+
+6. Ignoring Chain Link Hardware
+What They Do Wrong: Count posts and fabric. Maybe top rail. Forget tension bars, tension bands, brace bands, rail end cups, loop caps, tie wires, hog rings.
+
+Our System: Hardware kits per post type. Terminal posts auto-generate full tension assembly. Line posts generate loop cap + tie wires. Top rail generates ties + sleeves. Height-dependent quantities.
+
+7. Not Accounting for Manufacturer Systems
+What They Do Wrong: Treat vinyl like wood — calculate posts, rails, pickets separately. But vinyl is a SYSTEM. A CertainTeed panel doesn’t work with Bufftech posts.
+
+Our System: requires_manufacturer_match flag locks all BOM components to single manufacturer’s catalog. SKU resolution only searches within that product line.
+
+8. No Feedback Loop
+What They Do Wrong: The estimate is one-way. Never learns. Same errors repeat forever.
+
+Our System: Job closeout captures actuals. Variance engine identifies patterns. Calibration engine adjusts waste factors, production rates, concrete quantities. After 50 jobs, it’s not estimating — it’s predicting from data.
+
+
+This document is the material engine bible.
+An engineer can build from it. A foreman can validate it. A 20-year fence builder can trust it.
+Every fastener. Every bag of concrete. Every tension band.
+If a crew would notice it on a jobsite, it’s in here.
