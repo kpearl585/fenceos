@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔨 Running build validation before commit..."
+npm run build
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Build failed! Commit blocked."
+  echo "Fix the build errors before committing."
+  exit 1
+fi
+
+echo "✅ Build passed! Proceeding with commit..."

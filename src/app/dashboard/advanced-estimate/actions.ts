@@ -7,6 +7,7 @@ import { estimateFence } from "@/lib/fence-graph/engine";
 import type { FenceProjectInput, FenceEstimateResult } from "@/lib/fence-graph/types";
 import { updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "@/lib/fence-graph/bom/shared";
 import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
+import { calculateProjectTimeline } from "@/lib/fence-graph/calculateTimeline";
 import { SaveEstimateSchema } from "@/lib/validation/schemas";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
@@ -213,7 +214,8 @@ export async function generateCustomerProposalPdf(
   fenceType: string,
   customer: {
     name?: string; address?: string; city?: string; phone?: string; email?: string;
-  }
+  },
+  woodStyle?: "dog_ear_privacy" | "flat_top_privacy" | "picket" | "board_on_board"
 ): Promise<{ success: boolean; pdf?: string; error?: string }> {
   try {
     const supabase = await createClient();
@@ -233,6 +235,14 @@ export async function generateCustomerProposalPdf(
     const bidPrice = Math.round(result.totalCost * (1 + markupPct / 100));
     const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
 
+    // Calculate project timeline
+    const timeline = calculateProjectTimeline(
+      result,
+      fenceType as "vinyl" | "wood" | "chain_link" | "aluminum",
+      woodStyle,
+      7 // 7 business days until crew available (configurable later)
+    );
+
     const { CustomerProposalPdf } = await import("@/lib/fence-graph/CustomerProposalPdf");
     const proposalElement = React.createElement(CustomerProposalPdf, {
       data: {
@@ -243,6 +253,8 @@ export async function generateCustomerProposalPdf(
         date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
         proposalNumber: `P-${Date.now().toString().slice(-6)}`,
         validDays: 30,
+        estimatedStartDate: timeline.estimatedStartDateString,
+        estimatedDurationDays: timeline.estimatedDurationDays,
       },
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

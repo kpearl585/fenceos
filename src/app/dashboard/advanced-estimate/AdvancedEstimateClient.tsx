@@ -150,7 +150,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
     if (!result) return;
     setProposalStatus("generating");
     const res = await generateCustomerProposalPdf(
-      input, laborRate, wastePct, markupPct, projectName, fenceType, customer
+      input, laborRate, wastePct, markupPct, projectName, fenceType, customer, woodStyle
     );
     if (res.success && res.pdf) {
       const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
