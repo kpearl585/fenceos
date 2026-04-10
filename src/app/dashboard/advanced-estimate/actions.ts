@@ -11,6 +11,8 @@ import { calculateProjectTimeline } from "@/lib/fence-graph/calculateTimeline";
 import { SaveEstimateSchema } from "@/lib/validation/schemas";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
+import type { SiteComplexity, CloseoutData, AccuracyMetrics } from "@/lib/fence-graph/accuracy-types";
+import { calculateOverallComplexity } from "@/lib/fence-graph/accuracy-types";
 
 // ── Fetch org material prices ─────────────────────────────────────
 // Returns { [sku]: unit_cost } for the current org's materials.
@@ -393,5 +395,120 @@ export async function closeoutEstimate(
     }
     console.error("Closeout error:", err);
     return { success: false, error: "Failed to close estimate. Please try again." };
+  }
+}
+
+// ── Close out an estimate (Phase 1 Enhanced) ──────────────────────
+// Enhanced version with labor hours, costs, and site conditions tracking
+export async function closeoutEstimateEnhanced(
+  estimateId: string,
+  closeoutData: CloseoutData
+): Promise<{ success: boolean; newCalibration?: WasteCalibration; error?: string }> {
+  try {
+    // ✅ SECURITY: Validate inputs
+    const closeoutSchema = z.object({
+      estimateId: z.string().uuid("Invalid estimate ID"),
+      actualWastePct: z.number().min(0).max(100).finite("Waste % must be 0-100"),
+      notes: z.string().max(5000, "Notes too long"),
+      // Phase 1 additions
+      actualLaborHours: z.number().min(0).max(10000).finite("Labor hours must be 0-10000"),
+      crewSize: z.number().int().min(1).max(20).finite("Crew size must be 1-20"),
+      weatherConditions: z.enum(["clear", "rain", "heat", "cold", "mixed"]),
+      actualMaterialCost: z.number().min(0).finite("Material cost must be positive"),
+      actualLaborCost: z.number().min(0).finite("Labor cost must be positive"),
+      actualTotalCost: z.number().min(0).finite("Total cost must be positive"),
+    });
+    const validated = closeoutSchema.parse({ estimateId, ...closeoutData });
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Not authenticated" };
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+    if (!profile) return { success: false, error: "Profile not found" };
+
+    // ✅ SECURITY: Validate estimate belongs to this org (authorization check)
+    const { data: est } = await admin
+      .from("fence_graphs").select("id, status")
+      .eq("id", validated.estimateId).eq("org_id", profile.org_id).single();
+    if (!est) return { success: false, error: "Estimate not found" };
+    if (est.status === "closed") return { success: false, error: "Estimate already closed" };
+
+    const actualFactor = validated.actualWastePct / 100;
+
+    // Fetch current calibration
+    const { data: org } = await admin
+      .from("organizations").select("waste_calibration_json").eq("id", profile.org_id).single();
+    const currentCal: WasteCalibration =
+      (org?.waste_calibration_json as WasteCalibration | null) ?? DEFAULT_WASTE_CALIBRATION;
+
+    // EWMA update
+    const newCal = updateWasteCalibration(currentCal, actualFactor);
+
+    // Update org calibration
+    await admin
+      .from("organizations")
+      .update({ waste_calibration_json: newCal as unknown as Record<string, unknown> })
+      .eq("id", profile.org_id);
+
+    // Mark estimate as closed with full closeout data (Phase 1)
+    await admin
+      .from("fence_graphs")
+      .update({
+        status: "closed",
+        closed_at: new Date().toISOString(),
+        closeout_actual_waste_pct: actualFactor,
+        closeout_notes: validated.notes.trim() || null,
+        // Phase 1: Labor and cost tracking
+        closeout_actual_labor_hours: validated.actualLaborHours,
+        closeout_crew_size: validated.crewSize,
+        closeout_weather_conditions: validated.weatherConditions,
+        closeout_actual_material_cost: validated.actualMaterialCost,
+        closeout_actual_labor_cost: validated.actualLaborCost,
+        closeout_actual_total_cost: validated.actualTotalCost,
+      })
+      .eq("id", validated.estimateId);
+
+    return { success: true, newCalibration: newCal };
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      const firstError = err.issues[0];
+      return { success: false, error: `Validation failed: ${firstError?.message || "Invalid input"}` };
+    }
+    console.error("Closeout error:", err);
+    return { success: false, error: "Failed to close estimate. Please try again." };
+  }
+}
+
+// ── Get accuracy metrics ──────────────────────────────────────────
+// Phase 1: Fetch accuracy summary for dashboard
+export async function getAccuracyMetrics(days: number = 30): Promise<AccuracyMetrics | null> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+    if (!profile) return null;
+
+    // Call the database function
+    const { data, error } = await admin.rpc("get_accuracy_summary", {
+      p_org_id: profile.org_id,
+      p_days: days,
+    });
+
+    if (error) {
+      console.error("Error fetching accuracy metrics:", error);
+      return null;
+    }
+
+    return data as AccuracyMetrics;
+  } catch (err) {
+    console.error("Unexpected error fetching accuracy metrics:", err);
+    return null;
   }
 }
