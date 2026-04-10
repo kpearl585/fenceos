@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSavedEstimate, getOrgCalibration } from "../actions";
 import CloseoutPanel from "./CloseoutPanel";
+import ShareQuoteButton from "@/components/ShareQuoteButton";
 import type { FenceEstimateResult } from "@/lib/fence-graph/types";
 
 export const metadata = { title: "Estimate Detail — FenceEstimatePro" };
@@ -124,6 +125,18 @@ export default async function SavedEstimateDetailPage({ params }: { params: Prom
 
           {/* Right: Closeout panel */}
           <div className="space-y-4">
+            {/* Share Quote Button */}
+            {!isClosed && (
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Share with Customer</h3>
+                <p className="text-xs text-gray-600 mb-4">
+                  Send a secure link for customer to view and accept this quote.
+                </p>
+                <ShareQuoteButton estimateId={est.id} estimateName={est.name} />
+              </div>
+            )}
+
+            {/* Closeout Panel */}
             <CloseoutPanel
               estimateId={est.id}
               estimateName={est.name}
