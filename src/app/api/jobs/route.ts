@@ -10,13 +10,8 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const CreateJobSchema = z.object({
-  customer_name: z.string().min(1, 'Customer name required'),
-  customer_email: z.string().email().optional(),
-  customer_phone: z.string().optional(),
-  site_address: z.string().optional(),
-  site_city: z.string().optional(),
-  site_state: z.string().optional(),
-  site_zip: z.string().optional(),
+  customer_id: z.string().uuid().optional(),
+  title: z.string().optional(),
   notes: z.string().optional()
 })
 
@@ -51,23 +46,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validated = CreateJobSchema.parse(body)
 
-    // 4. Create job
+    // 4. Create job using workaround function (bypasses PostgREST cache issue)
     const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .insert({
-        org_id: userRecord.org_id,
-        customer_name: validated.customer_name,
-        customer_email: validated.customer_email,
-        customer_phone: validated.customer_phone,
-        site_address: validated.site_address,
-        site_city: validated.site_city,
-        site_state: validated.site_state,
-        site_zip: validated.site_zip,
-        notes: validated.notes,
-        status: 'draft'
+      .rpc('create_job_workaround', {
+        p_title: validated.title || 'New Job',
+        p_notes: validated.notes,
+        p_customer_id: validated.customer_id
       })
-      .select()
-      .single()
 
     if (jobError || !job) {
       return NextResponse.json(
