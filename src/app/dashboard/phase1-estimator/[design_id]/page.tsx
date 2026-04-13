@@ -6,6 +6,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import Phase1FeedbackButton from "@/components/Phase1FeedbackButton"
 
 export default async function Phase1ResultsPage({
   params
@@ -245,6 +246,9 @@ export default async function Phase1ResultsPage({
           <li>No client-side calculations - all data from deployed Phase 1 backend</li>
         </ul>
       </div>
+
+      {/* Feedback Button */}
+      <Phase1FeedbackButton designId={design_id} />
     </div>
   )
 }
