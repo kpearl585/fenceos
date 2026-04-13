@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky",
+    "prepare": "node -e \"if (!process.env.CI) { require('child_process').execSync('husky') }\"",
     "test:ai-extraction": "tsx scripts/test-ai-extraction.ts",
     "test:ai-extraction:high": "tsx scripts/test-ai-extraction.ts high",
     "test:e2e": "playwright test",
