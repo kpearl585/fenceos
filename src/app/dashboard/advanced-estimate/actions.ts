@@ -13,6 +13,7 @@ import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { SiteComplexity, CloseoutData, AccuracyMetrics } from "@/lib/fence-graph/accuracy-types";
 import { calculateOverallComplexity } from "@/lib/fence-graph/accuracy-types";
+import * as Sentry from '@sentry/nextjs';
 
 // ── Fetch org material prices ─────────────────────────────────────
 // Returns { [sku]: unit_cost } for the current org's materials.
@@ -55,6 +56,8 @@ export async function saveAdvancedEstimate(
   laborRate: number,
   wastePct: number
 ): Promise<{ success: boolean; id?: string; error?: string }> {
+  const startTime = Date.now();
+
   try {
     // ✅ SECURITY: Validate all inputs server-side
     const validated = SaveEstimateSchema.parse({
@@ -79,6 +82,15 @@ export async function saveAdvancedEstimate(
 
     const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
 
+    // Add Sentry context for better debugging
+    Sentry.setContext('advanced_estimator', {
+      total_linear_feet: totalLF,
+      labor_rate: laborRate,
+      waste_pct: wastePct,
+      total_cost: result.totalCost
+    });
+    Sentry.setUser({ id: user.id });
+
     // ✅ SECURITY: Rate limit estimate creation
     const rateLimit = RateLimiters.estimateCreation(profile.org_id);
     if (!rateLimit.success) {
@@ -102,12 +114,67 @@ export async function saveAdvancedEstimate(
       .single();
 
     if (error) {
+      // Track failed event
+      const duration = Date.now() - startTime;
+      try {
+        await admin.rpc('track_estimator_event', {
+          p_event_type: 'failed',
+          p_error_message: 'Database error saving estimate',
+          p_duration_ms: duration
+        });
+      } catch (trackErr) {
+        console.error('Failed to track error event:', trackErr);
+      }
+
+      // Capture in Sentry
+      Sentry.captureException(error, {
+        tags: { estimator: 'advanced', step: 'save' },
+        level: 'error'
+      });
+
       // ✅ SECURITY: Don't leak database error details to client
       console.error("Database error saving estimate:", error);
       return { success: false, error: "Failed to save estimate. Please try again." };
     }
+
+    // Track completed event
+    const duration = Date.now() - startTime;
+    try {
+      await admin.rpc('track_estimator_event', {
+        p_event_type: 'completed',
+        p_result_summary: {
+          total_cost: validated.result.totalCost,
+          total_lf: totalLF,
+          labor_rate: laborRate
+        },
+        p_duration_ms: duration
+      });
+    } catch (trackErr) {
+      console.error('Failed to track success event:', trackErr);
+    }
+
     return { success: true, id: data.id };
   } catch (err: unknown) {
+    const duration = Date.now() - startTime;
+
+    // Track failed event
+    try {
+      const admin = createAdminClient();
+      await admin.rpc('track_estimator_event', {
+        p_event_type: 'failed',
+        p_error_message: err instanceof Error ? err.message : 'Unknown error',
+        p_duration_ms: duration
+      });
+    } catch (trackErr) {
+      console.error('Failed to track error event:', trackErr);
+    }
+
+    // Capture in Sentry
+    Sentry.captureException(err, {
+      tags: { estimator: 'advanced', step: 'save' },
+      level: err instanceof z.ZodError ? 'warning' : 'error'
+    });
+
     if (err instanceof z.ZodError) {
       // ✅ SECURITY: Validation error - return sanitized message
       const firstError = err.issues[0];

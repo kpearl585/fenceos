@@ -15,6 +15,7 @@ import { createEstimateFromFenceGraph } from "./convertActions";
 import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/exportBomExcel";
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
 import AiInputTab, { type AiAppliedState } from "./AiInputTab";
+import EstimatorFeedbackButton from "@/components/EstimatorFeedbackButton";
 
 const FENCE_TYPES: { value: FenceType; label: string }[] = [
   { value: "vinyl", label: "Vinyl" },
@@ -748,6 +749,9 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
           </div>
         )}
       </div>
+
+      {/* Feedback button - only shown when results are available */}
+      {result && <EstimatorFeedbackButton />}
     </div>
   );
 }
