@@ -1,4 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load test environment variables
+config({ path: resolve(__dirname, '.env.test') });
+config({ path: resolve(__dirname, '.env.local') });
 
 /**
  * Playwright configuration for Advanced Estimate E2E testing

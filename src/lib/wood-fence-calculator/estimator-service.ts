@@ -362,21 +362,52 @@ async function persistBOM(designId: string, bom: BOM): Promise<{
   try {
     const supabase = await createClient()
 
-    // 1. Create or update BOM header
+    // Get user's org_id for BOM
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return {
+        success: false,
+        error: {
+          code: 'AUTH_ERROR',
+          message: 'User not authenticated',
+        }
+      }
+    }
+
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('org_id')
+      .eq('auth_id', user.id)
+      .single()
+
+    if (!userRecord?.org_id) {
+      return {
+        success: false,
+        error: {
+          code: 'ORG_ERROR',
+          message: 'User organization not found',
+        }
+      }
+    }
+
+    // 1. Create BOM header (each design gets a new BOM)
     const { data: bomRecord, error: bomError } = await supabase
       .from('boms')
-      .upsert({
+      .insert({
         design_id: designId,
-        total_line_count: bom.total_line_count,
-        summary: bom.summary,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'design_id'
+        org_id: userRecord.org_id,
+        total_line_count: bom.total_line_count
       })
       .select('id')
       .single()
 
     if (bomError || !bomRecord) {
+      console.error('❌ BOM insert failed:', bomError)
+      console.error('Attempted insert:', {
+        design_id: designId,
+        org_id: userRecord.org_id,
+        total_line_count: bom.total_line_count
+      })
       return {
         success: false,
         error: {
@@ -406,7 +437,6 @@ async function persistBOM(designId: string, bom: BOM): Promise<{
       category: line.category,
       description: line.description,
       raw_quantity: line.raw_quantity,
-      waste_quantity: line.waste_quantity || 0,
       insurance_quantity: line.insurance_quantity || 0,
       order_quantity: line.order_quantity,
       calculation_notes: line.calculation_notes,

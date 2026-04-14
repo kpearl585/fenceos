@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useTransition, useEffect } from "react";
 import {
   estimateFence,
   PRODUCT_LINES,
@@ -17,6 +17,7 @@ import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/expor
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
 import AiInputTab, { type AiAppliedState } from "./AiInputTab";
 import EstimatorFeedbackButton from "@/components/EstimatorFeedbackButton";
+import { HelpTooltip } from "@/components/Tooltip";
 
 const FENCE_TYPES: { value: FenceType; label: string }[] = [
   { value: "vinyl", label: "Vinyl" },
@@ -70,6 +71,29 @@ function defaultRun(): RunInput {
   };
 }
 
+// Map technical errors to contractor-friendly messages
+function getUserFriendlyError(technicalMessage: string): string {
+  const errorMap: Record<string, string> = {
+    "RunInput.linearFeet required": "Please enter the linear feet for your fence runs",
+    "No runs provided": "Add at least one fence section to generate an estimate",
+    "runs.length === 0": "Add at least one fence section to generate an estimate",
+    "Invalid post spacing": "Post spacing must be between 6-10 feet for this fence type",
+    "Gate width exceeds": "Gate is too wide for the fence section. Try a smaller gate or longer run",
+    "missing required": "Please fill in all required fields",
+    "calculation error": "Unable to calculate estimate. Please check your inputs and try again",
+  };
+
+  // Check if technical message contains any of our known error patterns
+  for (const [pattern, friendlyMsg] of Object.entries(errorMap)) {
+    if (technicalMessage.toLowerCase().includes(pattern.toLowerCase())) {
+      return friendlyMsg;
+    }
+  }
+
+  // Default fallback for unknown errors
+  return "Something went wrong. Please check your inputs and try again.";
+}
+
 export default function AdvancedEstimateClient({
   priceMap = {},
   defaultWastePct = 5,
@@ -93,7 +117,7 @@ export default function AdvancedEstimateClient({
   const [runs, setRuns] = useState<RunInput[]>([defaultRun()]);
   const [gates, setGates] = useState<GateInput[]>([]);
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
-  const [inputMode, setInputMode] = useState<"manual" | "ai">("manual");
+  const [inputMode, setInputMode] = useState<"manual" | "ai">(aiAvailable ? "ai" : "manual");
   const [projectName, setProjectName] = useState("New Estimate");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [markupPct, setMarkupPct] = useState(35);
@@ -113,6 +137,10 @@ export default function AdvancedEstimateClient({
   const [surveyCost, setSurveyCost] = useState(0);
   // New: nudge banner
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
+  // New: Simple Mode
+  const [runsMode, setRunsMode] = useState<"simple" | "advanced">("simple");
+  const [simpleTotalFeet, setSimpleTotalFeet] = useState(0);
+  const [simpleCorners, setSimpleCorners] = useState(0);
 
   const productLine = PRODUCT_LINES[productLineId];
   const postSize = productLine?.postSize ?? "5x5";
@@ -136,6 +164,26 @@ export default function AdvancedEstimateClient({
 
   const [estimateError, setEstimateError] = useState<string | null>(null);
 
+  // Auto-generate runs from simple mode inputs
+  useEffect(() => {
+    if (runsMode === "simple" && simpleTotalFeet > 0) {
+      const numSections = simpleCorners + 1;
+      const feetPerSection = simpleTotalFeet / numSections;
+
+      const newRuns: RunInput[] = [];
+      for (let i = 0; i < numSections; i++) {
+        newRuns.push({
+          id: newRunId(),
+          linearFeet: Math.round(feetPerSection),
+          startType: i === 0 ? "end" : "corner",
+          endType: i === numSections - 1 ? "end" : "corner",
+          slopeDeg: 0,
+        });
+      }
+      setRuns(newRuns);
+    }
+  }, [runsMode, simpleTotalFeet, simpleCorners]);
+
   // Build per-estimate config with labor efficiency override
   const estimateConfig = useMemo(() => {
     if (!estimatorConfig) return undefined;
@@ -156,7 +204,9 @@ export default function AdvancedEstimateClient({
       setEstimateError(null);
       return r;
     } catch (err) {
-      setEstimateError(err instanceof Error ? err.message : "Calculation error");
+      const technicalMessage = err instanceof Error ? err.message : "Calculation error";
+      const friendlyMessage = getUserFriendlyError(technicalMessage);
+      setEstimateError(friendlyMessage);
       return null;
     }
   }, [input, productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates, priceMap, estimateConfig, existingFenceRemoval, permitCost, inspectionCost, engineeringCost, surveyCost]);
@@ -294,6 +344,41 @@ export default function AdvancedEstimateClient({
           </button>
         </div>
 
+        {/* Customer Info — Always visible, used by all PDFs/estimates */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="font-semibold text-blue-900">Customer Information</h2>
+            <span className="text-xs text-blue-600 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded">Required for quotes</span>
+          </div>
+          <p className="text-xs text-blue-700 mb-4">Enter once, used for all PDFs and estimates</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-blue-700 mb-1">Customer Name *</label>
+              <input type="text" placeholder="Jane Smith"
+                value={customer.name} onChange={e => setCustomer(c => ({ ...c, name: e.target.value }))}
+                className="w-full border border-blue-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-blue-700 mb-1">Street Address</label>
+              <input type="text" placeholder="123 Main St"
+                value={customer.address} onChange={e => setCustomer(c => ({ ...c, address: e.target.value }))}
+                className="w-full border border-blue-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-blue-700 mb-1">City, State, Zip</label>
+              <input type="text" placeholder="Orlando, FL 32801"
+                value={customer.city} onChange={e => setCustomer(c => ({ ...c, city: e.target.value }))}
+                className="w-full border border-blue-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-blue-700 mb-1">Phone</label>
+              <input type="text" placeholder="(555) 000-0000"
+                value={customer.phone} onChange={e => setCustomer(c => ({ ...c, phone: e.target.value }))}
+                className="w-full border border-blue-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            </div>
+          </div>
+        </div>
+
         {/* Config nudge banner — shown when using default rates */}
         {!hasCustomConfig && !nudgeDismissed && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start justify-between">
@@ -378,7 +463,10 @@ export default function AdvancedEstimateClient({
               </div>
             )}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Soil Type</label>
+              <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Soil Type
+                <HelpTooltip content="Soil type affects concrete depth and hole diameter. Sandy soil needs deeper holes, clay allows shallower holes. This impacts concrete quantity and post stability." />
+              </label>
               <select
                 value={soilType}
                 onChange={(e) => setSoilType(e.target.value as SoilType)}
@@ -390,7 +478,10 @@ export default function AdvancedEstimateClient({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Labor Rate ($/hr)</label>
+              <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Labor Rate ($/hr)
+                <HelpTooltip content="Your crew's hourly rate including wages, insurance, and benefits. Typical range: $50-80/hr for 2-person crew. System calculates hours based on fence complexity." />
+              </label>
               <input
                 type="number" min={20} max={200} value={laborRate}
                 onChange={(e) => setLaborRate(Number(e.target.value))}
@@ -398,7 +489,10 @@ export default function AdvancedEstimateClient({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Waste Factor (%)</label>
+              <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Waste Factor (%)
+                <HelpTooltip content="Extra material to account for cuts, defects, and installation errors. Typical: 5-7%. System learns your actual waste from completed jobs and adjusts this automatically." />
+              </label>
               <input
                 type="number" min={1} max={20} value={wastePct}
                 onChange={(e) => setWastePct(Number(e.target.value))}
@@ -406,7 +500,10 @@ export default function AdvancedEstimateClient({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Markup Over Cost (%)</label>
+              <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Markup Over Cost (%)
+                <HelpTooltip content="Your profit margin over total cost (materials + labor). Typical: 30-40%. This determines your bid price and gross profit." />
+              </label>
               <input
                 type="number" min={0} max={200} value={markupPct}
                 onChange={(e) => setMarkupPct(Number(e.target.value))}
@@ -441,8 +538,9 @@ export default function AdvancedEstimateClient({
 
           {/* Labor Efficiency Slider */}
           <div className="mt-4 border-t border-gray-100 pt-4">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
               Site Difficulty Adjustment
+              <HelpTooltip content="Adjusts labor time for site conditions. Rocky soil, tight access, or difficult terrain = slide right (+). Wide open, easy access = slide left (-). Affects total labor hours and cost." />
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -499,8 +597,10 @@ export default function AdvancedEstimateClient({
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-semibold text-fence-900">Fence Runs</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Add each straight segment between structural breaks (corners, gates, ends)</p>
+              <h2 className="font-semibold text-fence-900">Fence Measurements</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {runsMode === "simple" ? "Enter total linear feet and number of corners" : "Add each straight segment between structural breaks"}
+              </p>
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-400">Total</p>
@@ -508,6 +608,70 @@ export default function AdvancedEstimateClient({
             </div>
           </div>
 
+          {/* Simple/Advanced Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1 gap-1 mb-4">
+            <button
+              onClick={() => setRunsMode("simple")}
+              className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors ${runsMode === "simple" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              Simple Mode
+            </button>
+            <button
+              onClick={() => setRunsMode("advanced")}
+              className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors ${runsMode === "advanced" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              Advanced (Run-by-Run)
+            </button>
+          </div>
+
+          {/* Simple Mode UI */}
+          {runsMode === "simple" && (
+            <div className="space-y-3 mb-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="flex items-center gap-1 text-xs font-medium text-gray-500 mb-1">
+                    Total Linear Feet
+                    <HelpTooltip content="The total amount of fencing you need. Measure the perimeter where you want the fence installed." />
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="180"
+                    value={simpleTotalFeet || ""}
+                    onChange={(e) => setSimpleTotalFeet(Number(e.target.value))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-1 text-xs font-medium text-gray-500 mb-1">
+                    Number of Corners
+                    <HelpTooltip content="Count how many 90-degree turns your fence makes. A straight fence = 0 corners. An L-shape = 1 corner. A rectangle = 3 corners (4 sides, don't count start/end)." />
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    placeholder="2"
+                    value={simpleCorners || ""}
+                    onChange={(e) => setSimpleCorners(Number(e.target.value))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                  />
+                </div>
+              </div>
+              {simpleTotalFeet > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-green-800 mb-1">Auto-Generated</p>
+                  <p className="text-xs text-green-700">
+                    {runs.length} section{runs.length !== 1 ? "s" : ""} of ~{Math.round(simpleTotalFeet / (simpleCorners + 1))} LF each
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Advanced Mode UI */}
+          {runsMode === "advanced" && (
+          <>
           <div className="space-y-3">
             {runs.map((run, idx) => {
               const gatesForRun = gates.filter((g) => g.afterRunId === run.id);
@@ -620,38 +784,9 @@ export default function AdvancedEstimateClient({
           >
             + Add Run
           </button>
+          </>
+          )}
         </div> {/* end runs card */}
-        {/* Customer Info */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="font-semibold text-fence-900 mb-1">Customer Info</h2>
-          <p className="text-xs text-gray-400 mb-4">Optional — populates the customer proposal PDF</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Customer Name</label>
-              <input type="text" placeholder="Jane Smith"
-                value={customer.name} onChange={e => setCustomer(c => ({ ...c, name: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Street Address</label>
-              <input type="text" placeholder="123 Main St"
-                value={customer.address} onChange={e => setCustomer(c => ({ ...c, address: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">City, State, Zip</label>
-              <input type="text" placeholder="Orlando, FL 32801"
-                value={customer.city} onChange={e => setCustomer(c => ({ ...c, city: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Phone</label>
-              <input type="text" placeholder="(555) 000-0000"
-                value={customer.phone} onChange={e => setCustomer(c => ({ ...c, phone: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
-            </div>
-          </div>
-        </div>
         </>)} {/* end inputMode === "manual" */}
       </div> {/* end lg:col-span-3 left column */}
 

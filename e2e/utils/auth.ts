@@ -12,8 +12,8 @@ export async function login(page: Page, email: string, password: string) {
   await page.fill('input[name="password"]', password);
   await page.click('button:has-text("Sign In")');
 
-  // Wait for redirect to dashboard
-  await page.waitForURL('/dashboard/**', { timeout: 10000 });
+  // Wait for redirect to dashboard (matches /dashboard or /dashboard/*)
+  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
 }
 
 export async function loginWithTestUser(page: Page) {

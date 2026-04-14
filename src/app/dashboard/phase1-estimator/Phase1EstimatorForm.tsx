@@ -43,8 +43,49 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Prevent duplicate submissions
+    if (loading) return
+
     setLoading(true)
     setError(null)
+
+    // Frontend validation before API call
+    if (totalLinearFeet > 10000) {
+      setError('Total linear feet cannot exceed 10,000')
+      setLoading(false)
+      return
+    }
+
+    if (cornerCount > 100) {
+      setError('Corner count cannot exceed 100')
+      setLoading(false)
+      return
+    }
+
+    if (gates.length > 20) {
+      setError('Cannot have more than 20 gates')
+      setLoading(false)
+      return
+    }
+
+    // Validate gate positions
+    const invalidGates = gates.filter(g =>
+      g.position_ft !== undefined && g.position_ft > totalLinearFeet
+    )
+    if (invalidGates.length > 0) {
+      setError('Gate positions must be within the total linear feet')
+      setLoading(false)
+      return
+    }
+
+    // Validate total gate width
+    const totalGateWidth = gates.reduce((sum, g) => sum + g.width_ft, 0)
+    if (totalGateWidth >= totalLinearFeet) {
+      setError(`Total gate width (${totalGateWidth} ft) must be less than total linear feet (${totalLinearFeet} ft)`)
+      setLoading(false)
+      return
+    }
 
     try {
       // Step 1: Create Job
@@ -52,8 +93,7 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer_name: customerName || 'Test Customer',
-          customer_email: userEmail,
+          title: customerName || 'Phase 1 Test Job',
           notes: 'Created via Phase 1 Estimator UI'
         })
       })
@@ -107,7 +147,35 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
 
     } catch (err) {
       console.error('Submission error:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error occurred')
+
+      // User-friendly error messages
+      let userMessage = 'An unexpected error occurred. Please try again.'
+
+      if (err instanceof Error) {
+        // Parse API error messages
+        if (err.message.includes('Job creation failed')) {
+          userMessage = 'Failed to create job. Please check your connection and try again.'
+        } else if (err.message.includes('Design creation failed')) {
+          userMessage = 'Failed to create fence design. Please verify your inputs and try again.'
+        } else if (err.message.includes('Estimate failed')) {
+          userMessage = 'Failed to generate estimate. The calculation encountered an error.'
+        } else if (err.message.includes('Unauthorized')) {
+          userMessage = 'Session expired. Please refresh the page and log in again.'
+        } else if (err.message.includes('not found')) {
+          userMessage = 'Required data not found. Please try creating a new estimate.'
+        } else if (err.message.includes('linear feet')) {
+          userMessage = err.message // Validation errors are already user-friendly
+        } else if (err.message.includes('gate') || err.message.includes('Gate')) {
+          userMessage = err.message // Gate validation errors are user-friendly
+        } else if (err.message.includes('corner') || err.message.includes('Corner')) {
+          userMessage = err.message // Corner validation errors are user-friendly
+        } else {
+          // Generic fallback for other errors
+          userMessage = 'Something went wrong. Please try again or contact support if the problem persists.'
+        }
+      }
+
+      setError(userMessage)
       setLoading(false)
     }
   }
@@ -153,6 +221,7 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
               value={totalLinearFeet}
               onChange={(e) => setTotalLinearFeet(Number(e.target.value))}
               min="1"
+              max="10000"
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -167,6 +236,7 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
               value={cornerCount}
               onChange={(e) => setCornerCount(Number(e.target.value))}
               min="0"
+              max="100"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
