@@ -12,23 +12,28 @@ import { calcTotalConcrete } from "../concrete";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
 import { mergePrices } from "../pricing/defaultPrices";
 import { calculateAllGateCosts } from "../gatePricing";
+import type { OrgEstimatorConfig } from "../config/types";
+import { DEFAULT_ESTIMATOR_CONFIG } from "../config/defaults";
 
-const LINE_POST_OC_FT = 10; // line posts every 10ft (standard residential)
-const TOP_RAIL_STOCK_FT = 21; // standard top rail length sold in 21ft sections
 const TENSION_WIRE_SPOOL_FT = 150; // 1 spool covers 150 LF
 const TIE_WIRE_BOX_USES = 200; // 1 box ≈ 200 tie points
 
 export function generateChainLinkBom(
   graph: FenceGraph,
   wastePct: number,
-  priceMap: Record<string, number> = {}
+  priceMap: Record<string, number> = {},
+  config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): { bom: BomItem[]; laborDrivers: LaborDriver[]; auditTrail: string[] } {
   const bom: BomItem[] = [];
   const audit: string[] = [];
   const { nodes, edges, productLine, installRules, siteConfig, windMode } = graph;
 
-  // Merge user prices with defaults (user prices override defaults)
-  const prices = mergePrices(priceMap);
+  // Chain link constants from config
+  const LINE_POST_OC_FT = config.material.chainLinkPostOcFt;
+  const TOP_RAIL_STOCK_FT = config.material.chainLinkTopRailStockFt;
+
+  // Merge user prices with defaults (user prices override defaults, region applied)
+  const prices = mergePrices(priceMap, (config.region.key as import("../pricing/defaultPrices").Region) || "base");
   const p = (sku: string) => prices[sku];
   const heightFt = productLine.panelHeight_in / 12;
   const fabricSku = heightFt > 4 ? "CL_FABRIC_6FT" : "CL_FABRIC_4FT";
@@ -47,9 +52,11 @@ export function generateChainLinkBom(
   );
   // Line posts: independently calculated from run LF (not from FenceGraph line nodes)
   // because chain link uses 10ft OC, not panel-width OC
+  // Formula: total posts in run = ceil(runLF / OC) + 1, minus 2 terminal posts = interior
   const linePostCount = segEdges.reduce((count, edge) => {
     const runLF = edge.length_in / 12;
-    const interior = Math.max(0, Math.floor(runLF / LINE_POST_OC_FT) - 1);
+    const totalPostsInRun = Math.ceil(runLF / LINE_POST_OC_FT) + 1;
+    const interior = Math.max(0, totalPostsInRun - 2);
     return count + interior;
   }, 0);
 
@@ -58,9 +65,11 @@ export function generateChainLinkBom(
 
   bom.push(makeBomItem("CL_POST_TERM", "Chain Link Terminal Post 2.5\" × 8ft", "posts", "ea", terminalPosts.length, 0.95,
     `${terminalPosts.length} terminal posts (end/corner/gate)`, p("CL_POST_TERM")));
-  bom.push(makeBomItem("CL_POST_2IN", "Chain Link Line Post 2\" × 8ft", "posts", "ea",
-    Math.ceil(linePostCount * (1 + wastePct)), 0.92,
-    `${linePostCount} line posts at ${LINE_POST_OC_FT}ft OC + waste`, p("CL_POST_2IN")));
+  if (linePostCount > 0) {
+    bom.push(makeBomItem("CL_POST_2IN", "Chain Link Line Post 2\" × 8ft", "posts", "ea",
+      Math.ceil(linePostCount * (1 + wastePct)), 0.92,
+      `${linePostCount} line posts at ${LINE_POST_OC_FT}ft OC + waste`, p("CL_POST_2IN")));
+  }
 
   // Fabric — sold by the linear foot
   const fabricLF = Math.ceil(totalLF * (1 + wastePct));
@@ -108,9 +117,11 @@ export function generateChainLinkBom(
     `1 per terminal post × ${terminalPosts.length}`, p("CL_RAIL_END")));
 
   // ── Line post hardware (loop caps hold top rail on each line post) ──
-  bom.push(makeBomItem("CL_LOOP_CAP", "Chain Link Loop Cap", "cl_hardware", "ea",
-    linePostCount, 0.98,
-    `1 per line post × ${linePostCount} line posts`, p("CL_LOOP_CAP")));
+  if (linePostCount > 0) {
+    bom.push(makeBomItem("CL_LOOP_CAP", "Chain Link Loop Cap", "cl_hardware", "ea",
+      linePostCount, 0.98,
+      `1 per line post × ${linePostCount} line posts`, p("CL_LOOP_CAP")));
+  }
   audit.push(`CL terminal hardware: ${terminalPosts.length} tension bars, ${terminalPosts.length * tensionBandsPerPost} tension bands, ${terminalPosts.length * 2} brace bands, ${terminalPosts.length} rail ends`);
 
   // Concrete + gravel — uses adjusted install rules for terminal vs line posts
@@ -119,7 +130,7 @@ export function generateChainLinkBom(
     ...Array(linePostCount).fill({ type: "line", reinforced: false }),
   ] as typeof nodes;
   const { totalBags, totalGravelBags, perPostCalc } = calcTotalConcrete(
-    allNodes, installRules, siteConfig, wastePct
+    allNodes, installRules, siteConfig, wastePct, config.concrete
   );
   bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", totalBags, 0.95,
     `${totalPostCount} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor})`, p("CONCRETE_80LB")));
@@ -131,7 +142,7 @@ export function generateChainLinkBom(
   let totalGateLaborHours = 0;
 
   if (gateSpecs.length > 0) {
-    const gateCosts = calculateAllGateCosts(gateSpecs, "chain_link", prices, 65);
+    const gateCosts = calculateAllGateCosts(gateSpecs, "chain_link", prices, 65, config);
 
     // Aggregate by SKU using Map
     const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
@@ -204,15 +215,16 @@ export function generateChainLinkBom(
     bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", terminalPosts.length, 0.90, `Wind mode: terminal posts only`, p("REBAR_4_3FT")));
   }
 
-  // Labor rates adjusted to realistic contractor baselines (0.8-1.3 hrs per 10 LF)
+  // Labor — rates from org config
+  const cl = config.labor.chain_link;
   const laborDrivers: LaborDriver[] = [
-    { activity: "Hole Digging", count: totalPostCount, rateHrs: 0.25, totalHrs: totalPostCount * 0.25 },
-    { activity: "Post Setting", count: totalPostCount, rateHrs: 0.20, totalHrs: totalPostCount * 0.20 },
-    { activity: "Top Rail Installation", count: railCutPlan.stockPiecesNeeded, rateHrs: 0.20, totalHrs: railCutPlan.stockPiecesNeeded * 0.20 },
-    { activity: "Fabric Unrolling & Stretching", count: segEdges.length, rateHrs: 1.50, totalHrs: segEdges.length * 1.50, notes: "Per run" },
+    { activity: "Hole Digging", count: totalPostCount, rateHrs: cl.holeDig, totalHrs: totalPostCount * cl.holeDig },
+    { activity: "Post Setting", count: totalPostCount, rateHrs: cl.postSet, totalHrs: totalPostCount * cl.postSet },
+    { activity: "Top Rail Installation", count: railCutPlan.stockPiecesNeeded, rateHrs: cl.topRail, totalHrs: railCutPlan.stockPiecesNeeded * cl.topRail },
+    { activity: "Fabric Unrolling & Stretching", count: segEdges.length, rateHrs: cl.fabricStretch, totalHrs: segEdges.length * cl.fabricStretch, notes: "Per run" },
     { activity: "Gate Installation", count: gateSpecs.length, rateHrs: 0, totalHrs: totalGateLaborHours },
-    { activity: "Tie Wire / Fastening", count: totalPostCount, rateHrs: 0.15, totalHrs: totalPostCount * 0.15 },
-    { activity: "Concrete Pour", count: totalPostCount, rateHrs: 0.10, totalHrs: totalPostCount * 0.10 },
+    { activity: "Tie Wire / Fastening", count: totalPostCount, rateHrs: cl.tieWire, totalHrs: totalPostCount * cl.tieWire },
+    { activity: "Concrete Pour", count: totalPostCount, rateHrs: cl.concretePour, totalHrs: totalPostCount * cl.concretePour },
   ];
 
   return { bom, laborDrivers, auditTrail: audit };

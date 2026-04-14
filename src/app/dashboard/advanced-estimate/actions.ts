@@ -14,6 +14,9 @@ import { z } from "zod";
 import type { SiteComplexity, CloseoutData, AccuracyMetrics } from "@/lib/fence-graph/accuracy-types";
 import { calculateOverallComplexity } from "@/lib/fence-graph/accuracy-types";
 import * as Sentry from '@sentry/nextjs';
+import type { OrgEstimatorConfig } from "@/lib/fence-graph/config/types";
+import type { DeepPartial } from "@/lib/fence-graph/config/types";
+import { mergeEstimatorConfig } from "@/lib/fence-graph/config/resolveEstimatorConfig";
 
 // ── Fetch org material prices ─────────────────────────────────────
 // Returns { [sku]: unit_cost } for the current org's materials.
@@ -577,5 +580,42 @@ export async function getAccuracyMetrics(days: number = 30): Promise<AccuracyMet
   } catch (err) {
     console.error("Unexpected error fetching accuracy metrics:", err);
     return null;
+  }
+}
+
+// ── Fetch org estimator config ──────────────────────────────────
+// Returns resolved config (org overrides merged over defaults).
+export async function getOrgEstimatorConfig(): Promise<{
+  config: OrgEstimatorConfig;
+  hasCustomConfig: boolean;
+}> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { config: mergeEstimatorConfig(null), hasCustomConfig: false };
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("org_id")
+      .eq("auth_id", user.id)
+      .single();
+    if (!profile) return { config: mergeEstimatorConfig(null), hasCustomConfig: false };
+
+    const { data: orgSettings } = await admin
+      .from("org_settings")
+      .select("estimator_config_json")
+      .eq("org_id", profile.org_id)
+      .single();
+
+    const raw = (orgSettings as Record<string, unknown> | null)?.estimator_config_json;
+    const hasCustomConfig = raw !== null && raw !== undefined && typeof raw === "object";
+    const config = mergeEstimatorConfig(
+      hasCustomConfig ? (raw as DeepPartial<OrgEstimatorConfig>) : null
+    );
+
+    return { config, hasCustomConfig };
+  } catch {
+    return { config: mergeEstimatorConfig(null), hasCustomConfig: false };
   }
 }

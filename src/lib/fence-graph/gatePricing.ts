@@ -3,6 +3,8 @@
 // Replaces loose gate estimates with precise material + labor calculations
 
 import type { GateSpec } from "./types";
+import type { OrgEstimatorConfig } from "./config/types";
+import { DEFAULT_ESTIMATOR_CONFIG } from "./config/defaults";
 
 export interface GateHardware {
   gateSku: string;
@@ -42,7 +44,8 @@ export function calculateGateCost(
   gateSpec: GateSpec,
   fenceType: "vinyl" | "wood" | "chain_link" | "aluminum",
   priceMap: Record<string, number>,
-  laborRatePerHr: number
+  laborRatePerHr: number,
+  config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): GateCost {
   const { gateType, openingWidth_in, isPoolGate } = gateSpec;
   const widthFt = openingWidth_in / 12;
@@ -65,8 +68,8 @@ export function calculateGateCost(
   // Calculate material cost
   const materialCost = calculateGateMaterialCost(hardware);
 
-  // Calculate labor hours (complexity-based)
-  const laborHours = calculateGateLaborHours(gateType, widthTier, fenceType, isPoolGate);
+  // Calculate labor hours (complexity-based, config-driven)
+  const laborHours = calculateGateLaborHours(gateType, widthTier, fenceType, isPoolGate, config);
   const laborCost = laborHours * laborRatePerHr;
 
   // Generate breakdown
@@ -208,32 +211,36 @@ function calculateGateLaborHours(
   gateType: "single" | "double",
   widthTier: "small" | "standard" | "wide" | "extra_wide",
   fenceType: "vinyl" | "wood" | "chain_link" | "aluminum",
-  isPoolGate: boolean | undefined
+  isPoolGate: boolean | undefined,
+  config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): number {
-  // Base hours by gate type
-  let baseHours = gateType === "single" ? 1.5 : 3.0; // Double = 2x leaves
+  // Base hours from config
+  let baseHours = gateType === "single"
+    ? config.gateLaborBase.single
+    : config.gateLaborBase.double;
 
-  // Width complexity modifier
-  const widthModifiers = {
-    small: 1.0,       // 4ft gate: baseline
-    standard: 1.1,    // 5-6ft: +10%
-    wide: 1.3,        // 7-12ft: +30% (heavier, alignment)
-    extra_wide: 1.5,  // 13ft+: +50% (structural concerns)
+  // Width complexity modifier from config
+  const wm = config.gateWidthMultipliers;
+  const widthModifiers: Record<string, number> = {
+    small: wm.small,
+    standard: wm.standard,
+    wide: wm.wide,
+    extra_wide: wm.extraWide,
   };
-  baseHours *= widthModifiers[widthTier];
+  baseHours *= widthModifiers[widthTier] ?? 1.0;
 
-  // Fence type modifier (material-specific installation complexity)
+  // Fence type modifier (material-specific — kept inline, not worth config)
   const fenceTypeModifiers = {
-    vinyl: 1.0,       // Baseline
-    wood: 1.1,        // +10% (more shimming/adjustment)
-    chain_link: 0.9,  // -10% (simpler attachment)
-    aluminum: 1.0,    // Baseline
+    vinyl: 1.0,
+    wood: 1.1,
+    chain_link: 0.9,
+    aluminum: 1.0,
   };
   baseHours *= fenceTypeModifiers[fenceType];
 
-  // Pool gate modifier (code compliance, spring closer)
+  // Pool gate modifier from config
   if (isPoolGate) {
-    baseHours *= 1.2; // +20% for pool code installation
+    baseHours *= config.gatePoolMultiplier;
   }
 
   // Round to 1 decimal
@@ -272,7 +279,8 @@ export function calculateAllGateCosts(
   gates: GateSpec[],
   fenceType: "vinyl" | "wood" | "chain_link" | "aluminum",
   priceMap: Record<string, number>,
-  laborRatePerHr: number
+  laborRatePerHr: number,
+  config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): {
   gates: GateCost[];
   totalMaterial: number;
@@ -280,7 +288,7 @@ export function calculateAllGateCosts(
   totalCost: number;
 } {
   const gateCosts = gates.map(spec =>
-    calculateGateCost(spec, fenceType, priceMap, laborRatePerHr)
+    calculateGateCost(spec, fenceType, priceMap, laborRatePerHr, config)
   );
 
   const totalMaterial = gateCosts.reduce((sum, g) => sum + g.materialCost, 0);

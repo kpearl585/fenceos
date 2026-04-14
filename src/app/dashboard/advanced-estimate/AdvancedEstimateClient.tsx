@@ -9,6 +9,7 @@ import {
   type FenceEstimateResult,
   type FenceType,
   type WoodStyle,
+  type OrgEstimatorConfig,
 } from "@/lib/fence-graph/engine";
 import { saveAdvancedEstimate, generateAdvancedEstimatePdf, generateCustomerProposalPdf } from "./actions";
 import { createEstimateFromFenceGraph } from "./convertActions";
@@ -69,7 +70,19 @@ function defaultRun(): RunInput {
   };
 }
 
-export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct = 5, aiAvailable = true }: { priceMap?: Record<string, number>; defaultWastePct?: number; aiAvailable?: boolean }) {
+export default function AdvancedEstimateClient({
+  priceMap = {},
+  defaultWastePct = 5,
+  aiAvailable = true,
+  estimatorConfig,
+  hasCustomConfig = false,
+}: {
+  priceMap?: Record<string, number>;
+  defaultWastePct?: number;
+  aiAvailable?: boolean;
+  estimatorConfig?: OrgEstimatorConfig;
+  hasCustomConfig?: boolean;
+}) {
   const [fenceType, setFenceType] = useState<FenceType>("vinyl");
   const [woodStyle, setWoodStyle] = useState<WoodStyle>("dog_ear_privacy");
   const [productLineId, setProductLineId] = useState("vinyl_privacy_6ft");
@@ -90,6 +103,16 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
   const [isPending, startTransition] = useTransition();
   const [convertStatus, setConvertStatus] = useState<"idle" | "converting" | "done" | "error">("idle");
   const [convertError, setConvertError] = useState<string | null>(null);
+  // New: job site options
+  const [existingFenceRemoval, setExistingFenceRemoval] = useState(false);
+  const [laborEfficiency, setLaborEfficiency] = useState(1.0);
+  // New: regulatory costs
+  const [permitCost, setPermitCost] = useState(0);
+  const [inspectionCost, setInspectionCost] = useState(0);
+  const [engineeringCost, setEngineeringCost] = useState(0);
+  const [surveyCost, setSurveyCost] = useState(0);
+  // New: nudge banner
+  const [nudgeDismissed, setNudgeDismissed] = useState(false);
 
   const productLine = PRODUCT_LINES[productLineId];
   const postSize = productLine?.postSize ?? "5x5";
@@ -104,16 +127,39 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
     windMode,
     runs: runs.filter((r) => r.linearFeet > 0),
     gates,
+    existingFenceRemoval,
+    permitCost: permitCost > 0 ? permitCost : undefined,
+    inspectionCost: inspectionCost > 0 ? inspectionCost : undefined,
+    engineeringCost: engineeringCost > 0 ? engineeringCost : undefined,
+    surveyCost: surveyCost > 0 ? surveyCost : undefined,
   };
 
+  const [estimateError, setEstimateError] = useState<string | null>(null);
+
+  // Build per-estimate config with labor efficiency override
+  const estimateConfig = useMemo(() => {
+    if (!estimatorConfig) return undefined;
+    if (laborEfficiency === 1.0) return estimatorConfig;
+    return {
+      ...estimatorConfig,
+      laborEfficiency: { baseMultiplier: laborEfficiency },
+    };
+  }, [estimatorConfig, laborEfficiency]);
+
   const result: FenceEstimateResult | null = useMemo(() => {
-    if (input.runs.length === 0) return null;
+    if (input.runs.length === 0) { setEstimateError(null); return null; }
     try {
-      return estimateFence(input, { fenceType, woodStyle, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
-    } catch {
+      const r = estimateFence(input, {
+        fenceType, woodStyle, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap,
+        estimatorConfig: estimateConfig,
+      });
+      setEstimateError(null);
+      return r;
+    } catch (err) {
+      setEstimateError(err instanceof Error ? err.message : "Calculation error");
       return null;
     }
-  }, [input, productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates, priceMap]);
+  }, [input, productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates, priceMap, estimateConfig, existingFenceRemoval, permitCost, inspectionCost, engineeringCost, surveyCost]);
 
   function updateRun(id: string, patch: Partial<RunInput>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -248,6 +294,20 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
           </button>
         </div>
 
+        {/* Config nudge banner — shown when using default rates */}
+        {!hasCustomConfig && !nudgeDismissed && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start justify-between">
+            <div>
+              <p className="text-sm font-semibold text-blue-800">Using industry-standard rates</p>
+              <p className="text-xs text-blue-700 mt-0.5">
+                These estimates use default labor rates and material assumptions.{" "}
+                <a href="/dashboard/settings/estimator" className="underline font-semibold">Customize them in Estimator Settings</a> to match your crew speed and local pricing.
+              </p>
+            </div>
+            <button onClick={() => setNudgeDismissed(true)} className="text-blue-400 hover:text-blue-600 ml-3 text-lg leading-none">&times;</button>
+          </div>
+        )}
+
         {/* AI Input Tab */}
         {inputMode === "ai" && (
           <AiInputTab onApply={(state: AiAppliedState) => {
@@ -354,18 +414,86 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
               />
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setWindMode((v) => !v)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${windMode ? "bg-fence-600" : "bg-gray-200"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${windMode ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-            <span className="text-sm font-medium text-gray-700">Wind Mode / Hurricane Zone</span>
-            {windMode && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Deeper posts + aluminum inserts + rebar applied</span>}
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setWindMode((v) => !v)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${windMode ? "bg-fence-600" : "bg-gray-200"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${windMode ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+              <span className="text-sm font-medium text-gray-700">Wind Mode / Hurricane Zone</span>
+              {windMode && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Deeper posts + aluminum inserts + rebar applied</span>}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setExistingFenceRemoval((v) => !v)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${existingFenceRemoval ? "bg-fence-600" : "bg-gray-200"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${existingFenceRemoval ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+              <span className="text-sm font-medium text-gray-700">Existing Fence Removal</span>
+              {existingFenceRemoval && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Tear-down labor + post extraction + disposal</span>}
+            </div>
+          </div>
+
+          {/* Labor Efficiency Slider */}
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Site Difficulty Adjustment
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range" min={0.7} max={1.5} step={0.05}
+                value={laborEfficiency}
+                onChange={(e) => setLaborEfficiency(Number(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-fence-600"
+              />
+              <span className="text-sm font-bold text-fence-900 w-14 text-right">
+                {laborEfficiency === 1.0 ? "Normal" : `${laborEfficiency > 1 ? "+" : ""}${Math.round((laborEfficiency - 1) * 100)}%`}
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Slide right for harder sites (rocky, tight access). Slide left for easy, open lots.
+            </p>
           </div>
         </div>
+
+        {/* Regulatory Costs (collapsible) */}
+        <details className="bg-white rounded-xl border border-gray-200">
+          <summary className="p-5 cursor-pointer">
+            <span className="font-semibold text-fence-900">Regulatory Costs</span>
+            <span className="text-xs text-gray-400 ml-2">(optional — permits, inspection, engineering, survey)</span>
+          </summary>
+          <div className="px-5 pb-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Permit ($)</label>
+              <input type="number" min={0} value={permitCost || ""} placeholder="0"
+                onChange={(e) => setPermitCost(Number(e.target.value))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Inspection ($)</label>
+              <input type="number" min={0} value={inspectionCost || ""} placeholder="0"
+                onChange={(e) => setInspectionCost(Number(e.target.value))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Engineering ($)</label>
+              <input type="number" min={0} value={engineeringCost || ""} placeholder="0"
+                onChange={(e) => setEngineeringCost(Number(e.target.value))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Survey ($)</label>
+              <input type="number" min={0} value={surveyCost || ""} placeholder="0"
+                onChange={(e) => setSurveyCost(Number(e.target.value))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400" />
+            </div>
+          </div>
+        </details>
 
         {/* Runs */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -745,7 +873,11 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
           </>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-            <p className="text-gray-400 text-sm">Add at least one run with a length to generate an estimate.</p>
+            {estimateError ? (
+              <p className="text-red-500 text-sm">{estimateError}</p>
+            ) : (
+              <p className="text-gray-400 text-sm">Add at least one run with a length to generate an estimate.</p>
+            )}
           </div>
         )}
       </div>

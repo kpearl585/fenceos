@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AdvancedEstimateClient from "./AdvancedEstimateClient";
-import { getOrgMaterialPrices, getOrgCalibration } from "./actions";
+import { getOrgMaterialPrices, getOrgCalibration, getOrgEstimatorConfig } from "./actions";
 import { checkAiReadiness } from "./aiActions";
 
 export const metadata = { title: "Advanced Estimate — FenceEstimatePro" };
@@ -11,10 +11,11 @@ export default async function AdvancedEstimatePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [priceMap, calibration, aiReadiness] = await Promise.all([
+  const [priceMap, calibration, aiReadiness, estimatorConfig] = await Promise.all([
     getOrgMaterialPrices(),
     getOrgCalibration(),
     checkAiReadiness(),
+    getOrgEstimatorConfig(),
   ]);
   const hasPrices = Object.keys(priceMap).length > 0;
 
@@ -56,7 +57,13 @@ export default async function AdvancedEstimatePage() {
             <p className="text-xs text-amber-700 mt-1">{aiReadiness.reason ?? "AI extraction is not configured."} Manual input is fully available.</p>
           </div>
         )}
-        <AdvancedEstimateClient priceMap={priceMap} defaultWastePct={Math.round(calibration.currentFactor * 100)} aiAvailable={aiReadiness.available} />
+        <AdvancedEstimateClient
+          priceMap={priceMap}
+          defaultWastePct={Math.round(calibration.currentFactor * 100)}
+          aiAvailable={aiReadiness.available}
+          estimatorConfig={estimatorConfig.config}
+          hasCustomConfig={estimatorConfig.hasCustomConfig}
+        />
       </div>
     </main>
   );

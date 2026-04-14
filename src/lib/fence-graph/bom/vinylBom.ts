@@ -5,18 +5,21 @@ import { countPanelsToBuy } from "../segmentation";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
 import { mergePrices } from "../pricing/defaultPrices";
 import { calculateAllGateCosts } from "../gatePricing";
+import type { OrgEstimatorConfig } from "../config/types";
+import { DEFAULT_ESTIMATOR_CONFIG } from "../config/defaults";
 
 export function generateVinylBom(
   graph: FenceGraph,
   wastePct: number,
-  priceMap: Record<string, number> = {}
+  priceMap: Record<string, number> = {},
+  config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): { bom: BomItem[]; laborDrivers: LaborDriver[]; auditTrail: string[] } {
   const bom: BomItem[] = [];
   const audit: string[] = [];
   const { nodes, edges, productLine, installRules, siteConfig, windMode } = graph;
 
-  // Merge user prices with defaults (user prices override defaults)
-  const prices = mergePrices(priceMap);
+  // Merge user prices with defaults (user prices override defaults, region applied)
+  const prices = mergePrices(priceMap, (config.region.key as import("../pricing/defaultPrices").Region) || "base");
   const p = (sku: string) => prices[sku];
 
   const linePosts = nodes.filter(n => n.type === "line");
@@ -89,7 +92,7 @@ export function generateVinylBom(
   // Pre-fab system: picket fence or privacy with pre-assembled panels
   if (isComponentSystem) {
     // Component system: calculate individual pickets with slope adjustment
-    const picketsPerFoot = 2; // Standard 6" on-center spacing
+    const picketsPerFoot = config.material.vinylPicketsPerFoot;
     const slopeAdjustedLF = totalLinearFeet * (1 + (slopeAdjustmentFactor / totalPanels));
     const picketCount = Math.ceil(slopeAdjustedLF * picketsPerFoot * (1 + wastePct + 0.05)); // +5% extra for damage
 
@@ -143,9 +146,18 @@ export function generateVinylBom(
     audit.push(`Pre-fab system: ${finalPanelCount} panels (${totalPanels} base + slope adj + waste)`);
   }
 
-  // Rails — cutting-stock optimizer
-  const railLengths_ft = segEdges.map(e => e.length_in / 12);
-  const railCutPlan = cuttingStockOptimizer(railLengths_ft.flatMap(l => Array(productLine.railCount).fill(l)), 8, wastePct);
+  // Rails — cutting-stock optimizer using section widths (post-to-post spans), not run lengths
+  const sectionWidths_ft: number[] = [];
+  for (const edge of segEdges) {
+    if (!edge.sections) continue;
+    for (const sec of edge.sections) {
+      // Each section needs railCount rails, each rail = section width
+      for (let r = 0; r < productLine.railCount; r++) {
+        sectionWidths_ft.push(sec.width_in / 12);
+      }
+    }
+  }
+  const railCutPlan = cuttingStockOptimizer(sectionWidths_ft, 8, wastePct);
   bom.push(makeBomItem("VINYL_RAIL_8FT", "Vinyl Rail 8ft", "rails", "ea", railCutPlan.stockPiecesNeeded, 0.92,
     railCutPlan.explanation, p("VINYL_RAIL_8FT")));
 
@@ -160,18 +172,10 @@ export function generateVinylBom(
     audit.push(`Vinyl picket plain-rail: ${bracketCount} L-brackets needed`);
   }
 
-  // Concrete + gravel with slope and waste adjustments
-  const { totalBags, totalGravelBags, perPostCalc } = calcTotalConcrete(nodes, installRules, siteConfig, wastePct);
-  // Add slope adjustment: sloped installations need ~10% more concrete for proper setting
-  const hasSlopedSections = segEdges.some(e => e.slopeDeg > 5);
-  const slopeConcreteMultiplier = hasSlopedSections ? 1.10 : 1.0;
-  // Add realistic waste factor for concrete (spillage, post wobble, field conditions)
-  const concreteWasteFactor = 0.25; // 25% waste is industry standard
-  const finalConcreteBags = Math.ceil(totalBags * slopeConcreteMultiplier * (1 + concreteWasteFactor));
-
-  const slopeConcreteNote = hasSlopedSections ? " + 10% slope adj" : "";
-  bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", finalConcreteBags, 0.95,
-    `${nodes.length} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor})${slopeConcreteNote} + 25% waste`, p("CONCRETE_80LB")));
+  // Concrete + gravel — waste already applied inside calcTotalConcrete()
+  const { totalBags, totalGravelBags, perPostCalc } = calcTotalConcrete(nodes, installRules, siteConfig, wastePct, config.concrete);
+  bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", totalBags, 0.95,
+    `${nodes.length} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor}) + ${Math.round(wastePct * 100)}% waste`, p("CONCRETE_80LB")));
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
     `4" gravel base per post × ${nodes.length} posts`, p("GRAVEL_40LB")));
 
@@ -182,7 +186,7 @@ export function generateVinylBom(
   let totalGateLaborHours = 0;
 
   if (gateSpecs.length > 0) {
-    const gateCosts = calculateAllGateCosts(gateSpecs, "vinyl", prices, 65);
+    const gateCosts = calculateAllGateCosts(gateSpecs, "vinyl", prices, 65, config);
 
     // Add gate material to BOM (aggregated by SKU)
     const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
@@ -258,25 +262,25 @@ export function generateVinylBom(
     bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", nodes.length, 0.90, `Wind mode: all ${nodes.length} posts`, p("REBAR_4_3FT")));
   }
 
-  // Fasteners
+  // Fasteners — screws per section from config
   const totalSections = segEdges.reduce((s, e) => s + (e.sections?.length ?? 0), 0);
-  // Each section needs: ~20-25 screws (rail connections, panel attachments)
-  // 1lb box ≈ 150 screws, so ~6 sections per box (conservative)
-  const screwBoxes = Math.ceil(totalSections / 6 * (1 + wastePct));
+  const screwsPerSec = config.material.screwsPerSection;
+  const screwsNeeded = totalSections * screwsPerSec;
+  const screwBoxes = Math.ceil(screwsNeeded / 150 * (1 + wastePct)); // ~150 screws per 1lb box
   bom.push(makeBomItem("SCREWS_1LB", "Screws (1lb box ~150ct)", "hardware", "ea", screwBoxes, 0.90,
-    `${totalSections} sections × ~25 screws/section ÷ 150/box + ${Math.round(wastePct * 100)}% waste`, p("SCREWS_1LB")));
+    `${totalSections} sections × ${screwsPerSec} screws/section ÷ 150/box + ${Math.round(wastePct * 100)}% waste`, p("SCREWS_1LB")));
 
-  // Labor
+  // Labor — rates from org config
   const rackedSections = segEdges.filter(e => e.slopeMethod === "racked").reduce((s, e) => s + (e.sections?.length ?? 0), 0);
-  // Labor rates adjusted to realistic contractor baselines (1.5-2.5 hrs per 10 LF)
+  const vl = config.labor.vinyl;
   const laborDrivers: LaborDriver[] = [
-    { activity: "Hole Digging", count: nodes.length, rateHrs: 0.25, totalHrs: nodes.length * 0.25 },
-    { activity: "Post Setting", count: nodes.length, rateHrs: 0.20, totalHrs: nodes.length * 0.20 },
-    { activity: "Section Installation", count: totalSections, rateHrs: 0.50, totalHrs: totalSections * 0.50 },
-    { activity: "Cutting Operations", count: totalCuts, rateHrs: 0.15, totalHrs: totalCuts * 0.15 },
+    { activity: "Hole Digging", count: nodes.length, rateHrs: vl.holeDig, totalHrs: nodes.length * vl.holeDig },
+    { activity: "Post Setting", count: nodes.length, rateHrs: vl.postSet, totalHrs: nodes.length * vl.postSet },
+    { activity: "Section Installation", count: totalSections, rateHrs: vl.sectionInstall, totalHrs: totalSections * vl.sectionInstall },
+    { activity: "Cutting Operations", count: totalCuts, rateHrs: vl.cutting, totalHrs: totalCuts * vl.cutting },
     { activity: "Gate Installation", count: gateSpecs.length, rateHrs: 0, totalHrs: totalGateLaborHours },
-    { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: 0.30, totalHrs: rackedSections * 0.30 },
-    { activity: "Concrete Pour", count: nodes.length, rateHrs: 0.08, totalHrs: nodes.length * 0.08 },
+    { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: vl.racking, totalHrs: rackedSections * vl.racking },
+    { activity: "Concrete Pour", count: nodes.length, rateHrs: vl.concretePour, totalHrs: nodes.length * vl.concretePour },
   ];
 
   return { bom, laborDrivers, auditTrail: audit };

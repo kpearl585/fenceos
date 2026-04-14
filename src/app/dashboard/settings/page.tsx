@@ -56,6 +56,22 @@ export default async function SettingsPage() {
           <OrgNameForm orgId={org?.id || profile.org_id} currentName={org?.name || ""} />
         </div>
 
+        {/* Estimator Settings Link */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-fence-900">Estimator Settings</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Customize labor rates, material assumptions, overhead, equipment, and pricing rules for your crew.</p>
+            </div>
+            <Link
+              href="/dashboard/settings/estimator"
+              className="bg-fence-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-fence-700 transition-colors whitespace-nowrap"
+            >
+              Configure
+            </Link>
+          </div>
+        </div>
+
         {/* Legal / Payment Terms + Business Settings */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="font-semibold text-fence-900 mb-4">Legal & Payment Terms</h2>

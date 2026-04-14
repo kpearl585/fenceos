@@ -6,6 +6,8 @@ import { makeBomItem, cuttingStockOptimizer } from "./shared";
 import { mergePrices } from "../pricing/defaultPrices";
 import { calculateAllGateCosts } from "../gatePricing";
 import { calculateBoardOnBoardCount, calculateGapBasedPicketCount, feetToInches } from "./picketCalculation";
+import type { OrgEstimatorConfig } from "../config/types";
+import { DEFAULT_ESTIMATOR_CONFIG } from "../config/defaults";
 
 export type WoodStyle = "dog_ear_privacy" | "flat_top_privacy" | "picket" | "board_on_board";
 
@@ -13,14 +15,15 @@ export function generateWoodBom(
   graph: FenceGraph,
   wastePct: number,
   style: WoodStyle = "dog_ear_privacy",
-  priceMap: Record<string, number> = {}
+  priceMap: Record<string, number> = {},
+  config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): { bom: BomItem[]; laborDrivers: LaborDriver[]; auditTrail: string[] } {
   const bom: BomItem[] = [];
   const audit: string[] = [];
   const { nodes, edges, productLine, installRules, siteConfig, windMode } = graph;
 
-  // Merge user prices with defaults (user prices override defaults)
-  const prices = mergePrices(priceMap);
+  // Merge user prices with defaults (user prices override defaults, region applied)
+  const prices = mergePrices(priceMap, (config.region.key as import("../pricing/defaultPrices").Region) || "base");
   const p = (sku: string) => prices[sku];
   const heightFt = productLine.panelHeight_in / 12;
   const isHeavy = heightFt > 6; // 6x6 posts for 8ft+ fence
@@ -54,8 +57,16 @@ export function generateWoodBom(
 
   // Rails — 2x4 pressure treated, cutting-stock optimizer
   const segEdges = edges.filter(e => e.type === "segment");
-  const railLengths = segEdges.map(e => e.length_in / 12);
-  const allRailLengths = railLengths.flatMap(l => Array(railCount).fill(l));
+  // Rails — use section widths (post-to-post spans), not full run lengths
+  const allRailLengths: number[] = [];
+  for (const edge of segEdges) {
+    if (!edge.sections) continue;
+    for (const sec of edge.sections) {
+      for (let r = 0; r < railCount; r++) {
+        allRailLengths.push(sec.width_in / 12);
+      }
+    }
+  }
   const railCutPlan = cuttingStockOptimizer(allRailLengths, 8, wastePct);
   bom.push(makeBomItem("WOOD_RAIL_2X4_8", "Pressure Treated 2x4x8 Rail", "rails", "ea", railCutPlan.stockPiecesNeeded, 0.92,
     `${railCount} rails/span × ${railCutPlan.explanation}`, p("WOOD_RAIL_2X4_8")));
@@ -75,9 +86,9 @@ export function generateWoodBom(
     const totalRunInches = feetToInches(totalRunLF);
     const picketSku = heightFt > 6 ? "WOOD_PICKET_8FT" : "WOOD_PICKET_6FT";
 
-    // Board-on-board uses wider boards (typically 1×6 = 5.5" actual width)
-    const picketWidth = 5.5; // 1×6 board actual width
-    const overlapPct = 0.24; // 24% overlap (industry standard ~1.32")
+    // Board-on-board: board width and overlap from org config
+    const picketWidth = config.material.woodPicketWidth;
+    const overlapPct = config.material.woodBoBOverlapPct;
 
     const { frontCount, backCount, total, overlapInches } = calculateBoardOnBoardCount(
       totalRunInches,
@@ -118,7 +129,7 @@ export function generateWoodBom(
   }
 
   // Concrete + gravel
-  const { totalBags, totalGravelBags, perPostCalc } = calcTotalConcrete(nodes, installRules, siteConfig, wastePct);
+  const { totalBags, totalGravelBags, perPostCalc } = calcTotalConcrete(nodes, installRules, siteConfig, wastePct, config.concrete);
   bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", totalBags, 0.95,
     `${nodes.length} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor})`, p("CONCRETE_80LB")));
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
@@ -143,7 +154,7 @@ export function generateWoodBom(
   let totalGateLaborHours = 0;
 
   if (gateSpecs.length > 0) {
-    const gateCosts = calculateAllGateCosts(gateSpecs, "wood", prices, 65);
+    const gateCosts = calculateAllGateCosts(gateSpecs, "wood", prices, 65, config);
 
     // Aggregate by SKU using Map
     const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
@@ -229,30 +240,28 @@ export function generateWoodBom(
   const totalCuts = segEdges.reduce((s, e) => s + (e.sections?.filter(sec => sec.isPartial).length ?? 0), 0);
   const rackedSections = segEdges.filter(e => e.slopeMethod === "racked").reduce((s, e) => s + (e.sections?.length ?? 0), 0);
 
-  // Labor rates adjusted to realistic contractor baselines (1.5-2.5 hrs per 10 LF)
+  // Labor — rates from org config
+  const wl = config.labor.wood;
   const laborDrivers: LaborDriver[] = [
-    { activity: "Hole Digging", count: nodes.length, rateHrs: 0.25, totalHrs: nodes.length * 0.25 },
-    { activity: "Post Setting", count: nodes.length, rateHrs: 0.20, totalHrs: nodes.length * 0.20 },
-    { activity: "Rail Installation", count: totalRails, rateHrs: 0.10, totalHrs: totalRails * 0.10 },
+    { activity: "Hole Digging", count: nodes.length, rateHrs: wl.holeDig, totalHrs: nodes.length * wl.holeDig },
+    { activity: "Post Setting", count: nodes.length, rateHrs: wl.postSet, totalHrs: nodes.length * wl.postSet },
+    { activity: "Rail Installation", count: totalRails, rateHrs: wl.railInstall, totalHrs: totalRails * wl.railInstall },
   ];
 
   // Board/panel installation labor varies by style
   if (isBoardOnBoard) {
-    // Board-on-board: Install boards on both sides, more labor-intensive
-    // Approximately 0.06 hrs per board (front + back installation + alignment)
     const totalRunLF = segEdges.reduce((s, e) => s + e.length_in / 12, 0);
     const totalRunInches = feetToInches(totalRunLF);
-    const { total: totalBoards } = calculateBoardOnBoardCount(totalRunInches, 5.5, 0.24, wastePct);
-    laborDrivers.push({ activity: "Board-on-Board Installation", count: totalBoards, rateHrs: 0.06, totalHrs: totalBoards * 0.06 });
+    const { total: totalBoards } = calculateBoardOnBoardCount(totalRunInches, config.material.woodPicketWidth, config.material.woodBoBOverlapPct, wastePct);
+    laborDrivers.push({ activity: "Board-on-Board Installation", count: totalBoards, rateHrs: wl.bobInstall, totalHrs: totalBoards * wl.bobInstall });
   } else if (isPicket || totalSections > 0) {
-    // Standard picket or panel nailing
-    laborDrivers.push({ activity: "Board/Panel Nailing", count: totalSections || 1, rateHrs: 0.40, totalHrs: (totalSections || 1) * 0.40 });
+    laborDrivers.push({ activity: "Board/Panel Nailing", count: totalSections || 1, rateHrs: wl.boardNailing, totalHrs: (totalSections || 1) * wl.boardNailing });
   }
 
-  laborDrivers.push({ activity: "Cutting Operations", count: totalCuts, rateHrs: 0.15, totalHrs: totalCuts * 0.15 });
+  laborDrivers.push({ activity: "Cutting Operations", count: totalCuts, rateHrs: wl.cutting, totalHrs: totalCuts * wl.cutting });
   laborDrivers.push({ activity: "Gate Installation", count: gateSpecs.length, rateHrs: 0, totalHrs: totalGateLaborHours });
-  laborDrivers.push({ activity: "Racking (Field Fab)", count: rackedSections, rateHrs: 0.30, totalHrs: rackedSections * 0.30 });
-  laborDrivers.push({ activity: "Concrete Pour", count: nodes.length, rateHrs: 0.08, totalHrs: nodes.length * 0.08 });
+  laborDrivers.push({ activity: "Racking (Field Fab)", count: rackedSections, rateHrs: wl.racking, totalHrs: rackedSections * wl.racking });
+  laborDrivers.push({ activity: "Concrete Pour", count: nodes.length, rateHrs: wl.concretePour, totalHrs: nodes.length * wl.concretePour });
 
   return { bom, laborDrivers, auditTrail: audit };
 }

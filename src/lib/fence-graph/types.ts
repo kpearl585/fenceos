@@ -151,6 +151,12 @@ export interface FenceProjectInput {
   windMode: boolean;
   runs: RunInput[];
   gates: GateInput[];
+  existingFenceRemoval?: boolean;
+  // Optional regulatory costs (manual entry by contractor)
+  permitCost?: number;
+  inspectionCost?: number;
+  engineeringCost?: number;
+  surveyCost?: number;
 }
 
 // ── BOM Output Types ──────────────────────────────────────────────
@@ -182,6 +188,55 @@ export interface EdgeCaseFlag {
   details: Record<string, any>;
 }
 
+export interface CommercialSummary {
+  // Cost breakdown by category
+  materialCostSubtotal: number;
+  laborCostSubtotal: number;
+  equipmentCostSubtotal: number;
+  logisticsCostSubtotal: number;
+  disposalCostSubtotal: number;
+  regulatoryCostSubtotal: number;
+  commercialAdjustmentsSubtotal: number; // minimum job charge adjustment
+
+  // Totals
+  rawEstimatedCost: number;    // actual calculated cost before min job charge
+  finalQuotedTotal: number;     // rawEstimatedCost + commercialAdjustments
+
+  // Markup scenarios (based on rawEstimatedCost)
+  quotedAt20Pct: number;
+  quotedAt30Pct: number;
+  quotedAt40Pct: number;
+
+  // Gross profit at each markup level
+  grossProfitAt20Pct: number;
+  grossProfitAt30Pct: number;
+  grossProfitAt40Pct: number;
+}
+
+export interface QuoteMetadata {
+  createdAt: string;           // ISO 8601 timestamp
+  quoteValidUntil: string;     // ISO 8601 date
+  quoteVersion: number;
+}
+
+export interface CustomerProposalSummary {
+  fenceTypeLabel: string;         // "Vinyl Privacy"
+  productLineLabel: string;       // "Vinyl Privacy 6ft"
+  totalLinearFeet: number;
+  gateCount: number;
+  estimatedInstallDays: number;
+  finalQuotedTotal: number;
+  quoteValidUntil: string;
+  shortScopeSummary: string;      // "Install 100 LF of 6 ft vinyl privacy fence with 1 gate."
+  exclusionsSummary: string[];    // What is NOT included
+}
+
+export interface ShoppingListGroup {
+  group: string;
+  items: BomItem[];
+  subtotal: number;
+}
+
 export interface FenceEstimateResult {
   projectId: string;
   projectName: string;
@@ -200,6 +255,13 @@ export interface FenceEstimateResult {
   redFlagItems: BomItem[];  // items with confidence < 0.8
   // Edge case detection (v1.0.0 production guardrails)
   edgeCaseFlags?: EdgeCaseFlag[];
+  // Profitability & commercial analysis
+  commercialSummary?: CommercialSummary;
+  // Quote package
+  quoteMetadata?: QuoteMetadata;
+  customerProposal?: CustomerProposalSummary;
+  termsAndConditions?: string[];
+  shoppingListGroups?: ShoppingListGroup[];
   // Audit
   auditTrail: string[];
 }
