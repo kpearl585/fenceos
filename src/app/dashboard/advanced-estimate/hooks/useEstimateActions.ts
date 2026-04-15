@@ -13,6 +13,7 @@ import {
   generateCustomerProposalPdf,
 } from "../actions";
 import { createEstimateFromFenceGraph } from "../convertActions";
+import { STATUS_RESET_MS, CONVERT_ERROR_RESET_MS } from "../constants";
 
 function downloadBase64Pdf(base64: string, filename: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -87,7 +88,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
     setSaveStatus("saving");
     const res = await saveAdvancedEstimate(input, result, projectName, laborRate, wastePct / 100);
     setSaveStatus(res.success ? "saved" : "error");
-    setTimeout(() => setSaveStatus("idle"), 3000);
+    setTimeout(() => setSaveStatus("idle"), STATUS_RESET_MS);
   }, [input, result, projectName, laborRate, wastePct]);
 
   const handlePdfDownload = useCallback(async () => {
@@ -99,7 +100,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
       setPdfStatus("idle");
     } else {
       setPdfStatus("error");
-      setTimeout(() => setPdfStatus("idle"), 3000);
+      setTimeout(() => setPdfStatus("idle"), STATUS_RESET_MS);
     }
   }, [input, result, laborRate, wastePct, projectName]);
 
@@ -114,7 +115,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
       setProposalStatus("idle");
     } else {
       setProposalStatus("error");
-      setTimeout(() => setProposalStatus("idle"), 3000);
+      setTimeout(() => setProposalStatus("idle"), STATUS_RESET_MS);
     }
   }, [input, result, laborRate, wastePct, markupPct, projectName, fenceType, customer, woodStyle]);
 
@@ -141,7 +142,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
     } else {
       setConvertStatus("error");
       setConvertError(res.error ?? "Conversion failed");
-      setTimeout(() => setConvertStatus("idle"), 4000);
+      setTimeout(() => setConvertStatus("idle"), CONVERT_ERROR_RESET_MS);
     }
   }, [result, projectName, laborRate, markupPct, totalLF, fenceType, customer, router]);
 

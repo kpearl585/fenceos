@@ -17,6 +17,13 @@ import RegulatoryCostsCard from "./components/RegulatoryCostsCard";
 import EstimateSummaryCard from "./components/EstimateSummaryCard";
 import ProjectSetupCard, { PRODUCT_LINE_BY_TYPE } from "./components/ProjectSetupCard";
 import RunsEditor from "./components/RunsEditor";
+import {
+  DEFAULT_LABOR_RATE,
+  DEFAULT_MARKUP_PCT,
+  DEFAULT_LABOR_EFFICIENCY,
+  DEFAULT_POST_SIZE,
+  DEFAULT_FENCE_HEIGHT_IN,
+} from "./constants";
 
 export default function AdvancedEstimateClient({
   priceMap = {},
@@ -38,14 +45,14 @@ export default function AdvancedEstimateClient({
   const [productLineId, setProductLineId] = useState("vinyl_privacy_6ft");
   const [soilType, setSoilType] = useState<SoilType>("sandy_loam");
   const [windMode, setWindMode] = useState(false);
-  const [laborRate, setLaborRate] = useState(65);
+  const [laborRate, setLaborRate] = useState(DEFAULT_LABOR_RATE);
   const [wastePct, setWastePct] = useState(defaultWastePct);
   const [inputMode, setInputMode] = useState<"manual" | "ai">(aiAvailable ? "ai" : "manual");
   const [projectName, setProjectName] = useState("New Estimate");
-  const [markupPct, setMarkupPct] = useState(35);
+  const [markupPct, setMarkupPct] = useState(DEFAULT_MARKUP_PCT);
   const [customer, setCustomer] = useState({ name: "", address: "", city: "", phone: "", email: "" });
   const [existingFenceRemoval, setExistingFenceRemoval] = useState(false);
-  const [laborEfficiency, setLaborEfficiency] = useState(1.0);
+  const [laborEfficiency, setLaborEfficiency] = useState(DEFAULT_LABOR_EFFICIENCY);
   const [permitCost, setPermitCost] = useState(0);
   const [inspectionCost, setInspectionCost] = useState(0);
   const [engineeringCost, setEngineeringCost] = useState(0);
@@ -53,13 +60,13 @@ export default function AdvancedEstimateClient({
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
 
   const productLine = PRODUCT_LINES[productLineId];
-  const postSize = productLine?.postSize ?? "5x5";
-  const fenceHeight = Math.round((productLine?.panelHeight_in ?? 72) / 12) as PanelHeight;
+  const postSize = productLine?.postSize ?? DEFAULT_POST_SIZE;
+  const fenceHeight = Math.round((productLine?.panelHeight_in ?? DEFAULT_FENCE_HEIGHT_IN) / 12) as PanelHeight;
 
   // Build per-estimate config with labor efficiency override
   const estimateConfig = useMemo(() => {
     if (!estimatorConfig) return undefined;
-    if (Math.abs(laborEfficiency - 1.0) < 1e-6) return estimatorConfig;
+    if (Math.abs(laborEfficiency - DEFAULT_LABOR_EFFICIENCY) < 1e-6) return estimatorConfig;
     return {
       ...estimatorConfig,
       laborEfficiency: { baseMultiplier: laborEfficiency },

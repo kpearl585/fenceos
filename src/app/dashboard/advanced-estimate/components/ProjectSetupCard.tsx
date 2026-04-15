@@ -2,6 +2,21 @@
 import { PRODUCT_LINES, type FenceType, type WoodStyle } from "@/lib/fence-graph/engine";
 import type { SoilType } from "@/lib/fence-graph/types";
 import { HelpTooltip } from "@/components/Tooltip";
+import ToggleSwitch from "./ToggleSwitch";
+import {
+  DEFAULT_LABOR_RATE,
+  DEFAULT_WASTE_PCT,
+  DEFAULT_MARKUP_PCT,
+  LABOR_RATE_MIN,
+  LABOR_RATE_MAX,
+  WASTE_PCT_MIN,
+  WASTE_PCT_MAX,
+  MARKUP_PCT_MIN,
+  MARKUP_PCT_MAX,
+  LABOR_EFFICIENCY_MIN,
+  LABOR_EFFICIENCY_MAX,
+  LABOR_EFFICIENCY_STEP,
+} from "../constants";
 
 const FENCE_TYPES: { value: FenceType; label: string }[] = [
   { value: "vinyl", label: "Vinyl" },
@@ -153,8 +168,8 @@ export default function ProjectSetupCard({
             <HelpTooltip content="Your crew's hourly rate including wages, insurance, and benefits. Typical range: $50-80/hr for 2-person crew. System calculates hours based on fence complexity." />
           </label>
           <input
-            type="number" min={20} max={200} value={laborRate}
-            onChange={(e) => onLaborRateChange(parseNumber(e, 65))}
+            type="number" min={LABOR_RATE_MIN} max={LABOR_RATE_MAX} value={laborRate}
+            onChange={(e) => onLaborRateChange(parseNumber(e, DEFAULT_LABOR_RATE))}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
           />
         </div>
@@ -164,8 +179,8 @@ export default function ProjectSetupCard({
             <HelpTooltip content="Extra material to account for cuts, defects, and installation errors. Typical: 5-7%. System learns your actual waste from completed jobs and adjusts this automatically." />
           </label>
           <input
-            type="number" min={1} max={20} value={wastePct}
-            onChange={(e) => onWastePctChange(parseNumber(e, 5))}
+            type="number" min={WASTE_PCT_MIN} max={WASTE_PCT_MAX} value={wastePct}
+            onChange={(e) => onWastePctChange(parseNumber(e, DEFAULT_WASTE_PCT))}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
           />
         </div>
@@ -175,35 +190,33 @@ export default function ProjectSetupCard({
             <HelpTooltip content="Your profit margin over total cost (materials + labor). Typical: 30-40%. This determines your bid price and gross profit." />
           </label>
           <input
-            type="number" min={0} max={200} value={markupPct}
-            onChange={(e) => onMarkupPctChange(Math.max(0, parseNumber(e, 35)))}
+            type="number" min={MARKUP_PCT_MIN} max={MARKUP_PCT_MAX} value={markupPct}
+            onChange={(e) => onMarkupPctChange(Math.max(0, parseNumber(e, DEFAULT_MARKUP_PCT)))}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
           />
         </div>
       </div>
       <div className="mt-4 space-y-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onWindModeToggle}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${windMode ? "bg-fence-600" : "bg-gray-200"}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${windMode ? "translate-x-6" : "translate-x-1"}`} />
-          </button>
-          <span className="text-sm font-medium text-gray-700">Wind Mode / Hurricane Zone</span>
-          {windMode && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Deeper posts + aluminum inserts + rebar applied</span>}
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onExistingFenceRemovalToggle}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${existingFenceRemoval ? "bg-fence-600" : "bg-gray-200"}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${existingFenceRemoval ? "translate-x-6" : "translate-x-1"}`} />
-          </button>
-          <span className="text-sm font-medium text-gray-700">Existing Fence Removal</span>
-          {existingFenceRemoval && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Tear-down labor + post extraction + disposal</span>}
-        </div>
+        <ToggleSwitch
+          label="Wind Mode / Hurricane Zone"
+          checked={windMode}
+          onToggle={onWindModeToggle}
+          activeBadge={
+            <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+              Deeper posts + aluminum inserts + rebar applied
+            </span>
+          }
+        />
+        <ToggleSwitch
+          label="Existing Fence Removal"
+          checked={existingFenceRemoval}
+          onToggle={onExistingFenceRemovalToggle}
+          activeBadge={
+            <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+              Tear-down labor + post extraction + disposal
+            </span>
+          }
+        />
       </div>
 
       {/* Labor Efficiency Slider */}
@@ -214,7 +227,10 @@ export default function ProjectSetupCard({
         </label>
         <div className="flex items-center gap-3">
           <input
-            type="range" min={0.7} max={1.5} step={0.05}
+            type="range"
+            min={LABOR_EFFICIENCY_MIN}
+            max={LABOR_EFFICIENCY_MAX}
+            step={LABOR_EFFICIENCY_STEP}
             value={laborEfficiency}
             onChange={(e) => onLaborEfficiencyChange(Number(e.target.value))}
             className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-fence-600"

@@ -3,6 +3,15 @@ import type { RunInput } from "@/lib/fence-graph/engine";
 import type { GateType } from "@/lib/fence-graph/types";
 import { HelpTooltip } from "@/components/Tooltip";
 import type { UseRunsEditorReturn } from "../hooks/useRunsEditor";
+import {
+  SIMPLE_CORNERS_MAX,
+  SLOPE_DEG_MIN,
+  SLOPE_DEG_MAX,
+  SLOPE_RACKED_MAX_DEG,
+  GATE_WIDTH_MIN,
+  GATE_WIDTH_MAX,
+  DEFAULT_GATE_WIDTH_FT,
+} from "../constants";
 
 const START_END_TYPES = ["end", "corner", "gate"] as const;
 const GATE_TYPES: GateType[] = ["single", "double"];
@@ -104,7 +113,7 @@ export default function RunsEditor({ editor }: RunsEditorProps) {
               <input
                 type="number"
                 min={0}
-                max={20}
+                max={SIMPLE_CORNERS_MAX}
                 placeholder="2"
                 value={simpleCorners || ""}
                 onChange={(e) => {
@@ -174,11 +183,11 @@ export default function RunsEditor({ editor }: RunsEditorProps) {
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Slope (deg)</label>
                       <input
-                        type="number" min={0} max={45} placeholder="0"
+                        type="number" min={SLOPE_DEG_MIN} max={SLOPE_DEG_MAX} placeholder="0"
                         value={run.slopeDeg || ""}
                         onChange={(e) => {
                           const v = e.target.valueAsNumber;
-                          updateRun(run.id, { slopeDeg: Number.isFinite(v) ? Math.max(0, Math.min(45, v)) : 0 });
+                          updateRun(run.id, { slopeDeg: Number.isFinite(v) ? Math.max(SLOPE_DEG_MIN, Math.min(SLOPE_DEG_MAX, v)) : 0 });
                         }}
                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
                       />
@@ -186,7 +195,7 @@ export default function RunsEditor({ editor }: RunsEditorProps) {
                   </div>
                   {(run.slopeDeg ?? 0) > 0 && (
                     <p className="mt-2 text-xs text-amber-600">
-                      {(run.slopeDeg ?? 0) <= 18 ? "Racked panels (tilted to follow grade)" : "Stepped panels — level sections with gaps at each step"}
+                      {(run.slopeDeg ?? 0) <= SLOPE_RACKED_MAX_DEG ? "Racked panels (tilted to follow grade)" : "Stepped panels — level sections with gaps at each step"}
                     </p>
                   )}
 
@@ -211,11 +220,11 @@ export default function RunsEditor({ editor }: RunsEditorProps) {
                         <div>
                           <label className="block text-xs font-medium text-gray-500 mb-1">Width (ft)</label>
                           <input
-                            type="number" min={3} max={14}
+                            type="number" min={GATE_WIDTH_MIN} max={GATE_WIDTH_MAX}
                             value={gate.widthFt}
                             onChange={(e) => {
                               const v = e.target.valueAsNumber;
-                              updateGate(gate.id, { widthFt: Number.isFinite(v) ? v : 4 });
+                              updateGate(gate.id, { widthFt: Number.isFinite(v) ? v : DEFAULT_GATE_WIDTH_FT });
                             }}
                             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-fence-400"
                           />

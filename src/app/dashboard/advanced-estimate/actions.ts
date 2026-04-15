@@ -9,6 +9,7 @@ import { updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "@/lib/fence-g
 import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
 import { calculateProjectTimeline } from "@/lib/fence-graph/calculateTimeline";
 import { SaveEstimateSchema, GenerateAdvancedPdfSchema, GenerateCustomerProposalPdfSchema } from "@/lib/validation/schemas";
+import { DEFAULT_CREW_LEAD_DAYS, DEFAULT_PROPOSAL_VALID_DAYS } from "./constants";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { SiteComplexity, CloseoutData, AccuracyMetrics } from "@/lib/fence-graph/accuracy-types";
@@ -351,7 +352,7 @@ export async function generateCustomerProposalPdf(
       result,
       validated.fenceType,
       validated.woodStyle,
-      7 // 7 business days until crew available (configurable later)
+      DEFAULT_CREW_LEAD_DAYS,
     );
 
     const { CustomerProposalPdf } = await import("@/lib/fence-graph/CustomerProposalPdf");
@@ -371,7 +372,7 @@ export async function generateCustomerProposalPdf(
         customerEmail: validated.customer.email,
         date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
         proposalNumber: `P-${Date.now().toString().slice(-6)}`,
-        validDays: 30,
+        validDays: DEFAULT_PROPOSAL_VALID_DAYS,
         estimatedStartDate: timeline.estimatedStartDateString,
         estimatedDurationDays: timeline.estimatedDurationDays,
       },

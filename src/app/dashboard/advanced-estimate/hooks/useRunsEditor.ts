@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { RunInput, GateInput } from "@/lib/fence-graph/engine";
+import { DEFAULT_GATE_WIDTH_FT } from "../constants";
 
 export type RunsMode = "simple" | "advanced";
 export type SimpleShape = "open" | "closed";
@@ -138,7 +139,7 @@ export function useRunsEditor(): UseRunsEditorReturn {
       id: newGateId(),
       afterRunId,
       gateType: "single",
-      widthFt: 4,
+      widthFt: DEFAULT_GATE_WIDTH_FT,
       isPoolGate: false,
     }]);
   }, [newGateId]);
