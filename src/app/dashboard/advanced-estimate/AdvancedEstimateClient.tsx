@@ -140,30 +140,64 @@ export default function AdvancedEstimateClient({
   const [runsMode, setRunsMode] = useState<"simple" | "advanced">("simple");
   const [simpleTotalFeet, setSimpleTotalFeet] = useState(0);
   const [simpleCorners, setSimpleCorners] = useState(0);
+  const [simpleShape, setSimpleShape] = useState<"open" | "closed">("open");
 
   const productLine = PRODUCT_LINES[productLineId];
   const postSize = productLine?.postSize ?? "5x5";
   const fenceHeight = Math.round(productLine?.panelHeight_in / 12) as PanelHeight;
 
-  // Auto-generate runs from simple mode inputs
-  useEffect(() => {
-    if (runsMode === "simple" && simpleTotalFeet > 0) {
-      const numSections = simpleCorners + 1;
-      const feetPerSection = simpleTotalFeet / numSections;
-
-      const newRuns: RunInput[] = [];
-      for (let i = 0; i < numSections; i++) {
-        newRuns.push({
-          id: newRunId(),
-          linearFeet: Math.round(feetPerSection),
-          startType: i === 0 ? "end" : "corner",
-          endType: i === numSections - 1 ? "end" : "corner",
-          slopeDeg: 0,
-        });
-      }
-      setRuns(newRuns);
+  // Derive the runs the engine should consume.
+  // Simple mode: compute sections on demand from total feet + corners + shape,
+  // without writing to the `runs` state. Advanced mode: use the edited runs.
+  // This preserves Advanced edits across mode toggles and avoids the id churn
+  // + focus loss that the old "setRuns inside useEffect" pattern caused.
+  const effectiveRuns = useMemo<RunInput[]>(() => {
+    if (runsMode !== "simple") return runs;
+    if (simpleTotalFeet <= 0) return [];
+    const corners = Math.max(0, Math.floor(simpleCorners));
+    const numSections = simpleShape === "closed" ? Math.max(1, corners) : corners + 1;
+    const feetPerSection = simpleTotalFeet / numSections;
+    const out: RunInput[] = [];
+    for (let i = 0; i < numSections; i++) {
+      const isFirst = i === 0;
+      const isLast = i === numSections - 1;
+      out.push({
+        id: `simple_${i}`,
+        linearFeet: Math.round(feetPerSection),
+        startType: simpleShape === "closed" ? "corner" : (isFirst ? "end" : "corner"),
+        endType: simpleShape === "closed" ? "corner" : (isLast ? "end" : "corner"),
+        slopeDeg: 0,
+      });
     }
-  }, [runsMode, simpleTotalFeet, simpleCorners, newRunId]);
+    return out;
+  }, [runsMode, simpleTotalFeet, simpleCorners, simpleShape, runs]);
+
+  // Seed advanced state from simple state on first switch so users don't lose
+  // their measurements when they decide to refine section-by-section.
+  const handleRunsModeChange = useCallback((mode: "simple" | "advanced") => {
+    if (mode === "advanced" && runsMode === "simple") {
+      const isDefaultAdvanced = runs.length <= 1 && (runs[0]?.linearFeet ?? 0) === 0;
+      if (isDefaultAdvanced && simpleTotalFeet > 0) {
+        const corners = Math.max(0, Math.floor(simpleCorners));
+        const numSections = simpleShape === "closed" ? Math.max(1, corners) : corners + 1;
+        const feetPerSection = simpleTotalFeet / numSections;
+        const seeded: RunInput[] = [];
+        for (let i = 0; i < numSections; i++) {
+          const isFirst = i === 0;
+          const isLast = i === numSections - 1;
+          seeded.push({
+            id: `run_${++runIdCtrRef.current}`,
+            linearFeet: Math.round(feetPerSection),
+            startType: simpleShape === "closed" ? "corner" : (isFirst ? "end" : "corner"),
+            endType: simpleShape === "closed" ? "corner" : (isLast ? "end" : "corner"),
+            slopeDeg: 0,
+          });
+        }
+        setRuns(seeded);
+      }
+    }
+    setRunsMode(mode);
+  }, [runsMode, runs, simpleTotalFeet, simpleCorners, simpleShape]);
 
   // Build per-estimate config with labor efficiency override
   const estimateConfig = useMemo(() => {
@@ -188,7 +222,7 @@ export default function AdvancedEstimateClient({
       postSize,
       soilType,
       windMode,
-      runs: runs.filter((r) => r.linearFeet > 0),
+      runs: effectiveRuns.filter((r) => r.linearFeet > 0),
       gates,
       existingFenceRemoval,
       permitCost: permitCost > 0 ? permitCost : undefined,
@@ -211,7 +245,7 @@ export default function AdvancedEstimateClient({
     }
   }, [
     productLineId, fenceHeight, postSize, soilType, windMode,
-    runs, gates, existingFenceRemoval,
+    effectiveRuns, gates, existingFenceRemoval,
     permitCost, inspectionCost, engineeringCost, surveyCost,
     fenceType, woodStyle, laborRate, wastePct, priceMap, estimateConfig,
   ]);
@@ -243,7 +277,7 @@ export default function AdvancedEstimateClient({
     setGates((prev) => prev.filter((g) => g.id !== id));
   }
 
-  const totalLF = runs.reduce((s, r) => s + (r.linearFeet || 0), 0);
+  const totalLF = effectiveRuns.reduce((s, r) => s + (r.linearFeet || 0), 0);
   const hasValidInput = input.runs.length > 0;
 
   const safeMarkupPct = Math.max(0, markupPct);
@@ -617,13 +651,13 @@ export default function AdvancedEstimateClient({
           {/* Simple/Advanced Mode Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1 gap-1 mb-4">
             <button
-              onClick={() => setRunsMode("simple")}
+              onClick={() => handleRunsModeChange("simple")}
               className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors ${runsMode === "simple" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
             >
               Simple Mode
             </button>
             <button
-              onClick={() => setRunsMode("advanced")}
+              onClick={() => handleRunsModeChange("advanced")}
               className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors ${runsMode === "advanced" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
             >
               Advanced (Run-by-Run)
@@ -633,6 +667,29 @@ export default function AdvancedEstimateClient({
           {/* Simple Mode UI */}
           {runsMode === "simple" && (
             <div className="space-y-3 mb-4">
+              {/* Shape toggle */}
+              <div>
+                <label className="flex items-center gap-1 text-xs font-medium text-gray-500 mb-1">
+                  Fence Shape
+                  <HelpTooltip content="Open: fence runs along an edge with two free ends (e.g. back property line). Closed: fence wraps all the way around an area (e.g. backyard enclosure)." />
+                </label>
+                <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSimpleShape("open")}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${simpleShape === "open" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  >
+                    Open (line / L-shape)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSimpleShape("closed")}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${simpleShape === "closed" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  >
+                    Closed (enclosure)
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="flex items-center gap-1 text-xs font-medium text-gray-500 mb-1">
@@ -644,14 +701,17 @@ export default function AdvancedEstimateClient({
                     min={0}
                     placeholder="180"
                     value={simpleTotalFeet || ""}
-                    onChange={(e) => setSimpleTotalFeet(Number(e.target.value))}
+                    onChange={(e) => {
+                      const v = e.target.valueAsNumber;
+                      setSimpleTotalFeet(Number.isFinite(v) ? Math.max(0, v) : 0);
+                    }}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
                   />
                 </div>
                 <div>
                   <label className="flex items-center gap-1 text-xs font-medium text-gray-500 mb-1">
                     Number of Corners
-                    <HelpTooltip content="Count how many 90-degree turns your fence makes. A straight fence = 0 corners. An L-shape = 1 corner. A rectangle = 3 corners (4 sides, don't count start/end)." />
+                    <HelpTooltip content={simpleShape === "closed" ? "Count the 90-degree turns around the enclosure. A rectangle has 4 corners. Sections = corners." : "Count the 90-degree turns in the line. A straight fence has 0 corners (1 section). An L-shape has 1 corner (2 sections)."} />
                   </label>
                   <input
                     type="number"
@@ -659,16 +719,19 @@ export default function AdvancedEstimateClient({
                     max={20}
                     placeholder="2"
                     value={simpleCorners || ""}
-                    onChange={(e) => setSimpleCorners(Number(e.target.value))}
+                    onChange={(e) => {
+                      const v = e.target.valueAsNumber;
+                      setSimpleCorners(Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
+                    }}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
                   />
                 </div>
               </div>
-              {simpleTotalFeet > 0 && (
+              {simpleTotalFeet > 0 && effectiveRuns.length > 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                   <p className="text-xs font-semibold text-green-800 mb-1">Auto-Generated</p>
                   <p className="text-xs text-green-700">
-                    {runs.length} section{runs.length !== 1 ? "s" : ""} of ~{Math.round(simpleTotalFeet / (simpleCorners + 1))} LF each
+                    {effectiveRuns.length} section{effectiveRuns.length !== 1 ? "s" : ""} of ~{Math.round(simpleTotalFeet / effectiveRuns.length)} LF each
                   </p>
                 </div>
               )}
