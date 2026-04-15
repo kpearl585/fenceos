@@ -7,11 +7,15 @@ export function makeBomItem(
   unitCost?: number
 ): BomItem {
   const rounded = Math.ceil(qty);
+  // Use `!= null` instead of truthy check so a legitimate $0 unitCost
+  // (comp'd / sample / zero-priced line item) still produces extCost === 0
+  // instead of undefined, which would fail the validation layer.
+  const hasPrice = unitCost != null && Number.isFinite(unitCost);
   return {
     sku, name, category, unit,
     qty: rounded,
     unitCost,
-    extCost: unitCost ? rounded * unitCost : undefined,
+    extCost: hasPrice ? rounded * unitCost : undefined,
     confidence,
     traceability,
   };

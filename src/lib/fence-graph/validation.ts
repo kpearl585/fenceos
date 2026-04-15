@@ -94,8 +94,10 @@ export function validateEstimate(result: FenceEstimateResult): ValidationResult 
     });
   } else {
     // ── CRITICAL: All BOM items must have valid prices ──
+    // `unitCost != null` lets a legitimate $0 unit cost pass validation;
+    // the only failure case is missing price or NaN/Infinity.
     const itemsWithoutPrices = result.bom.filter(
-      item => !item.unitCost || isNaN(item.unitCost) || !isFinite(item.unitCost)
+      item => item.unitCost == null || isNaN(item.unitCost) || !isFinite(item.unitCost)
     );
     if (itemsWithoutPrices.length > 0) {
       errors.push({
@@ -118,8 +120,9 @@ export function validateEstimate(result: FenceEstimateResult): ValidationResult 
     }
 
     // ── CRITICAL: All BOM items must have valid extended costs ──
+    // `extCost != null` preserves $0 extended cost (qty × $0 unitCost) as valid.
     const itemsWithBadExtCost = result.bom.filter(
-      item => !item.extCost || isNaN(item.extCost) || !isFinite(item.extCost)
+      item => item.extCost == null || isNaN(item.extCost) || !isFinite(item.extCost)
     );
     if (itemsWithBadExtCost.length > 0) {
       errors.push({

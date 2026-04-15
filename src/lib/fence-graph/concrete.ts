@@ -40,6 +40,12 @@ export function calcConcretePerPost(
   if (site.soilType === "sandy" || site.soilType === "wet") {
     holeDepth = Math.max(holeDepth, floridaDepth);
   }
+  // Wind / hurricane zone: all posts must be ≥36" deep for lateral wind loads.
+  // Keeps the calcTotalConcrete recompute-from-scratch path aligned with the
+  // per-node depth that builder.ts sets when iterating nodes directly.
+  if (site.hurricaneZone) {
+    holeDepth = Math.max(holeDepth, 36);
+  }
   // Gate posts: extra 6 inches for leverage/weight
   // NOTE: Only apply if the caller hasn't already adjusted depth (e.g. builder.ts
   // pre-adjusts depth before calling). The flag isGatePost controls this.

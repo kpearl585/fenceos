@@ -20,6 +20,11 @@ import {
 
 export type FenceType = "vinyl" | "wood" | "chain_link" | "aluminum";
 
+// Formats a signed dollar adjustment for audit-trail readability.
+function fmtAdj(n: number): string {
+  return n >= 0 ? `+$${n}` : `-$${Math.abs(n)}`;
+}
+
 export interface BomOptions {
   fenceType: FenceType;
   woodStyle?: WoodStyle;
@@ -147,9 +152,10 @@ export function generateBom(
 
   // ── LABOR EFFICIENCY MULTIPLIER ──
   // Applied as a visible adjustment line when baseMultiplier != 1.0
-  // Comes AFTER overhead and removal so it scales all labor consistently
+  // Comes AFTER overhead and removal so it scales all labor consistently.
+  // Epsilon comparison guards against float drift from a UI slider (step=0.05).
   const effMultiplier = config.laborEfficiency.baseMultiplier;
-  if (effMultiplier !== 1.0) {
+  if (Math.abs(effMultiplier - 1.0) > 1e-6) {
     const preFinalLaborHrs = laborDrivers.reduce((s, l) => s + l.totalHrs, 0);
     const adjustmentHrs = Math.round((preFinalLaborHrs * (effMultiplier - 1)) * 10) / 10;
     if (adjustmentHrs !== 0) {
@@ -179,8 +185,12 @@ export function generateBom(
     ));
   }
 
-  // Mixer: only when concrete bag count warrants it
-  const totalConcreteBags = bom.find(b => b.sku === "CONCRETE_80LB")?.qty ?? 0;
+  // Mixer: only when concrete bag count warrants it.
+  // Summed across the `concrete` category so a non-standard concrete SKU
+  // (e.g. 60lb bags, regional variant) still triggers the rental correctly.
+  const totalConcreteBags = bom
+    .filter(b => b.category === "concrete" && b.sku.toUpperCase().startsWith("CONCRETE"))
+    .reduce((sum, b) => sum + b.qty, 0);
   if (totalConcreteBags >= MIXER_THRESHOLD_BAGS && config.equipment.mixerPerDay > 0) {
     bom.push(makeBomItem(
       "EQUIP_MIXER", "Concrete Mixer Rental", "equipment", "day",
@@ -250,22 +260,31 @@ export function generateBom(
   // ── FINAL TOTALS ──
   const finalMaterialCost = bom.reduce((s, item) => s + (item.extCost ?? 0), 0);
   const totalLaborHrs = Math.round(laborDrivers.reduce((s, l) => s + l.totalHrs, 0) * 10) / 10;
-  let totalLaborCost = Math.round(totalLaborHrs * laborRatePerHr);
+  const totalLaborCost = Math.round(totalLaborHrs * laborRatePerHr);
+
+  // Non-material categories that should NOT scale with regional MATERIAL pricing
+  // (rental rates, delivery fees, disposal, and permit fees are local service costs).
+  const NON_MATERIAL_CATEGORIES = new Set(["equipment", "logistics", "disposal", "regulatory"]);
+  const trueMaterialOnlyCost = bom
+    .filter(b => !NON_MATERIAL_CATEGORIES.has(b.category))
+    .reduce((s, b) => s + (b.extCost ?? 0), 0);
 
   // ── REGIONAL MULTIPLIERS ──
-  // Apply materialMultiplier and laborMultiplier from config when not base (1.0)
+  // Apply materialMultiplier and laborMultiplier from config when not base (1.0).
   // Note: config.region.key already drives per-SKU pricing via mergePrices in BOM generators.
   // materialMultiplier is an ADDITIONAL multiplier on top of that (for contractor fine-tuning).
+  // Only applied to true material SKUs, not equipment rentals / delivery / disposal / permits.
+  const EFFICIENCY_EPSILON = 1e-6;
   let materialRegionalAdj = 0;
-  if (config.region.materialMultiplier !== 1.0) {
-    materialRegionalAdj = Math.round(finalMaterialCost * (config.region.materialMultiplier - 1));
-    auditTrail.push(`Regional material adjustment: ${config.region.materialMultiplier}x → ${materialRegionalAdj > 0 ? "+" : ""}$${materialRegionalAdj}`);
+  if (Math.abs(config.region.materialMultiplier - 1) > EFFICIENCY_EPSILON) {
+    materialRegionalAdj = Math.round(trueMaterialOnlyCost * (config.region.materialMultiplier - 1));
+    auditTrail.push(`Regional material adjustment: ${config.region.materialMultiplier}x applied to materials only (${fmtAdj(materialRegionalAdj)})`);
   }
 
   let laborRegionalAdj = 0;
-  if (config.region.laborMultiplier !== 1.0) {
+  if (Math.abs(config.region.laborMultiplier - 1) > EFFICIENCY_EPSILON) {
     laborRegionalAdj = Math.round(totalLaborCost * (config.region.laborMultiplier - 1));
-    auditTrail.push(`Regional labor adjustment: ${config.region.laborMultiplier}x → ${laborRegionalAdj > 0 ? "+" : ""}$${laborRegionalAdj}`);
+    auditTrail.push(`Regional labor adjustment: ${config.region.laborMultiplier}x → ${fmtAdj(laborRegionalAdj)}`);
   }
 
   const adjustedMaterialCost = finalMaterialCost + materialRegionalAdj;

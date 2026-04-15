@@ -93,13 +93,18 @@ export function generateVinylBom(
   if (isComponentSystem) {
     // Component system: calculate individual pickets with slope adjustment
     const picketsPerFoot = config.material.vinylPicketsPerFoot;
-    const slopeAdjustedLF = totalLinearFeet * (1 + (slopeAdjustmentFactor / totalPanels));
+    // Guard divide-by-zero when no panels (degenerate input): fall back to
+    // unadjusted LF rather than NaN-propagating through the BOM.
+    const slopeFactor = totalPanels > 0 ? (slopeAdjustmentFactor / totalPanels) : 0;
+    const slopeAdjustedLF = totalLinearFeet * (1 + slopeFactor);
     const picketCount = Math.ceil(slopeAdjustedLF * picketsPerFoot * (1 + wastePct + 0.05)); // +5% extra for damage
 
     const picketSku = productLine.panelHeight_in >= 96 ? "VINYL_PICKET_8FT" :
                       productLine.panelHeight_in >= 72 ? "VINYL_PICKET_6FT" : "VINYL_PICKET_4FT";
 
-    const slopeNote = slopeAdjustmentFactor > 0 ? ` + ${(slopeAdjustmentFactor / totalPanels * 100).toFixed(0)}% slope adj` : "";
+    const slopeNote = slopeAdjustmentFactor > 0 && totalPanels > 0
+      ? ` + ${(slopeFactor * 100).toFixed(0)}% slope adj`
+      : "";
     bom.push(makeBomItem(
       picketSku,
       `Vinyl Privacy Picket ${productLine.panelHeight_in / 12}ft`,
