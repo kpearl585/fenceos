@@ -67,12 +67,30 @@ interface Props {
 }
 
 export function AdvancedEstimatePdf({ result, projectName, orgName, date }: Props) {
-  const { bom, laborDrivers, totalMaterialCost, totalLaborCost, totalLaborHrs, totalCost, graph, deterministicScrap_in, probabilisticWastePct } = result;
+  const { bom, laborDrivers, totalLaborCost, totalLaborHrs, totalCost, graph, deterministicScrap_in, probabilisticWastePct } = result;
   const totalLF = graph.edges.filter(e => e.type === "segment").reduce((s, e) => s + e.length_in / 12, 0);
-  const postCount = graph.nodes.length;
+  // Post count is derived from the BOM's true post SKUs (excluding post
+  // sleeves and caps, which also live in the "posts" category) rather
+  // than graph.nodes.length, so chain-link estimates don't leak the
+  // builder's phantom 96"-OC line posts (BOM uses config 120"-OC).
+  const postCountFromBom = bom
+    .filter(b => b.category === "posts" && b.sku.includes("POST")
+      && !b.sku.includes("SLEEVE") && !b.sku.includes("CAP"))
+    .reduce((sum, b) => sum + (b.qty ?? 0), 0);
+  const postCount = postCountFromBom > 0 ? postCountFromBom : graph.nodes.length;
   const gateCount = graph.edges.filter(e => e.type === "gate").length;
   const runCount = graph.edges.filter(e => e.type === "segment").length;
   const dateStr = date ?? new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  // Prefer the materials-only subtotal so the "Materials" line reflects
+  // actual materials, not materials + equipment + delivery + disposal +
+  // regulatory. Falls back to totalMaterialCost for estimates generated
+  // before materialOnlyCost existed (stored in DB as JSON).
+  const materialsDisplay = result.materialOnlyCost ?? result.totalMaterialCost;
+  const equipmentCost = bom.filter(b => b.category === "equipment").reduce((s, b) => s + (b.extCost ?? 0), 0);
+  const logisticsCost = bom.filter(b => b.category === "logistics").reduce((s, b) => s + (b.extCost ?? 0), 0);
+  const disposalCost = bom.filter(b => b.category === "disposal").reduce((s, b) => s + (b.extCost ?? 0), 0);
+  const regulatoryCost = bom.filter(b => b.category === "regulatory").reduce((s, b) => s + (b.extCost ?? 0), 0);
 
   return (
     <Document>
@@ -172,8 +190,32 @@ export function AdvancedEstimatePdf({ result, projectName, orgName, date }: Prop
           <Text style={styles.sectionTitle}>Cost Summary</Text>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Materials</Text>
-            <Text style={styles.totalValue}>{fmt(totalMaterialCost)}</Text>
+            <Text style={styles.totalValue}>{fmt(materialsDisplay)}</Text>
           </View>
+          {equipmentCost > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Equipment Rentals</Text>
+              <Text style={styles.totalValue}>{fmt(equipmentCost)}</Text>
+            </View>
+          )}
+          {logisticsCost > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Delivery / Logistics</Text>
+              <Text style={styles.totalValue}>{fmt(logisticsCost)}</Text>
+            </View>
+          )}
+          {disposalCost > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Disposal</Text>
+              <Text style={styles.totalValue}>{fmt(disposalCost)}</Text>
+            </View>
+          )}
+          {regulatoryCost > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Permits / Regulatory</Text>
+              <Text style={styles.totalValue}>{fmt(regulatoryCost)}</Text>
+            </View>
+          )}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Labor ({totalLaborHrs}h)</Text>
             <Text style={styles.totalValue}>{fmt(totalLaborCost)}</Text>

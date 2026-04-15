@@ -114,7 +114,15 @@ export function CustomerProposalPdf({ data }: { data: ProposalData }) {
     estimatedStartDate, estimatedDurationDays } = data;
 
   const typeLabel = FENCE_TYPE_LABELS[fenceType] ?? fenceType;
-  const postCount = result.graph.nodes.length;
+  // Post count is derived from the BOM's true post SKUs (excluding post
+  // sleeves and caps, which also live in the "posts" category) rather
+  // than graph.nodes.length, so chain-link proposals don't leak the
+  // builder's phantom 96"-OC posts (BOM uses config 120"-OC).
+  const postCountFromBom = result.bom
+    .filter(b => b.category === "posts" && b.sku.includes("POST")
+      && !b.sku.includes("SLEEVE") && !b.sku.includes("CAP"))
+    .reduce((sum, b) => sum + (b.qty ?? 0), 0);
+  const postCount = postCountFromBom > 0 ? postCountFromBom : result.graph.nodes.length;
   const gateCount = result.graph.edges.filter(e => e.type === "gate").length;
   const runCount = result.graph.edges.filter(e => e.type === "segment").length;
   const perLF = totalLF > 0 ? Math.round(bidPrice / totalLF) : 0;
@@ -229,8 +237,9 @@ export function CustomerProposalPdf({ data }: { data: ProposalData }) {
             <View style={{ flex: 1 }}>
               <Text style={s.sectionLabel}>Warranty Information</Text>
               <View style={s.termsBox}>
-                <Text style={s.termLine}>Workmanship: 2 years from completion</Text>
-                <Text style={s.termLine}>Materials: Manufacturer warranty (10-25 years typical)</Text>
+                {/* Must match quotePackage.DEFAULT_TERMS warranty clause */}
+                <Text style={s.termLine}>Workmanship: 1 year from completion</Text>
+                <Text style={s.termLine}>Materials: Manufacturer warranty per product terms</Text>
                 <Text style={s.termLine}>Excludes: Acts of nature, soil settling, unauthorized modifications</Text>
                 <Text style={[s.termLine, { marginTop: 8, fontSize: 7 }]}>Full warranty details provided upon project completion.</Text>
               </View>

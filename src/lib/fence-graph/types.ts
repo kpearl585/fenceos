@@ -243,7 +243,22 @@ export interface FenceEstimateResult {
   graph: FenceGraph;
   bom: BomItem[];
   laborDrivers: LaborDriver[];
+  /**
+   * Sum of every non-labor BOM extCost including equipment, logistics,
+   * disposal, regulatory, plus regional material adjustment.
+   * Historically named "material" but actually represents "total non-labor".
+   * New code should prefer `materialOnlyCost` for a true materials figure.
+   */
   totalMaterialCost: number;
+  /**
+   * True materials subtotal — BOM line items in the categories
+   * posts / panels / pickets / rails / fabric / concrete / hardware /
+   * (type-specific hardware), with regional material adjustment applied.
+   * Excludes equipment rentals, delivery, disposal, regulatory.
+   * Optional for backward compatibility with saved estimates generated
+   * before this field existed.
+   */
+  materialOnlyCost?: number;
   totalLaborHrs: number;
   totalLaborCost: number;
   totalCost: number;

@@ -83,7 +83,11 @@ export function buildQuoteMetadata(validityDays = 30): QuoteMetadata {
 export function buildCustomerProposal(
   result: FenceEstimateResult,
   fenceType: FenceType,
-  quoteValidUntil: string
+  quoteValidUntil: string,
+  /** Hours per crew-day; defaults to 8 if the caller can't supply config.
+   *  Must match `config.production.hoursPerDay` in the engine so the
+   *  customer sees the same day count the contractor sees internally. */
+  hoursPerDay: number = 8,
 ): CustomerProposalSummary {
   const graph = result.graph;
   const productLine = graph.productLine;
@@ -93,7 +97,8 @@ export function buildCustomerProposal(
   const totalLF = Math.round(segEdges.reduce((s, e) => s + e.length_in / 12, 0));
   const gateCount = graph.edges.filter(e => e.type === "gate").length;
 
-  const estimatedInstallDays = Math.max(1, Math.ceil(result.totalLaborHrs / 8));
+  const safeHoursPerDay = hoursPerDay > 0 ? hoursPerDay : 8;
+  const estimatedInstallDays = Math.max(1, Math.ceil(result.totalLaborHrs / safeHoursPerDay));
 
   const finalQuotedTotal = result.commercialSummary?.finalQuotedTotal ?? result.totalCost;
 

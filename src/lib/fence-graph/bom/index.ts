@@ -351,7 +351,8 @@ export function generateBom(
   const customerProposal = buildCustomerProposal(
     { totalLaborHrs, totalCost: Math.round(finalQuotedTotal), bom, graph, commercialSummary } as FenceEstimateResult,
     fenceType,
-    quoteMetadata.quoteValidUntil
+    quoteMetadata.quoteValidUntil,
+    config.production.hoursPerDay,
   );
   const termsAndConditions = buildTermsAndConditions(options.customTerms);
   const shoppingListGroups = groupBomIntoShoppingList(bom);
@@ -363,6 +364,10 @@ export function generateBom(
     bom,
     laborDrivers,
     totalMaterialCost: adjustedMaterialCost,
+    // True materials-only subtotal — excludes equipment, logistics,
+    // disposal, and regulatory so customer-facing renderers can show
+    // an honest "Materials" line without rolling in service costs.
+    materialOnlyCost: Math.round(materialOnlyCost),
     totalLaborHrs,
     totalLaborCost: adjustedLaborCost,
     totalCost: Math.round(finalQuotedTotal),
