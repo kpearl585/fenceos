@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import type {
   FenceProjectInput,
   FenceEstimateResult,
@@ -73,6 +74,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
     input, result, projectName, laborRate, wastePct, markupPct,
     fenceType, woodStyle, customer, totalLF,
   } = args;
+  const router = useRouter();
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [pdfStatus, setPdfStatus] = useState<PdfStatus>("idle");
@@ -135,13 +137,13 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
     });
     if (res.success && res.estimateId) {
       setConvertStatus("done");
-      window.location.href = `/dashboard/estimates/${res.estimateId}`;
+      router.push(`/dashboard/estimates/${res.estimateId}`);
     } else {
       setConvertStatus("error");
       setConvertError(res.error ?? "Conversion failed");
       setTimeout(() => setConvertStatus("idle"), 4000);
     }
-  }, [result, projectName, laborRate, markupPct, totalLF, fenceType, customer]);
+  }, [result, projectName, laborRate, markupPct, totalLF, fenceType, customer, router]);
 
   return {
     saveStatus, pdfStatus, proposalStatus, convertStatus, convertError,

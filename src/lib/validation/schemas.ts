@@ -11,70 +11,8 @@ import { z } from "zod";
 // ADVANCED ESTIMATE VALIDATION
 // ═══════════════════════════════════════════════════════════════
 
-export const SaveEstimateSchema = z.object({
-  name: z.string()
-    .min(1, "Estimate name required")
-    .max(200, "Estimate name too long")
-    .trim(),
-
-  laborRate: z.number()
-    .min(0, "Labor rate cannot be negative")
-    .max(500, "Labor rate unreasonably high")
-    .finite(),
-
-  wastePct: z.number()
-    .min(0, "Waste % cannot be negative")
-    .max(100, "Waste % cannot exceed 100%")
-    .finite(),
-
-  input: z.object({
-    customer: z.object({
-      name: z.string().max(200).trim(),
-      email: z.string().email().max(255).optional().or(z.literal("")),
-      phone: z.string().max(20).trim().optional().or(z.literal("")),
-      address: z.string().max(500).trim().optional().or(z.literal("")),
-    }),
-
-    fenceType: z.enum([
-      "vinyl_privacy",
-      "vinyl_semi_privacy",
-      "wood_privacy",
-      "wood_picket",
-      "chain_link",
-      "aluminum_ornamental"
-    ]),
-
-    height: z.enum(["4ft", "5ft", "6ft", "8ft"]),
-
-    runs: z.array(z.object({
-      id: z.string(),
-      linearFeet: z.number().min(1).max(10000).finite(),
-      slope: z.enum(["flat", "gentle", "moderate", "steep"]),
-      terrain: z.enum(["standard", "rocky", "sandy_loam", "sandy", "wet"]),
-      options: z.array(z.string()).optional(),
-    })).min(1, "At least one run required").max(100, "Too many runs"),
-
-    gates: z.array(z.object({
-      id: z.string(),
-      type: z.enum(["single_walk", "double_walk", "single_drive", "double_drive"]),
-      width: z.enum(["4ft", "6ft", "10ft", "12ft", "16ft"]),
-      quantity: z.number().int().min(1).max(50).finite(),
-    })).max(100, "Too many gates"),
-
-    extras: z.array(z.object({
-      id: z.string(),
-      name: z.string().max(200).trim(),
-      quantity: z.number().int().min(1).max(1000).finite(),
-      unitCost: z.number().min(0).max(100000).finite(),
-    })).max(200, "Too many extras"),
-  }),
-
-  result: z.object({
-    bom: z.array(z.any()),
-    labor: z.array(z.any()),
-    totalCost: z.number().min(0).max(10000000).finite(),
-  }),
-});
+// SaveEstimateSchema is defined further down, after FenceProjectInputSchema
+// (declaration order matters because `input` references it).
 
 // ═══════════════════════════════════════════════════════════════
 // FENCE PROJECT INPUT (Advanced Estimator engine shape)
@@ -119,6 +57,39 @@ export const GenerateAdvancedPdfSchema = z.object({
   laborRate: z.number().min(0).max(500).finite(),
   wastePct: z.number().min(0).max(100).finite(),
   projectName: z.string().min(1).max(200).trim(),
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SAVE ESTIMATE — matches runtime FenceProjectInput shape
+// ═══════════════════════════════════════════════════════════════
+export const SaveEstimateSchema = z.object({
+  name: z.string()
+    .min(1, "Estimate name required")
+    .max(200, "Estimate name too long")
+    .trim(),
+
+  laborRate: z.number()
+    .min(0, "Labor rate cannot be negative")
+    .max(500, "Labor rate unreasonably high")
+    .finite(),
+
+  wastePct: z.number()
+    .min(0, "Waste % cannot be negative")
+    .max(100, "Waste % cannot exceed 100%")
+    .finite(),
+
+  input: FenceProjectInputSchema,
+
+  // Result is engine output; cap outermost numeric fields and let the
+  // nested BOM / labor / audit arrays pass through since they're not
+  // user-provided.
+  result: z.object({
+    bom: z.array(z.unknown()),
+    totalCost: z.number().min(0).max(10000000).finite(),
+    totalMaterialCost: z.number().min(0).max(10000000).finite().optional(),
+    totalLaborCost: z.number().min(0).max(10000000).finite().optional(),
+    totalLaborHrs: z.number().min(0).max(100000).finite().optional(),
+  }).passthrough(),
 });
 
 export const GenerateCustomerProposalPdfSchema = GenerateAdvancedPdfSchema.extend({

@@ -219,13 +219,26 @@ export async function listAdvancedEstimates(): Promise<{
 }
 
 // ── Fetch org branding ────────────────────────────────────────────
-async function getOrgInfo(userId: string): Promise<{
-  orgId: string; orgName: string; orgPhone: string; orgEmail: string; orgAddress: string;
-}> {
+// Returns null when the user has no profile — callers must bail rather
+// than fall through with an empty orgId (which would collide rate-limit
+// keys across every profileless user).
+interface OrgInfo {
+  orgId: string;
+  orgName: string;
+  orgPhone: string;
+  orgEmail: string;
+  orgAddress: string;
+}
+async function getOrgInfo(userId: string): Promise<OrgInfo | null> {
   const admin = createAdminClient();
-  const { data: profile } = await admin
+  const { data: profile, error: profileErr } = await admin
     .from("profiles").select("org_id").eq("auth_id", userId).single();
-  if (!profile) return { orgId: "", orgName: "Your Company", orgPhone: "", orgEmail: "", orgAddress: "" };
+  if (profileErr || !profile) {
+    if (profileErr) {
+      Sentry.captureException(profileErr, { tags: { step: 'getOrgInfo.profile' }, level: 'warning' });
+    }
+    return null;
+  }
 
   const { data: org } = await admin
     .from("organizations").select("name").eq("id", profile.org_id).single();
@@ -256,10 +269,11 @@ export async function generateAdvancedEstimatePdf(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
 
-    const { orgId, orgName } = await getOrgInfo(user.id);
+    const orgInfo = await getOrgInfo(user.id);
+    if (!orgInfo) return { success: false, error: "Profile not found" };
 
     // ✅ SECURITY: Rate limit PDF generation
-    const rateLimit = RateLimiters.pdfGeneration(orgId);
+    const rateLimit = RateLimiters.pdfGeneration(orgInfo.orgId);
     if (!rateLimit.success) {
       return { success: false, error: rateLimit.error };
     }
@@ -272,7 +286,7 @@ export async function generateAdvancedEstimatePdf(
     });
 
     const pdfElement = React.createElement(AdvancedEstimatePdf, {
-      result, projectName: validated.projectName, orgName,
+      result, projectName: validated.projectName, orgName: orgInfo.orgName,
       date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -312,10 +326,12 @@ export async function generateCustomerProposalPdf(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
 
-    const { orgId, orgName, orgPhone, orgEmail, orgAddress } = await getOrgInfo(user.id);
+    const orgInfo = await getOrgInfo(user.id);
+    if (!orgInfo) return { success: false, error: "Profile not found" };
+    const { orgName, orgPhone, orgEmail, orgAddress } = orgInfo;
 
     // ✅ SECURITY: Rate limit PDF generation
-    const rateLimit = RateLimiters.pdfGeneration(orgId);
+    const rateLimit = RateLimiters.pdfGeneration(orgInfo.orgId);
     if (!rateLimit.success) {
       return { success: false, error: rateLimit.error };
     }
