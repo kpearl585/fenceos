@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useTransition, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   estimateFence,
   PRODUCT_LINES,
@@ -56,14 +56,9 @@ function fmt(n: number) {
 const START_END_TYPES = ["end", "corner", "gate"] as const;
 const GATE_TYPES: GateType[] = ["single", "double"];
 
-let runIdCtr = 0;
-let gateIdCtr = 0;
-function newRunId() { return `run_${++runIdCtr}`; }
-function newGateId() { return `gate_${++gateIdCtr}`; }
-
-function defaultRun(): RunInput {
+function makeDefaultRun(id: string): RunInput {
   return {
-    id: newRunId(),
+    id,
     linearFeet: 0,
     startType: "end",
     endType: "end",
@@ -107,6 +102,11 @@ export default function AdvancedEstimateClient({
   estimatorConfig?: OrgEstimatorConfig;
   hasCustomConfig?: boolean;
 }) {
+  const runIdCtrRef = useRef(0);
+  const gateIdCtrRef = useRef(0);
+  const newRunId = useCallback(() => `run_${++runIdCtrRef.current}`, []);
+  const newGateId = useCallback(() => `gate_${++gateIdCtrRef.current}`, []);
+
   const [fenceType, setFenceType] = useState<FenceType>("vinyl");
   const [woodStyle, setWoodStyle] = useState<WoodStyle>("dog_ear_privacy");
   const [productLineId, setProductLineId] = useState("vinyl_privacy_6ft");
@@ -114,7 +114,7 @@ export default function AdvancedEstimateClient({
   const [windMode, setWindMode] = useState(false);
   const [laborRate, setLaborRate] = useState(65);
   const [wastePct, setWastePct] = useState(defaultWastePct);
-  const [runs, setRuns] = useState<RunInput[]>([defaultRun()]);
+  const [runs, setRuns] = useState<RunInput[]>(() => [makeDefaultRun(`run_${++runIdCtrRef.current}`)]);
   const [gates, setGates] = useState<GateInput[]>([]);
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
   const [inputMode, setInputMode] = useState<"manual" | "ai">(aiAvailable ? "ai" : "manual");
@@ -124,7 +124,6 @@ export default function AdvancedEstimateClient({
   const [customer, setCustomer] = useState({ name: "", address: "", city: "", phone: "", email: "" });
   const [proposalStatus, setProposalStatus] = useState<"idle" | "generating" | "error">("idle");
   const [pdfStatus, setPdfStatus] = useState<"idle" | "generating" | "error">("idle");
-  const [isPending, startTransition] = useTransition();
   const [convertStatus, setConvertStatus] = useState<"idle" | "converting" | "done" | "error">("idle");
   const [convertError, setConvertError] = useState<string | null>(null);
   // New: job site options
@@ -146,24 +145,6 @@ export default function AdvancedEstimateClient({
   const postSize = productLine?.postSize ?? "5x5";
   const fenceHeight = Math.round(productLine?.panelHeight_in / 12) as PanelHeight;
 
-  const input: FenceProjectInput = {
-    projectName: "Advanced Estimate",
-    productLineId,
-    fenceHeight,
-    postSize,
-    soilType,
-    windMode,
-    runs: runs.filter((r) => r.linearFeet > 0),
-    gates,
-    existingFenceRemoval,
-    permitCost: permitCost > 0 ? permitCost : undefined,
-    inspectionCost: inspectionCost > 0 ? inspectionCost : undefined,
-    engineeringCost: engineeringCost > 0 ? engineeringCost : undefined,
-    surveyCost: surveyCost > 0 ? surveyCost : undefined,
-  };
-
-  const [estimateError, setEstimateError] = useState<string | null>(null);
-
   // Auto-generate runs from simple mode inputs
   useEffect(() => {
     if (runsMode === "simple" && simpleTotalFeet > 0) {
@@ -182,34 +163,58 @@ export default function AdvancedEstimateClient({
       }
       setRuns(newRuns);
     }
-  }, [runsMode, simpleTotalFeet, simpleCorners]);
+  }, [runsMode, simpleTotalFeet, simpleCorners, newRunId]);
 
   // Build per-estimate config with labor efficiency override
   const estimateConfig = useMemo(() => {
     if (!estimatorConfig) return undefined;
-    if (laborEfficiency === 1.0) return estimatorConfig;
+    if (Math.abs(laborEfficiency - 1.0) < 1e-6) return estimatorConfig;
     return {
       ...estimatorConfig,
       laborEfficiency: { baseMultiplier: laborEfficiency },
     };
   }, [estimatorConfig, laborEfficiency]);
 
-  const result: FenceEstimateResult | null = useMemo(() => {
-    if (input.runs.length === 0) { setEstimateError(null); return null; }
+  // Combined memo: build input, run engine, capture errors — all pure, no setState-in-render.
+  const { input, result, estimateError } = useMemo<{
+    input: FenceProjectInput;
+    result: FenceEstimateResult | null;
+    estimateError: string | null;
+  }>(() => {
+    const nextInput: FenceProjectInput = {
+      projectName: "Advanced Estimate",
+      productLineId,
+      fenceHeight,
+      postSize,
+      soilType,
+      windMode,
+      runs: runs.filter((r) => r.linearFeet > 0),
+      gates,
+      existingFenceRemoval,
+      permitCost: permitCost > 0 ? permitCost : undefined,
+      inspectionCost: inspectionCost > 0 ? inspectionCost : undefined,
+      engineeringCost: engineeringCost > 0 ? engineeringCost : undefined,
+      surveyCost: surveyCost > 0 ? surveyCost : undefined,
+    };
+    if (nextInput.runs.length === 0) {
+      return { input: nextInput, result: null, estimateError: null };
+    }
     try {
-      const r = estimateFence(input, {
+      const r = estimateFence(nextInput, {
         fenceType, woodStyle, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap,
         estimatorConfig: estimateConfig,
       });
-      setEstimateError(null);
-      return r;
+      return { input: nextInput, result: r, estimateError: null };
     } catch (err) {
       const technicalMessage = err instanceof Error ? err.message : "Calculation error";
-      const friendlyMessage = getUserFriendlyError(technicalMessage);
-      setEstimateError(friendlyMessage);
-      return null;
+      return { input: nextInput, result: null, estimateError: getUserFriendlyError(technicalMessage) };
     }
-  }, [input, productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates, priceMap, estimateConfig, existingFenceRemoval, permitCost, inspectionCost, engineeringCost, surveyCost]);
+  }, [
+    productLineId, fenceHeight, postSize, soilType, windMode,
+    runs, gates, existingFenceRemoval,
+    permitCost, inspectionCost, engineeringCost, surveyCost,
+    fenceType, woodStyle, laborRate, wastePct, priceMap, estimateConfig,
+  ]);
 
   function updateRun(id: string, patch: Partial<RunInput>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -241,7 +246,8 @@ export default function AdvancedEstimateClient({
   const totalLF = runs.reduce((s, r) => s + (r.linearFeet || 0), 0);
   const hasValidInput = input.runs.length > 0;
 
-  const bidPrice = result ? Math.round(result.totalCost * (1 + markupPct / 100)) : 0;
+  const safeMarkupPct = Math.max(0, markupPct);
+  const bidPrice = result ? Math.round(result.totalCost * (1 + safeMarkupPct / 100)) : 0;
 
   async function handleProposalDownload() {
     if (!result) return;
@@ -295,7 +301,7 @@ export default function AdvancedEstimateClient({
   async function handleSave() {
     if (!result) return;
     setSaveStatus("saving");
-    const res = await saveAdvancedEstimate(input, { ...result, projectName, bidPrice } as typeof result & { bidPrice: number }, projectName, laborRate, wastePct / 100);
+    const res = await saveAdvancedEstimate(input, result, projectName, laborRate, wastePct / 100);
     setSaveStatus(res.success ? "saved" : "error");
     setTimeout(() => setSaveStatus("idle"), 3000);
   }
@@ -400,7 +406,7 @@ export default function AdvancedEstimateClient({
             setProductLineId(state.productLineId);
             setSoilType(state.soilType);
             setWindMode(state.windMode);
-            setRuns(state.runs.length > 0 ? state.runs : [defaultRun()]);
+            setRuns(state.runs.length > 0 ? state.runs : [makeDefaultRun(newRunId())]);
             setGates(state.gates);
             setInputMode("manual"); // Switch to manual so they can review/edit
           }} />
@@ -779,7 +785,7 @@ export default function AdvancedEstimateClient({
           </div>
 
           <button
-            onClick={() => setRuns((prev) => [...prev, defaultRun()])}
+            onClick={() => setRuns((prev) => [...prev, makeDefaultRun(newRunId())])}
             className="mt-4 w-full border-2 border-dashed border-gray-200 text-gray-400 hover:border-fence-400 hover:text-fence-600 rounded-xl py-3 text-sm font-semibold transition-colors"
           >
             + Add Run
@@ -815,15 +821,15 @@ export default function AdvancedEstimateClient({
               </div>
               {/* Bid price */}
               {result.totalCost > 0 && (() => {
-                const bidPrice = Math.round(result.totalCost * (1 + markupPct / 100));
-                const grossProfit = bidPrice - result.totalCost;
-                const grossMargin = Math.round((grossProfit / bidPrice) * 100);
-                const pricePerLF = totalLF > 0 ? Math.round(bidPrice / totalLF) : 0;
+                const bidPriceLocal = Math.round(result.totalCost * (1 + safeMarkupPct / 100));
+                const grossProfit = bidPriceLocal - result.totalCost;
+                const grossMargin = bidPriceLocal > 0 ? Math.round((grossProfit / bidPriceLocal) * 100) : 0;
+                const pricePerLF = totalLF > 0 ? Math.round(bidPriceLocal / totalLF) : 0;
                 return (
                   <div className="bg-fence-800 rounded-lg p-3">
                     <div className="flex justify-between items-center mb-2">
-                      <p className="text-fence-200 text-xs font-semibold uppercase tracking-wide">Bid Price ({markupPct}% markup)</p>
-                      <p className="text-2xl font-bold text-white">{fmt(bidPrice)}</p>
+                      <p className="text-fence-200 text-xs font-semibold uppercase tracking-wide">Bid Price ({safeMarkupPct}% markup)</p>
+                      <p className="text-2xl font-bold text-white">{fmt(bidPriceLocal)}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>

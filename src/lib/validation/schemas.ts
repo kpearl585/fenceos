@@ -77,6 +77,64 @@ export const SaveEstimateSchema = z.object({
 });
 
 // ═══════════════════════════════════════════════════════════════
+// FENCE PROJECT INPUT (Advanced Estimator engine shape)
+// Matches src/lib/fence-graph/engine.ts FenceProjectInput at runtime.
+// Uses .passthrough() so future engine fields don't break validation.
+// ═══════════════════════════════════════════════════════════════
+
+export const RunInputSchema = z.object({
+  id: z.string().min(1).max(100),
+  linearFeet: z.number().min(0).max(100000).finite(),
+  startType: z.enum(["end", "corner", "gate"]),
+  endType: z.enum(["end", "corner", "gate"]),
+  slopeDeg: z.number().min(-45).max(45).finite(),
+}).passthrough();
+
+export const GateInputSchema = z.object({
+  id: z.string().min(1).max(100),
+  afterRunId: z.string().min(1).max(100),
+  gateType: z.enum(["single", "double"]),
+  widthFt: z.number().min(1).max(30).finite(),
+  isPoolGate: z.boolean().optional(),
+}).passthrough();
+
+export const FenceProjectInputSchema = z.object({
+  projectName: z.string().max(200).optional(),
+  productLineId: z.string().min(1).max(100),
+  fenceHeight: z.number().int().min(3).max(12).finite(),
+  postSize: z.string().max(20),
+  soilType: z.enum(["standard", "clay", "rocky", "sandy_loam", "sandy", "wet"]),
+  windMode: z.boolean(),
+  runs: z.array(RunInputSchema).min(1, "At least one run required").max(100, "Too many runs"),
+  gates: z.array(GateInputSchema).max(50, "Too many gates"),
+  existingFenceRemoval: z.boolean().optional(),
+  permitCost: z.number().min(0).max(100000).finite().optional(),
+  inspectionCost: z.number().min(0).max(100000).finite().optional(),
+  engineeringCost: z.number().min(0).max(100000).finite().optional(),
+  surveyCost: z.number().min(0).max(100000).finite().optional(),
+}).passthrough();
+
+export const GenerateAdvancedPdfSchema = z.object({
+  input: FenceProjectInputSchema,
+  laborRate: z.number().min(0).max(500).finite(),
+  wastePct: z.number().min(0).max(100).finite(),
+  projectName: z.string().min(1).max(200).trim(),
+});
+
+export const GenerateCustomerProposalPdfSchema = GenerateAdvancedPdfSchema.extend({
+  markupPct: z.number().min(0).max(500).finite(),
+  fenceType: z.enum(["vinyl", "wood", "chain_link", "aluminum"]),
+  customer: z.object({
+    name: z.string().max(200).trim().optional().or(z.literal("")),
+    address: z.string().max(500).trim().optional().or(z.literal("")),
+    city: z.string().max(100).trim().optional().or(z.literal("")),
+    phone: z.string().max(20).trim().optional().or(z.literal("")),
+    email: z.string().email("Invalid email").max(255).trim().optional().or(z.literal("")),
+  }),
+  woodStyle: z.enum(["dog_ear_privacy", "flat_top_privacy", "picket", "board_on_board"]).optional(),
+});
+
+// ═══════════════════════════════════════════════════════════════
 // CUSTOMER VALIDATION
 // ═══════════════════════════════════════════════════════════════
 
