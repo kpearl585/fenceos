@@ -13,12 +13,13 @@ export const GateSchema = z.object({
 export const RunSchema = z.object({
   linearFeet: z.number().min(0).max(10000),
   fenceType: z.enum(["vinyl", "wood", "chain_link", "aluminum"]),
+  // Must stay in sync with EXTRACTION_JSON_SCHEMA below — anything Zod accepts
+  // that the JSON Schema rejects is dead drift since the model can never emit it.
   productLineId: z.enum([
     "vinyl_privacy_6ft", "vinyl_privacy_8ft", "vinyl_picket_4ft", "vinyl_picket_6ft",
     "wood_privacy_6ft", "wood_privacy_8ft", "wood_picket_4ft",
     "chain_link_4ft", "chain_link_6ft",
     "aluminum_4ft", "aluminum_6ft",
-    "classic_privacy_6ft",
   ]),
   heightFt: z.number().min(2).max(12),
   gates: z.array(GateSchema).default([]),
@@ -50,49 +51,71 @@ export const CritiqueSchema = z.object({
 });
 
 // ── Validate & sanitize extraction result ─────────────────────────
+// Returns three classifications:
+//   blockers: must be resolved before the extraction can be applied
+//   warnings: informational only; safe to apply but worth surfacing
+//   errors:   union of blockers + warnings (legacy field, kept for
+//             backward-compat with consumers that haven't migrated)
+//
+// UI consumers should prefer the explicit `blockers` array over
+// substring-matching the legacy `errors` array. The `blocked` boolean
+// stays as a fast-path summary equal to `blockers.length > 0`.
 export function validateExtraction(raw: unknown): {
   valid: boolean;
   data?: z.infer<typeof ExtractionSchema>;
   errors: string[];
+  warnings: string[];
+  blockers: string[];
   blocked: boolean;
 } {
   const result = ExtractionSchema.safeParse(raw);
   if (!result.success) {
-    const errors = result.error.issues.map(i => `${i.path.join(".")}: ${i.message}`);
-    return { valid: false, errors, blocked: true };
+    const messages = result.error.issues.map(i => `${i.path.join(".")}: ${i.message}`);
+    return {
+      valid: false,
+      errors: messages,
+      warnings: [],
+      blockers: messages,
+      blocked: true,
+    };
   }
 
   const data = result.data;
-  const errors: string[] = [];
-  let blocked = false;
+  const blockers: string[] = [];
+  const warnings: string[] = [];
 
   // Business rules on top of schema
   for (let i = 0; i < data.runs.length; i++) {
     const run = data.runs[i];
     if (run.linearFeet === 0) {
-      errors.push(`Run ${i + 1} (${run.runLabel || "unlabeled"}): linearFeet is 0 — blocked`);
-      blocked = true;
+      blockers.push(`Run ${i + 1} (${run.runLabel || "unlabeled"}): linearFeet is 0`);
     }
     if (run.linearFeet > 5000) {
-      errors.push(`Run ${i + 1}: ${run.linearFeet} LF seems unusually long — verify`);
+      warnings.push(`Run ${i + 1}: ${run.linearFeet} LF seems unusually long — verify`);
     }
     for (const gate of run.gates) {
       if (gate.type === "double_drive" && gate.widthFt < 8) {
-        errors.push(`Run ${i + 1}: double drive gate is only ${gate.widthFt}ft — typical minimum is 10ft`);
+        warnings.push(`Run ${i + 1}: double drive gate is only ${gate.widthFt}ft — typical minimum is 10ft`);
       }
       if (gate.type === "pool" && !run.poolCode) {
         run.poolCode = true; // auto-correct
-        errors.push(`Run ${i + 1}: pool gate detected — poolCode auto-set to true`);
+        warnings.push(`Run ${i + 1}: pool gate detected — poolCode auto-set to true`);
       }
     }
   }
 
   if (data.runs.length === 0) {
-    errors.push("No runs extracted — cannot apply");
-    blocked = true;
+    blockers.push("No runs extracted — cannot apply");
   }
 
-  return { valid: true, data, errors, blocked };
+  return {
+    valid: true,
+    data,
+    errors: [...blockers, ...warnings], // legacy combined field
+    warnings,
+    blockers,
+    blocked: blockers.length > 0,
+  };
 }
 
 // ── OpenAI JSON Schema (for response_format) ──────────────────────

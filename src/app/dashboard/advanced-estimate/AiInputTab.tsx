@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { extractFromText, extractFromImage } from "./aiActions";
 import type { AiExtractionResult, AiExtractedRun, CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import type { RunInput, GateInput, FenceType } from "@/lib/fence-graph/engine";
@@ -19,13 +19,17 @@ interface Props {
   onApply: (state: AiAppliedState) => void;
 }
 
-let runCtr = 0;
-let gateCtr = 0;
-function newRunId() { return `ai_run_${++runCtr}`; }
-function newGateId() { return `ai_gate_${++gateCtr}`; }
-
 // ── Convert AI extraction → engine state ─────────────────────────
-function toEngineState(result: AiExtractionResult): AiAppliedState | null {
+// Pure function so we can unit-test it without mounting the component.
+// Multi-run extractions mark the joining nodes as corners (startType =
+// "corner" on every run after the first) so the builder reinforces them
+// and applies corner concrete depth — previously every joining node was
+// left as "end", silently under-bidding multi-run AI jobs.
+export function toEngineState(
+  result: AiExtractionResult,
+  newRunId: () => string,
+  newGateId: () => string,
+): AiAppliedState | null {
   if (!result.runs.length) return null;
 
   // Pick dominant fence type (most LF)
@@ -43,13 +47,19 @@ function toEngineState(result: AiExtractionResult): AiAppliedState | null {
   // Build engine runs + gates
   const engineRuns: RunInput[] = [];
   const engineGates: GateInput[] = [];
+  const isMultiRun = result.runs.length > 1;
 
-  for (const aiRun of result.runs) {
+  for (let i = 0; i < result.runs.length; i++) {
+    const aiRun = result.runs[i];
     const runId = newRunId();
     engineRuns.push({
       id: runId,
       linearFeet: aiRun.linearFeet,
-      startType: "end",
+      // First run starts at an open end. Every subsequent run starts at a
+      // corner so the builder mutates the shared previous-end node into a
+      // corner post (reinforced + structural concrete depth). This is what
+      // makes multi-run AI jobs bid the same as manually-entered multi-run.
+      startType: i > 0 && isMultiRun ? "corner" : "end",
       endType: "end",
       slopeDeg: aiRun.slopePercent ? Math.round(Math.atan(aiRun.slopePercent / 100) * (180 / Math.PI)) : 0,
     });
@@ -92,6 +102,14 @@ function confidenceLabel(c: number) {
 }
 
 export default function AiInputTab({ onApply }: Props) {
+  // Per-instance ID counters so two AI tabs (or multiple extractions on
+  // the same page) can't collide IDs. Replaces the prior module-level
+  // mutable counters that leaked across mounts and HMR.
+  const runCtrRef = useRef(0);
+  const gateCtrRef = useRef(0);
+  const newRunId = useCallback(() => `ai_run_${++runCtrRef.current}`, []);
+  const newGateId = useCallback(() => `ai_gate_${++gateCtrRef.current}`, []);
+
   const [mode, setMode] = useState<"text" | "image">("text");
   const [text, setText] = useState("");
   const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -101,8 +119,12 @@ export default function AiInputTab({ onApply }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AiExtractionResult | null>(null);
   const [critique, setCritique] = useState<CritiqueResult | null>(null);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [blocked, setBlocked] = useState(false);
+  const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
+  const [validationBlockers, setValidationBlockers] = useState<string[]>([]);
+  // criticallyBlocked is the unified gate the Apply button respects; it's
+  // true if Zod/business rules blocked, OR critique returned criticalBlockers,
+  // OR critique LLM said overallReadyToApply=false.
+  const [criticallyBlocked, setCriticallyBlocked] = useState(false);
   const [rateRemaining, setRateRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
@@ -113,8 +135,9 @@ export default function AiInputTab({ onApply }: Props) {
     setError(null);
     setResult(null);
     setCritique(null);
-    setValidationErrors([]);
-    setBlocked(false);
+    setValidationWarnings([]);
+    setValidationBlockers([]);
+    setCriticallyBlocked(false);
     setApplied(false);
 
     const res = mode === "text"
@@ -129,14 +152,16 @@ export default function AiInputTab({ onApply }: Props) {
     }
     setResult(res.result);
     setCritique(res.critique ?? null);
-    setValidationErrors(res.validationErrors ?? []);
-    setBlocked(res.blocked ?? false);
+    setValidationWarnings(res.validationWarnings ?? []);
+    setValidationBlockers(res.validationBlockers ?? []);
+    setCriticallyBlocked(res.criticallyBlocked ?? res.blocked ?? false);
     if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
   }
 
   function handleApply() {
     if (!result) return;
-    const state = toEngineState(result);
+    if (criticallyBlocked) return; // hard guard in addition to the disabled button
+    const state = toEngineState(result, newRunId, newGateId);
     if (!state) return;
     onApply(state);
     setApplied(true);
@@ -301,24 +326,32 @@ export default function AiInputTab({ onApply }: Props) {
             <span className="text-2xl font-bold flex-shrink-0">{Math.round(result.confidence * 100)}%</span>
           </div>
 
-          {/* Critical blockers */}
-          {(blocked || (critique?.criticalBlockers?.length ?? 0) > 0) && (
+          {/* Critical blockers — unified from validation + critique.
+              Reads the explicit blockers array instead of substring-matching
+              the legacy combined errors array. */}
+          {criticallyBlocked && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
               <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">Cannot apply — resolve first</p>
               <ul className="space-y-1">
-                {[...(critique?.criticalBlockers ?? []), ...validationErrors.filter(e => e.includes("blocked"))].map((b, i) => (
+                {[...validationBlockers, ...(critique?.criticalBlockers ?? [])].map((b, i) => (
                   <li key={i} className="text-xs text-red-800 flex gap-2"><span className="font-bold">!</span><span>{b}</span></li>
                 ))}
+                {critique?.overallReadyToApply === false && (critique?.criticalBlockers?.length ?? 0) === 0 && (
+                  <li className="text-xs text-red-800 flex gap-2">
+                    <span className="font-bold">!</span>
+                    <span>Quality-control review flagged this extraction as not ready to apply.</span>
+                  </li>
+                )}
               </ul>
             </div>
           )}
 
-          {/* Auto-corrections */}
-          {validationErrors.filter(e => !e.includes("blocked")).length > 0 && (
+          {/* Auto-corrections + warnings (informational, safe to apply) */}
+          {validationWarnings.length > 0 && (
             <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
               <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-2">Auto-corrected</p>
               <ul className="space-y-1">
-                {validationErrors.filter(e => !e.includes("blocked")).map((e, i) => (
+                {validationWarnings.map((e, i) => (
                   <li key={i} className="text-xs text-orange-800 flex gap-2"><span className="text-orange-400">—</span><span>{e}</span></li>
                 ))}
               </ul>
@@ -401,11 +434,11 @@ export default function AiInputTab({ onApply }: Props) {
                 ) : (
                   <button
                     onClick={handleApply}
-                    disabled={blocked}
-                    title={blocked ? "Resolve critical blockers before applying" : undefined}
+                    disabled={criticallyBlocked}
+                    title={criticallyBlocked ? "Resolve critical blockers before applying" : undefined}
                     className="px-4 py-2 bg-fence-600 text-white text-sm font-bold rounded-lg hover:bg-fence-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {blocked ? "Blocked" : "Apply to Estimate"}
+                    {criticallyBlocked ? "Blocked" : "Apply to Estimate"}
                   </button>
                 )}
               </div>

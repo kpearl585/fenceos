@@ -1,6 +1,7 @@
 "use server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
+import * as Sentry from "@sentry/nextjs";
 import { SYSTEM_PROMPT, USER_PROMPT_TEXT, USER_PROMPT_IMAGE } from "@/lib/fence-graph/ai-extract/prompt";
 import { CRITIQUE_SYSTEM_PROMPT, CRITIQUE_USER_PROMPT } from "@/lib/fence-graph/ai-extract/critique-prompt";
 import { EXTRACTION_JSON_SCHEMA, CRITIQUE_JSON_SCHEMA, validateExtraction } from "@/lib/fence-graph/ai-extract/schema";
@@ -29,20 +30,32 @@ export async function checkAiReadiness(): Promise<{ available: boolean; reason?:
 }
 
 // ── Rate limiter ──────────────────────────────────────────────────
-async function checkRateLimit(orgId: string): Promise<{ allowed: boolean; remaining: number }> {
+// Fails CLOSED on DB error so a Supabase outage cannot bypass the
+// per-org GPT-4o budget. Errors are captured to Sentry so an outage
+// is observable even when the user-facing message is generic.
+async function checkRateLimit(orgId: string): Promise<{ allowed: boolean; remaining: number; error?: string }> {
   try {
     const admin = createAdminClient();
     const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-    const { count } = await admin
+    const { count, error } = await admin
       .from("ai_extraction_log")
       .select("*", { count: "exact", head: true })
       .eq("org_id", orgId)
       .gte("created_at", since);
 
+    if (error) throw error;
     const used = count ?? 0;
     return { allowed: used < RATE_LIMIT_PER_HOUR, remaining: Math.max(0, RATE_LIMIT_PER_HOUR - used) };
-  } catch {
-    return { allowed: true, remaining: RATE_LIMIT_PER_HOUR }; // fail open on rate check error
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { feature: "ai-extraction", step: "rate-limit-check" },
+      level: "warning",
+    });
+    return {
+      allowed: false,
+      remaining: 0,
+      error: "Rate limit check temporarily unavailable. Please retry in a moment.",
+    };
   }
 }
 
@@ -264,10 +277,13 @@ export async function extractFromText(
   const auth = await getAuthContext();
   if (!auth) return { success: false, error: "Not authenticated" };
 
-  // Rate limit
+  // Rate limit (fails CLOSED on DB error)
   const rateCheck = await checkRateLimit(auth.orgId);
   if (!rateCheck.allowed) {
-    return { success: false, error: `Rate limit reached. You have used ${RATE_LIMIT_PER_HOUR} AI extractions this hour. Try again later.` };
+    return {
+      success: false,
+      error: rateCheck.error ?? `Rate limit reached. You have used ${RATE_LIMIT_PER_HOUR} AI extractions this hour. Try again later.`,
+    };
   }
 
   const inputHash = crypto.createHash("sha256").update(description).digest("hex").slice(0, 16);
@@ -298,6 +314,14 @@ export async function extractFromText(
     // Detect hidden cost flags
     result.hiddenCostFlags = detectHiddenCosts(description, result);
 
+    // Compute the unified critically-blocked flag the UI uses to gate Apply.
+    // Any of: schema/business-rule blocker, critique critical blocker, or
+    // critique LLM explicit "not ready to apply" verdict.
+    const criticallyBlocked =
+      validation.blocked ||
+      (critique?.criticalBlockers?.length ?? 0) > 0 ||
+      (critique != null && critique.overallReadyToApply === false);
+
     // Persist audit (non-blocking)
     void persistAudit({
       orgId: auth.orgId,
@@ -317,7 +341,10 @@ export async function extractFromText(
       result,
       critique: critique ?? undefined,
       validationErrors: validation.errors,
+      validationBlockers: validation.blockers,
+      validationWarnings: validation.warnings,
       blocked: validation.blocked,
+      criticallyBlocked,
       inputTokens,
       outputTokens,
       rateRemaining: rateCheck.remaining - 1,
@@ -325,6 +352,10 @@ export async function extractFromText(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Extraction failed";
     if (msg.startsWith("AI_UNAVAILABLE")) return { success: false, error: "AI extraction is not available. Contact your administrator." };
+    Sentry.captureException(err, {
+      tags: { feature: "ai-extraction", step: "extract-text" },
+      level: "error",
+    });
     return { success: false, error: msg };
   }
 }
@@ -345,7 +376,10 @@ export async function extractFromImage(
 
   const rateCheck = await checkRateLimit(auth.orgId);
   if (!rateCheck.allowed) {
-    return { success: false, error: `Rate limit reached (${RATE_LIMIT_PER_HOUR}/hour). Try again later.` };
+    return {
+      success: false,
+      error: rateCheck.error ?? `Rate limit reached (${RATE_LIMIT_PER_HOUR}/hour). Try again later.`,
+    };
   }
 
   // Size check — keep under 4MB for performance
@@ -383,6 +417,12 @@ export async function extractFromImage(
     // Detect hidden cost flags (use additionalText if available)
     result.hiddenCostFlags = detectHiddenCosts(additionalText || "", result);
 
+    // Same critically-blocked flag the text path uses.
+    const criticallyBlocked =
+      validation.blocked ||
+      (critique?.criticalBlockers?.length ?? 0) > 0 ||
+      (critique != null && critique.overallReadyToApply === false);
+
     // Persist audit
     void persistAudit({
       orgId: auth.orgId,
@@ -402,13 +442,20 @@ export async function extractFromImage(
       result,
       critique: critique ?? undefined,
       validationErrors: validation.errors,
+      validationBlockers: validation.blockers,
+      validationWarnings: validation.warnings,
       blocked: validation.blocked,
+      criticallyBlocked,
       inputTokens,
       outputTokens,
       rateRemaining: rateCheck.remaining - 1,
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Image extraction failed";
+    Sentry.captureException(err, {
+      tags: { feature: "ai-extraction", step: "extract-image" },
+      level: "error",
+    });
     return { success: false, error: msg };
   }
 }

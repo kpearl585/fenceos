@@ -45,8 +45,19 @@ export interface AiExtractionResponse {
   success: boolean;
   result?: AiExtractionResult;
   critique?: CritiqueResult;
+  /** Legacy combined messages (warnings + blockers). UI should prefer
+   *  validationBlockers / validationWarnings going forward. */
   validationErrors?: string[];
-  blocked?: boolean;           // true if Zod validation found critical blockers
+  /** Critical issues that must be resolved before applying. */
+  validationBlockers?: string[];
+  /** Informational issues that don't prevent applying. */
+  validationWarnings?: string[];
+  /** True if ANY of: Zod validation blocked, business rule blocked,
+   *  critique returned criticalBlockers, or critique set
+   *  overallReadyToApply=false. UI Apply button must respect this flag. */
+  criticallyBlocked?: boolean;
+  /** @deprecated use criticallyBlocked. Kept for backward compat. */
+  blocked?: boolean;
   error?: string;
   inputTokens?: number;
   outputTokens?: number;
