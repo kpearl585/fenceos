@@ -1,23 +1,20 @@
 "use client";
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import {
-  estimateFence,
   PRODUCT_LINES,
-  type FenceProjectInput,
   type RunInput,
   type GateInput,
-  type FenceEstimateResult,
   type FenceType,
   type WoodStyle,
   type OrgEstimatorConfig,
 } from "@/lib/fence-graph/engine";
-import { saveAdvancedEstimate, generateAdvancedEstimatePdf, generateCustomerProposalPdf } from "./actions";
-import { createEstimateFromFenceGraph } from "./convertActions";
 import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/exportBomExcel";
-import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
+import type { SoilType, PanelHeight, GateType } from "@/lib/fence-graph/types";
 import AiInputTab, { type AiAppliedState } from "./AiInputTab";
 import EstimatorFeedbackButton from "@/components/EstimatorFeedbackButton";
 import { HelpTooltip } from "@/components/Tooltip";
+import { useFenceEstimate } from "./hooks/useFenceEstimate";
+import { useEstimateActions } from "./hooks/useEstimateActions";
 
 const FENCE_TYPES: { value: FenceType; label: string }[] = [
   { value: "vinyl", label: "Vinyl" },
@@ -66,29 +63,6 @@ function makeDefaultRun(id: string): RunInput {
   };
 }
 
-// Map technical errors to contractor-friendly messages
-function getUserFriendlyError(technicalMessage: string): string {
-  const errorMap: Record<string, string> = {
-    "RunInput.linearFeet required": "Please enter the linear feet for your fence runs",
-    "No runs provided": "Add at least one fence section to generate an estimate",
-    "runs.length === 0": "Add at least one fence section to generate an estimate",
-    "Invalid post spacing": "Post spacing must be between 6-10 feet for this fence type",
-    "Gate width exceeds": "Gate is too wide for the fence section. Try a smaller gate or longer run",
-    "missing required": "Please fill in all required fields",
-    "calculation error": "Unable to calculate estimate. Please check your inputs and try again",
-  };
-
-  // Check if technical message contains any of our known error patterns
-  for (const [pattern, friendlyMsg] of Object.entries(errorMap)) {
-    if (technicalMessage.toLowerCase().includes(pattern.toLowerCase())) {
-      return friendlyMsg;
-    }
-  }
-
-  // Default fallback for unknown errors
-  return "Something went wrong. Please check your inputs and try again.";
-}
-
 export default function AdvancedEstimateClient({
   priceMap = {},
   defaultWastePct = 5,
@@ -119,13 +93,8 @@ export default function AdvancedEstimateClient({
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
   const [inputMode, setInputMode] = useState<"manual" | "ai">(aiAvailable ? "ai" : "manual");
   const [projectName, setProjectName] = useState("New Estimate");
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [markupPct, setMarkupPct] = useState(35);
   const [customer, setCustomer] = useState({ name: "", address: "", city: "", phone: "", email: "" });
-  const [proposalStatus, setProposalStatus] = useState<"idle" | "generating" | "error">("idle");
-  const [pdfStatus, setPdfStatus] = useState<"idle" | "generating" | "error">("idle");
-  const [convertStatus, setConvertStatus] = useState<"idle" | "converting" | "done" | "error">("idle");
-  const [convertError, setConvertError] = useState<string | null>(null);
   // New: job site options
   const [existingFenceRemoval, setExistingFenceRemoval] = useState(false);
   const [laborEfficiency, setLaborEfficiency] = useState(1.0);
@@ -209,46 +178,12 @@ export default function AdvancedEstimateClient({
     };
   }, [estimatorConfig, laborEfficiency]);
 
-  // Combined memo: build input, run engine, capture errors — all pure, no setState-in-render.
-  const { input, result, estimateError } = useMemo<{
-    input: FenceProjectInput;
-    result: FenceEstimateResult | null;
-    estimateError: string | null;
-  }>(() => {
-    const nextInput: FenceProjectInput = {
-      projectName: "Advanced Estimate",
-      productLineId,
-      fenceHeight,
-      postSize,
-      soilType,
-      windMode,
-      runs: effectiveRuns.filter((r) => r.linearFeet > 0),
-      gates,
-      existingFenceRemoval,
-      permitCost: permitCost > 0 ? permitCost : undefined,
-      inspectionCost: inspectionCost > 0 ? inspectionCost : undefined,
-      engineeringCost: engineeringCost > 0 ? engineeringCost : undefined,
-      surveyCost: surveyCost > 0 ? surveyCost : undefined,
-    };
-    if (nextInput.runs.length === 0) {
-      return { input: nextInput, result: null, estimateError: null };
-    }
-    try {
-      const r = estimateFence(nextInput, {
-        fenceType, woodStyle, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap,
-        estimatorConfig: estimateConfig,
-      });
-      return { input: nextInput, result: r, estimateError: null };
-    } catch (err) {
-      const technicalMessage = err instanceof Error ? err.message : "Calculation error";
-      return { input: nextInput, result: null, estimateError: getUserFriendlyError(technicalMessage) };
-    }
-  }, [
+  const { input, result, estimateError, hasValidInput } = useFenceEstimate({
     productLineId, fenceHeight, postSize, soilType, windMode,
     effectiveRuns, gates, existingFenceRemoval,
     permitCost, inspectionCost, engineeringCost, surveyCost,
     fenceType, woodStyle, laborRate, wastePct, priceMap, estimateConfig,
-  ]);
+  });
 
   function updateRun(id: string, patch: Partial<RunInput>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -278,87 +213,17 @@ export default function AdvancedEstimateClient({
   }
 
   const totalLF = effectiveRuns.reduce((s, r) => s + (r.linearFeet || 0), 0);
-  const hasValidInput = input.runs.length > 0;
 
   const safeMarkupPct = Math.max(0, markupPct);
   const bidPrice = result ? Math.round(result.totalCost * (1 + safeMarkupPct / 100)) : 0;
 
-  async function handleProposalDownload() {
-    if (!result) return;
-    setProposalStatus("generating");
-    const res = await generateCustomerProposalPdf(
-      input, laborRate, wastePct, markupPct, projectName, fenceType, customer, woodStyle
-    );
-    if (res.success && res.pdf) {
-      const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${projectName.replace(/\s+/g, "-")}-proposal.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setProposalStatus("idle");
-    } else {
-      setProposalStatus("error");
-      setTimeout(() => setProposalStatus("idle"), 3000);
-    }
-  }
-
-  async function handleConvertToEstimate() {
-    if (!result) return;
-    if (!customer.name.trim()) {
-      setConvertError("Enter a customer name above before creating an estimate.");
-      return;
-    }
-    setConvertStatus("converting");
-    setConvertError(null);
-    const res = await createEstimateFromFenceGraph({
-      result,
-      projectName,
-      laborRate,
-      markupPct,
-      totalLF,
-      fenceType,
-      customer,
-    });
-    if (res.success && res.estimateId) {
-      setConvertStatus("done");
-      window.location.href = `/dashboard/estimates/${res.estimateId}`;
-    } else {
-      setConvertStatus("error");
-      setConvertError(res.error ?? "Conversion failed");
-      setTimeout(() => setConvertStatus("idle"), 4000);
-    }
-  }
-
-  async function handleSave() {
-    if (!result) return;
-    setSaveStatus("saving");
-    const res = await saveAdvancedEstimate(input, result, projectName, laborRate, wastePct / 100);
-    setSaveStatus(res.success ? "saved" : "error");
-    setTimeout(() => setSaveStatus("idle"), 3000);
-  }
-
-  async function handlePdfDownload() {
-    if (!result) return;
-    setPdfStatus("generating");
-    const res = await generateAdvancedEstimatePdf(input, laborRate, wastePct, projectName);
-    if (res.success && res.pdf) {
-      const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${projectName.replace(/\s+/g, "-")}-estimate.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setPdfStatus("idle");
-    } else {
-      setPdfStatus("error");
-      setTimeout(() => setPdfStatus("idle"), 3000);
-    }
-  }
+  const {
+    saveStatus, pdfStatus, proposalStatus, convertStatus, convertError,
+    handleSave, handlePdfDownload, handleProposalDownload, handleConvertToEstimate,
+  } = useEstimateActions({
+    input, result, projectName, laborRate, wastePct, markupPct,
+    fenceType, woodStyle, customer, totalLF,
+  });
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
