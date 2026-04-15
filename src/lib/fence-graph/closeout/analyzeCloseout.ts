@@ -54,8 +54,30 @@ function buildCostVariance(
 ): CostVarianceSummary {
   const estimatedRaw = cs?.rawEstimatedCost ?? estimate.totalCost;
 
-  // Derive actual total: explicit > sum of categories > fallback
-  const actualTotal = actuals.actualFinalJobCost ?? deriveActualTotal(actuals) ?? estimatedRaw;
+  // Derive actual total and track how trustworthy the derivation was so the
+  // UI can surface "partial" / "no data" warnings instead of letting a
+  // contractor read a "0% variance" and mistake it for a clean closeout.
+  const derivation = deriveActualTotal(actuals);
+  let actualTotal: number;
+  let dataCompleteness: "complete" | "partial" | "none";
+
+  if (actuals.actualFinalJobCost !== undefined && actuals.actualFinalJobCost !== null) {
+    // Contractor gave us an explicit final total.
+    actualTotal = actuals.actualFinalJobCost;
+    dataCompleteness = "complete";
+  } else if (derivation !== null) {
+    actualTotal = derivation;
+    dataCompleteness = "complete";
+  } else if (hasAnyCostActual(actuals)) {
+    // One or two categories present — not enough to derive a total reliably.
+    // Fall back to the estimate so we don't fabricate a large "under" variance
+    // from the absence of the unreported categories.
+    actualTotal = estimatedRaw;
+    dataCompleteness = "partial";
+  } else {
+    actualTotal = estimatedRaw;
+    dataCompleteness = "none";
+  }
 
   const varianceAmount = actualTotal - estimatedRaw;
   const variancePct = safeVariancePct(actualTotal, estimatedRaw);
@@ -65,7 +87,7 @@ function buildCostVariance(
 
   return {
     estimatedRawCost: estimatedRaw,
-    actualFinalJobCost: actualTotal,
+    actualFinalJobCost: Math.round(actualTotal),
     varianceAmount: Math.round(varianceAmount),
     variancePct: round4(variancePct),
     estimatedLaborHours: estimatedLaborHrs,
@@ -76,10 +98,40 @@ function buildCostVariance(
     laborHourVariancePct: actualLaborHrs !== null
       ? round4(safeVariancePct(actualLaborHrs, estimatedLaborHrs))
       : null,
+    dataCompleteness,
   };
 }
 
+/** Check whether the contractor provided ANY cost-actuals field. Used to
+ *  distinguish "no data" from "partial" and drive the dataCompleteness flag. */
+function hasAnyCostActual(actuals: CloseoutActuals): boolean {
+  return (
+    actuals.actualMaterialCost != null ||
+    actuals.actualLaborCost != null ||
+    actuals.actualEquipmentCost != null ||
+    actuals.actualLogisticsCost != null ||
+    actuals.actualDisposalCost != null ||
+    actuals.actualRegulatoryCost != null
+  );
+}
+
+/**
+ * Derive an actual final job cost from the provided category actuals — but
+ * ONLY when both of the two large buckets (material + labor) are present.
+ * Without both, a partial sum produces a wildly under-bidded "actual total"
+ * that poisons the variance analysis. Returning null here forces the caller
+ * to choose a safer fallback.
+ */
 function deriveActualTotal(actuals: CloseoutActuals): number | null {
+  const hasMaterial = actuals.actualMaterialCost != null;
+  const hasLabor = actuals.actualLaborCost != null;
+
+  // Material + labor are the minimum backbone for a meaningful total.
+  // Equipment/logistics/disposal/regulatory are often zero on a job, so a
+  // closeout lacking them isn't partial — but lacking either material or
+  // labor means the total can't be reconstructed.
+  if (!hasMaterial || !hasLabor) return null;
+
   const parts = [
     actuals.actualMaterialCost,
     actuals.actualLaborCost,
@@ -88,7 +140,7 @@ function deriveActualTotal(actuals: CloseoutActuals): number | null {
     actuals.actualDisposalCost,
     actuals.actualRegulatoryCost,
   ];
-  const available = parts.filter((v): v is number => v !== undefined && v !== null);
+  const available = parts.filter((v): v is number => v != null);
   if (available.length === 0) return null;
   return available.reduce((s, v) => s + v, 0);
 }
@@ -135,6 +187,14 @@ function buildCalibrationSignals(
 ): CalibrationSignal[] {
   const signals: CalibrationSignal[] = [];
 
+  // The labor-hours signal below is preferred over the labor-cost signal
+  // when both would fire — labor hours is more granular and both trace to
+  // the same underlying issue. This flag suppresses the cost-based one to
+  // stop the "same signal emitted twice" behavior.
+  const laborHoursSignalWillFire =
+    actuals.actualLaborHours != null &&
+    Math.abs(safeVariancePct(actuals.actualLaborHours, estimate.totalLaborHrs)) > ON_TARGET_THRESHOLD;
+
   // ── Category-based signals ──
   for (const cv of categoryVariances) {
     if (cv.status === "on_target") continue;
@@ -145,6 +205,9 @@ function buildCalibrationSignals(
 
     switch (cv.category) {
       case "Labor":
+        // Skip to avoid double-counting when the hours-based labor signal
+        // will also fire below — contractor sees one labor signal, not two.
+        if (laborHoursSignalWillFire) break;
         signals.push({
           type: cv.status === "over" ? "labor_underestimate" : "labor_overestimate",
           severity,
@@ -203,6 +266,28 @@ function buildCalibrationSignals(
           });
         }
         break;
+      case "Regulatory":
+        // Previously fell through with no handler — regulatory surprises
+        // (missed permits, unexpected engineering stamps) never generated
+        // a calibration signal.
+        if (cv.estimated === 0 && cv.actual > 0) {
+          signals.push({
+            type: "regulatory_missing",
+            severity: cv.actual >= 500 ? "high" : "medium",
+            message: `Regulatory cost of $${cv.actual} was incurred but not estimated (permit / inspection / engineering / survey)`,
+            recommendedConfigArea: "regulatory (add to project input checklist)",
+            recommendedDirection: "review",
+          });
+        } else if (cv.status === "over") {
+          signals.push({
+            type: "regulatory_underestimate",
+            severity,
+            message: `Regulatory cost was ${pctLabel} over estimate ($${cv.varianceAmount > 0 ? "+" : ""}${cv.varianceAmount})`,
+            recommendedConfigArea: "regulatory",
+            recommendedDirection: "increase",
+          });
+        }
+        break;
     }
   }
 
@@ -224,17 +309,21 @@ function buildCalibrationSignals(
   }
 
   // ── Concrete quantity signals ──
-  if (actuals.actualConcreteBags !== undefined) {
+  // Type is `concrete_underestimate` when we used MORE bags than planned,
+  // `concrete_overestimate` when we used fewer. Previous code used
+  // `waste_overestimate` for the fewer-bags case, which mislabeled the
+  // cause (could be engine tuning, not just waste factor).
+  if (actuals.actualConcreteBags != null) {
     const estBags = estimate.bom.find(b => b.sku === "CONCRETE_80LB")?.qty ?? 0;
     if (estBags > 0) {
       const bagsPct = safeVariancePct(actuals.actualConcreteBags, estBags);
       if (Math.abs(bagsPct) > ON_TARGET_THRESHOLD) {
         signals.push({
-          type: bagsPct > 0 ? "concrete_underestimate" : "waste_overestimate",
+          type: bagsPct > 0 ? "concrete_underestimate" : "concrete_overestimate",
           severity: severityFromPct(Math.abs(bagsPct)),
           message: `Concrete: estimated ${estBags} bags, actual ${actuals.actualConcreteBags} bags (${bagsPct > 0 ? "+" : ""}${Math.round(bagsPct * 100)}%)`,
-          recommendedConfigArea: "concrete.bagYieldCuFt",
-          recommendedDirection: bagsPct > 0 ? "review" : "review",
+          recommendedConfigArea: "concrete.bagYieldCuFt / soilConcreteFactor",
+          recommendedDirection: bagsPct > 0 ? "increase" : "decrease",
         });
       }
     }
@@ -318,20 +407,13 @@ function buildLearningSummary(
     return `${cv.category}: $${Math.abs(cv.varianceAmount)} ${dir} (${Math.abs(Math.round(cv.variancePct * 100))}%)`;
   });
 
-  // What went right: on-target categories
+  // What went right: on-target categories only. Previously when NO category
+  // was within ±5% the fallback labeled the "closest" loser as "what went
+  // right", which framed a variance as a win. Now an empty array is the
+  // honest answer — the UI can render "No categories within ±5%" itself.
   const whatWentRight = categoryVariances
     .filter(cv => cv.status === "on_target")
     .map(cv => `${cv.category} was within ±5% of estimate`);
-
-  if (whatWentRight.length === 0 && categoryVariances.length > 0) {
-    // Find the closest category
-    const closest = [...categoryVariances].sort(
-      (a, b) => Math.abs(a.variancePct) - Math.abs(b.variancePct)
-    )[0];
-    if (closest) {
-      whatWentRight.push(`${closest.category} was closest to estimate (${Math.abs(Math.round(closest.variancePct * 100))}% variance)`);
-    }
-  }
 
   // What to review: high-severity signals
   const whatToReviewNextTime = signals

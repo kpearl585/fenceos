@@ -62,18 +62,31 @@ export interface CostVarianceSummary {
   actualLaborHours: number | null;
   laborHourVariance: number | null;
   laborHourVariancePct: number | null;
+
+  /**
+   * How complete the closeout data was at time of analysis.
+   *   "complete" — explicit `actualFinalJobCost`, OR both material + labor provided
+   *   "partial"  — at least one category present but total could not be derived
+   *   "none"     — no actuals were provided; variance falls back to the estimate
+   * UI should warn the contractor when this is "partial" or "none" so they don't
+   * mistake an empty/partial analysis for a clean "on target" result.
+   */
+  dataCompleteness?: "complete" | "partial" | "none";
 }
 
 export type CalibrationSignalType =
   | "labor_underestimate"
   | "labor_overestimate"
   | "concrete_underestimate"
+  | "concrete_overestimate"
   | "material_underestimate"
   | "material_overestimate"
   | "equipment_missing"
   | "equipment_overestimate"
   | "delivery_missing"
   | "removal_underestimated"
+  | "regulatory_missing"
+  | "regulatory_underestimate"
   | "field_condition_rock"
   | "field_condition_roots"
   | "field_condition_water"
