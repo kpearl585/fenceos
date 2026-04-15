@@ -189,9 +189,11 @@ export function generateVinylBom(
   const gateSpecs = gateEdges.map(e => e.gateSpec).filter(spec => spec !== undefined);
 
   let totalGateLaborHours = 0;
+  let gateMissingSkus: string[] = [];
 
   if (gateSpecs.length > 0) {
-    const gateCosts = calculateAllGateCosts(gateSpecs, "vinyl", prices, 65, config);
+    const gateCosts = calculateAllGateCosts(gateSpecs, "vinyl", prices, undefined, config);
+    gateMissingSkus = Array.from(new Set(gateCosts.gates.flatMap(g => g.missingPriceSkus)));
 
     // Add gate material to BOM (aggregated by SKU)
     const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
@@ -199,10 +201,12 @@ export function generateVinylBom(
     for (const gateCost of gateCosts.gates) {
       const hw = gateCost.hardware;
 
-      // Gate panels
+      // Gate panels — distinct SKU per single/double avoids the BOM-map
+      // description collision that used to collapse mixed jobs into one row.
       const gateKey = hw.gateSku;
       if (!gateSkuMap.has(gateKey)) {
-        gateSkuMap.set(gateKey, { qty: 0, desc: `Vinyl Gate ${hw.gateQty > 1 ? '(double)' : '(single)'}`, unitCost: hw.gateUnitPrice });
+        const isDouble = hw.gateSku.endsWith("_DBL");
+        gateSkuMap.set(gateKey, { qty: 0, desc: isDouble ? "Vinyl Double Drive Gate" : "Vinyl Walk Gate", unitCost: hw.gateUnitPrice });
       }
       gateSkuMap.get(gateKey)!.qty += hw.gateQty;
 
@@ -250,11 +254,26 @@ export function generateVinylBom(
       totalGateLaborHours += gateCost.laborHours;
     }
 
-    // Add aggregated BOM items
+    // Add aggregated BOM items. Confidence is dropped below the 0.80
+    // redFlag threshold on any line whose SKU was missing from the price
+    // map, so the contractor sees "review" flag instead of silent $0.
     for (const [sku, data] of Array.from(gateSkuMap)) {
-      bom.push(makeBomItem(sku, data.desc, "gates", "ea", data.qty, 0.95, `${gateSpecs.length} gates`, data.unitCost));
+      const isMissing = gateMissingSkus.includes(sku);
+      bom.push(makeBomItem(
+        sku,
+        data.desc,
+        "gates",
+        "ea",
+        data.qty,
+        isMissing ? 0.60 : 0.95,
+        isMissing ? `${gateSpecs.length} gates — price missing, review` : `${gateSpecs.length} gates`,
+        data.unitCost,
+      ));
     }
 
+    if (gateMissingSkus.length > 0) {
+      audit.push(`⚠ Gate pricing: missing SKUs ${gateMissingSkus.join(", ")} — review before sending quote`);
+    }
     audit.push(`Gates: ${gateSpecs.length} total (deterministic pricing: $${gateCosts.totalMaterial.toFixed(2)} material, ${totalGateLaborHours}hrs labor)`);
   }
 

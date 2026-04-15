@@ -34,6 +34,9 @@ export interface GateCost {
   totalCost: number;
   hardware: GateHardware;
   breakdown: string;
+  /** SKUs that were missing from the price map; surfaces as a confidence
+   *  downgrade on the affected BOM line so missing pricing is not silent. */
+  missingPriceSkus: string[];
 }
 
 /**
@@ -44,7 +47,7 @@ export function calculateGateCost(
   gateSpec: GateSpec,
   fenceType: "vinyl" | "wood" | "chain_link" | "aluminum",
   priceMap: Record<string, number>,
-  laborRatePerHr: number,
+  laborRatePerHr?: number,
   config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): GateCost {
   const { gateType, openingWidth_in, isPoolGate } = gateSpec;
@@ -56,13 +59,15 @@ export function calculateGateCost(
   // Base gate SKU selection
   const baseSku = selectGateSku(fenceType, gateType, widthTier);
 
-  // Hardware package assembly
+  // Hardware package assembly (also records any SKUs missing from priceMap)
+  const missingPriceSkus: string[] = [];
   const hardware = assembleGateHardware(
     baseSku,
     gateType,
     fenceType,
     isPoolGate,
-    priceMap
+    priceMap,
+    missingPriceSkus,
   );
 
   // Calculate material cost
@@ -70,7 +75,10 @@ export function calculateGateCost(
 
   // Calculate labor hours (complexity-based, config-driven)
   const laborHours = calculateGateLaborHours(gateType, widthTier, fenceType, isPoolGate, config);
-  const laborCost = laborHours * laborRatePerHr;
+  // laborRatePerHr is optional — when not provided, leave laborCost at 0.
+  // Callers at the BOM level compute labor cost themselves from totalLaborHrs
+  // × the real rate, so forcing a value here would only mislead future readers.
+  const laborCost = typeof laborRatePerHr === "number" ? laborHours * laborRatePerHr : 0;
 
   // Generate breakdown
   const breakdown = generateGateBreakdown(hardware, laborHours, gateType, widthFt);
@@ -82,6 +90,7 @@ export function calculateGateCost(
     totalCost: materialCost + laborCost,
     hardware,
     breakdown,
+    missingPriceSkus,
   };
 }
 
@@ -104,12 +113,14 @@ function selectGateSku(
   widthTier: "small" | "standard" | "wide" | "extra_wide"
 ): string {
   if (gateType === "double") {
-    // Double gates: use appropriate double/drive gate SKU
+    // Double gates: dedicated drive-gate SKUs for all four fence types.
+    // Prior implementation used a 4ft single SKU × 2 for vinyl/aluminum,
+    // which systematically under-bid wide double gates by $200–$500 each.
     switch (fenceType) {
-      case "vinyl": return "GATE_VINYL_4FT"; // 2x single for double
+      case "vinyl": return "GATE_VINYL_DBL";
       case "wood": return "GATE_WOOD_DBL";
       case "chain_link": return "GATE_CL_DBL";
-      case "aluminum": return "GATE_ALUM_4FT"; // 2x single for double
+      case "aluminum": return "GATE_ALUM_DBL";
     }
   }
 
@@ -136,18 +147,36 @@ function assembleGateHardware(
   gateType: "single" | "double",
   fenceType: "vinyl" | "wood" | "chain_link" | "aluminum",
   isPoolGate: boolean | undefined,
-  priceMap: Record<string, number>
+  priceMap: Record<string, number>,
+  missingPriceSkus: string[] = [],
 ): GateHardware {
-  const p = (sku: string) => priceMap[sku] || 0;
+  // Nullish-coalesce so `undefined` is caught (missing) and `0` is preserved
+  // (legitimate zero price — e.g. comped item). Missing SKUs are recorded
+  // so the BOM layer can mark the line for review rather than silently
+  // under-bidding at $0.
+  const p = (sku: string) => {
+    const v = priceMap[sku];
+    if (v == null) {
+      if (!missingPriceSkus.includes(sku)) missingPriceSkus.push(sku);
+      return 0;
+    }
+    return v;
+  };
 
+  // Double-gate SKUs (GATE_*_DBL) are priced as one complete kit containing
+  // both leaves. Single-gate SKUs are one leaf. Keeping gateQty at 1 for
+  // doubles matches how the vendor invoices them and prevents the prior
+  // BOM-map collision between single and double rows of the same SKU.
   const hardware: GateHardware = {
     gateSku,
-    gateQty: gateType === "double" ? 2 : 1, // Double gates = 2 leaves
+    gateQty: 1,
     gateUnitPrice: p(gateSku),
 
-    // Hinges: 2 pairs per leaf
+    // Hinges: HINGE_HD is priced per pair.
+    // Single walk gate: 2 pairs (one top, one bottom — sag prevention on heavier gates).
+    // Double drive gate: 4 pairs (2 per leaf).
     hingeSku: "HINGE_HD",
-    hingeQty: gateType === "double" ? 4 : 2, // 2 pairs per leaf
+    hingeQty: gateType === "double" ? 4 : 2,
     hingeUnitPrice: p("HINGE_HD"),
 
     // Latch
@@ -279,7 +308,7 @@ export function calculateAllGateCosts(
   gates: GateSpec[],
   fenceType: "vinyl" | "wood" | "chain_link" | "aluminum",
   priceMap: Record<string, number>,
-  laborRatePerHr: number,
+  laborRatePerHr?: number,
   config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): {
   gates: GateCost[];

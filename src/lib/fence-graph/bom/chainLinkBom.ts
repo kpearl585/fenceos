@@ -140,9 +140,11 @@ export function generateChainLinkBom(
   // Gates (deterministic pricing engine)
   const gateSpecs = gateEdges.map(e => e.gateSpec).filter(spec => spec !== undefined);
   let totalGateLaborHours = 0;
+  let gateMissingSkus: string[] = [];
 
   if (gateSpecs.length > 0) {
-    const gateCosts = calculateAllGateCosts(gateSpecs, "chain_link", prices, 65, config);
+    const gateCosts = calculateAllGateCosts(gateSpecs, "chain_link", prices, undefined, config);
+    gateMissingSkus = Array.from(new Set(gateCosts.gates.flatMap(g => g.missingPriceSkus)));
 
     // Aggregate by SKU using Map
     const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
@@ -150,10 +152,10 @@ export function generateChainLinkBom(
     for (const gateCost of gateCosts.gates) {
       const hw = gateCost.hardware;
 
-      // Gate (single 4ft or double set)
+      // Gate (single walk or double drive kit — distinct SKU per type)
       const gateKey = hw.gateSku;
       if (!gateSkuMap.has(gateKey)) {
-        const gateDesc = hw.gateQty === 2 ? "Chain Link Double Drive Gate" : "Chain Link Walk Gate";
+        const gateDesc = hw.gateSku.endsWith("_DBL") ? "Chain Link Double Drive Gate" : "Chain Link Walk Gate";
         gateSkuMap.set(gateKey, { qty: 0, desc: gateDesc, unitCost: hw.gateUnitPrice });
       }
       gateSkuMap.get(gateKey)!.qty += hw.gateQty;
@@ -203,11 +205,25 @@ export function generateChainLinkBom(
       totalGateLaborHours += gateCost.laborHours;
     }
 
-    // Add aggregated BOM items
+    // Confidence dropped below 0.80 redFlag threshold on lines whose SKU
+    // was missing from the price map, surfacing silent $0 substitution.
     for (const [sku, data] of Array.from(gateSkuMap)) {
-      bom.push(makeBomItem(sku, data.desc, "gates", "ea", data.qty, 0.95, `${gateSpecs.length} gates`, data.unitCost));
+      const isMissing = gateMissingSkus.includes(sku);
+      bom.push(makeBomItem(
+        sku,
+        data.desc,
+        "gates",
+        "ea",
+        data.qty,
+        isMissing ? 0.60 : 0.95,
+        isMissing ? `${gateSpecs.length} gates — price missing, review` : `${gateSpecs.length} gates`,
+        data.unitCost,
+      ));
     }
 
+    if (gateMissingSkus.length > 0) {
+      audit.push(`⚠ Gate pricing: missing SKUs ${gateMissingSkus.join(", ")} — review before sending quote`);
+    }
     audit.push(`Gates: ${gateSpecs.length} total (deterministic pricing: $${gateCosts.totalMaterial.toFixed(2)} material, ${totalGateLaborHours}hrs labor)`);
   }
 

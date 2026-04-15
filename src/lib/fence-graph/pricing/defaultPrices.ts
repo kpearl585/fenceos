@@ -92,6 +92,7 @@ export const DEFAULT_PRICES_BASE: Record<string, number> = {
   // ── GATES ──────────────────────────────────────────────────────
   GATE_VINYL_4FT: 185.00,
   GATE_VINYL_6FT: 240.00,
+  GATE_VINYL_DBL: 485.00,           // Vinyl double drive gate kit (both leaves + center drop rod hw)
   GATE_WOOD_4FT: 165.00,
   GATE_WOOD_DBL: 425.00,
   GATE_CHAIN_LINK_4FT: 95.00,
@@ -100,6 +101,7 @@ export const DEFAULT_PRICES_BASE: Record<string, number> = {
   GATE_CL_DBL: 245.00,              // Alias for chain link double drive gate
   GATE_ALUMINUM_4FT: 295.00,
   GATE_ALUM_4FT: 295.00,            // Alias for aluminum walk gate
+  GATE_ALUM_DBL: 695.00,            // Aluminum ornamental double drive gate kit
 
   // ── GATE HARDWARE ──────────────────────────────────────────────
   HINGE_HD: 18.50,              // Heavy duty hinge (per pair)
