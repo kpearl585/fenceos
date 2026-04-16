@@ -10,6 +10,7 @@ import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
 import { calculateProjectTimeline } from "@/lib/fence-graph/calculateTimeline";
 import { SaveEstimateSchema, GenerateAdvancedPdfSchema, GenerateCustomerProposalPdfSchema } from "@/lib/validation/schemas";
 import { DEFAULT_CREW_LEAD_DAYS, DEFAULT_PROPOSAL_VALID_DAYS } from "./constants";
+import { instrument } from "@/lib/observability/estimator-instrumentation";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { SiteComplexity, CloseoutData, AccuracyMetrics } from "@/lib/fence-graph/accuracy-types";
@@ -156,6 +157,12 @@ export async function saveAdvancedEstimate(
     } catch (trackErr) {
       console.error('Failed to track success event:', trackErr);
     }
+
+    instrument.estimateSaved({
+      totalLF,
+      fenceType: "advanced",
+      totalCost: validated.result.totalCost,
+    });
 
     return { success: true, id: data.id };
   } catch (err: unknown) {

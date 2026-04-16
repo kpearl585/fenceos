@@ -8,6 +8,7 @@ import { EXTRACTION_JSON_SCHEMA, CRITIQUE_JSON_SCHEMA, validateExtraction } from
 import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph/ai-extract/types";
 import type { CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import { detectHiddenCosts } from "@/lib/fence-graph/ai-extract/hiddenCostDetection";
+import { instrument } from "@/lib/observability/estimator-instrumentation";
 import crypto from "crypto";
 
 // ── Rate limiting constants ────────────────────────────────────────
@@ -332,6 +333,15 @@ export async function extractFromText(
       critiqueJson: critique,
       validationErrors: validation.errors,
       confidence: result.confidence,
+      inputTokens,
+      outputTokens,
+    });
+
+    instrument.aiExtractionCompleted({
+      inputType: "text",
+      confidence: result.confidence,
+      runCount: result.runs.length,
+      blocked: criticallyBlocked,
       inputTokens,
       outputTokens,
     });
