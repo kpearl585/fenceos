@@ -166,91 +166,102 @@ export default function ProjectSetupCard({
             ))}
           </select>
         </div>
-        <div>
-          <label htmlFor="est-labor-rate" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-            Labor Rate ($/hr)
-            <HelpTooltip content="Your crew's hourly rate including wages, insurance, and benefits. Typical range: $50-80/hr for 2-person crew. System calculates hours based on fence complexity." />
-          </label>
-          <input
-            id="est-labor-rate"
-            type="number" min={LABOR_RATE_MIN} max={LABOR_RATE_MAX} value={laborRate}
-            onChange={(e) => onLaborRateChange(parseNumber(e, DEFAULT_LABOR_RATE))}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
-          />
-        </div>
-        <div>
-          <label htmlFor="est-waste-pct" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-            Waste Factor (%)
-            <HelpTooltip content="Extra material to account for cuts, defects, and installation errors. Typical: 5-7%. System learns your actual waste from completed jobs and adjusts this automatically." />
-          </label>
-          <input
-            id="est-waste-pct"
-            type="number" min={WASTE_PCT_MIN} max={WASTE_PCT_MAX} value={wastePct}
-            onChange={(e) => onWastePctChange(parseNumber(e, DEFAULT_WASTE_PCT))}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
-          />
-        </div>
-        <div>
-          <label htmlFor="est-markup-pct" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-            Markup Over Cost (%)
-            <HelpTooltip content="Your profit margin over total cost (materials + labor). Typical: 30-40%. This determines your bid price and gross profit." />
-          </label>
-          <input
-            id="est-markup-pct"
-            type="number" min={MARKUP_PCT_MIN} max={MARKUP_PCT_MAX} value={markupPct}
-            onChange={(e) => onMarkupPctChange(Math.max(0, parseNumber(e, DEFAULT_MARKUP_PCT)))}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
-          />
-        </div>
-      </div>
-      <div className="mt-4 space-y-3">
-        <ToggleSwitch
-          label="Wind Mode / Hurricane Zone"
-          checked={windMode}
-          onToggle={onWindModeToggle}
-          activeBadge={
-            <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-              Deeper posts + aluminum inserts + rebar applied
-            </span>
-          }
-        />
-        <ToggleSwitch
-          label="Existing Fence Removal"
-          checked={existingFenceRemoval}
-          onToggle={onExistingFenceRemovalToggle}
-          activeBadge={
-            <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-              Tear-down labor + post extraction + disposal
-            </span>
-          }
-        />
       </div>
 
-      {/* Labor Efficiency Slider */}
-      <div className="mt-4 border-t border-gray-100 pt-4">
-        <label htmlFor="est-labor-efficiency" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-          Site Difficulty Adjustment
-          <HelpTooltip content="Adjusts labor time for site conditions. Rocky soil, tight access, or difficult terrain = slide right (+). Wide open, easy access = slide left (-). Affects total labor hours and cost." />
-        </label>
-        <div className="flex items-center gap-3">
-          <input
-            id="est-labor-efficiency"
-            type="range"
-            min={LABOR_EFFICIENCY_MIN}
-            max={LABOR_EFFICIENCY_MAX}
-            step={LABOR_EFFICIENCY_STEP}
-            value={laborEfficiency}
-            onChange={(e) => onLaborEfficiencyChange(Number(e.target.value))}
-            className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-fence-600"
-          />
-          <span className="text-sm font-bold text-fence-900 w-14 text-right">
-            {Math.abs(laborEfficiency - 1.0) < 1e-6 ? "Normal" : `${laborEfficiency > 1 ? "+" : ""}${Math.round((laborEfficiency - 1) * 100)}%`}
+      {/* Business settings — collapsible so the contractor sees fence
+          type + measurements first, and these secondary options only
+          when they need to adjust from their defaults. */}
+      <details className="mt-4 border-t border-gray-100 pt-4">
+        <summary className="cursor-pointer flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Business Settings</span>
+          <span className="text-xs text-gray-400">
+            ${laborRate}/hr · {markupPct}% markup · {wastePct}% waste
           </span>
+        </summary>
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label htmlFor="est-labor-rate" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Labor Rate ($/hr)
+              <HelpTooltip content="Your crew's hourly rate including wages, insurance, and benefits. Typical range: $50-80/hr for 2-person crew. System calculates hours based on fence complexity." />
+            </label>
+            <input
+              id="est-labor-rate"
+              type="number" min={LABOR_RATE_MIN} max={LABOR_RATE_MAX} value={laborRate}
+              onChange={(e) => onLaborRateChange(parseNumber(e, DEFAULT_LABOR_RATE))}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+            />
+          </div>
+          <div>
+            <label htmlFor="est-waste-pct" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Waste (%)
+              <HelpTooltip content="Extra material to account for cuts, defects, and installation errors. Typical: 5-7%. System learns your actual waste from completed jobs and adjusts this automatically." />
+            </label>
+            <input
+              id="est-waste-pct"
+              type="number" min={WASTE_PCT_MIN} max={WASTE_PCT_MAX} value={wastePct}
+              onChange={(e) => onWastePctChange(parseNumber(e, DEFAULT_WASTE_PCT))}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+            />
+          </div>
+          <div>
+            <label htmlFor="est-markup-pct" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Markup (%)
+              <HelpTooltip content="Your profit margin over total cost (materials + labor). Typical: 30-40%. This determines your bid price and gross profit." />
+            </label>
+            <input
+              id="est-markup-pct"
+              type="number" min={MARKUP_PCT_MIN} max={MARKUP_PCT_MAX} value={markupPct}
+              onChange={(e) => onMarkupPctChange(Math.max(0, parseNumber(e, DEFAULT_MARKUP_PCT)))}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+            />
+          </div>
         </div>
-        <p className="text-xs text-gray-400 mt-1">
-          Slide right for harder sites (rocky, tight access). Slide left for easy, open lots.
-        </p>
-      </div>
+        <div className="mt-3 space-y-3">
+          <ToggleSwitch
+            label="Wind Mode / Hurricane Zone"
+            checked={windMode}
+            onToggle={onWindModeToggle}
+            activeBadge={
+              <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                Deeper posts + aluminum inserts + rebar applied
+              </span>
+            }
+          />
+          <ToggleSwitch
+            label="Existing Fence Removal"
+            checked={existingFenceRemoval}
+            onToggle={onExistingFenceRemovalToggle}
+            activeBadge={
+              <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                Tear-down labor + post extraction + disposal
+              </span>
+            }
+          />
+        </div>
+
+        {/* Site Difficulty */}
+        <div className="mt-3">
+          <label htmlFor="est-labor-efficiency" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            Site Difficulty
+            <HelpTooltip content="Adjusts labor time for site conditions. Rocky soil, tight access, or difficult terrain = slide right (+). Wide open, easy access = slide left (-). Affects total labor hours and cost." />
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              id="est-labor-efficiency"
+              type="range"
+              min={LABOR_EFFICIENCY_MIN}
+              max={LABOR_EFFICIENCY_MAX}
+              step={LABOR_EFFICIENCY_STEP}
+              value={laborEfficiency}
+              onChange={(e) => onLaborEfficiencyChange(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-fence-600"
+            />
+            <span className="text-sm font-bold text-fence-900 w-14 text-right">
+              {Math.abs(laborEfficiency - 1.0) < 1e-6 ? "Normal" : `${laborEfficiency > 1 ? "+" : ""}${Math.round((laborEfficiency - 1) * 100)}%`}
+            </span>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

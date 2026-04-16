@@ -1,5 +1,5 @@
 "use client";
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
 import type { FenceEstimateResult } from "@/lib/fence-graph/engine";
 import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/exportBomExcel";
 import type {
@@ -53,6 +53,7 @@ export default memo(function EstimateSummaryCard({
   onConvertToEstimate,
 }: EstimateSummaryCardProps) {
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
+  const [showExports, setShowExports] = useState(false);
 
   if (!result) {
     return (
@@ -126,61 +127,76 @@ export default memo(function EstimateSummaryCard({
             disabled={convertStatus === "converting" || convertStatus === "done"}
             className="w-full py-3 rounded-lg text-sm font-bold bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-60 shadow-sm"
           >
-            {convertStatus === "converting" ? "Creating Estimate..." :
+            {convertStatus === "converting" ? "Creating Quote..." :
              convertStatus === "done" ? "Redirecting..." :
-             "Create Estimate & Send to Customer"}
+             "Create Quote →"}
           </button>
           {convertError && (
             <p role="alert" className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">{convertError}</p>
           )}
           {convertStatus === "idle" && (
-            <p className="text-xs text-fence-300 text-center">Requires customer name in Customer Info above</p>
+            <p className="text-xs text-fence-300 text-center">Enter customer name below to create a sendable quote</p>
           )}
           <button
             onClick={onSave}
             disabled={saveStatus === "saving"}
             className="w-full py-2 rounded-lg text-xs font-semibold bg-fence-700 hover:bg-fence-600 text-white transition-colors disabled:opacity-60"
           >
-            {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error" : "Save Draft"}
+            {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "✓ Saved" : saveStatus === "error" ? "Error — retry" : "Save Draft"}
           </button>
-          <div className="grid grid-cols-2 gap-2">
+
+          {/* Downloads — collapsed by default to reduce decision fatigue.
+              Contractors see the 2 primary actions (Create Quote + Save Draft)
+              and expand this section only when they need exports. */}
+          <div className="relative">
             <button
-              onClick={onPdfDownload}
-              disabled={pdfStatus === "generating"}
-              title="Internal BOM with costs, margins, and audit trail"
-              className="py-2 rounded-lg text-xs font-semibold bg-fence-800 hover:bg-fence-700 text-fence-100 transition-colors disabled:opacity-60"
+              onClick={() => setShowExports((v) => !v)}
+              className="w-full py-2 rounded-lg text-xs font-semibold bg-fence-800 hover:bg-fence-700 text-fence-100 transition-colors flex items-center justify-center gap-2"
             >
-              {pdfStatus === "generating" ? "Generating..." : "Internal BOM"}
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Download / Export {showExports ? "▴" : "▾"}
             </button>
-            <button
-              onClick={onProposalDownload}
-              disabled={proposalStatus === "generating"}
-              title="Clean customer-facing proposal — no cost exposure"
-              className="py-2 rounded-lg text-xs font-semibold bg-white text-fence-900 border border-fence-200 hover:bg-fence-50 transition-colors disabled:opacity-60"
-            >
-              {proposalStatus === "generating" ? "Generating..." : proposalStatus === "error" ? "Failed" : "Customer Proposal"}
-            </button>
-          </div>
-          <p className="text-xs text-fence-300 text-center">Internal BOM shows costs · Proposal shows bid price only</p>
-          <div className="border-t border-fence-800 pt-2 mt-1">
-            <p className="text-xs text-fence-300 text-center mb-2">Excel / Spreadsheet</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => downloadInternalBom(result, projectName, markupPct, totalLF)}
-                title="Full BOM with costs, margins, labor — internal use only"
-                className="py-2 rounded-lg text-xs font-semibold bg-fence-800 hover:bg-fence-700 text-fence-100 border border-fence-700 transition-colors"
-              >
-                Internal BOM (.xlsx)
-              </button>
-              <button
-                onClick={() => downloadSupplierPO(result, projectName, totalLF, undefined, supplierAddress)}
-                title="Clean purchase order for your supplier — no costs shown"
-                className="py-2 rounded-lg text-xs font-semibold bg-white text-fence-900 border border-fence-200 hover:bg-fence-50 transition-colors"
-              >
-                Supplier PO (.xlsx)
-              </button>
-            </div>
-            <p className="text-xs text-fence-300 text-center mt-1">Internal shows margins · Supplier PO shows quantities only</p>
+            {showExports && (
+              <div className="mt-2 space-y-2 bg-fence-900 rounded-lg p-3">
+                <p className="text-xs text-fence-400 font-semibold uppercase tracking-wide mb-1">PDF</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={onPdfDownload}
+                    disabled={pdfStatus === "generating"}
+                    title="Internal BOM with costs, margins, and audit trail"
+                    className="py-2 rounded-lg text-xs font-semibold bg-fence-800 hover:bg-fence-700 text-fence-100 transition-colors disabled:opacity-60"
+                  >
+                    {pdfStatus === "generating" ? "Generating..." : "Internal BOM"}
+                  </button>
+                  <button
+                    onClick={onProposalDownload}
+                    disabled={proposalStatus === "generating"}
+                    title="Clean customer-facing proposal — no cost exposure"
+                    className="py-2 rounded-lg text-xs font-semibold bg-white text-fence-900 border border-fence-200 hover:bg-fence-50 transition-colors disabled:opacity-60"
+                  >
+                    {proposalStatus === "generating" ? "Generating..." : proposalStatus === "error" ? "Failed" : "Customer Proposal"}
+                  </button>
+                </div>
+                <p className="text-xs text-fence-400 font-semibold uppercase tracking-wide mt-2 mb-1">Excel</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => downloadInternalBom(result, projectName, markupPct, totalLF)}
+                    title="Full BOM with costs, margins, labor — internal use only"
+                    className="py-2 rounded-lg text-xs font-semibold bg-fence-800 hover:bg-fence-700 text-fence-100 border border-fence-700 transition-colors"
+                  >
+                    Internal BOM (.xlsx)
+                  </button>
+                  <button
+                    onClick={() => downloadSupplierPO(result, projectName, totalLF, undefined, supplierAddress)}
+                    title="Clean purchase order for your supplier — no costs shown"
+                    className="py-2 rounded-lg text-xs font-semibold bg-white text-fence-900 border border-fence-200 hover:bg-fence-50 transition-colors"
+                  >
+                    Supplier PO (.xlsx)
+                  </button>
+                </div>
+                <p className="text-xs text-fence-400 text-center mt-1">Internal shows costs · Proposal/Supplier shows bid price only</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -47,7 +47,9 @@ export default function AdvancedEstimateClient({
   const [windMode, setWindMode] = useState(false);
   const [laborRate, setLaborRate] = useState(DEFAULT_LABOR_RATE);
   const [wastePct, setWastePct] = useState(defaultWastePct);
-  const [inputMode, setInputMode] = useState<"manual" | "ai">(aiAvailable ? "ai" : "manual");
+  // Default to manual — contractors want to enter numbers immediately.
+  // AI is a power feature they discover via the toggle, not the default path.
+  const [inputMode, setInputMode] = useState<"manual" | "ai">("manual");
   const [projectName, setProjectName] = useState("New Estimate");
   const [markupPct, setMarkupPct] = useState(DEFAULT_MARKUP_PCT);
   const [customer, setCustomer] = useState({ name: "", address: "", city: "", phone: "", email: "" });
@@ -111,9 +113,6 @@ export default function AdvancedEstimateClient({
           </button>
         </div>
 
-        {/* Customer Info — Always visible, used by all PDFs/estimates */}
-        <CustomerInfoCard value={customer} onChange={setCustomer} />
-
         {/* Config nudge banner — shown when using default rates */}
         {!hasCustomConfig && !nudgeDismissed && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start justify-between">
@@ -175,6 +174,8 @@ export default function AdvancedEstimateClient({
               onLaborEfficiencyChange={setLaborEfficiency}
             />
 
+            <RunsEditor editor={editor} />
+
             <RegulatoryCostsCard
               permitCost={permitCost}
               inspectionCost={inspectionCost}
@@ -185,10 +186,13 @@ export default function AdvancedEstimateClient({
               onEngineeringChange={setEngineeringCost}
               onSurveyChange={setSurveyCost}
             />
-
-            <RunsEditor editor={editor} />
           </>
         )}
+
+        {/* Customer Info — moved below measurements so contractors
+            fill fence details first (the thing they care about) then
+            customer info when they're ready to generate a quote. */}
+        <CustomerInfoCard value={customer} onChange={setCustomer} />
       </div>
 
       {/* ── Right Column: Live Results ─────────────────────────────── */}
@@ -214,6 +218,24 @@ export default function AdvancedEstimateClient({
 
       {/* Feedback button - only shown when results are available */}
       {result && <EstimatorFeedbackButton />}
+
+      {/* Sticky mobile price bar — visible only on small screens when
+          the results column is scrolled out of view. Shows the live total
+          so the contractor always knows the price while editing inputs. */}
+      {result && (
+        <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-fence-950 text-white px-4 py-3 flex items-center justify-between z-40 shadow-lg border-t border-fence-800">
+          <div>
+            <p className="text-xs text-fence-300">Estimate Total</p>
+            <p className="text-xl font-bold">${Math.round(result.totalCost).toLocaleString()}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-fence-300">{editor.totalLF} LF</p>
+            <p className="text-sm font-semibold text-fence-200">
+              {editor.totalLF > 0 ? `$${Math.round(result.totalCost * (1 + Math.max(0, markupPct) / 100) / editor.totalLF)}/LF` : "—"}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

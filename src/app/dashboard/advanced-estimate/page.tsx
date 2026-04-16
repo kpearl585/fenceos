@@ -24,11 +24,10 @@ export default async function AdvancedEstimatePage() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-widest text-fence-600 bg-fence-50 border border-fence-200 px-2 py-0.5 rounded">Beta</span>
-            <h1 className="text-2xl font-bold text-fence-950">Advanced Fence Estimator</h1>
+            <h1 className="text-2xl font-bold text-fence-950">Fence Estimator</h1>
           </div>
           <p className="text-gray-500 text-sm">
-            Run-based estimation engine. Add each fence segment individually for professional-grade accuracy with full material traceability.
+            Professional-grade estimates with full material traceability. Enter measurements below — the engine does all the math.
           </p>
           <div className="flex items-center gap-4 mt-2">
             <a href="/dashboard/advanced-estimate/saved" className="text-sm text-fence-600 font-semibold hover:underline">

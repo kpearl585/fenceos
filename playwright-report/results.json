@@ -332,14 +332,405 @@
           ]
         }
       ]
+    },
+    {
+      "title": "phase1-estimator-beta-safety.spec.ts",
+      "file": "phase1-estimator-beta-safety.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 1 Estimator - Beta Safety",
+          "file": "phase1-estimator-beta-safety.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "BS-1: should reject linear feet exceeding maximum",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-901c8b4c7965ff77e713",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 20,
+              "column": 7
+            },
+            {
+              "title": "BS-2: should reject corner count exceeding maximum",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-32a4bee0b79ebedd6eac",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 35,
+              "column": 7
+            },
+            {
+              "title": "BS-3: should reject total gate width exceeding fence length",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-b55b1b976a9a156f4017",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 49,
+              "column": 7
+            },
+            {
+              "title": "BS-4: should prevent duplicate submit clicks",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-651c98e8aa60e732edae",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 75,
+              "column": 7
+            },
+            {
+              "title": "BS-5: should handle results page reload gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-7f0056584f4e37bd611d",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 88,
+              "column": 7
+            },
+            {
+              "title": "BS-6: should submit multi-gate scenario successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-c8686da651f6f6f4e206",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 111,
+              "column": 7
+            },
+            {
+              "title": "BS-7: should show user-friendly error for invalid inputs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-4be20627d0f0324c8744",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 137,
+              "column": 7
+            },
+            {
+              "title": "BS-8: should handle very short fence (edge case)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-ab9da6e6d4e5a431b56d",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 155,
+              "column": 7
+            },
+            {
+              "title": "BS-9: should clear error message on retry",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "3b280facbdf903834392-d913a9e666c17cfd4af9",
+              "file": "phase1-estimator-beta-safety.spec.ts",
+              "line": 167,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "phase1-estimator-critical-path.spec.ts",
+      "file": "phase1-estimator-critical-path.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 1 Estimator - Critical Path",
+          "file": "phase1-estimator-critical-path.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "CP-1: should load Phase 1 estimator page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "59a44d02dfde0e593b81-71c166cfe1ea5538e27c",
+              "file": "phase1-estimator-critical-path.spec.ts",
+              "line": 23,
+              "column": 7
+            },
+            {
+              "title": "CP-2: should submit 100ft straight fence and get results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "59a44d02dfde0e593b81-195b94720876d2570b55",
+              "file": "phase1-estimator-critical-path.spec.ts",
+              "line": 36,
+              "column": 7
+            },
+            {
+              "title": "CP-3: should submit 100ft with 1 walk gate",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "59a44d02dfde0e593b81-a5b2170a6a7673d68b0b",
+              "file": "phase1-estimator-critical-path.spec.ts",
+              "line": 60,
+              "column": 7
+            },
+            {
+              "title": "CP-4: should submit 24ft edge case (short run)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "59a44d02dfde0e593b81-53916f957dd069c8e6f6",
+              "file": "phase1-estimator-critical-path.spec.ts",
+              "line": 79,
+              "column": 7
+            },
+            {
+              "title": "CP-5: should show loading state during generation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "59a44d02dfde0e593b81-20f3d275ff43f9427fac",
+              "file": "phase1-estimator-critical-path.spec.ts",
+              "line": 97,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "phase1-manual-entry.spec.ts",
+      "file": "phase1-manual-entry.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Advanced Estimate - Manual Entry Flow",
+          "file": "phase1-manual-entry.spec.ts",
+          "line": 19,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load advanced estimate page without errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d7e46cf0d2c3cd1ae977-36d243cef2dd6721e35f",
+              "file": "phase1-manual-entry.spec.ts",
+              "line": 35,
+              "column": 7
+            },
+            {
+              "title": "should complete manual entry flow and generate estimate",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d7e46cf0d2c3cd1ae977-efaac714e78b6de45f39",
+              "file": "phase1-manual-entry.spec.ts",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "should show validation errors for incomplete data",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d7e46cf0d2c3cd1ae977-f35be13c00a30d394646",
+              "file": "phase1-manual-entry.spec.ts",
+              "line": 133,
+              "column": 7
+            }
+          ]
+        }
+      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-04-16T17:20:28.026Z",
-    "duration": 41.61299999999994,
+    "startTime": "2026-04-16T20:11:44.444Z",
+    "duration": 80.66199999999998,
     "expected": 0,
-    "skipped": 12,
+    "skipped": 29,
     "unexpected": 0,
     "flaky": 0
   }
