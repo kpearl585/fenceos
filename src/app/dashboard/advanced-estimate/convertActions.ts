@@ -6,6 +6,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { RateLimiters } from "@/lib/security/rate-limit";
+import { requireActiveSubscription } from "@/lib/subscription";
 import type { FenceEstimateResult } from "@/lib/fence-graph/types";
 
 interface ConvertInput {
@@ -36,6 +37,10 @@ export async function createEstimateFromFenceGraph(
     const { data: profile } = await admin
       .from("profiles").select("id, org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
+
+    // ✅ BILLING: Verify active subscription before creating quote
+    const subBlocked = await requireActiveSubscription(profile.org_id);
+    if (subBlocked) return subBlocked;
 
     // ✅ SECURITY: Rate limit estimate conversion (creates DB records)
     const rateLimit = RateLimiters.estimateCreation(profile.org_id);

@@ -9,6 +9,7 @@ import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph
 import type { CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import { detectHiddenCosts } from "@/lib/fence-graph/ai-extract/hiddenCostDetection";
 import { instrument } from "@/lib/observability/estimator-instrumentation";
+import { requireActiveSubscription } from "@/lib/subscription";
 import crypto from "crypto";
 
 // ── Rate limiting constants ────────────────────────────────────────
@@ -278,6 +279,10 @@ export async function extractFromText(
   const auth = await getAuthContext();
   if (!auth) return { success: false, error: "Not authenticated" };
 
+  // ✅ BILLING: AI extraction costs real money — verify subscription first
+  const subBlocked = await requireActiveSubscription(auth.orgId);
+  if (subBlocked) return subBlocked;
+
   // Rate limit (fails CLOSED on DB error)
   const rateCheck = await checkRateLimit(auth.orgId);
   if (!rateCheck.allowed) {
@@ -383,6 +388,10 @@ export async function extractFromImage(
 
   const auth = await getAuthContext();
   if (!auth) return { success: false, error: "Not authenticated" };
+
+  // ✅ BILLING: AI image extraction costs real money — verify subscription
+  const subBlocked = await requireActiveSubscription(auth.orgId);
+  if (subBlocked) return subBlocked;
 
   const rateCheck = await checkRateLimit(auth.orgId);
   if (!rateCheck.allowed) {

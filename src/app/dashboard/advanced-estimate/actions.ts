@@ -11,6 +11,7 @@ import { calculateProjectTimeline } from "@/lib/fence-graph/calculateTimeline";
 import { SaveEstimateSchema, GenerateAdvancedPdfSchema, GenerateCustomerProposalPdfSchema } from "@/lib/validation/schemas";
 import { DEFAULT_CREW_LEAD_DAYS, DEFAULT_PROPOSAL_VALID_DAYS } from "./constants";
 import { instrument } from "@/lib/observability/estimator-instrumentation";
+import { requireActiveSubscription } from "@/lib/subscription";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { SiteComplexity, CloseoutData, AccuracyMetrics } from "@/lib/fence-graph/accuracy-types";
@@ -84,6 +85,10 @@ export async function saveAdvancedEstimate(
       .eq("auth_id", user.id)
       .single();
     if (!profile) return { success: false, error: "Profile not found" };
+
+    // ✅ BILLING: Verify active subscription before saving
+    const subBlocked = await requireActiveSubscription(profile.org_id);
+    if (subBlocked) return subBlocked;
 
     const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
 
@@ -280,6 +285,10 @@ export async function generateAdvancedEstimatePdf(
     const orgInfo = await getOrgInfo(user.id);
     if (!orgInfo) return { success: false, error: "Profile not found" };
 
+    // ✅ BILLING: Verify active subscription before PDF generation
+    const subBlocked = await requireActiveSubscription(orgInfo.orgId);
+    if (subBlocked) return subBlocked;
+
     // ✅ SECURITY: Rate limit PDF generation
     const rateLimit = RateLimiters.pdfGeneration(orgInfo.orgId);
     if (!rateLimit.success) {
@@ -337,6 +346,10 @@ export async function generateCustomerProposalPdf(
     const orgInfo = await getOrgInfo(user.id);
     if (!orgInfo) return { success: false, error: "Profile not found" };
     const { orgName, orgPhone, orgEmail, orgAddress } = orgInfo;
+
+    // ✅ BILLING: Verify active subscription before proposal generation
+    const subBlocked = await requireActiveSubscription(orgInfo.orgId);
+    if (subBlocked) return subBlocked;
 
     // ✅ SECURITY: Rate limit PDF generation
     const rateLimit = RateLimiters.pdfGeneration(orgInfo.orgId);
