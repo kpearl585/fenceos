@@ -10,18 +10,14 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {
-      "actualWorkers": 1
-    },
+    "metadata": {},
     "preserveOutput": "always",
     "projects": [
       {
         "outputDir": "/Users/pearllabs/Documents/GitHub/fenceos/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "chromium",
         "name": "chromium",
         "testDir": "/Users/pearllabs/Documents/GitHub/fenceos/e2e",
@@ -73,20 +69,20 @@
   },
   "suites": [
     {
-      "title": "phase1-estimator-critical-path.spec.ts",
-      "file": "phase1-estimator-critical-path.spec.ts",
+      "title": "advanced-estimator.spec.ts",
+      "file": "advanced-estimator.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Phase 1 Estimator - Critical Path",
-          "file": "phase1-estimator-critical-path.spec.ts",
-          "line": 16,
+          "title": "Advanced Estimator — Critical Path",
+          "file": "advanced-estimator.spec.ts",
+          "line": 76,
           "column": 6,
           "specs": [
             {
-              "title": "CP-1: should load Phase 1 estimator page",
+              "title": "AE-1: 100ft vinyl privacy → estimate summary appears with costs",
               "ok": true,
               "tags": [],
               "tests": [
@@ -96,32 +92,18 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2599,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-13T14:15:32.204Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "59a44d02dfde0e593b81-71c166cfe1ea5538e27c",
-              "file": "phase1-estimator-critical-path.spec.ts",
-              "line": 23,
+              "id": "fb9d793733cd462ad3cd-ba15601c6d5669f26f23",
+              "file": "advanced-estimator.spec.ts",
+              "line": 103,
               "column": 7
             },
             {
-              "title": "CP-2: should submit 100ft straight fence and get results",
-              "ok": false,
+              "title": "AE-2: Simple Mode → Advanced toggle preserves measurements",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -130,72 +112,18 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 22214,
-                      "error": {
-                        "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
-                        "stack": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at /Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts:53:16",
-                        "location": {
-                          "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                          "column": 16,
-                          "line": 53
-                        },
-                        "snippet": "  51 |     // Wait for navigation to results\n  52 |     // Results page should load within reasonable time\n> 53 |     await page.waitForURL(/\\/dashboard\\/phase1-estimator\\/results/, { timeout: 20000 });\n     |                ^\n  54 |\n  55 |     // Verify results page loaded\n  56 |     const url = page.url();"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                            "column": 16,
-                            "line": 53
-                          },
-                          "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n\n  51 |     // Wait for navigation to results\n  52 |     // Results page should load within reasonable time\n> 53 |     await page.waitForURL(/\\/dashboard\\/phase1-estimator\\/results/, { timeout: 20000 });\n     |                ^\n  54 |\n  55 |     // Verify results page loaded\n  56 |     const url = page.url();\n    at /Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts:53:16"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-13T14:15:34.880Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--a7d86-aight-fence-and-get-results-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--a7d86-aight-fence-and-get-results-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--a7d86-aight-fence-and-get-results-chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                        "column": 16,
-                        "line": 53
-                      }
-                    }
-                  ],
-                  "status": "unexpected"
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "59a44d02dfde0e593b81-195b94720876d2570b55",
-              "file": "phase1-estimator-critical-path.spec.ts",
-              "line": 36,
+              "id": "fb9d793733cd462ad3cd-c788701d44782e4dbc18",
+              "file": "advanced-estimator.spec.ts",
+              "line": 129,
               "column": 7
             },
             {
-              "title": "CP-3: should submit 100ft with 1 walk gate",
-              "ok": false,
+              "title": "AE-3: AI extraction populates runs when applied",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -204,72 +132,18 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 22284,
-                      "error": {
-                        "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
-                        "stack": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at /Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts:73:16",
-                        "location": {
-                          "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                          "column": 16,
-                          "line": 73
-                        },
-                        "snippet": "  71 |\n  72 |     // Wait for results\n> 73 |     await page.waitForURL(/\\/dashboard\\/phase1-estimator\\/results/, { timeout: 20000 });\n     |                ^\n  74 |\n  75 |     // Verify navigated to results\n  76 |     expect(page.url()).toContain('/dashboard/phase1-estimator/results/');"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                            "column": 16,
-                            "line": 73
-                          },
-                          "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n\n  71 |\n  72 |     // Wait for results\n> 73 |     await page.waitForURL(/\\/dashboard\\/phase1-estimator\\/results/, { timeout: 20000 });\n     |                ^\n  74 |\n  75 |     // Verify navigated to results\n  76 |     expect(page.url()).toContain('/dashboard/phase1-estimator/results/');\n    at /Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts:73:16"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-13T14:15:57.393Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--5f528-bmit-100ft-with-1-walk-gate-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--5f528-bmit-100ft-with-1-walk-gate-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--5f528-bmit-100ft-with-1-walk-gate-chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                        "column": 16,
-                        "line": 73
-                      }
-                    }
-                  ],
-                  "status": "unexpected"
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "59a44d02dfde0e593b81-a5b2170a6a7673d68b0b",
-              "file": "phase1-estimator-critical-path.spec.ts",
-              "line": 60,
+              "id": "fb9d793733cd462ad3cd-d5eb08c02b3064484f56",
+              "file": "advanced-estimator.spec.ts",
+              "line": 154,
               "column": 7
             },
             {
-              "title": "CP-4: should submit 24ft edge case (short run)",
-              "ok": false,
+              "title": "AE-4: Customer proposal PDF downloads without crash",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -278,72 +152,18 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 22319,
-                      "error": {
-                        "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
-                        "stack": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at /Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts:94:16",
-                        "location": {
-                          "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                          "column": 16,
-                          "line": 94
-                        },
-                        "snippet": "  92 |\n  93 |     // Should still generate successfully\n> 94 |     await page.waitForURL(/\\/dashboard\\/phase1-estimator\\/results/, { timeout: 20000 });\n     |                ^\n  95 |   });\n  96 |\n  97 |   test('CP-5: should show loading state during generation', async ({ page }) => {"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                            "column": 16,
-                            "line": 94
-                          },
-                          "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n\n  92 |\n  93 |     // Should still generate successfully\n> 94 |     await page.waitForURL(/\\/dashboard\\/phase1-estimator\\/results/, { timeout: 20000 });\n     |                ^\n  95 |   });\n  96 |\n  97 |   test('CP-5: should show loading state during generation', async ({ page }) => {\n    at /Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts:94:16"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-13T14:16:20.044Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--19299-t-24ft-edge-case-short-run--chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--19299-t-24ft-edge-case-short-run--chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--19299-t-24ft-edge-case-short-run--chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                        "column": 16,
-                        "line": 94
-                      }
-                    }
-                  ],
-                  "status": "unexpected"
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "59a44d02dfde0e593b81-53916f957dd069c8e6f6",
-              "file": "phase1-estimator-critical-path.spec.ts",
-              "line": 79,
+              "id": "fb9d793733cd462ad3cd-5da2cd7f94c87e5dbfa7",
+              "file": "advanced-estimator.spec.ts",
+              "line": 203,
               "column": 7
             },
             {
-              "title": "CP-5: should show loading state during generation",
-              "ok": false,
+              "title": "AE-5: Internal BOM and Supplier PO Excel exports download",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -352,67 +172,161 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 22284,
-                      "error": {
-                        "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
-                        "stack": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at /Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts:107:16",
-                        "location": {
-                          "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                          "column": 16,
-                          "line": 107
-                        },
-                        "snippet": "  105 |\n  106 |     // Eventually should navigate\n> 107 |     await page.waitForURL(/\\/dashboard\\/phase1-estimator\\/results/, { timeout: 20000 });\n      |                ^\n  108 |   });\n  109 | });\n  110 |"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                            "column": 16,
-                            "line": 107
-                          },
-                          "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n\n  105 |\n  106 |     // Eventually should navigate\n> 107 |     await page.waitForURL(/\\/dashboard\\/phase1-estimator\\/results/, { timeout: 20000 });\n      |                ^\n  108 |   });\n  109 | });\n  110 |\n    at /Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts:107:16"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-13T14:16:42.720Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--5b516-ing-state-during-generation-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--5b516-ing-state-during-generation-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/pearllabs/Documents/GitHub/fenceos/test-results/phase1-estimator-critical--5b516-ing-state-during-generation-chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/pearllabs/Documents/GitHub/fenceos/e2e/phase1-estimator-critical-path.spec.ts",
-                        "column": 16,
-                        "line": 107
-                      }
-                    }
-                  ],
-                  "status": "unexpected"
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "59a44d02dfde0e593b81-20f3d275ff43f9427fac",
-              "file": "phase1-estimator-critical-path.spec.ts",
-              "line": 97,
+              "id": "fb9d793733cd462ad3cd-3cb158ac5a4d714c67a8",
+              "file": "advanced-estimator.spec.ts",
+              "line": 226,
+              "column": 7
+            },
+            {
+              "title": "AE-6: Adding gates updates estimate with gate hardware",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "fb9d793733cd462ad3cd-c222c955e83398789063",
+              "file": "advanced-estimator.spec.ts",
+              "line": 250,
+              "column": 7
+            },
+            {
+              "title": "AE-7: Wind mode toggle increases concrete in BOM",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "fb9d793733cd462ad3cd-7977e0609859b06a2088",
+              "file": "advanced-estimator.spec.ts",
+              "line": 281,
+              "column": 7
+            },
+            {
+              "title": "AE-8: Save Draft persists without error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "fb9d793733cd462ad3cd-228d31eee0d850a39fa3",
+              "file": "advanced-estimator.spec.ts",
+              "line": 314,
+              "column": 7
+            },
+            {
+              "title": "AE-9: Empty runs show helpful prompt instead of crash",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "fb9d793733cd462ad3cd-ec6d3bd7627e934ff811",
+              "file": "advanced-estimator.spec.ts",
+              "line": 336,
+              "column": 7
+            },
+            {
+              "title": "AE-10: Internal BOM PDF downloads without crash",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "fb9d793733cd462ad3cd-89c3f7df12b120d5fa53",
+              "file": "advanced-estimator.spec.ts",
+              "line": 356,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Advanced Estimator — Mobile",
+          "file": "advanced-estimator.spec.ts",
+          "line": 375,
+          "column": 6,
+          "specs": [
+            {
+              "title": "AE-M1: All core inputs are visible and tappable on mobile",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "fb9d793733cd462ad3cd-68504cfadaedbf6c0876",
+              "file": "advanced-estimator.spec.ts",
+              "line": 382,
+              "column": 7
+            },
+            {
+              "title": "AE-M2: Customer info card is accessible on mobile",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "fb9d793733cd462ad3cd-df3054a7468c61fe9aeb",
+              "file": "advanced-estimator.spec.ts",
+              "line": 409,
               "column": 7
             }
           ]
@@ -422,11 +336,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-04-13T14:15:29.348Z",
-    "duration": 95777.55799999999,
-    "expected": 1,
-    "skipped": 0,
-    "unexpected": 4,
+    "startTime": "2026-04-16T17:20:28.026Z",
+    "duration": 41.61299999999994,
+    "expected": 0,
+    "skipped": 12,
+    "unexpected": 0,
     "flaky": 0
   }
 }
