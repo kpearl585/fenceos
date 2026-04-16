@@ -1,7 +1,7 @@
 # FenceEstimatePro Security Documentation
 
-**Last Updated:** April 9, 2026  
-**Status:** Hardened (Phase 1 Complete)
+**Last Updated:** April 16, 2026  
+**Status:** Hardened (Phase 2 — full RLS audit + CSP tightening complete)
 
 ---
 
@@ -28,10 +28,11 @@
 - See `/src/lib/validation/schemas.ts` for all schemas
 
 #### 3. Rate Limiting
-- **AI Extraction:** 20 requests/hour per org (prevents API abuse)
+- **AI Extraction:** 20 requests/hour per org (prevents API abuse). Fails CLOSED on DB error (no silent bypass).
 - **PDF Generation:** 50 requests/hour per org (prevents resource exhaustion)
 - **Excel Export:** 50 requests/hour per org
-- **Estimate Creation:** 100 requests/hour per org
+- **Estimate Creation:** 100 requests/hour per org (includes estimate conversion)
+- **Closeout Submission:** 20 requests/hour per org
 - **Login Attempts:** 5 per 15 minutes per IP (brute force protection)
 
 **Implementation:** `/src/lib/security/rate-limit.ts`
