@@ -5,6 +5,7 @@
 // estimate detail page where contractor can review, send, and get signed.
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { RateLimiters } from "@/lib/security/rate-limit";
 import type { FenceEstimateResult } from "@/lib/fence-graph/types";
 
 interface ConvertInput {
@@ -35,6 +36,12 @@ export async function createEstimateFromFenceGraph(
     const { data: profile } = await admin
       .from("profiles").select("id, org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
+
+    // ✅ SECURITY: Rate limit estimate conversion (creates DB records)
+    const rateLimit = RateLimiters.estimateCreation(profile.org_id);
+    if (!rateLimit.success) {
+      return { success: false, error: rateLimit.error };
+    }
 
     const { result, projectName, laborRate, markupPct, totalLF, fenceType, customer } = input;
     const bidPrice = Math.round(result.totalCost * (1 + markupPct / 100));

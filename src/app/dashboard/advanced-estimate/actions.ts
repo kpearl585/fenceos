@@ -476,6 +476,12 @@ export async function closeoutEstimate(
       .from("profiles").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
 
+    // ✅ SECURITY: Rate limit closeout submissions
+    const rateLimit = RateLimiters.closeoutSubmission(profile.org_id);
+    if (!rateLimit.success) {
+      return { success: false, error: rateLimit.error };
+    }
+
     // ✅ SECURITY: Validate estimate belongs to this org (authorization check)
     const { data: est } = await admin
       .from("fence_graphs").select("id, status")
@@ -552,6 +558,12 @@ export async function closeoutEstimateEnhanced(
     const { data: profile } = await admin
       .from("profiles").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
+
+    // ✅ SECURITY: Rate limit enhanced closeout submissions
+    const rateLimit = RateLimiters.closeoutSubmission(profile.org_id);
+    if (!rateLimit.success) {
+      return { success: false, error: rateLimit.error };
+    }
 
     // ✅ SECURITY: Validate estimate belongs to this org (authorization check)
     const { data: est } = await admin

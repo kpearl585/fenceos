@@ -127,6 +127,14 @@ export const RateLimiters = {
       windowMs: 60 * 60 * 1000,
     }),
 
+  /** Closeout submissions: 20 per hour per org */
+  closeoutSubmission: (orgId: string) =>
+    checkRateLimit({
+      key: `closeout:${orgId}`,
+      limit: 20,
+      windowMs: 60 * 60 * 1000,
+    }),
+
   /** Login attempts: 5 per 15 minutes per IP */
   loginAttempts: (ip: string) =>
     checkRateLimit({
