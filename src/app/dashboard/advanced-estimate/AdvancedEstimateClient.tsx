@@ -59,7 +59,12 @@ export default function AdvancedEstimateClient({
   const [inspectionCost, setInspectionCost] = useState(0);
   const [engineeringCost, setEngineeringCost] = useState(0);
   const [surveyCost, setSurveyCost] = useState(0);
-  const [nudgeDismissed, setNudgeDismissed] = useState(false);
+  // Persist nudge dismiss so it doesn't reappear on every page load.
+  // After ~3 dismissals the contractor has seen it enough.
+  const [nudgeDismissed, setNudgeDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("fep-nudge-dismissed") === "true";
+  });
 
   const productLine = PRODUCT_LINES[productLineId];
   const postSize = productLine?.postSize ?? DEFAULT_POST_SIZE;
@@ -123,7 +128,7 @@ export default function AdvancedEstimateClient({
                 <a href="/dashboard/settings/estimator" className="underline font-semibold">Customize them in Estimator Settings</a> to match your crew speed and local pricing.
               </p>
             </div>
-            <button onClick={() => setNudgeDismissed(true)} className="text-blue-400 hover:text-blue-600 ml-3 text-lg leading-none">&times;</button>
+            <button onClick={() => { setNudgeDismissed(true); try { localStorage.setItem("fep-nudge-dismissed", "true"); } catch {} }} className="text-blue-400 hover:text-blue-600 ml-3 text-lg leading-none">&times;</button>
           </div>
         )}
 

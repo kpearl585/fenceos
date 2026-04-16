@@ -239,26 +239,34 @@ export default function ProjectSetupCard({
           />
         </div>
 
-        {/* Site Difficulty */}
+        {/* Site Difficulty — preset buttons instead of a slider.
+            Contractors think "easy lot" or "tough site", not "1.15x". */}
         <div className="mt-3">
-          <label htmlFor="est-labor-efficiency" className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
             Site Difficulty
-            <HelpTooltip content="Adjusts labor time for site conditions. Rocky soil, tight access, or difficult terrain = slide right (+). Wide open, easy access = slide left (-). Affects total labor hours and cost." />
+            <HelpTooltip content="Adjusts labor time for site conditions. Tough sites (rocky soil, tight access, slopes) take longer. Easy lots (flat, open, good access) are faster." />
           </label>
-          <div className="flex items-center gap-3">
-            <input
-              id="est-labor-efficiency"
-              type="range"
-              min={LABOR_EFFICIENCY_MIN}
-              max={LABOR_EFFICIENCY_MAX}
-              step={LABOR_EFFICIENCY_STEP}
-              value={laborEfficiency}
-              onChange={(e) => onLaborEfficiencyChange(Number(e.target.value))}
-              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-fence-600"
-            />
-            <span className="text-sm font-bold text-fence-900 w-14 text-right">
-              {Math.abs(laborEfficiency - 1.0) < 1e-6 ? "Normal" : `${laborEfficiency > 1 ? "+" : ""}${Math.round((laborEfficiency - 1) * 100)}%`}
-            </span>
+          <div className="grid grid-cols-4 gap-2">
+            {([
+              { label: "Easy", value: 0.85, desc: "−15% labor" },
+              { label: "Standard", value: 1.0, desc: "baseline" },
+              { label: "Tough", value: 1.2, desc: "+20% labor" },
+              { label: "Very Hard", value: 1.4, desc: "+40% labor" },
+            ] as const).map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => onLaborEfficiencyChange(preset.value)}
+                className={`py-2 px-1 rounded-lg text-center border transition-colors ${
+                  Math.abs(laborEfficiency - preset.value) < 0.05
+                    ? "bg-fence-600 text-white border-fence-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-fence-400"
+                }`}
+              >
+                <span className="block text-xs font-semibold">{preset.label}</span>
+                <span className="block text-[10px] mt-0.5 opacity-70">{preset.desc}</span>
+              </button>
+            ))}
           </div>
         </div>
       </details>

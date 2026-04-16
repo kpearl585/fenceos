@@ -1,5 +1,5 @@
 "use client";
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { FenceEstimateResult } from "@/lib/fence-graph/engine";
 import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/exportBomExcel";
 import type {
@@ -55,6 +55,20 @@ export default memo(function EstimateSummaryCard({
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
   const [showExports, setShowExports] = useState(false);
 
+  // Flash animation: briefly highlight the total when it changes so the
+  // contractor knows the estimate recalculated (especially on desktop
+  // where the right column may not be in direct focus).
+  const [flash, setFlash] = useState(false);
+  const prevCostRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (result && prevCostRef.current !== null && prevCostRef.current !== result.totalCost) {
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 600);
+      return () => clearTimeout(t);
+    }
+    if (result) prevCostRef.current = result.totalCost;
+  }, [result?.totalCost]);
+
   if (!result) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
@@ -90,7 +104,7 @@ export default memo(function EstimateSummaryCard({
         </div>
         <div className="border-t border-fence-800 pt-3 mb-3 flex justify-between items-center">
           <p className="text-fence-300 text-sm">Total Cost</p>
-          <p className="text-xl font-semibold text-fence-200">{fmt(result.totalCost)}</p>
+          <p className={`text-xl font-semibold text-fence-200 transition-colors duration-500 ${flash ? "text-green-400" : ""}`}>{fmt(result.totalCost)}</p>
         </div>
         {result.totalCost > 0 && (
           <div className="bg-fence-800 rounded-lg p-3">
