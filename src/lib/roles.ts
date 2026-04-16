@@ -34,8 +34,8 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: "Overview",   href: "/dashboard",           segment: "",          icon: "home" },
   { label: "Customers",  href: "/dashboard/customers",  segment: "customers", icon: "users" },
-  { label: "Estimates",  href: "/dashboard/estimates",  segment: "estimates", icon: "calculator" },
-  { label: "Advanced Estimate", href: "/dashboard/advanced-estimate", segment: "advanced-estimate", icon: "calculator" },
+  { label: "Estimator",  href: "/dashboard/advanced-estimate", segment: "advanced-estimate", icon: "calculator" },
+  { label: "Quotes",     href: "/dashboard/estimates",  segment: "estimates", icon: "calculator" },
   { label: "Jobs",       href: "/dashboard/jobs",       segment: "jobs",      icon: "briefcase" },
   { label: "Leads",      href: "/dashboard/leads",      segment: "leads",     icon: "mail" },
   { label: "Materials",  href: "/dashboard/materials",  segment: "materials", icon: "package" },

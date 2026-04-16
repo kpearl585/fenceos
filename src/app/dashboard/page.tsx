@@ -73,7 +73,9 @@ export default async function DashboardHome({
   const allJobs = jobs ?? [];
 
   //  KPIs 
-  const quotedEstimates = allEstimates.filter(e => e.status === "quoted" || e.status === "draft");
+  const quotedEstimates = allEstimates.filter(e => e.status === "quoted");
+  const draftEstimates = allEstimates.filter(e => e.status === "draft");
+  const pipelineValue = quotedEstimates.reduce((s, e) => s + (Number(e.total) || 0), 0);
   const activeJobs = allJobs.filter(j => j.status === "active");
   const scheduledJobs = allJobs.filter(j => j.status === "scheduled");
   const completedJobs = allJobs.filter(j => j.status === "complete");
@@ -122,7 +124,7 @@ export default async function DashboardHome({
             </Link>
           )}
           {canEstimate && (
-            <Link href="/dashboard/estimates/new" className="inline-flex items-center gap-1.5 bg-fence-600 hover:bg-fence-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
+            <Link href="/dashboard/advanced-estimate" className="inline-flex items-center gap-1.5 bg-fence-600 hover:bg-fence-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
               + New Estimate
             </Link>
           )}
@@ -145,9 +147,9 @@ export default async function DashboardHome({
         </div>
         {canEstimate && (
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Quotes Out</p>
-            <p className="text-2xl font-bold text-fence-900 mt-2">{pipeline.quoted}</p>
-            <p className="text-xs text-gray-400 mt-1">{pipeline.draft} drafts</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pipeline Value</p>
+            <p className="text-2xl font-bold text-fence-900 mt-2">{fmt(pipelineValue)}</p>
+            <p className="text-xs text-gray-400 mt-1">{quotedEstimates.length} quote{quotedEstimates.length !== 1 ? "s" : ""} out · {draftEstimates.length} draft{draftEstimates.length !== 1 ? "s" : ""}</p>
           </div>
         )}
         {isOwner && (
@@ -228,7 +230,7 @@ export default async function DashboardHome({
             {recentEstimates.length === 0 ? (
               <div className="px-5 py-8 text-center">
                 <p className="text-sm text-gray-400">No estimates yet</p>
-                <Link href="/dashboard/estimates/new" className="mt-3 inline-block text-xs text-fence-600 font-semibold hover:underline">Create your first estimate →</Link>
+                <Link href="/dashboard/advanced-estimate" className="mt-3 inline-block text-xs text-fence-600 font-semibold hover:underline">Create your first estimate →</Link>
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
@@ -299,7 +301,7 @@ export default async function DashboardHome({
         <h2 className="text-sm font-semibold text-gray-700 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {canEstimate && (
-            <Link href="/dashboard/estimates/new" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-fence-200 hover:border-fence-400 hover:bg-fence-50 transition-all group text-center">
+            <Link href="/dashboard/advanced-estimate" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-fence-200 hover:border-fence-400 hover:bg-fence-50 transition-all group text-center">
               <span className="text-2xl"></span>
               <span className="text-xs font-semibold text-fence-700 group-hover:text-fence-900">New Estimate</span>
             </Link>

@@ -1,46 +1,17 @@
 /**
- * Phase 1 Estimator - Input Screen
- * Minimal UI to test deployed Phase 1 API
+ * Phase 1 Estimator — SUNSET REDIRECT
+ *
+ * The Phase 1 estimator has been superseded by the Advanced Estimator
+ * with Simple Mode (which provides the same quick-entry UX with the
+ * full graph-based engine underneath). Any bookmarks or links to the
+ * old Phase 1 page now redirect to the Advanced Estimator.
+ *
+ * Existing Phase 1 estimates at /dashboard/phase1-estimator/[design_id]
+ * still render (read-only) so contractors can reference old work.
  */
 
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-import Phase1EstimatorForm from "./Phase1EstimatorForm"
+import { redirect } from "next/navigation";
 
-export default async function Phase1EstimatorPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/login")
-  }
-
-  // Get user's org_id
-  const { data: userRecord } = await supabase
-    .from('users')
-    .select('org_id, email')
-    .eq('auth_id', user.id)
-    .single()
-
-  if (!userRecord?.org_id) {
-    return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 rounded p-4">
-          <h2 className="text-red-800 font-semibold">Setup Required</h2>
-          <p className="text-red-700 mt-2">Your account is not linked to an organization. Please contact support.</p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Phase 1 Estimator</h1>
-        <p className="text-gray-600 mt-2">Wood Privacy Fence - Graph-based BOM Calculator</p>
-      </div>
-
-      <Phase1EstimatorForm orgId={userRecord.org_id} userEmail={userRecord.email} />
-    </div>
-  )
+export default function Phase1EstimatorPage() {
+  redirect("/dashboard/advanced-estimate");
 }
