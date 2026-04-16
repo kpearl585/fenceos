@@ -58,7 +58,7 @@ export default memo(function EstimateSummaryCard({
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
         {estimateError ? (
-          <p className="text-red-500 text-sm">{estimateError}</p>
+          <p role="alert" className="text-red-500 text-sm">{estimateError}</p>
         ) : (
           <p className="text-gray-400 text-sm">Add at least one run with a length to generate an estimate.</p>
         )}
@@ -131,7 +131,7 @@ export default memo(function EstimateSummaryCard({
              "Create Estimate & Send to Customer"}
           </button>
           {convertError && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">{convertError}</p>
+            <p role="alert" className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">{convertError}</p>
           )}
           {convertStatus === "idle" && (
             <p className="text-xs text-fence-300 text-center">Requires customer name in Customer Info above</p>

@@ -17,8 +17,9 @@ export default function CustomerInfoCard({ value, onChange }: CustomerInfoCardPr
       <p className="text-xs text-blue-700 mb-4">Enter once, used for all PDFs and estimates</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-blue-700 mb-1">Customer Name *</label>
+          <label htmlFor="est-cust-name" className="block text-xs font-medium text-blue-700 mb-1">Customer Name *</label>
           <input
+            id="est-cust-name"
             type="text"
             placeholder="Jane Smith"
             value={value.name}
@@ -27,8 +28,9 @@ export default function CustomerInfoCard({ value, onChange }: CustomerInfoCardPr
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-blue-700 mb-1">Street Address</label>
+          <label htmlFor="est-cust-address" className="block text-xs font-medium text-blue-700 mb-1">Street Address</label>
           <input
+            id="est-cust-address"
             type="text"
             placeholder="123 Main St"
             value={value.address}
@@ -37,8 +39,9 @@ export default function CustomerInfoCard({ value, onChange }: CustomerInfoCardPr
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-blue-700 mb-1">City, State, Zip</label>
+          <label htmlFor="est-cust-city" className="block text-xs font-medium text-blue-700 mb-1">City, State, Zip</label>
           <input
+            id="est-cust-city"
             type="text"
             placeholder="Orlando, FL 32801"
             value={value.city}
@@ -47,8 +50,9 @@ export default function CustomerInfoCard({ value, onChange }: CustomerInfoCardPr
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-blue-700 mb-1">Phone</label>
+          <label htmlFor="est-cust-phone" className="block text-xs font-medium text-blue-700 mb-1">Phone</label>
           <input
+            id="est-cust-phone"
             type="text"
             placeholder="(555) 000-0000"
             value={value.phone}

@@ -21,7 +21,7 @@ export default function AdvancedEstimateError({
   }, [error]);
 
   return (
-    <div className="max-w-2xl mx-auto mt-12 bg-white rounded-xl border border-red-200 p-8">
+    <div role="alert" className="max-w-2xl mx-auto mt-12 bg-white rounded-xl border border-red-200 p-8">
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
           <svg
