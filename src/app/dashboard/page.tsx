@@ -164,6 +164,9 @@ export default async function DashboardHome({
       </div>
 
 
+      {/*  Referral Widget — promoted above the fold for growth  */}
+      {isOwner && <ReferralWidget />}
+
       {/*  Onboarding Checklist  */}
       {isOwner && (
         <OnboardingChecklist
@@ -292,9 +295,6 @@ export default async function DashboardHome({
         </div>
       </div>
 
-
-      {/*  Referral Widget  */}
-      {isOwner && <ReferralWidget />}
 
       {/*  Quick Actions  */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
