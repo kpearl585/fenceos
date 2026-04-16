@@ -6,7 +6,10 @@
 //
 // Uses SheetJS (xlsx) for workbook generation.
 
-import * as XLSX from "xlsx";
+// Dynamic import: xlsx (SheetJS) is ~500KB and only needed when the
+// contractor clicks "Download Excel". Importing at the top of every
+// page load bloats the client bundle. The `import("xlsx")` inside each
+// export function defers loading until the button is actually clicked.
 import type { FenceEstimateResult } from "./types";
 
 // Categories that should NOT be sent to a fence supplier — these are
@@ -28,7 +31,11 @@ function fmtCurrency(n: number | undefined) {
   return `$${n.toFixed(2)}`;
 }
 
-function downloadWorkbook(wb: XLSX.WorkBook, filename: string) {
+async function loadXLSX() {
+  return await import("xlsx");
+}
+
+function downloadWorkbook(XLSX: typeof import("xlsx"), wb: import("xlsx").WorkBook, filename: string) {
   const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
@@ -41,13 +48,14 @@ function downloadWorkbook(wb: XLSX.WorkBook, filename: string) {
 
 // ── 1. Internal BOM Workbook ──────────────────────────────────────
 // Three sheets: Summary | Bill of Materials | Labor
-export function downloadInternalBom(
+export async function downloadInternalBom(
   result: FenceEstimateResult,
   projectName: string,
   markupPct: number,
   totalLF: number,
   orgName?: string
 ) {
+  const XLSX = await loadXLSX();
   const wb = XLSX.utils.book_new();
   const safeMarkup = Math.max(0, markupPct);
   const bidPrice = Math.round(result.totalCost * (1 + safeMarkup / 100));
@@ -159,18 +167,19 @@ export function downloadInternalBom(
   XLSX.utils.book_append_sheet(wb, wsAudit, "Audit Trail");
 
   const slug = projectName.replace(/[^a-z0-9]/gi, "-").toLowerCase();
-  downloadWorkbook(wb, `${slug}-internal-bom.xlsx`);
+  downloadWorkbook(XLSX, wb, `${slug}-internal-bom.xlsx`);
 }
 
 // ── 2. Supplier Purchase Order Workbook ───────────────────────────
 // One clean sheet. No costs. Send directly to distributor.
-export function downloadSupplierPO(
+export async function downloadSupplierPO(
   result: FenceEstimateResult,
   projectName: string,
   totalLF: number,
   orgName?: string,
   customerAddress?: string
 ) {
+  const XLSX = await loadXLSX();
   const wb = XLSX.utils.book_new();
 
   const headerRows = [
@@ -231,5 +240,5 @@ export function downloadSupplierPO(
   XLSX.utils.book_append_sheet(wb, ws, "Purchase Order");
 
   const slug = projectName.replace(/[^a-z0-9]/gi, "-").toLowerCase();
-  downloadWorkbook(wb, `${slug}-supplier-po.xlsx`);
+  downloadWorkbook(XLSX, wb, `${slug}-supplier-po.xlsx`);
 }

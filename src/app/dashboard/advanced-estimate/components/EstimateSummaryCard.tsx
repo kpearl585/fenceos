@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { FenceEstimateResult } from "@/lib/fence-graph/engine";
 import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/exportBomExcel";
 import type {
@@ -31,7 +31,11 @@ interface EstimateSummaryCardProps {
   onConvertToEstimate: () => void;
 }
 
-export default function EstimateSummaryCard({
+// Memoized: this card re-renders on every parent keystroke (customer name,
+// project name, etc.) even when `result` hasn't changed. The memo boundary
+// skips re-renders when none of the 16 props change by reference equality.
+// The `result` object identity only changes when the engine memo recomputes.
+export default memo(function EstimateSummaryCard({
   result,
   estimateError,
   projectName,
@@ -270,4 +274,4 @@ export default function EstimateSummaryCard({
       </div>
     </>
   );
-}
+});
