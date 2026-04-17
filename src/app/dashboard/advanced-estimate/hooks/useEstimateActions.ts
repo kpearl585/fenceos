@@ -14,6 +14,7 @@ import {
 } from "../actions";
 import { createEstimateFromFenceGraph } from "../convertActions";
 import { STATUS_RESET_MS, CONVERT_ERROR_RESET_MS } from "../constants";
+import { isPaywallBlock, type PaywallBlock } from "@/lib/paywall";
 
 function downloadBase64Pdf(base64: string, filename: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -61,6 +62,8 @@ export interface UseEstimateActionsReturn {
   proposalStatus: PdfStatus;
   convertStatus: ConvertStatus;
   convertError: string | null;
+  paywallBlock: PaywallBlock | null;
+  dismissPaywall: () => void;
   handleSave: () => Promise<void>;
   handlePdfDownload: () => Promise<void>;
   handleProposalDownload: () => Promise<void>;
@@ -82,11 +85,18 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
   const [proposalStatus, setProposalStatus] = useState<PdfStatus>("idle");
   const [convertStatus, setConvertStatus] = useState<ConvertStatus>("idle");
   const [convertError, setConvertError] = useState<string | null>(null);
+  const [paywallBlock, setPaywallBlock] = useState<PaywallBlock | null>(null);
+  const dismissPaywall = useCallback(() => setPaywallBlock(null), []);
 
   const handleSave = useCallback(async () => {
     if (!result) return;
     setSaveStatus("saving");
     const res = await saveAdvancedEstimate(input, result, projectName, laborRate, wastePct / 100);
+    if (isPaywallBlock(res)) {
+      setPaywallBlock(res);
+      setSaveStatus("idle");
+      return;
+    }
     setSaveStatus(res.success ? "saved" : "error");
     setTimeout(() => setSaveStatus("idle"), STATUS_RESET_MS);
   }, [input, result, projectName, laborRate, wastePct]);
@@ -148,6 +158,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
 
   return {
     saveStatus, pdfStatus, proposalStatus, convertStatus, convertError,
+    paywallBlock, dismissPaywall,
     handleSave, handlePdfDownload, handleProposalDownload, handleConvertToEstimate,
   };
 }

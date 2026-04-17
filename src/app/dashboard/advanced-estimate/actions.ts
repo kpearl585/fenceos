@@ -11,7 +11,8 @@ import { calculateProjectTimeline } from "@/lib/fence-graph/calculateTimeline";
 import { SaveEstimateSchema, GenerateAdvancedPdfSchema, GenerateCustomerProposalPdfSchema } from "@/lib/validation/schemas";
 import { DEFAULT_CREW_LEAD_DAYS, DEFAULT_PROPOSAL_VALID_DAYS } from "./constants";
 import { instrument } from "@/lib/observability/estimator-instrumentation";
-import { requireActiveSubscription } from "@/lib/subscription";
+import { checkSubscription, requireActiveSubscription } from "@/lib/subscription";
+import { buildPaywallBlock, type PaywallBlock } from "@/lib/paywall";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { SiteComplexity, CloseoutData, AccuracyMetrics } from "@/lib/fence-graph/accuracy-types";
@@ -61,7 +62,7 @@ export async function saveAdvancedEstimate(
   name: string,
   laborRate: number,
   wastePct: number
-): Promise<{ success: boolean; id?: string; error?: string }> {
+): Promise<{ success: true; id: string } | { success: false; error: string } | PaywallBlock> {
   const startTime = Date.now();
 
   try {
@@ -86,9 +87,32 @@ export async function saveAdvancedEstimate(
       .single();
     if (!profile) return { success: false, error: "Profile not found" };
 
-    // ✅ BILLING: Verify active subscription before saving
-    const subBlocked = await requireActiveSubscription(profile.org_id);
-    if (subBlocked) return subBlocked;
+    // ✅ BILLING: Subscription + monthly estimate cap (paywall-aware).
+    // Returns a PaywallBlock the client renders in <PaywallModal/> via usePaywall().
+    const sub = await checkSubscription(profile.org_id);
+    if (!sub.isActive) {
+      return buildPaywallBlock(
+        sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
+        sub.effectivePlan,
+      );
+    }
+    if (sub.limits.maxEstimatesPerMonth != null) {
+      const monthStart = new Date();
+      monthStart.setUTCDate(1);
+      monthStart.setUTCHours(0, 0, 0, 0);
+      const { count } = await admin
+        .from("fence_graphs")
+        .select("id", { count: "exact", head: true })
+        .eq("org_id", profile.org_id)
+        .gte("created_at", monthStart.toISOString());
+      const used = count ?? 0;
+      if (used >= sub.limits.maxEstimatesPerMonth) {
+        return buildPaywallBlock("estimate_cap_hit", sub.effectivePlan, {
+          used,
+          limit: sub.limits.maxEstimatesPerMonth,
+        });
+      }
+    }
 
     const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
 
@@ -104,7 +128,7 @@ export async function saveAdvancedEstimate(
     // ✅ SECURITY: Rate limit estimate creation
     const rateLimit = RateLimiters.estimateCreation(profile.org_id);
     if (!rateLimit.success) {
-      return { success: false, error: rateLimit.error };
+      return { success: false, error: rateLimit.error ?? "Rate limit exceeded. Please try again later." };
     }
 
     const { data, error } = await admin

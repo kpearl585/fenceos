@@ -17,6 +17,7 @@ import RegulatoryCostsCard from "./components/RegulatoryCostsCard";
 import EstimateSummaryCard from "./components/EstimateSummaryCard";
 import ProjectSetupCard, { PRODUCT_LINE_BY_TYPE } from "./components/ProjectSetupCard";
 import RunsEditor from "./components/RunsEditor";
+import { PaywallModal } from "@/components/PaywallModal";
 import {
   DEFAULT_LABOR_RATE,
   DEFAULT_MARKUP_PCT,
@@ -89,6 +90,7 @@ export default function AdvancedEstimateClient({
 
   const {
     saveStatus, pdfStatus, proposalStatus, convertStatus, convertError,
+    paywallBlock, dismissPaywall,
     handleSave, handlePdfDownload, handleProposalDownload, handleConvertToEstimate,
   } = useEstimateActions({
     input, result, projectName, laborRate, wastePct, markupPct,
@@ -241,6 +243,8 @@ export default function AdvancedEstimateClient({
           </div>
         </div>
       )}
+
+      <PaywallModal block={paywallBlock} onClose={dismissPaywall} />
     </div>
   );
 }
