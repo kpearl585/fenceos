@@ -6,3 +6,10 @@
 //
 // We import the existing config so the init options stay in one place.
 import "./sentry.client.config";
+
+import * as Sentry from "@sentry/nextjs";
+
+// Required by @sentry/nextjs v10 to instrument App Router navigations as
+// performance transactions. Without this export, SPA route transitions are
+// invisible in Sentry's Performance tab.
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
