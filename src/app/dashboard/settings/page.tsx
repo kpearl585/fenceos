@@ -8,6 +8,7 @@ import BrandingForm from "@/components/settings/BrandingForm";
 import TeamMembersSection from "@/components/settings/TeamMembersSection";
 import BillingPortalButton from "@/components/settings/BillingPortalButton";
 import ExportDataButton from "@/components/settings/ExportDataButton";
+import DeleteAccountButton from "@/components/settings/DeleteAccountButton";
 import { planHasCustomBranding } from "@/lib/planLimits";
 import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -279,25 +280,7 @@ export default async function SettingsPage() {
                   Active subscriptions will be cancelled. We recommend exporting your data first.
                 </p>
               </div>
-              <form action={deleteAccount} className="ml-4">
-                <button
-                  type="submit"
-                  onClick={(e) => {
-                    if (!confirm('Are you absolutely sure you want to delete your account? This action CANNOT be undone. All your data will be permanently deleted after 30 days.\n\nType DELETE in the next prompt to confirm.')) {
-                      e.preventDefault();
-                      return;
-                    }
-                    const confirmation = prompt('Type DELETE to confirm account deletion:');
-                    if (confirmation !== 'DELETE') {
-                      e.preventDefault();
-                      alert('Account deletion cancelled. Confirmation did not match.');
-                    }
-                  }}
-                  className="bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
-                >
-                  Delete Account
-                </button>
-              </form>
+              <DeleteAccountButton action={deleteAccount} />
             </div>
           </div>
         </div>
