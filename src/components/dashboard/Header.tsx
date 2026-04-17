@@ -35,7 +35,7 @@ export function Header({ email, role, fullName }: { email: string; role: Role; f
       <div className="flex items-center gap-3">
         {role !== "foreman" && (
           <Link
-            href="/dashboard/estimates/new"
+            href="/dashboard/advanced-estimate"
             className="hidden sm:inline-flex items-center gap-1.5 bg-fence-600 hover:bg-fence-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

@@ -62,7 +62,7 @@ export default async function EstimatesPage({
           <h1 className="text-2xl font-bold text-fence-900">Estimates</h1>
           <p className="text-sm text-gray-500 mt-0.5">{filtered.length} estimate{filtered.length !== 1 ? "s" : ""}{status ? ` · ${status}` : ""}</p>
         </div>
-        <Link href="/dashboard/estimates/new" className="bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors">
+        <Link href="/dashboard/advanced-estimate" className="bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors">
           + New Estimate
         </Link>
       </div>
@@ -80,7 +80,7 @@ export default async function EstimatesPage({
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <p className="text-gray-400 text-sm">{q || status ? "No estimates match your search." : "No estimates yet."}</p>
           {!q && !status && (
-            <Link href="/dashboard/estimates/new" className="mt-3 inline-block text-sm text-fence-600 font-semibold hover:underline">Create your first estimate →</Link>
+            <Link href="/dashboard/advanced-estimate" className="mt-3 inline-block text-sm text-fence-600 font-semibold hover:underline">Create your first estimate →</Link>
           )}
         </div>
       ) : (

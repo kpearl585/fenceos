@@ -55,7 +55,7 @@ export default async function OnboardingChecklist({ userId, orgId, userCreatedAt
     {
       label: "Build your first estimate",
       done: (estimateCount ?? 0) > 0,
-      href: "/dashboard/estimates/new",
+      href: "/dashboard/advanced-estimate",
     },
     {
       label: "Send estimate to customer",
