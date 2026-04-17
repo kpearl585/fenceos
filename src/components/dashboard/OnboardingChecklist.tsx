@@ -24,11 +24,17 @@ export default async function OnboardingChecklist({ userId, orgId, userCreatedAt
     supabase.from("customers").select("id", { count: "exact", head: true }).eq("org_id", orgId),
     supabase.from("estimates").select("id", { count: "exact", head: true }).eq("org_id", orgId),
     supabase.from("estimates").select("id", { count: "exact", head: true }).eq("org_id", orgId).in("status", ["quoted", "approved"]),
-    supabase.from("org_settings").select("id, target_margin, payment_terms").eq("org_id", orgId).single(),
+    supabase.from("org_settings").select("org_id, target_margin_pct, payment_terms").eq("org_id", orgId).single(),
   ]);
 
-  // Company profile is "done" if they've set at least a target margin or payment terms
-  const profileDone = !!(orgSettings?.target_margin || orgSettings?.payment_terms);
+  // Company profile is "done" if they've set at least a target margin (non-default)
+  // or explicit payment terms. target_margin_pct has a DEFAULT of 0.35, so a value
+  // of exactly 0.35 means "user didn't touch it"; anything else means they ran
+  // through onboarding and kept/changed the default.
+  const hasCustomMargin =
+    orgSettings?.target_margin_pct != null &&
+    Number(orgSettings.target_margin_pct) !== 0.35;
+  const profileDone = !!(hasCustomMargin || orgSettings?.payment_terms);
 
   const steps = [
     {
