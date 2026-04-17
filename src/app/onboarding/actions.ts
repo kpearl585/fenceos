@@ -43,5 +43,25 @@ export async function saveOnboarding(fd: FormData) {
       default_labor_rate: laborRate,
     }, { onConflict: "org_id" });
 
+  // Carry the onboarding form's phone input through to org_branding so it
+  // shows up on every customer-facing PDF right away. Users can still edit
+  // it in Settings → Company Contact Info. `state` is captured separately
+  // in profile.full_name/address logic later (no standalone column today).
+  if (phone) {
+    await admin
+      .from("org_branding")
+      .upsert({
+        org_id: profile.org_id,
+        phone,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "org_id" });
+  }
+
+  // Suppress unused-var warning for `state` — kept here intentionally so the
+  // onboarding form's state dropdown continues to submit without a crash,
+  // pending a schema decision on where to persist it (org_branding.address
+  // component, new org_contact table, or just stop collecting it).
+  void state;
+
   redirect("/dashboard?welcome=1");
 }

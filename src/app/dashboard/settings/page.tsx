@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { canAccess } from "@/lib/roles";
-import { saveOrgSettings, deleteAccount } from "./actions";
+import { saveOrgSettings, saveOrgContact, deleteAccount } from "./actions";
 import OrgNameForm from "@/components/settings/OrgNameForm";
 import BrandingForm from "@/components/settings/BrandingForm";
 import TeamMembersSection from "@/components/settings/TeamMembersSection";
@@ -133,6 +133,53 @@ export default async function SettingsPage() {
 
             <button type="submit" className="bg-fence-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700">
               Save Settings
+            </button>
+          </form>
+        </div>
+
+        {/* Company Contact Info — shown on every customer-facing PDF.
+            Deliberately outside the plan gate: every plan's quotes need a
+            phone/email/address in the "from" block. Only branding (logo,
+            colors) is Pro+. */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-fence-900 mb-1">Company Contact Info</h2>
+          <p className="text-xs text-gray-500 mb-4">
+            Shown on every customer-facing proposal, invoice, and contract. Keep this up to date so customers know how to reach you.
+          </p>
+          <form action={saveOrgContact} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  name="phone"
+                  type="tel"
+                  defaultValue={(branding as Record<string, unknown> | null)?.phone as string || ""}
+                  placeholder="(555) 867-5309"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  name="email"
+                  type="email"
+                  defaultValue={(branding as Record<string, unknown> | null)?.email as string || ""}
+                  placeholder="quotes@yourcompany.com"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mailing Address</label>
+              <input
+                name="address"
+                defaultValue={(branding as Record<string, unknown> | null)?.address as string || ""}
+                placeholder="123 Main St, Springfield, IL 62701"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+              />
+            </div>
+            <button type="submit" className="bg-fence-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700">
+              Save Contact Info
             </button>
           </form>
         </div>

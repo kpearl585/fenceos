@@ -51,6 +51,27 @@ export async function saveBranding(fd: FormData) {
   revalidatePath("/dashboard/settings");
 }
 
+/**
+ * Save the company contact info (phone / email / address) that renders on
+ * every customer-facing PDF (proposals, invoices, contracts, acceptance
+ * emails). Separate from saveBranding because contact info is needed on
+ * all plans — branding (logo, custom colors) is gated to Pro+, but a
+ * Starter user's quote still needs their phone number on it.
+ */
+export async function saveOrgContact(fd: FormData) {
+  const { supabase, profile } = await getAuthContext();
+
+  await supabase.from("org_branding").upsert({
+    org_id: profile.org_id,
+    phone:   (fd.get("phone") as string | null)?.trim() || null,
+    email:   (fd.get("email") as string | null)?.trim() || null,
+    address: (fd.get("address") as string | null)?.trim() || null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "org_id" });
+
+  revalidatePath("/dashboard/settings");
+}
+
 export async function updateOrgName(orgId: string, name: string) {
   if (!name?.trim()) return { error: "Name is required" };
   const supabase = createAdminClient();
