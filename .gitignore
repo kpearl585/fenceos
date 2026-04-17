@@ -1,9 +1,19 @@
 node_modules
 .next
+.next-dataless-*
 .vercel
 .env.local
 .DS_Store
 .env.local.save
+
+# macOS iCloud / Finder conflict duplicates
+* 2.ts
+* 2.tsx
+* 2.js
+* 2.jsx
+* 2.json
+* 2.md
+.claude/
 
 # Sentry
 .sentryclirc
