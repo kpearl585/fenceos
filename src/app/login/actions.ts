@@ -82,7 +82,29 @@ export async function signup(formData: FormData) {
     // never block signup if email fails
   }
 
-  redirect("/signup?message=Check your email to confirm your account");
+  // Branch on whether Supabase returned a session:
+  //  - Session present → email confirmation is OFF in project settings. The
+  //    user is fully authenticated right now. Straight into onboarding,
+  //    matches the "14 days free, no credit card required" promise on the
+  //    signup page.
+  //  - Session absent → email confirmation is ON. Show the stale-friendly
+  //    waiting page so they know what to do next.
+  //
+  // Ops note: confirmation is toggled in Supabase Dashboard → Auth →
+  // Providers → Email → "Confirm email". For a B2B trial funnel, OFF is
+  // usually the right call — you want users in-app immediately, and the
+  // welcome email above already landed in their inbox via Resend.
+  if (signUpData?.session) {
+    revalidatePath("/", "layout");
+    redirect("/onboarding");
+  }
+
+  redirect(
+    "/signup?message=" +
+      encodeURIComponent(
+        "Check your email to confirm your account. If you don't see it in a few minutes, check spam or contact support@fenceestimatepro.com."
+      )
+  );
 }
 
 export async function logout() {

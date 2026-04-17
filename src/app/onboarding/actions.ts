@@ -14,7 +14,6 @@ export async function saveOnboarding(fd: FormData) {
   const companyName   = (fd.get("company_name") as string)?.trim();
   const fullName      = (fd.get("full_name") as string)?.trim();
   const phone         = (fd.get("phone") as string)?.trim();
-  const city          = (fd.get("city") as string)?.trim();
   const state         = (fd.get("state") as string)?.trim();
   const targetMargin  = parseFloat((fd.get("target_margin") as string) || "35") / 100;
   const laborRate     = parseFloat((fd.get("labor_rate") as string) || "65");
