@@ -94,7 +94,7 @@ export default async function OwnerDashboardPage() {
   const adminForPlan = createAdminClient();
   const { data: orgForPlan } = await adminForPlan.from("organizations").select("plan").eq("id", profile.org_id).single();
   if (!getPlanLimits(orgForPlan?.plan).pnlDashboard) {
-    return <UpgradeGate feature="Owner P&L Dashboard" requiredPlan="Pro" description="Full financial overview across all jobs and estimates — revenue, gross profit, margin tracking, and jobs at risk. Available on Pro and Business." />;
+    return <UpgradeGate feature="Owner P&L Dashboard" requiredPlan="Pro" trigger="feature_pipeline" description="Full financial overview across all jobs and estimates — revenue, gross profit, margin tracking, and jobs at risk. Available on Pro and Business." />;
   }
 
   // (original role guard — now handled above, this block intentionally removed)

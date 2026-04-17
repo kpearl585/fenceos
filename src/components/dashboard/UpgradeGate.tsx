@@ -1,14 +1,20 @@
 import Link from "next/link";
 import { PLAN_UPGRADE_URL } from "@/lib/planLimits";
+import type { PaywallTrigger } from "@/lib/paywall";
 
 interface Props {
   feature: string;
   requiredPlan: "Pro" | "Business";
   description?: string;
+  /** Optional trigger identifier — appended to the upgrade link as
+   *  ?from=<trigger> so the upgrade page can personalize + analytics
+   *  can measure which feature-gate drove the visit. */
+  trigger?: PaywallTrigger;
 }
 
-export default function UpgradeGate({ feature, requiredPlan, description }: Props) {
+export default function UpgradeGate({ feature, requiredPlan, description, trigger }: Props) {
   const desc = description ?? `${feature} is available on the ${requiredPlan} plan and above.`;
+  const href = trigger ? `${PLAN_UPGRADE_URL}?from=${encodeURIComponent(trigger)}` : PLAN_UPGRADE_URL;
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       <div className="bg-white border border-gray-200 rounded-2xl p-10 max-w-md w-full text-center shadow-sm">
@@ -20,7 +26,7 @@ export default function UpgradeGate({ feature, requiredPlan, description }: Prop
         <h2 className="text-xl font-bold text-fence-950 mb-2">{feature}</h2>
         <p className="text-sm text-gray-500 mb-6 leading-relaxed">{desc}</p>
         <Link
-          href={PLAN_UPGRADE_URL}
+          href={href}
           className="inline-block bg-fence-600 text-white font-semibold text-sm px-6 py-3 rounded-lg hover:bg-fence-700 transition-colors"
         >
           Upgrade to {requiredPlan}

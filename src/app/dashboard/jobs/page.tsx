@@ -33,7 +33,7 @@ export default async function JobsPage({
   const admin = createAdminClient();
   const { data: orgForPlan } = await admin.from("organizations").select("plan").eq("id", profile.org_id).single();
   if (!planHasJobs(orgForPlan?.plan)) {
-    return <UpgradeGate feature="Jobs & Foreman Board" requiredPlan="Pro" description="Track every job from scheduled to complete, assign foremen, verify materials, and manage change orders. Available on Pro and Business." />;
+    return <UpgradeGate feature="Jobs & Foreman Board" requiredPlan="Pro" trigger="feature_jobs" description="Track every job from scheduled to complete, assign foremen, verify materials, and manage change orders. Available on Pro and Business." />;
   }
 
   let query = supabase
