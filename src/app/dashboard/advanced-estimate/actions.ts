@@ -11,7 +11,7 @@ import { calculateProjectTimeline } from "@/lib/fence-graph/calculateTimeline";
 import { SaveEstimateSchema, GenerateAdvancedPdfSchema, GenerateCustomerProposalPdfSchema } from "@/lib/validation/schemas";
 import { DEFAULT_CREW_LEAD_DAYS, DEFAULT_PROPOSAL_VALID_DAYS } from "./constants";
 import { instrument } from "@/lib/observability/estimator-instrumentation";
-import { checkSubscription, requireActiveSubscription } from "@/lib/subscription";
+import { checkSubscription } from "@/lib/subscription";
 import { buildPaywallBlock, type PaywallBlock } from "@/lib/paywall";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
@@ -309,14 +309,19 @@ export async function generateAdvancedEstimatePdf(
     const orgInfo = await getOrgInfo(user.id);
     if (!orgInfo) return { success: false, error: "Profile not found" };
 
-    // ✅ BILLING: Verify active subscription before PDF generation
-    const subBlocked = await requireActiveSubscription(orgInfo.orgId);
-    if (subBlocked) return subBlocked;
+    // ✅ BILLING: Subscription check, paywall-aware.
+    const sub = await checkSubscription(orgInfo.orgId);
+    if (!sub.isActive) {
+      return buildPaywallBlock(
+        sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
+        sub.effectivePlan,
+      );
+    }
 
     // ✅ SECURITY: Rate limit PDF generation
     const rateLimit = RateLimiters.pdfGeneration(orgInfo.orgId);
     if (!rateLimit.success) {
-      return { success: false, error: rateLimit.error };
+      return { success: false, error: rateLimit.error ?? "Rate limit exceeded. Please try again later." };
     }
 
     const priceMap = await getOrgMaterialPrices();
@@ -371,14 +376,19 @@ export async function generateCustomerProposalPdf(
     if (!orgInfo) return { success: false, error: "Profile not found" };
     const { orgName, orgPhone, orgEmail, orgAddress } = orgInfo;
 
-    // ✅ BILLING: Verify active subscription before proposal generation
-    const subBlocked = await requireActiveSubscription(orgInfo.orgId);
-    if (subBlocked) return subBlocked;
+    // ✅ BILLING: Subscription check, paywall-aware.
+    const sub = await checkSubscription(orgInfo.orgId);
+    if (!sub.isActive) {
+      return buildPaywallBlock(
+        sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
+        sub.effectivePlan,
+      );
+    }
 
     // ✅ SECURITY: Rate limit PDF generation
     const rateLimit = RateLimiters.pdfGeneration(orgInfo.orgId);
     if (!rateLimit.success) {
-      return { success: false, error: rateLimit.error };
+      return { success: false, error: rateLimit.error ?? "Rate limit exceeded. Please try again later." };
     }
 
     const priceMap = await getOrgMaterialPrices();

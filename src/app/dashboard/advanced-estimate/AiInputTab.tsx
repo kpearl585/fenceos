@@ -5,6 +5,7 @@ import type { AiExtractionResult, AiExtractedRun, CritiqueResult } from "@/lib/f
 import type { RunInput, GateInput, FenceType } from "@/lib/fence-graph/engine";
 import type { SoilType, GateType } from "@/lib/fence-graph/types";
 import { QUICK_TEMPLATES } from "@/lib/fence-graph/ai-extract/templates";
+import { isPaywallBlock, type PaywallBlock } from "@/lib/paywall";
 
 export interface AiAppliedState {
   fenceType: FenceType;
@@ -17,6 +18,9 @@ export interface AiAppliedState {
 
 interface Props {
   onApply: (state: AiAppliedState) => void;
+  /** Raised when the server action returns a PaywallBlock (expired trial,
+   *  lapsed subscription, etc.) so the parent can surface the modal. */
+  onPaywall?: (block: PaywallBlock) => void;
 }
 
 // ── Convert AI extraction → engine state ─────────────────────────
@@ -101,7 +105,7 @@ function confidenceLabel(c: number) {
   return "Low confidence — review carefully";
 }
 
-export default function AiInputTab({ onApply }: Props) {
+export default function AiInputTab({ onApply, onPaywall }: Props) {
   // Per-instance ID counters so two AI tabs (or multiple extractions on
   // the same page) can't collide IDs. Replaces the prior module-level
   // mutable counters that leaked across mounts and HMR.
@@ -145,6 +149,11 @@ export default function AiInputTab({ onApply }: Props) {
       : await extractFromImage(imageBase64!, imageMime, additionalContext || undefined);
 
     setLoading(false);
+
+    if (isPaywallBlock(res)) {
+      onPaywall?.(res);
+      return;
+    }
 
     if (!res.success || !res.result) {
       setError(res.error ?? "Extraction failed");

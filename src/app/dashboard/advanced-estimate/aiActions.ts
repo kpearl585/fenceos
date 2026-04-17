@@ -9,7 +9,8 @@ import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph
 import type { CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import { detectHiddenCosts } from "@/lib/fence-graph/ai-extract/hiddenCostDetection";
 import { instrument } from "@/lib/observability/estimator-instrumentation";
-import { requireActiveSubscription } from "@/lib/subscription";
+import { checkSubscription } from "@/lib/subscription";
+import { buildPaywallBlock } from "@/lib/paywall";
 import crypto from "crypto";
 
 // ── Rate limiting constants ────────────────────────────────────────
@@ -279,9 +280,15 @@ export async function extractFromText(
   const auth = await getAuthContext();
   if (!auth) return { success: false, error: "Not authenticated" };
 
-  // ✅ BILLING: AI extraction costs real money — verify subscription first
-  const subBlocked = await requireActiveSubscription(auth.orgId);
-  if (subBlocked) return subBlocked;
+  // ✅ BILLING: AI extraction costs real money — verify subscription first.
+  // Return a PaywallBlock so the client modal fires with a proper upgrade pitch.
+  const sub = await checkSubscription(auth.orgId);
+  if (!sub.isActive) {
+    return buildPaywallBlock(
+      sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
+      sub.effectivePlan,
+    );
+  }
 
   // Rate limit (fails CLOSED on DB error)
   const rateCheck = await checkRateLimit(auth.orgId);
@@ -389,9 +396,14 @@ export async function extractFromImage(
   const auth = await getAuthContext();
   if (!auth) return { success: false, error: "Not authenticated" };
 
-  // ✅ BILLING: AI image extraction costs real money — verify subscription
-  const subBlocked = await requireActiveSubscription(auth.orgId);
-  if (subBlocked) return subBlocked;
+  // ✅ BILLING: AI image extraction costs real money — verify subscription.
+  const sub = await checkSubscription(auth.orgId);
+  if (!sub.isActive) {
+    return buildPaywallBlock(
+      sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
+      sub.effectivePlan,
+    );
+  }
 
   const rateCheck = await checkRateLimit(auth.orgId);
   if (!rateCheck.allowed) {

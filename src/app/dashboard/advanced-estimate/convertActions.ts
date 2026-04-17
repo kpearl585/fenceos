@@ -6,7 +6,8 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { RateLimiters } from "@/lib/security/rate-limit";
-import { requireActiveSubscription } from "@/lib/subscription";
+import { checkSubscription } from "@/lib/subscription";
+import { buildPaywallBlock } from "@/lib/paywall";
 import type { FenceEstimateResult } from "@/lib/fence-graph/types";
 
 interface ConvertInput {
@@ -38,14 +39,19 @@ export async function createEstimateFromFenceGraph(
       .from("profiles").select("id, org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
 
-    // ✅ BILLING: Verify active subscription before creating quote
-    const subBlocked = await requireActiveSubscription(profile.org_id);
-    if (subBlocked) return subBlocked;
+    // ✅ BILLING: Subscription check, paywall-aware.
+    const sub = await checkSubscription(profile.org_id);
+    if (!sub.isActive) {
+      return buildPaywallBlock(
+        sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
+        sub.effectivePlan,
+      );
+    }
 
     // ✅ SECURITY: Rate limit estimate conversion (creates DB records)
     const rateLimit = RateLimiters.estimateCreation(profile.org_id);
     if (!rateLimit.success) {
-      return { success: false, error: rateLimit.error };
+      return { success: false, error: rateLimit.error ?? "Rate limit exceeded. Please try again later." };
     }
 
     const { result, projectName, laborRate, markupPct, totalLF, fenceType, customer } = input;

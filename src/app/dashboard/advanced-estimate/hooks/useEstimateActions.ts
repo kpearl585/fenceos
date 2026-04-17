@@ -64,6 +64,9 @@ export interface UseEstimateActionsReturn {
   convertError: string | null;
   paywallBlock: PaywallBlock | null;
   dismissPaywall: () => void;
+  /** Imperatively raise the paywall modal — used by sibling components
+   *  (AI tab, etc.) that call their own server actions. */
+  showPaywall: (block: PaywallBlock) => void;
   handleSave: () => Promise<void>;
   handlePdfDownload: () => Promise<void>;
   handleProposalDownload: () => Promise<void>;
@@ -87,6 +90,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
   const [convertError, setConvertError] = useState<string | null>(null);
   const [paywallBlock, setPaywallBlock] = useState<PaywallBlock | null>(null);
   const dismissPaywall = useCallback(() => setPaywallBlock(null), []);
+  const showPaywall = useCallback((block: PaywallBlock) => setPaywallBlock(block), []);
 
   const handleSave = useCallback(async () => {
     if (!result) return;
@@ -105,6 +109,11 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
     if (!result) return;
     setPdfStatus("generating");
     const res = await generateAdvancedEstimatePdf(input, laborRate, wastePct, projectName);
+    if (isPaywallBlock(res)) {
+      setPaywallBlock(res);
+      setPdfStatus("idle");
+      return;
+    }
     if (res.success && res.pdf) {
       downloadBase64Pdf(res.pdf, `${safeFilename(projectName)}-estimate.pdf`);
       setPdfStatus("idle");
@@ -120,6 +129,11 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
     const res = await generateCustomerProposalPdf(
       input, laborRate, wastePct, markupPct, projectName, fenceType, customer, woodStyle,
     );
+    if (isPaywallBlock(res)) {
+      setPaywallBlock(res);
+      setProposalStatus("idle");
+      return;
+    }
     if (res.success && res.pdf) {
       downloadBase64Pdf(res.pdf, `${safeFilename(projectName)}-proposal.pdf`);
       setProposalStatus("idle");
@@ -146,6 +160,11 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
       fenceType,
       customer,
     });
+    if (isPaywallBlock(res)) {
+      setPaywallBlock(res);
+      setConvertStatus("idle");
+      return;
+    }
     if (res.success && res.estimateId) {
       setConvertStatus("done");
       router.push(`/dashboard/estimates/${res.estimateId}`);
@@ -158,7 +177,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
 
   return {
     saveStatus, pdfStatus, proposalStatus, convertStatus, convertError,
-    paywallBlock, dismissPaywall,
+    paywallBlock, dismissPaywall, showPaywall,
     handleSave, handlePdfDownload, handleProposalDownload, handleConvertToEstimate,
   };
 }

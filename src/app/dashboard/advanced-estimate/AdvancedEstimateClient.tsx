@@ -90,7 +90,7 @@ export default function AdvancedEstimateClient({
 
   const {
     saveStatus, pdfStatus, proposalStatus, convertStatus, convertError,
-    paywallBlock, dismissPaywall,
+    paywallBlock, dismissPaywall, showPaywall,
     handleSave, handlePdfDownload, handleProposalDownload, handleConvertToEstimate,
   } = useEstimateActions({
     input, result, projectName, laborRate, wastePct, markupPct,
@@ -136,22 +136,25 @@ export default function AdvancedEstimateClient({
 
         {/* AI Input Tab */}
         {inputMode === "ai" && (
-          <AiInputTab onApply={(state: AiAppliedState) => {
-            setFenceType(state.fenceType);
-            setProductLineId(state.productLineId);
-            if (state.productLineId && !PRODUCT_LINE_BY_TYPE[state.fenceType]?.includes(state.productLineId)) {
-              setProductLineId(PRODUCT_LINE_BY_TYPE[state.fenceType][0]);
-            }
-            setSoilType(state.soilType);
-            setWindMode(state.windMode);
-            editor.setRuns(
-              state.runs.length > 0
-                ? state.runs
-                : [editor.makeDefaultRun(editor.newRunId())],
-            );
-            editor.setGates(state.gates);
-            setInputMode("manual"); // Switch to manual so they can review/edit
-          }} />
+          <AiInputTab
+            onApply={(state: AiAppliedState) => {
+              setFenceType(state.fenceType);
+              setProductLineId(state.productLineId);
+              if (state.productLineId && !PRODUCT_LINE_BY_TYPE[state.fenceType]?.includes(state.productLineId)) {
+                setProductLineId(PRODUCT_LINE_BY_TYPE[state.fenceType][0]);
+              }
+              setSoilType(state.soilType);
+              setWindMode(state.windMode);
+              editor.setRuns(
+                state.runs.length > 0
+                  ? state.runs
+                  : [editor.makeDefaultRun(editor.newRunId())],
+              );
+              editor.setGates(state.gates);
+              setInputMode("manual"); // Switch to manual so they can review/edit
+            }}
+            onPaywall={showPaywall}
+          />
         )}
 
         {inputMode === "manual" && (
