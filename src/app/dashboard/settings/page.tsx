@@ -258,7 +258,7 @@ export default async function SettingsPage() {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div>
                 <p className="text-sm font-medium text-gray-700">Export Your Data</p>
-                <p className="text-xs text-gray-500 mt-0.5">Download all your estimates, customers, and materials as JSON</p>
+                <p className="text-xs text-gray-500 mt-0.5">Download all your estimates, customers, and materials as an Excel workbook (opens in Excel, Numbers, or Google Sheets).</p>
               </div>
               <ExportDataButton />
             </div>
