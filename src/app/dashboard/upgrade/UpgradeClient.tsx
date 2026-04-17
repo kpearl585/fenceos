@@ -59,6 +59,11 @@ const TRIGGER_CONTEXT: Record<
     headline: "Track jobs from scheduled to closeout",
     sub: "Jobs board, foreman access, change orders. Pro and up.",
   },
+  feature_advanced_reporting: {
+    plan: "business",
+    headline: "Run the business, not just the jobs",
+    sub: "Close rate, margin trends, at-risk jobs — full KPI reporting on Business.",
+  },
   subscription_expired: {
     plan: "starter",
     headline: "Your trial has ended",

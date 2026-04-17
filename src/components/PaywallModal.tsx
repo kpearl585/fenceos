@@ -80,6 +80,12 @@ function getCopy(block: PaywallBlock): Copy {
       primaryCta,
       secondaryCta: "Not now",
     },
+    feature_advanced_reporting: {
+      title: `KPI reporting unlocks with ${suggestedName}`,
+      body: `Close rate, margin trends, revenue by fence type, jobs at risk — everything you need to run the business, not just the next estimate. Available on Business.`,
+      primaryCta,
+      secondaryCta: "Not now",
+    },
     subscription_expired: {
       title: `Your free trial has ended`,
       body: `Your data is safe. Pick a plan to pick up where you left off — same estimates, same catalog, same customer records.`,

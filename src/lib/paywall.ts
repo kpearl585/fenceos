@@ -17,11 +17,12 @@ export type PaywallTrigger =
   | "estimate_cap_hit"          // hard: monthly estimates exhausted
   | "seat_cap"                  // tried to invite a teammate over limit
   | "feature_alternative_bids"  // multi-bid proposals (Pro+)
-  | "feature_qb_sync"           // QuickBooks sync (Crew only)
-  | "feature_pricing_rules"     // pricing rules engine (Crew only)
+  | "feature_qb_sync"           // QuickBooks sync (Business only)
+  | "feature_pricing_rules"     // pricing rules engine (Business only)
   | "feature_pipeline"          // pipeline value dashboard (Pro+)
   | "feature_branded_pdf"       // custom PDF branding (Pro+)
   | "feature_jobs"              // jobs board / foreman (Pro+)
+  | "feature_advanced_reporting" // KPI dashboard (Business only)
   | "subscription_expired"      // trial over, no paid plan
   | "subscription_lapsed";      // paid plan past_due / canceled
 
@@ -38,6 +39,7 @@ export const PAYWALL_TRIGGERS: readonly PaywallTrigger[] = [
   "feature_pipeline",
   "feature_branded_pdf",
   "feature_jobs",
+  "feature_advanced_reporting",
   "subscription_expired",
   "subscription_lapsed",
 ] as const;
@@ -102,8 +104,12 @@ function pickSuggestedPlan(
   trigger: PaywallTrigger,
   currentPlan: PlanKey
 ): "starter" | "pro" | "business" {
-  // Crew-only features
-  if (trigger === "feature_qb_sync" || trigger === "feature_pricing_rules") {
+  // Business-only features
+  if (
+    trigger === "feature_qb_sync" ||
+    trigger === "feature_pricing_rules" ||
+    trigger === "feature_advanced_reporting"
+  ) {
     return "business";
   }
   // Pro-or-higher features — if they're already on Pro, push Crew
@@ -145,7 +151,9 @@ function defaultError(trigger: PaywallTrigger, ctx?: PaywallContext): string {
     case "feature_branded_pdf":
       return "Custom PDF branding is available on Pro and Crew.";
     case "feature_jobs":
-      return "Jobs tracking is available on Pro and Crew.";
+      return "Jobs tracking is available on Pro and Business.";
+    case "feature_advanced_reporting":
+      return "Advanced KPI reporting is available on Business.";
     case "subscription_expired":
       return "Your free trial has expired. Upgrade to continue.";
     case "subscription_lapsed":
