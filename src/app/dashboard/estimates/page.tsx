@@ -4,6 +4,7 @@ import { canAccess } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import SearchFilter from "@/components/dashboard/SearchFilter";
+import { getOrgMarginTargets } from "@/lib/marginTargets";
 
 function fmt(v: number | string | null) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(Number(v) || 0);
@@ -47,6 +48,9 @@ export default async function EstimatesPage({
 
   const { data: estimates } = await query;
   const isOwner = profile.role === "owner";
+  // Margin color bands follow the org's configured target (editable in
+  // Settings). Yellow band = within 5pp below target; red = below that.
+  const { target: targetMargin, warn: warnMargin } = await getOrgMarginTargets(profile.org_id);
 
   const filtered = (estimates ?? []).filter(e => {
     if (!q) return true;
@@ -112,7 +116,7 @@ export default async function EstimatesPage({
                     {isOwner && <td className="px-4 py-3 text-right font-semibold text-fence-900">{e.total ? fmt(e.total) : "—"}</td>}
                     {isOwner && (
                       <td className="px-4 py-3 text-right hidden sm:table-cell">
-                        <span className={`font-semibold text-sm ${Number(e.gross_margin_pct) >= 0.35 ? "text-green-600" : Number(e.gross_margin_pct) >= 0.28 ? "text-yellow-600" : "text-red-500"}`}>
+                        <span className={`font-semibold text-sm ${Number(e.gross_margin_pct) >= targetMargin ? "text-green-600" : Number(e.gross_margin_pct) >= warnMargin ? "text-yellow-600" : "text-red-500"}`}>
                           {e.gross_margin_pct ? `${(Number(e.gross_margin_pct) * 100).toFixed(1)}%` : "—"}
                         </span>
                       </td>

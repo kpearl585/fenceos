@@ -6,6 +6,7 @@ import { canAccess } from "@/lib/roles";
 import ExportCSV from "@/components/dashboard/ExportCSV";
 import UpgradeGate from "@/components/dashboard/UpgradeGate";
 import { getPlanLimits } from "@/lib/planLimits";
+import { getOrgMarginTargets } from "@/lib/marginTargets";
 
 /* ── Types ── */
 interface SummaryData {
@@ -137,7 +138,10 @@ export default async function OwnerDashboardPage() {
   const avgMargin = Number(summary.avg_margin_pct);
   const belowCount = Number(summary.jobs_below_target_margin_count);
   const coDelta = Number(summary.margin_delta_from_change_orders);
-  const TARGET = 0.35;
+  // Use the org's configured target (editable in Settings) rather than a
+  // hardcoded 35%. Falls back to 0.35 only if the org_settings row is
+  // missing — consistent with /dashboard/page.tsx since 21574d2.
+  const { target: TARGET } = await getOrgMarginTargets(profile.org_id);
 
   return (
     <>

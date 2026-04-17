@@ -12,9 +12,21 @@ import {
   useDroppable,
   useDraggable,
 } from "@dnd-kit/core";
-import { useState, useTransition } from "react";
+import { useState, useTransition, createContext, useContext } from "react";
 import Link from "next/link";
 import { updateJobStatus } from "@/app/dashboard/jobs/actions";
+
+/**
+ * Margin color thresholds are driven by the org's configured target.
+ * Passed in as a prop from JobsPage and consumed via context inside the
+ * leaf JobCard so we don't have to thread the values through 3 layers
+ * of column/draggable wrappers. Default falls back to 30% / 25% if the
+ * provider isn't used (safety for any ad-hoc render of the card).
+ */
+const MarginTargetsContext = createContext<{ target: number; warn: number }>({
+  target: 0.30,
+  warn: 0.25,
+});
 
 export type KanbanJob = {
   id: string;
@@ -57,6 +69,10 @@ function JobCard({ job, dragHandleProps }: {
   job: KanbanJob;
   dragHandleProps?: Record<string, unknown>;
 }) {
+  const { target, warn } = useContext(MarginTargetsContext);
+  const pct = Number(job.gross_margin_pct ?? 0);
+  const marginColor =
+    pct >= target ? "text-green-600" : pct >= warn ? "text-yellow-600" : "text-red-600";
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:border-fence-300 hover:shadow-md transition-all">
       {/* Drag handle strip */}
@@ -92,7 +108,7 @@ function JobCard({ job, dragHandleProps }: {
           {job.isOwner && (
             <div className="text-right shrink-0">
               <p className="text-sm font-bold text-fence-900">{fmt(job.total_price)}</p>
-              <p className={`text-xs font-semibold mt-0.5 ${(job.gross_margin_pct ?? 0) < 0.3 ? "text-red-600" : "text-green-600"}`}>
+              <p className={`text-xs font-semibold mt-0.5 ${marginColor}`}>
                 {fmtPct(job.gross_margin_pct)}
               </p>
             </div>
@@ -150,6 +166,7 @@ function KanbanColumn({ column, jobs }: { column: typeof ACTIVE_COLUMNS[number];
 /*  Completed Jobs History Table                                       */
 /* ------------------------------------------------------------------ */
 function CompletedHistory({ jobs, isOwner }: { jobs: KanbanJob[]; isOwner: boolean }) {
+  const { target, warn } = useContext(MarginTargetsContext);
   const [show, setShow] = useState(false);
   if (jobs.length === 0) return null;
 
@@ -181,7 +198,10 @@ function CompletedHistory({ jobs, isOwner }: { jobs: KanbanJob[]; isOwner: boole
               {isOwner && (
                 <div className="text-right shrink-0 ml-4">
                   <p className="text-sm font-bold text-gray-800">{fmt(job.total_price)}</p>
-                  <p className={`text-xs font-semibold ${(job.gross_margin_pct ?? 0) < 0.3 ? "text-red-600" : "text-green-600"}`}>
+                  <p className={`text-xs font-semibold ${(() => {
+                    const p = Number(job.gross_margin_pct ?? 0);
+                    return p >= target ? "text-green-600" : p >= warn ? "text-yellow-600" : "text-red-600";
+                  })()}`}>
                     {fmtPct(job.gross_margin_pct)}
                   </p>
                 </div>
@@ -197,7 +217,15 @@ function CompletedHistory({ jobs, isOwner }: { jobs: KanbanJob[]; isOwner: boole
 /* ------------------------------------------------------------------ */
 /*  Board                                                              */
 /* ------------------------------------------------------------------ */
-export default function JobKanban({ jobs: initialJobs }: { jobs: KanbanJob[] }) {
+export default function JobKanban({
+  jobs: initialJobs,
+  targetMargin = 0.30,
+  warnMargin = 0.25,
+}: {
+  jobs: KanbanJob[];
+  targetMargin?: number;
+  warnMargin?: number;
+}) {
   const [jobs, setJobs] = useState(initialJobs);
   const [activeJob, setActiveJob] = useState<KanbanJob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -251,6 +279,7 @@ export default function JobKanban({ jobs: initialJobs }: { jobs: KanbanJob[] }) 
   }
 
   return (
+    <MarginTargetsContext.Provider value={{ target: targetMargin, warn: warnMargin }}>
     <div>
       {error && (
         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg flex items-center justify-between">
@@ -287,5 +316,6 @@ export default function JobKanban({ jobs: initialJobs }: { jobs: KanbanJob[] }) 
         </div>
       )}
     </div>
+    </MarginTargetsContext.Provider>
   );
 }

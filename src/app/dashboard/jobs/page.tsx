@@ -7,6 +7,7 @@ import JobKanban, { type KanbanJob } from "@/components/jobs/JobKanban";
 import UpgradeGate from "@/components/dashboard/UpgradeGate";
 import { planHasJobs } from "@/lib/planLimits";
 import { createAdminClient } from "@/lib/supabase/server";
+import { getOrgMarginTargets } from "@/lib/marginTargets";
 
 const STATUS_FILTERS = [
   { value: "", label: "All Jobs" },
@@ -45,6 +46,10 @@ export default async function JobsPage({
   if (status) query = query.eq("status", status);
 
   const { data: jobs } = await query;
+
+  // Margin color thresholds on the kanban cards follow the org's own
+  // target (editable in Settings) rather than a hardcoded 30%.
+  const { target: targetMargin, warn: warnMargin } = await getOrgMarginTargets(profile.org_id);
 
   const foremanIds = (jobs ?? []).map((j: { assigned_foreman_id: string | null }) => j.assigned_foreman_id).filter(Boolean) as string[];
   let foremanMap: Record<string, string> = {};
@@ -131,7 +136,7 @@ export default async function JobsPage({
           )}
         </div>
       ) : (
-        <JobKanban jobs={kanbanJobs} />
+        <JobKanban jobs={kanbanJobs} targetMargin={targetMargin} warnMargin={warnMargin} />
       )}
     </>
   );
