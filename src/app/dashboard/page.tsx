@@ -51,6 +51,7 @@ export default async function DashboardHome({
     { data: estimates },
     { data: jobs },
     { data: customers },
+    { data: orgSettings },
   ] = await Promise.all([
     canEstimate
       ? supabase.from("estimates")
@@ -67,12 +68,26 @@ export default async function DashboardHome({
     supabase.from("customers")
       .select("id", { count: "exact", head: true })
       .eq("org_id", profile.org_id),
+    supabase.from("org_settings")
+      .select("target_margin_pct")
+      .eq("org_id", profile.org_id)
+      .single(),
   ]);
 
   const allEstimates = estimates ?? [];
   const allJobs = jobs ?? [];
 
-  //  KPIs 
+  // Resolved org margin target (drives the "below target" alert + card colors
+  // below). Falls back to 0.35 if the row is missing (e.g., fresh org whose
+  // onboarding row hasn't been upserted yet). 0.35 matches the onboarding
+  // form default and the NOT NULL DEFAULT on the column.
+  const targetMargin = Number(orgSettings?.target_margin_pct) || 0.35;
+  // Yellow band = within 5 percentage points below target. Anything below
+  // that is red. Keeps the three-tone scale but anchors it to the user's
+  // own target instead of a hardcoded 35/28/below split.
+  const warnMargin = Math.max(0, targetMargin - 0.05);
+
+  //  KPIs
   const quotedEstimates = allEstimates.filter(e => e.status === "quoted");
   const draftEstimates = allEstimates.filter(e => e.status === "draft");
   const pipelineValue = quotedEstimates.reduce((s, e) => s + (Number(e.total) || 0), 0);
@@ -83,7 +98,7 @@ export default async function DashboardHome({
     + activeJobs.reduce((s, j) => s + (Number(j.total_price) || 0), 0);
   const margins = allJobs.filter(j => j.gross_margin_pct && j.status !== "cancelled").map(j => Number(j.gross_margin_pct));
   const avgMargin = margins.length ? margins.reduce((a, b) => a + b, 0) / margins.length : 0;
-  const belowTargetJobs = allJobs.filter(j => j.gross_margin_pct && Number(j.gross_margin_pct) < 0.30 && j.status !== "cancelled" && j.status !== "complete");
+  const belowTargetJobs = allJobs.filter(j => j.gross_margin_pct && Number(j.gross_margin_pct) < warnMargin && j.status !== "cancelled" && j.status !== "complete");
 
   // Pipeline counts
   const pipeline = {
@@ -153,12 +168,12 @@ export default async function DashboardHome({
           </div>
         )}
         {isOwner && (
-          <div className={`rounded-xl border-2 p-5 shadow-sm ${avgMargin >= 0.35 ? "bg-green-50 border-green-200" : avgMargin >= 0.28 ? "bg-yellow-50 border-yellow-200" : "bg-red-50 border-red-200"}`}>
+          <div className={`rounded-xl border-2 p-5 shadow-sm ${avgMargin >= targetMargin ? "bg-green-50 border-green-200" : avgMargin >= warnMargin ? "bg-yellow-50 border-yellow-200" : "bg-red-50 border-red-200"}`}>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Avg Margin</p>
-            <p className={`text-2xl font-bold mt-2 ${avgMargin >= 0.35 ? "text-green-700" : avgMargin >= 0.28 ? "text-yellow-700" : "text-red-700"}`}>
+            <p className={`text-2xl font-bold mt-2 ${avgMargin >= targetMargin ? "text-green-700" : avgMargin >= warnMargin ? "text-yellow-700" : "text-red-700"}`}>
               {margins.length ? fmtPct(avgMargin) : "—"}
             </p>
-            <p className="text-xs text-gray-500 mt-1">Target: 35%</p>
+            <p className="text-xs text-gray-500 mt-1">Target: {fmtPct(targetMargin)}</p>
           </div>
         )}
       </div>
@@ -182,7 +197,7 @@ export default async function DashboardHome({
           
           <div className="flex-1">
             <p className="text-sm font-semibold text-red-800">
-              {belowTargetJobs.length} job{belowTargetJobs.length !== 1 ? "s" : ""} below 30% margin
+              {belowTargetJobs.length} job{belowTargetJobs.length !== 1 ? "s" : ""} below {fmtPct(warnMargin)} margin
             </p>
             <p className="text-xs text-red-600 mt-0.5">
               {belowTargetJobs.slice(0, 3).map((j: { customers: { name: string }[] | null }) => (j.customers as { name: string }[] | null)?.[0]?.name || "Unnamed").join(", ")}
@@ -280,7 +295,7 @@ export default async function DashboardHome({
                   </div>
                   <div className="flex items-center gap-2 ml-3 flex-shrink-0">
                     {isOwner && j.gross_margin_pct && (
-                      <span className={`text-xs font-bold ${Number(j.gross_margin_pct) >= 0.35 ? "text-green-600" : Number(j.gross_margin_pct) >= 0.28 ? "text-yellow-600" : "text-red-500"}`}>
+                      <span className={`text-xs font-bold ${Number(j.gross_margin_pct) >= targetMargin ? "text-green-600" : Number(j.gross_margin_pct) >= warnMargin ? "text-yellow-600" : "text-red-500"}`}>
                         {fmtPct(j.gross_margin_pct)}
                       </span>
                     )}
