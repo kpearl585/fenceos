@@ -32,6 +32,30 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/*
+ * Form control default text color.
+ *
+ * body sets color: #F2F2F2 for the dark landing/marketing pages. The
+ * dashboard is light-themed with white backgrounds, but <input>, <textarea>,
+ * and <select> inherit the body color by default — so every fillable field
+ * in the dashboard was rendering near-white text on a white background
+ * (invisible). The landing page's signup/login forms already set explicit
+ * `text-white` / similar on their inputs for readability on dark
+ * backgrounds, so this default only applies where a more specific utility
+ * class hasn't been declared.
+ *
+ * Lives in @layer base so Tailwind utilities like `text-white` /
+ * `text-gray-900` / `text-fence-950` on a specific element win via
+ * normal cascade.
+ */
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  textarea,
+  select {
+    color: #111827; /* gray-900 — same as the dashboard's default body text */
+  }
+}
+
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #1C1C1C; border-radius: 2px; }
