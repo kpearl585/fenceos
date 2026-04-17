@@ -1,9 +1,38 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import type { PaywallTrigger } from "@/lib/paywall";
+import type { PlanKey as AnyPlanKey } from "@/lib/planLimits";
 
 type PlanKey = "starter" | "pro" | "business";
+
+// Plan rank for comparing "does currentPlan unlock what suggestedPlan unlocks?"
+// Trial = 99 because trial users have full feature access — higher than any
+// paid plan — and the "upgrade" pitch is "pick a plan before trial ends,"
+// not "unlock more." free gets 0 (locked).
+const PLAN_RANK: Record<AnyPlanKey, number> = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  business: 3,
+  trial: 99,
+};
+
+function planMeetsSuggestion(current: AnyPlanKey | null, suggested: PlanKey): boolean {
+  if (!current) return false;
+  return (PLAN_RANK[current] ?? 0) >= PLAN_RANK[suggested];
+}
+
+/** Nice-looking plan name for copy. Mirrors PLAN_DISPLAY_NAME in paywall.ts
+ *  but tuned for inline sentence fragments on this page. */
+const PLAN_LABEL: Record<AnyPlanKey, string> = {
+  free: "the Free tier",
+  trial: "your trial",
+  starter: "Starter",
+  pro: "Pro",
+  business: "Business",
+};
 
 // Maps the paywall trigger that brought the user here to:
 //   - a context-setting banner above the plans (headline + sub)
@@ -106,13 +135,36 @@ const PLANS = [
   },
 ];
 
-export default function UpgradeClient({ trigger }: { trigger?: PaywallTrigger | null }) {
+export default function UpgradeClient({
+  trigger,
+  currentPlan = null,
+}: {
+  trigger?: PaywallTrigger | null;
+  currentPlan?: AnyPlanKey | null;
+}) {
   const [loading, setLoading] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
 
   // Resolve context from the trigger — fall back to a generic pitch with
   // Pro highlighted if we don't recognize or didn't get a trigger.
   const context = trigger ? TRIGGER_CONTEXT[trigger] : null;
+
+  // Plan-aware state. Three buckets:
+  //   - "already-have": user's current plan already includes this feature —
+  //     show a success message + back-to-dashboard CTA instead of scaring
+  //     them with "Upgrade required"
+  //   - "can-upgrade":  user is on a real paid plan that's below the
+  //     suggested plan — soft banner ("Unlock with X"), not alarming
+  //   - "needs-upgrade": user is on free/expired/no-plan — keep the
+  //     original "Upgrade required" banner, it's accurate for them
+  const accessState: "already-have" | "can-upgrade" | "needs-upgrade" | null =
+    context
+      ? planMeetsSuggestion(currentPlan, context.plan)
+        ? "already-have"
+        : currentPlan && currentPlan !== "free"
+          ? "can-upgrade"
+          : "needs-upgrade"
+      : null;
   const highlightedPlan: PlanKey = context?.plan ?? "pro";
 
   // Attribution event — log once on mount so we can measure which triggers
@@ -154,13 +206,49 @@ export default function UpgradeClient({ trigger }: { trigger?: PaywallTrigger | 
     }
   }
 
+  // Fast path: user already has access to the feature that brought them
+  // here. Don't pressure them — acknowledge it and send them back.
+  if (context && accessState === "already-have") {
+    const planLabel = currentPlan ? PLAN_LABEL[currentPlan] : "your plan";
+    return (
+      <div className="min-h-screen bg-gray-50 py-16 px-4">
+        <div className="max-w-xl mx-auto text-center">
+          <div className="bg-white rounded-2xl p-10 shadow-sm border border-gray-100">
+            <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
+              <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-fence-950 mb-3">You already have access</h1>
+            <p className="text-gray-500 mb-8 leading-relaxed">
+              {context.headline} — this feature is included in {planLabel}. You&apos;re all set.
+            </p>
+            <Link
+              href="/dashboard"
+              className="inline-block bg-fence-600 text-white font-semibold text-sm px-8 py-3 rounded-xl hover:bg-fence-700 transition-colors"
+            >
+              Back to dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Banner copy depends on where the user stands relative to the feature
+  // they're being pitched. See accessState comment above for the rules.
+  const bannerChip =
+    accessState === "can-upgrade"
+      ? `Unlock with ${context && PLAN_LABEL[context.plan]}`
+      : "Upgrade required";
+
   return (
     <div className="min-h-screen bg-gray-50 py-16 px-4">
       <div className="max-w-4xl mx-auto">
         {context ? (
           <div className="text-center mb-8">
             <div className="inline-block bg-fence-50 border border-fence-200 text-fence-800 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
-              Upgrade required
+              {bannerChip}
             </div>
             <h1 className="text-3xl font-bold text-fence-950 mb-3">{context.headline}</h1>
             <p className="text-gray-500 max-w-2xl mx-auto">{context.sub}</p>
