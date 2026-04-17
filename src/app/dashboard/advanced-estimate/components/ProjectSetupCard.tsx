@@ -41,10 +41,10 @@ export const PRODUCT_LINE_BY_TYPE: Record<FenceType, string[]> = {
 
 const SOIL_LABELS: Record<SoilType, string> = {
   standard: "Standard / Mixed",
-  clay: "Clay (firm)",
-  rocky: "Rocky / Caliche",
-  sandy_loam: "Sandy Loam (FL inland)",
-  sandy: "Sandy (FL coastal)",
+  clay: "Clay (firm, cohesive)",
+  rocky: "Rocky / Hard (caliche, shale, decomposed granite)",
+  sandy_loam: "Sandy Loam (inland, well-drained)",
+  sandy: "Sandy (coastal, loose)",
   wet: "Wet / High Water Table",
 };
 

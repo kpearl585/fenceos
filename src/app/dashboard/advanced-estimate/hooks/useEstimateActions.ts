@@ -145,8 +145,36 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
 
   const handleConvertToEstimate = useCallback(async () => {
     if (!result) return;
+    // Project name must be a real name before we create a permanent
+    // estimate record. Blocks the "New Estimate" default from silently
+    // accumulating in the estimates list as a pile of identical titles.
+    const trimmedName = projectName.trim();
+    if (!trimmedName || trimmedName.toLowerCase() === "new estimate") {
+      setConvertError("Give this estimate a name before creating the quote.");
+      if (typeof document !== "undefined") {
+        const field = document.getElementById("est-project-name") as HTMLInputElement | null;
+        if (field) {
+          field.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => field.focus(), 300);
+        }
+      }
+      setTimeout(() => setConvertError(null), CONVERT_ERROR_RESET_MS);
+      return;
+    }
     if (!customer.name.trim()) {
       setConvertError("Enter a customer name above before creating an estimate.");
+      // Pull the user to the field instead of making them hunt for it.
+      // Guarded by typeof document for SSR safety — this runs in a
+      // useCallback bound event handler so the check is defensive only.
+      if (typeof document !== "undefined") {
+        const field = document.getElementById("est-cust-name") as HTMLInputElement | null;
+        if (field) {
+          field.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Wait for the smooth scroll to settle before focusing, otherwise
+          // the mobile keyboard popping up cancels the scroll animation.
+          setTimeout(() => field.focus(), 300);
+        }
+      }
       return;
     }
     setConvertStatus("converting");

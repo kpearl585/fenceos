@@ -40,12 +40,17 @@ export default async function AdvancedEstimatePage() {
             )}
           </div>
           {!hasPrices && (
-            <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-              <span className="text-amber-600 text-sm font-semibold flex-shrink-0">No material prices found.</span>
-              <span className="text-amber-700 text-sm">
-                Quantities will be accurate but dollar amounts will show $0. Set unit costs in{" "}
+            /* Softened from a red-alert "dollar amounts will show $0" banner.
+               The BOM engines layer DEFAULT_PRICES_BASE under the org map
+               via mergePrices(), so totals are real — just not tuned to
+               this contractor's suppliers. No reason to scare a new user
+               away from their first estimate. */
+            <div className="mt-3 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+              <span className="text-blue-700 text-sm">
+                Using default material prices so you can price jobs right away.
+                Update your{" "}
                 <a href="/dashboard/materials" className="underline font-semibold">Materials</a>{" "}
-                to enable cost and bid pricing.
+                catalog anytime to match your supplier costs.
               </span>
             </div>
           )}
