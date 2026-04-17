@@ -18,6 +18,7 @@
   "crons": [
     { "path": "/api/cron/expire-estimates", "schedule": "0 2 * * *" },
     { "path": "/api/cron/trial-emails", "schedule": "0 10 * * *" },
-    { "path": "/api/cron/waitlist-sequence", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/waitlist-sequence", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/stale-estimate-nudges", "schedule": "0 14 * * *" }
   ]
 }

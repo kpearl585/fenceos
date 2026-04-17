@@ -841,3 +841,58 @@ export function trialWinbackEmail(opts: { email: string; orgName: string }) {
 </div></body></html>`,
   };
 }
+
+// ── Stale-estimate follow-up nudge ────────────────────────────────
+// Sent to the contractor (not the customer) when a quote has sat in
+// "quoted" status for ~5 days with no customer response. Point: turn the
+// pipeline dashboard from a passive view into an active behavior.
+export function staleEstimateNudgeEmail(opts: {
+  email: string;
+  orgName: string;
+  customerName: string;
+  total: number;
+  daysSinceQuote: number;
+  estimateUrl: string;
+}) {
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+  return {
+    to: opts.email,
+    subject: `Follow up on ${opts.customerName}'s ${fmt(opts.total)} quote?`,
+    html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f9fafb;font-family:system-ui,sans-serif;">
+<div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <div style="background:#0a1a12;padding:28px 32px;">
+    <div style="color:#34d399;font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;">FenceEstimatePro</div>
+    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Quote still open — time for a nudge?</h1>
+  </div>
+  <div style="padding:32px;">
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">Hey ${opts.orgName},</p>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 16px;">
+      You sent <strong>${opts.customerName}</strong> a ${fmt(opts.total)} quote <strong>${opts.daysSinceQuote} days ago</strong>.
+      No response yet.
+    </p>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 20px;margin:0 0 24px;">
+      <p style="color:#166534;font-weight:700;font-size:14px;margin:0 0 6px;">Real talk:</p>
+      <p style="color:#14532d;font-size:14px;line-height:1.6;margin:0;">
+        Contractors who follow up within the first week close ~30% more jobs.
+        Past week, the odds drop fast. A 30-second text or phone call is usually all it takes.
+      </p>
+    </div>
+
+    <p style="color:#374151;line-height:1.6;margin:0 0 24px;">
+      Open the estimate to see the pricing, customer contact info, and BOM:
+    </p>
+
+    <a href="${opts.estimateUrl}" style="display:inline-block;background:#2D6A4F;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;margin-bottom:24px;">Open ${opts.customerName}'s quote →</a>
+
+    <p style="color:#6b7280;font-size:13px;line-height:1.6;border-top:1px solid #f3f4f6;padding-top:20px;margin:8px 0 0;">
+      You'll only get one of these per quote — we don't nag. If the customer already signed offline,
+      just mark the estimate as accepted in FenceEstimatePro.
+    </p>
+    <p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">FenceEstimatePro</p>
+  </div>
+</div></body></html>`,
+  };
+}
