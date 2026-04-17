@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/client";
 import { createClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -47,6 +48,8 @@ export async function POST(request: NextRequest) {
     if (session.mode === "subscription") {
       const orgId = session.metadata?.org_id;
       const plan  = session.metadata?.plan;
+      const billingPeriod = session.metadata?.billing_period;
+      const paywallTrigger = session.metadata?.paywall_trigger;
       const customerId = typeof session.customer === "string"
         ? session.customer : session.customer?.id;
 
@@ -65,6 +68,30 @@ export async function POST(request: NextRequest) {
           // Return 500 so Stripe retries the webhook
           return NextResponse.json({ error: "DB update failed" }, { status: 500 });
         }
+
+        // Paid conversion attribution — Sentry captureMessage at info level
+        // closes the funnel loop: paywall trigger → upgrade visit (logged
+        // from UpgradeClient) → paid conversion (logged here). Same tag
+        // taxonomy on both messages so a single Discover query can reveal
+        // which triggers actually convert vs. just drive traffic.
+        Sentry.captureMessage(
+          `Paid conversion: org ${orgId} → ${plan} (${billingPeriod ?? "monthly"})${paywallTrigger ? ` from trigger ${paywallTrigger}` : " [organic]"}`,
+          {
+            tags: {
+              surface: "paid-conversion",
+              plan,
+              billing_period: billingPeriod ?? "monthly",
+              trigger: paywallTrigger ?? "organic",
+            },
+            level: "info",
+            extra: {
+              orgId,
+              stripeSessionId: session.id,
+              stripeSubscriptionId:
+                typeof session.subscription === "string" ? session.subscription : null,
+            },
+          }
+        );
       }
     }
 

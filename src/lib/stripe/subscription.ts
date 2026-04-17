@@ -1,4 +1,5 @@
 import { getStripe } from "@/lib/stripe/client";
+import type { PaywallTrigger } from "@/lib/paywall";
 
 export const PLAN_PRICE_IDS: Record<string, string> = {
   starter:  "price_1T6t9h38qXAGqAtugJvPNdxg",
@@ -32,6 +33,7 @@ export async function createSubscriptionCheckout({
   successUrl,
   cancelUrl,
   billingPeriod = "monthly",
+  paywallTrigger,
 }: {
   orgId: string;
   userId: string;
@@ -40,12 +42,27 @@ export async function createSubscriptionCheckout({
   successUrl: string;
   cancelUrl: string;
   billingPeriod?: "monthly" | "annual";
+  /** The PaywallTrigger that drove this checkout, if any. Persisted to
+   *  both session and subscription metadata so /api/stripe/webhook can
+   *  attribute the conversion end-to-end. Null when the user landed on
+   *  /dashboard/upgrade organically (no ?from param). */
+  paywallTrigger?: PaywallTrigger | null;
 }) {
   const stripe = getStripe();
   const priceId = billingPeriod === "annual"
     ? PLAN_PRICE_IDS_ANNUAL[plan]
     : PLAN_PRICE_IDS[plan];
   if (!priceId) throw new Error(`Unknown plan: ${plan}`);
+
+  // Stripe metadata values must be strings; null → omit the key entirely
+  // so we don't store the string "null".
+  const meta: Record<string, string> = {
+    org_id: orgId,
+    user_id: userId,
+    plan,
+    billing_period: billingPeriod,
+  };
+  if (paywallTrigger) meta.paywall_trigger = paywallTrigger;
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -54,8 +71,8 @@ export async function createSubscriptionCheckout({
     customer_email: email,
     success_url: successUrl,
     cancel_url: cancelUrl,
-    metadata: { org_id: orgId, user_id: userId, plan, billing_period: billingPeriod },
-    subscription_data: { metadata: { org_id: orgId, user_id: userId, plan, billing_period: billingPeriod } },
+    metadata: meta,
+    subscription_data: { metadata: meta },
     allow_promotion_codes: true,
   });
 

@@ -2,28 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import UpgradeClient from "./UpgradeClient";
-import type { PaywallTrigger } from "@/lib/paywall";
-
-// Narrow an arbitrary ?from=... string to the PaywallTrigger union so
-// UpgradeClient can trust it.
-const VALID_TRIGGERS: readonly PaywallTrigger[] = [
-  "estimate_cap_warning",
-  "estimate_cap_hit",
-  "seat_cap",
-  "feature_alternative_bids",
-  "feature_qb_sync",
-  "feature_pricing_rules",
-  "feature_pipeline",
-  "feature_branded_pdf",
-  "feature_jobs",
-  "subscription_expired",
-  "subscription_lapsed",
-] as const;
-
-function parseTrigger(raw: string | undefined): PaywallTrigger | null {
-  if (!raw) return null;
-  return (VALID_TRIGGERS as readonly string[]).includes(raw) ? (raw as PaywallTrigger) : null;
-}
+import { parsePaywallTrigger } from "@/lib/paywall";
 
 export default async function UpgradePage({
   searchParams,
@@ -35,7 +14,7 @@ export default async function UpgradePage({
   if (!user) redirect("/login");
 
   const { from } = await searchParams;
-  const trigger = parseTrigger(from);
+  const trigger = parsePaywallTrigger(from);
 
   let profile;
   try {

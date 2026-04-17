@@ -25,6 +25,34 @@ export type PaywallTrigger =
   | "subscription_expired"      // trial over, no paid plan
   | "subscription_lapsed";      // paid plan past_due / canceled
 
+/** Single source of truth for trigger validation — keep in sync with the
+ *  PaywallTrigger union above. Exported as `readonly` so callers can
+ *  iterate it (e.g., for tests, docs) without risk of mutation. */
+export const PAYWALL_TRIGGERS: readonly PaywallTrigger[] = [
+  "estimate_cap_warning",
+  "estimate_cap_hit",
+  "seat_cap",
+  "feature_alternative_bids",
+  "feature_qb_sync",
+  "feature_pricing_rules",
+  "feature_pipeline",
+  "feature_branded_pdf",
+  "feature_jobs",
+  "subscription_expired",
+  "subscription_lapsed",
+] as const;
+
+/** Narrow an untrusted string (query param, request body, Stripe metadata)
+ *  to a PaywallTrigger, or null if the input isn't a known trigger. */
+export function parsePaywallTrigger(
+  raw: string | null | undefined
+): PaywallTrigger | null {
+  if (!raw) return null;
+  return (PAYWALL_TRIGGERS as readonly string[]).includes(raw)
+    ? (raw as PaywallTrigger)
+    : null;
+}
+
 /** Internal plan key → marketing display name. */
 export const PLAN_DISPLAY_NAME: Record<PlanKey, string> = {
   trial: "Trial",

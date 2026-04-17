@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSubscriptionCheckout } from "@/lib/stripe/subscription";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { parsePaywallTrigger } from "@/lib/paywall";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -9,13 +10,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { plan, billing_period = "monthly" } = await req.json();
+  const { plan, billing_period = "monthly", trigger = null } = await req.json();
   if (!["starter", "pro", "business"].includes(plan)) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
   if (!["monthly", "annual"].includes(billing_period)) {
     return NextResponse.json({ error: "Invalid billing period" }, { status: 400 });
   }
+
+  // Untrusted input — narrow via allow-list, silently drop if unknown.
+  const paywallTrigger = parsePaywallTrigger(trigger);
 
   // Use admin client to bypass RLS — user is authenticated above, lookup is safe
   const admin = createAdminClient();
@@ -44,6 +48,7 @@ export async function POST(req: NextRequest) {
       successUrl: `${origin}/dashboard?subscribed=1`,
       cancelUrl: `${origin}/dashboard/upgrade?cancelled=1`,
       billingPeriod: billing_period as "monthly" | "annual",
+      paywallTrigger,
     });
 
     return NextResponse.json({ url: session.url });
