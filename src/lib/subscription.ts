@@ -14,6 +14,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { getPlanLimits, type PlanKey, type PlanLimits, PLAN_UPGRADE_URL } from "@/lib/planLimits";
+import { buildPaywallBlock, type PaywallBlock } from "@/lib/paywall";
 
 export interface SubscriptionStatus {
   /** The effective plan after trial expiry / lapsed subscription. */
@@ -136,4 +137,54 @@ export async function requireActiveSubscription(
     error: sub.reason ?? "Subscription required.",
     upgradeUrl: PLAN_UPGRADE_URL,
   };
+}
+
+/**
+ * Unified billing gate for all revenue-generating server actions.
+ *
+ * Returns either:
+ *   - null → access allowed, proceed
+ *   - PaywallBlock → caller should `return` it to the client so the modal fires
+ *
+ * Enforces two layers:
+ *   1. Subscription active (trial valid OR paid plan in good standing)
+ *   2. Monthly estimate-cap not exceeded (if the plan has a cap)
+ *
+ * The cap check counts fence_graphs rows created this calendar month for
+ * the org. Applies to any action that consumes quota — save, PDF, AI,
+ * quote-convert — so a capped user can't bypass the save gate by using
+ * PDF/AI export on a non-saved estimate.
+ */
+export async function enforceBillingGate(
+  orgId: string
+): Promise<PaywallBlock | null> {
+  const sub = await checkSubscription(orgId);
+
+  if (!sub.isActive) {
+    return buildPaywallBlock(
+      sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
+      sub.effectivePlan,
+    );
+  }
+
+  if (sub.limits.maxEstimatesPerMonth != null) {
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const admin = createAdminClient();
+    const { count } = await admin
+      .from("fence_graphs")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .gte("created_at", monthStart.toISOString());
+    const used = count ?? 0;
+    if (used >= sub.limits.maxEstimatesPerMonth) {
+      return buildPaywallBlock("estimate_cap_hit", sub.effectivePlan, {
+        used,
+        limit: sub.limits.maxEstimatesPerMonth,
+      });
+    }
+  }
+
+  return null;
 }

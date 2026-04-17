@@ -11,8 +11,8 @@ import { calculateProjectTimeline } from "@/lib/fence-graph/calculateTimeline";
 import { SaveEstimateSchema, GenerateAdvancedPdfSchema, GenerateCustomerProposalPdfSchema } from "@/lib/validation/schemas";
 import { DEFAULT_CREW_LEAD_DAYS, DEFAULT_PROPOSAL_VALID_DAYS } from "./constants";
 import { instrument } from "@/lib/observability/estimator-instrumentation";
-import { checkSubscription } from "@/lib/subscription";
-import { buildPaywallBlock, type PaywallBlock } from "@/lib/paywall";
+import { enforceBillingGate } from "@/lib/subscription";
+import { type PaywallBlock } from "@/lib/paywall";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { z } from "zod";
 import type { SiteComplexity, CloseoutData, AccuracyMetrics } from "@/lib/fence-graph/accuracy-types";
@@ -88,31 +88,8 @@ export async function saveAdvancedEstimate(
     if (!profile) return { success: false, error: "Profile not found" };
 
     // ✅ BILLING: Subscription + monthly estimate cap (paywall-aware).
-    // Returns a PaywallBlock the client renders in <PaywallModal/> via usePaywall().
-    const sub = await checkSubscription(profile.org_id);
-    if (!sub.isActive) {
-      return buildPaywallBlock(
-        sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
-        sub.effectivePlan,
-      );
-    }
-    if (sub.limits.maxEstimatesPerMonth != null) {
-      const monthStart = new Date();
-      monthStart.setUTCDate(1);
-      monthStart.setUTCHours(0, 0, 0, 0);
-      const { count } = await admin
-        .from("fence_graphs")
-        .select("id", { count: "exact", head: true })
-        .eq("org_id", profile.org_id)
-        .gte("created_at", monthStart.toISOString());
-      const used = count ?? 0;
-      if (used >= sub.limits.maxEstimatesPerMonth) {
-        return buildPaywallBlock("estimate_cap_hit", sub.effectivePlan, {
-          used,
-          limit: sub.limits.maxEstimatesPerMonth,
-        });
-      }
-    }
+    const billingBlock = await enforceBillingGate(profile.org_id);
+    if (billingBlock) return billingBlock;
 
     const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
 
@@ -309,14 +286,9 @@ export async function generateAdvancedEstimatePdf(
     const orgInfo = await getOrgInfo(user.id);
     if (!orgInfo) return { success: false, error: "Profile not found" };
 
-    // ✅ BILLING: Subscription check, paywall-aware.
-    const sub = await checkSubscription(orgInfo.orgId);
-    if (!sub.isActive) {
-      return buildPaywallBlock(
-        sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
-        sub.effectivePlan,
-      );
-    }
+    // ✅ BILLING: Subscription + monthly cap gate.
+    const billingBlock = await enforceBillingGate(orgInfo.orgId);
+    if (billingBlock) return billingBlock;
 
     // ✅ SECURITY: Rate limit PDF generation
     const rateLimit = RateLimiters.pdfGeneration(orgInfo.orgId);
@@ -376,14 +348,9 @@ export async function generateCustomerProposalPdf(
     if (!orgInfo) return { success: false, error: "Profile not found" };
     const { orgName, orgPhone, orgEmail, orgAddress } = orgInfo;
 
-    // ✅ BILLING: Subscription check, paywall-aware.
-    const sub = await checkSubscription(orgInfo.orgId);
-    if (!sub.isActive) {
-      return buildPaywallBlock(
-        sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
-        sub.effectivePlan,
-      );
-    }
+    // ✅ BILLING: Subscription + monthly cap gate.
+    const billingBlock = await enforceBillingGate(orgInfo.orgId);
+    if (billingBlock) return billingBlock;
 
     // ✅ SECURITY: Rate limit PDF generation
     const rateLimit = RateLimiters.pdfGeneration(orgInfo.orgId);

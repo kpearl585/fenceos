@@ -9,8 +9,7 @@ import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph
 import type { CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import { detectHiddenCosts } from "@/lib/fence-graph/ai-extract/hiddenCostDetection";
 import { instrument } from "@/lib/observability/estimator-instrumentation";
-import { checkSubscription } from "@/lib/subscription";
-import { buildPaywallBlock } from "@/lib/paywall";
+import { enforceBillingGate } from "@/lib/subscription";
 import crypto from "crypto";
 
 // ── Rate limiting constants ────────────────────────────────────────
@@ -280,15 +279,9 @@ export async function extractFromText(
   const auth = await getAuthContext();
   if (!auth) return { success: false, error: "Not authenticated" };
 
-  // ✅ BILLING: AI extraction costs real money — verify subscription first.
-  // Return a PaywallBlock so the client modal fires with a proper upgrade pitch.
-  const sub = await checkSubscription(auth.orgId);
-  if (!sub.isActive) {
-    return buildPaywallBlock(
-      sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
-      sub.effectivePlan,
-    );
-  }
+  // ✅ BILLING: AI extraction costs real money — enforce subscription + cap.
+  const billingBlock = await enforceBillingGate(auth.orgId);
+  if (billingBlock) return billingBlock;
 
   // Rate limit (fails CLOSED on DB error)
   const rateCheck = await checkRateLimit(auth.orgId);
@@ -396,14 +389,9 @@ export async function extractFromImage(
   const auth = await getAuthContext();
   if (!auth) return { success: false, error: "Not authenticated" };
 
-  // ✅ BILLING: AI image extraction costs real money — verify subscription.
-  const sub = await checkSubscription(auth.orgId);
-  if (!sub.isActive) {
-    return buildPaywallBlock(
-      sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
-      sub.effectivePlan,
-    );
-  }
+  // ✅ BILLING: AI image extraction costs real money — enforce sub + cap.
+  const billingBlock = await enforceBillingGate(auth.orgId);
+  if (billingBlock) return billingBlock;
 
   const rateCheck = await checkRateLimit(auth.orgId);
   if (!rateCheck.allowed) {

@@ -6,8 +6,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { RateLimiters } from "@/lib/security/rate-limit";
-import { checkSubscription } from "@/lib/subscription";
-import { buildPaywallBlock } from "@/lib/paywall";
+import { enforceBillingGate } from "@/lib/subscription";
 import type { FenceEstimateResult } from "@/lib/fence-graph/types";
 
 interface ConvertInput {
@@ -39,14 +38,9 @@ export async function createEstimateFromFenceGraph(
       .from("profiles").select("id, org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
 
-    // ✅ BILLING: Subscription check, paywall-aware.
-    const sub = await checkSubscription(profile.org_id);
-    if (!sub.isActive) {
-      return buildPaywallBlock(
-        sub.trialDaysRemaining != null ? "subscription_expired" : "subscription_lapsed",
-        sub.effectivePlan,
-      );
-    }
+    // ✅ BILLING: Subscription + monthly cap gate.
+    const billingBlock = await enforceBillingGate(profile.org_id);
+    if (billingBlock) return billingBlock;
 
     // ✅ SECURITY: Rate limit estimate conversion (creates DB records)
     const rateLimit = RateLimiters.estimateCreation(profile.org_id);
