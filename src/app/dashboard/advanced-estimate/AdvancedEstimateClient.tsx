@@ -26,37 +26,18 @@ import {
   DEFAULT_FENCE_HEIGHT_IN,
 } from "./constants";
 
-// ── Draft persistence (autosave) ─────────────────────────────────────
-// localStorage key is versioned so a future schema change just leaves
-// old drafts on the shelf until they're overwritten or user clears the
-// key — no broken-restore attempts.
-const DRAFT_KEY = "fep-estimator-draft-v1";
-const DRAFT_SAVE_DEBOUNCE_MS = 600;
-
-// Scope of what's auto-saved. Intentionally excludes runs[] / gates[]
-// arrays because useRunsEditor owns that state internally — a proper
-// runs-restore would need a hydration path into the hook. Covered for
-// a follow-up; today autosave covers everything the user types into the
-// Project Setup card + Regulatory Costs + Customer Info, which is the
-// bulk of the typing and the part most costly to lose.
-interface EstimatorDraft {
-  projectName: string;
-  fenceType: string;
-  productLineId: string;
-  woodStyle: string;
-  soilType: string;
-  laborRate: number;
-  wastePct: number;
-  markupPct: number;
-  windMode: boolean;
-  existingFenceRemoval: boolean;
-  laborEfficiency: number;
-  permitCost: number;
-  inspectionCost: number;
-  engineeringCost: number;
-  surveyCost: number;
-  customer: { name: string; address: string; city: string; phone: string; email: string };
-}
+import {
+  DRAFT_KEY,
+  DRAFT_SAVE_DEBOUNCE_MS,
+  parseDraft,
+  serializeDraft,
+  type EstimatorDraft,
+} from "./draft";
+// Scope note: autosave intentionally excludes runs[] / gates[] arrays
+// because useRunsEditor owns that state internally — a proper
+// runs-restore would need a hydration path into the hook. Today it
+// covers Project Setup + Regulatory Costs + Customer Info, which is
+// the bulk of the typing and the most costly to lose on refresh.
 
 export default function AdvancedEstimateClient({
   priceMap = {},
@@ -108,47 +89,31 @@ export default function AdvancedEstimateClient({
   // mismatch and keeps localStorage access off the render path. Runs once.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      const d = JSON.parse(raw) as Partial<EstimatorDraft>;
-      if (!d || typeof d !== "object") return;
-
-      // Restore scalar form state. Keep validation tight — each field is
-      // narrowed to its expected runtime type before setState to prevent
-      // a corrupted draft from blowing up the estimator.
-      if (typeof d.projectName === "string") setProjectName(d.projectName);
-      if (typeof d.fenceType === "string") setFenceType(d.fenceType as FenceType);
-      if (typeof d.productLineId === "string") setProductLineId(d.productLineId);
-      if (typeof d.woodStyle === "string") setWoodStyle(d.woodStyle as WoodStyle);
-      if (typeof d.soilType === "string") setSoilType(d.soilType as SoilType);
-      if (typeof d.laborRate === "number") setLaborRate(d.laborRate);
-      if (typeof d.wastePct === "number") setWastePct(d.wastePct);
-      if (typeof d.markupPct === "number") setMarkupPct(d.markupPct);
-      if (typeof d.windMode === "boolean") setWindMode(d.windMode);
-      if (typeof d.existingFenceRemoval === "boolean") setExistingFenceRemoval(d.existingFenceRemoval);
-      if (typeof d.laborEfficiency === "number") setLaborEfficiency(d.laborEfficiency);
-      if (typeof d.permitCost === "number") setPermitCost(d.permitCost);
-      if (typeof d.inspectionCost === "number") setInspectionCost(d.inspectionCost);
-      if (typeof d.engineeringCost === "number") setEngineeringCost(d.engineeringCost);
-      if (typeof d.surveyCost === "number") setSurveyCost(d.surveyCost);
-      if (d.customer && typeof d.customer === "object") {
-        setCustomer({
-          name:    typeof d.customer.name === "string" ? d.customer.name : "",
-          address: typeof d.customer.address === "string" ? d.customer.address : "",
-          city:    typeof d.customer.city === "string" ? d.customer.city : "",
-          phone:   typeof d.customer.phone === "string" ? d.customer.phone : "",
-          email:   typeof d.customer.email === "string" ? d.customer.email : "",
-        });
-      }
-      setDraftRestored(true);
-      // Auto-dismiss after a few seconds — we don't want a permanent
-      // banner nagging the user about a draft they're actively editing.
-      const t = setTimeout(() => setDraftRestored(false), 5000);
-      return () => clearTimeout(t);
-    } catch {
-      // Corrupt or version-mismatched draft — silently ignore.
-    }
+    const d = parseDraft(localStorage.getItem(DRAFT_KEY));
+    if (!d) return;
+    let restored = false;
+    if (d.projectName !== undefined) { setProjectName(d.projectName); restored = true; }
+    if (d.fenceType !== undefined) { setFenceType(d.fenceType as FenceType); restored = true; }
+    if (d.productLineId !== undefined) { setProductLineId(d.productLineId); restored = true; }
+    if (d.woodStyle !== undefined) { setWoodStyle(d.woodStyle as WoodStyle); restored = true; }
+    if (d.soilType !== undefined) { setSoilType(d.soilType as SoilType); restored = true; }
+    if (d.laborRate !== undefined) { setLaborRate(d.laborRate); restored = true; }
+    if (d.wastePct !== undefined) { setWastePct(d.wastePct); restored = true; }
+    if (d.markupPct !== undefined) { setMarkupPct(d.markupPct); restored = true; }
+    if (d.windMode !== undefined) { setWindMode(d.windMode); restored = true; }
+    if (d.existingFenceRemoval !== undefined) { setExistingFenceRemoval(d.existingFenceRemoval); restored = true; }
+    if (d.laborEfficiency !== undefined) { setLaborEfficiency(d.laborEfficiency); restored = true; }
+    if (d.permitCost !== undefined) { setPermitCost(d.permitCost); restored = true; }
+    if (d.inspectionCost !== undefined) { setInspectionCost(d.inspectionCost); restored = true; }
+    if (d.engineeringCost !== undefined) { setEngineeringCost(d.engineeringCost); restored = true; }
+    if (d.surveyCost !== undefined) { setSurveyCost(d.surveyCost); restored = true; }
+    if (d.customer !== undefined) { setCustomer(d.customer); restored = true; }
+    if (!restored) return;
+    setDraftRestored(true);
+    // Auto-dismiss after a few seconds — we don't want a permanent
+    // banner nagging the user about a draft they're actively editing.
+    const t = setTimeout(() => setDraftRestored(false), 5000);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
@@ -165,7 +130,7 @@ export default function AdvancedEstimateClient({
       customer,
     };
     const handle = setTimeout(() => {
-      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch {
+      try { localStorage.setItem(DRAFT_KEY, serializeDraft(draft)); } catch {
         // Storage full / disabled — no-op. Draft is nice-to-have, not
         // required for the estimator to work.
       }
