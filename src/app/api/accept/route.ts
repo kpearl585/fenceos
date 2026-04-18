@@ -170,6 +170,11 @@ export async function POST(request: NextRequest) {
       .eq("org_id", est.org_id)
       .single();
 
+    // Convert the drawn signature to a base64 data URL so the PDF module
+    // can embed it without a storage round-trip (signed URL expiry + latency
+    // would complicate the request path). sigBuffer is already in memory.
+    const signatureDataUrl = `data:image/png;base64,${sigBuffer.toString("base64")}`;
+
     const pdfData: PdfEstimateData = {
       estimateId: est.id,
       title: est.title,
@@ -205,6 +210,7 @@ export async function POST(request: NextRequest) {
       isSigned: true,
       acceptedByName: name,
       acceptedAt: timestamp,
+      acceptedSignatureDataUrl: signatureDataUrl,
       acceptanceHash,
     };
 

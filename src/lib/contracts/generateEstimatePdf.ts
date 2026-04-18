@@ -54,7 +54,10 @@ export interface PdfEstimateData {
   isSigned?: boolean;
   acceptedByName?: string | null;
   acceptedAt?: string | null;
-  acceptedSignatureUrl?: string | null;
+  // Base64 data URL of the drawn signature PNG. Passed as data URL so the
+  // PDF module stays self-contained — no fetch against storage, no signed-URL
+  // expiry race. Caller buffers the upload anyway, converting it is free.
+  acceptedSignatureDataUrl?: string | null;
   acceptanceHash?: string | null;
 }
 
@@ -315,9 +318,32 @@ export async function generateEstimatePdfBuffer(data: PdfEstimateData): Promise<
     doc.setFontSize(9);
     doc.setFont(data.fontFamily, "bold");
     doc.text("ACCEPTED", margin, y);
-    y += 5;
+    y += 6;
+
+    // Embed the drawn signature if supplied. jsPDF's addImage accepts a
+    // base64 data URL directly; we render at 80mm × 25mm which matches the
+    // aspect ratio of the signature-pad canvas on the acceptance form.
+    if (data.acceptedSignatureDataUrl) {
+      const sigW = 80;
+      const sigH = 25;
+      // Guard against the rare case of a malformed data URL — addImage
+      // throws on parse failure, and we don't want that to fail the whole
+      // PDF render. The typed-name line below is sufficient fallback.
+      try {
+        doc.addImage(data.acceptedSignatureDataUrl, "PNG", margin, y, sigW, sigH);
+        // Thin line under the signature so it visually reads as signed-on-a-line.
+        doc.setDrawColor(180, 180, 180);
+        doc.line(margin, y + sigH + 1, margin + sigW, y + sigH + 1);
+        y += sigH + 5;
+      } catch {
+        // Fall through to text-only block; don't break the PDF for a
+        // corrupted signature payload.
+      }
+    }
+
     doc.setTextColor(60, 60, 60);
     doc.setFont(data.fontFamily, "normal");
+    doc.setFontSize(9);
     doc.text(`Signed by: ${data.acceptedByName}`, margin, y);
     y += 4;
     if (data.acceptedAt) {
@@ -334,7 +360,6 @@ export async function generateEstimatePdfBuffer(data: PdfEstimateData): Promise<
       doc.text(`Hash: ${data.acceptanceHash}`, margin, y);
       y += 4;
     }
-    // Signature image placeholder (would need base64 img in production)
   } else {
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
