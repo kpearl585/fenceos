@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 };
 
 interface Props {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
 export default async function QuoteViewPage({ params }: Props) {
-  const { token } = params;
+  const { token } = await params;
   const result = await getQuoteByToken(token);
 
   // Error state
