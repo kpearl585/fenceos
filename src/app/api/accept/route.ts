@@ -1,10 +1,7 @@
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
-import {
-  generateEstimatePdfBuffer,
-  type PdfEstimateData,
-} from "@/lib/contracts/generateEstimatePdf";
+import type { PdfEstimateData } from "@/lib/contracts/generateEstimatePdf";
+import { processAcceptance } from "@/lib/contracts/processAcceptance";
 import { sendEmail, estimateAcceptedOwnerEmail, estimateAcceptedCustomerEmail } from "@/lib/email";
 
 /**
@@ -70,25 +67,10 @@ export async function POST(request: NextRequest) {
       request.headers.get("x-real-ip") ||
       "unknown";
 
-    // 3. Upload signature to storage
     const sigBuffer = Buffer.from(await signatureFile.arrayBuffer());
-    const sigPath = `${est.org_id}/${estimateId}/signature.png`;
+    const timestamp = new Date().toISOString();
 
-    const { error: sigErr } = await supabase.storage
-      .from("contracts")
-      .upload(sigPath, sigBuffer, {
-        contentType: "image/png",
-        upsert: true,
-      });
-
-    if (sigErr) {
-      return NextResponse.json(
-        { error: `Signature upload failed: ${sigErr.message}` },
-        { status: 500 }
-      );
-    }
-
-    // 4. Load line items for hash
+    // 3. Load line items + customer/branding for the hash and PDF.
     const { data: lineItems } = await supabase
       .from("estimate_line_items")
       .select("description, quantity, unit_price, extended_price")
@@ -102,51 +84,6 @@ export async function POST(request: NextRequest) {
       )
       .join(";");
 
-    // 5. Generate acceptance hash
-    const timestamp = new Date().toISOString();
-    const hashPayload = [
-      estimateId,
-      Number(est.total).toFixed(2),
-      lineItemsSummary,
-      est.legal_terms_snapshot || "",
-      timestamp,
-    ].join("|");
-
-    const acceptanceHash = crypto
-      .createHash("sha256")
-      .update(hashPayload)
-      .digest("hex");
-
-    // 6. Get signature public URL
-    const { data: sigUrlData } = supabase.storage
-      .from("contracts")
-      .getPublicUrl(sigPath);
-    const signatureUrl = sigUrlData.publicUrl;
-
-    // 7. Update estimate — V1: no deposit handling
-    const { error: updateErr } = await supabase
-      .from("estimates")
-      .update({
-        status: "accepted",
-        accepted_at: timestamp,
-        accepted_by_name: name,
-        accepted_by_email: email,
-        accepted_ip: ip,
-        accepted_signature_url: signatureUrl,
-        acceptance_hash: acceptanceHash,
-        updated_at: timestamp,
-      })
-      .eq("id", estimateId)
-      .eq("accept_token", token);
-
-    if (updateErr) {
-      return NextResponse.json(
-        { error: `Acceptance failed: ${updateErr.message}` },
-        { status: 500 }
-      );
-    }
-
-    // 8. Generate signed contract PDF
     const customer = (
       est.customers as unknown as {
         name: string;
@@ -163,19 +100,13 @@ export async function POST(request: NextRequest) {
       (Array.isArray(orgObj2) ? orgObj2[0]?.name : (orgObj2 as { name: string } | null)?.name) ||
       "FenceOS";
 
-    // Load branding
     const { data: branding } = await supabase
       .from("org_branding")
       .select("*")
       .eq("org_id", est.org_id)
       .single();
 
-    // Convert the drawn signature to a base64 data URL so the PDF module
-    // can embed it without a storage round-trip (signed URL expiry + latency
-    // would complicate the request path). sigBuffer is already in memory.
-    const signatureDataUrl = `data:image/png;base64,${sigBuffer.toString("base64")}`;
-
-    const pdfData: PdfEstimateData = {
+    const pdfData: Omit<PdfEstimateData, "isSigned" | "acceptedByName" | "acceptedAt" | "acceptanceHash" | "acceptedSignatureDataUrl"> = {
       estimateId: est.id,
       title: est.title,
       createdAt: est.created_at,
@@ -207,36 +138,57 @@ export async function POST(request: NextRequest) {
       accentColor: branding?.accent_color || "#f59e0b",
       fontFamily: branding?.font_family || "helvetica",
       footerNote: branding?.footer_note || null,
-      isSigned: true,
-      acceptedByName: name,
-      acceptedAt: timestamp,
-      acceptedSignatureDataUrl: signatureDataUrl,
-      acceptanceHash,
     };
 
-    const pdfBuffer = await generateEstimatePdfBuffer(pdfData);
-    const contractPath = `${est.org_id}/${estimateId}/signed-contract.pdf`;
-
-    const { error: pdfErr } = await supabase.storage
-      .from("contracts")
-      .upload(contractPath, pdfBuffer, {
-        contentType: "application/pdf",
-        upsert: true,
+    // 4. Shared helper: upload signature → hash → signed PDF → signed URL.
+    let signatureUrl: string;
+    let acceptanceHash: string;
+    let contractPdfUrl: string | null;
+    try {
+      const artifacts = await processAcceptance({
+        supabase,
+        orgId: est.org_id,
+        recordId: estimateId,
+        signerName: name,
+        signatureBuffer: sigBuffer,
+        timestamp,
+        total: Number(est.total) || 0,
+        lineItemsSummary,
+        legalTermsSnapshot: est.legal_terms_snapshot || "",
+        pdfData,
       });
+      signatureUrl = artifacts.signatureUrl;
+      acceptanceHash = artifacts.acceptanceHash;
+      contractPdfUrl = artifacts.contractPdfUrl;
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Acceptance processing failed" },
+        { status: 500 },
+      );
+    }
 
-    if (!pdfErr) {
-      // Private bucket — use signed URL (1 year expiry = 31536000 seconds)
-      const { data: contractUrlData } = await supabase.storage
-        .from("contracts")
-        .createSignedUrl(contractPath, 31536000);
+    // 5. Persist acceptance + contract URL in one update.
+    const { error: updateErr } = await supabase
+      .from("estimates")
+      .update({
+        status: "accepted",
+        accepted_at: timestamp,
+        accepted_by_name: name,
+        accepted_by_email: email,
+        accepted_ip: ip,
+        accepted_signature_url: signatureUrl,
+        acceptance_hash: acceptanceHash,
+        contract_pdf_url: contractPdfUrl,
+        updated_at: timestamp,
+      })
+      .eq("id", estimateId)
+      .eq("accept_token", token);
 
-      const contractPdfUrl = contractUrlData?.signedUrl ?? null;
-
-      // Update contract PDF URL
-      await supabase
-        .from("estimates")
-        .update({ contract_pdf_url: contractPdfUrl })
-        .eq("id", estimateId);
+    if (updateErr) {
+      return NextResponse.json(
+        { error: `Acceptance failed: ${updateErr.message}` },
+        { status: 500 }
+      );
     }
 
     // 9. Send notification emails (non-blocking)
