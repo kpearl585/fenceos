@@ -108,6 +108,24 @@ export default function AdvancedEstimateClient({
     if (d.engineeringCost !== undefined) { setEngineeringCost(d.engineeringCost); restored = true; }
     if (d.surveyCost !== undefined) { setSurveyCost(d.surveyCost); restored = true; }
     if (d.customer !== undefined) { setCustomer(d.customer); restored = true; }
+    if (
+      d.runs !== undefined ||
+      d.gates !== undefined ||
+      d.runsMode !== undefined ||
+      d.simpleTotalFeet !== undefined ||
+      d.simpleCorners !== undefined ||
+      d.simpleShape !== undefined
+    ) {
+      editor.hydrate({
+        runs: d.runs,
+        gates: d.gates,
+        runsMode: d.runsMode,
+        simpleTotalFeet: d.simpleTotalFeet,
+        simpleCorners: d.simpleCorners,
+        simpleShape: d.simpleShape,
+      });
+      restored = true;
+    }
     if (!restored) return;
     setDraftRestored(true);
     // Auto-dismiss after a few seconds — we don't want a permanent
@@ -128,6 +146,12 @@ export default function AdvancedEstimateClient({
       laborRate, wastePct, markupPct, windMode, existingFenceRemoval,
       laborEfficiency, permitCost, inspectionCost, engineeringCost, surveyCost,
       customer,
+      runsMode: editor.runsMode,
+      simpleTotalFeet: editor.simpleTotalFeet,
+      simpleCorners: editor.simpleCorners,
+      simpleShape: editor.simpleShape,
+      runs: editor.runs,
+      gates: editor.gates,
     };
     const handle = setTimeout(() => {
       try { localStorage.setItem(DRAFT_KEY, serializeDraft(draft)); } catch {
@@ -141,6 +165,8 @@ export default function AdvancedEstimateClient({
     laborRate, wastePct, markupPct, windMode, existingFenceRemoval,
     laborEfficiency, permitCost, inspectionCost, engineeringCost, surveyCost,
     customer,
+    editor.runsMode, editor.simpleTotalFeet, editor.simpleCorners, editor.simpleShape,
+    editor.runs, editor.gates,
   ]);
 
   const productLine = PRODUCT_LINES[productLineId];

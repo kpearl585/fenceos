@@ -6,10 +6,18 @@
 // shape contract and field-by-field validation.
 //
 // The key is versioned — bumping DRAFT_KEY invalidates all existing
-// drafts rather than attempting a risky forward-migration.
+// drafts rather than attempting a risky forward-migration. New optional
+// fields (runs, gates, runsMode, simple-mode params) do NOT require a
+// bump: parseDraft drops them silently if absent, so v1 drafts still
+// restore their scalar fields and the editor starts fresh.
+
+import type { RunInput, GateInput } from "@/lib/fence-graph/types";
 
 export const DRAFT_KEY = "fep-estimator-draft-v1";
 export const DRAFT_SAVE_DEBOUNCE_MS = 600;
+
+export type DraftRunsMode = "simple" | "advanced";
+export type DraftSimpleShape = "open" | "closed";
 
 export interface EstimatorDraft {
   projectName: string;
@@ -28,16 +36,71 @@ export interface EstimatorDraft {
   engineeringCost: number;
   surveyCost: number;
   customer: { name: string; address: string; city: string; phone: string; email: string };
+  runsMode: DraftRunsMode;
+  simpleTotalFeet: number;
+  simpleCorners: number;
+  simpleShape: DraftSimpleShape;
+  runs: RunInput[];
+  gates: GateInput[];
 }
 
 export function serializeDraft(draft: EstimatorDraft): string {
   return JSON.stringify(draft);
 }
 
+const VALID_POST_TYPES = new Set<RunInput["startType"]>(["end", "corner", "gate"]);
+const VALID_SLOPE_METHODS = new Set(["racked", "stepped", "level"]);
+const VALID_PANEL_STYLES = new Set(["privacy", "picket", "semi_privacy", "lattice_top"]);
+const VALID_GATE_TYPES = new Set<GateInput["gateType"]>(["single", "double"]);
+
+function parseRunInput(u: unknown): RunInput | null {
+  if (!u || typeof u !== "object" || Array.isArray(u)) return null;
+  const r = u as Record<string, unknown>;
+  if (typeof r.id !== "string" || !r.id) return null;
+  if (typeof r.linearFeet !== "number" || !Number.isFinite(r.linearFeet)) return null;
+  if (typeof r.startType !== "string" || !VALID_POST_TYPES.has(r.startType as RunInput["startType"])) return null;
+  if (typeof r.endType !== "string" || !VALID_POST_TYPES.has(r.endType as RunInput["endType"])) return null;
+
+  const out: RunInput = {
+    id: r.id,
+    linearFeet: r.linearFeet,
+    startType: r.startType as RunInput["startType"],
+    endType: r.endType as RunInput["endType"],
+  };
+  if (typeof r.cornerAngle === "number" && Number.isFinite(r.cornerAngle)) out.cornerAngle = r.cornerAngle;
+  if (typeof r.slopeDeg === "number" && Number.isFinite(r.slopeDeg)) out.slopeDeg = r.slopeDeg;
+  if (typeof r.slopeMethod === "string" && VALID_SLOPE_METHODS.has(r.slopeMethod)) {
+    out.slopeMethod = r.slopeMethod as RunInput["slopeMethod"];
+  }
+  if (typeof r.panelStyle === "string" && VALID_PANEL_STYLES.has(r.panelStyle)) {
+    out.panelStyle = r.panelStyle as RunInput["panelStyle"];
+  }
+  if (typeof r.notes === "string") out.notes = r.notes;
+  return out;
+}
+
+function parseGateInput(u: unknown): GateInput | null {
+  if (!u || typeof u !== "object" || Array.isArray(u)) return null;
+  const g = u as Record<string, unknown>;
+  if (typeof g.id !== "string" || !g.id) return null;
+  if (typeof g.afterRunId !== "string" || !g.afterRunId) return null;
+  if (typeof g.gateType !== "string" || !VALID_GATE_TYPES.has(g.gateType as GateInput["gateType"])) return null;
+  if (typeof g.widthFt !== "number" || !Number.isFinite(g.widthFt)) return null;
+  if (typeof g.isPoolGate !== "boolean") return null;
+  return {
+    id: g.id,
+    afterRunId: g.afterRunId,
+    gateType: g.gateType as GateInput["gateType"],
+    widthFt: g.widthFt,
+    isPoolGate: g.isPoolGate,
+  };
+}
+
 // Returns a partial draft containing only the fields that pass type-narrowing.
 // A field that's missing or wrong-typed is dropped — the caller falls back to
 // its default. Corrupt JSON / non-object input returns null so the restore
-// path can silently ignore it.
+// path can silently ignore it. Arrays drop invalid items individually rather
+// than failing the whole array, so one corrupt run doesn't nuke the draft.
 export function parseDraft(raw: string | null | undefined): Partial<EstimatorDraft> | null {
   if (!raw) return null;
   let parsed: unknown;
@@ -81,5 +144,39 @@ export function parseDraft(raw: string | null | undefined): Partial<EstimatorDra
       email: typeof c.email === "string" ? c.email : "",
     };
   }
+
+  if (d.runsMode === "simple" || d.runsMode === "advanced") out.runsMode = d.runsMode;
+  if (typeof d.simpleTotalFeet === "number" && Number.isFinite(d.simpleTotalFeet)) {
+    out.simpleTotalFeet = d.simpleTotalFeet;
+  }
+  if (typeof d.simpleCorners === "number" && Number.isFinite(d.simpleCorners)) {
+    out.simpleCorners = d.simpleCorners;
+  }
+  if (d.simpleShape === "open" || d.simpleShape === "closed") out.simpleShape = d.simpleShape;
+
+  if (Array.isArray(d.runs)) {
+    const runs = d.runs.map(parseRunInput).filter((r): r is RunInput => r !== null);
+    out.runs = runs;
+  }
+  if (Array.isArray(d.gates)) {
+    const gates = d.gates.map(parseGateInput).filter((g): g is GateInput => g !== null);
+    out.gates = gates;
+  }
+
   return out;
+}
+
+// Parse the numeric suffix of an id like "run_7" / "gate_12". Returns 0 if
+// the id doesn't match the expected shape — the caller treats that as
+// "nothing to restore" and the counter stays at its current value.
+export function maxIdSuffix(items: { id: string }[], prefix: string): number {
+  let max = 0;
+  const pat = new RegExp(`^${prefix}_(\\d+)$`);
+  for (const it of items) {
+    const m = pat.exec(it.id);
+    if (!m) continue;
+    const n = parseInt(m[1], 10);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return max;
 }

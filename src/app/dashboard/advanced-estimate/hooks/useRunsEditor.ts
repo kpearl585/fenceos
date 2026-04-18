@@ -2,6 +2,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { RunInput, GateInput } from "@/lib/fence-graph/engine";
 import { DEFAULT_GATE_WIDTH_FT } from "../constants";
+import { maxIdSuffix } from "../draft";
 
 export type RunsMode = "simple" | "advanced";
 export type SimpleShape = "open" | "closed";
@@ -76,6 +77,18 @@ export interface UseRunsEditorReturn {
   // Escape hatches for consumers that need to seed state (e.g. AI apply)
   newRunId: () => string;
   makeDefaultRun: (id: string) => RunInput;
+
+  // Restore editor state from a persisted draft. Seeds the id counters
+  // to max(existing id suffix) so newly added runs/gates don't collide
+  // with restored ones.
+  hydrate: (partial: {
+    runs?: RunInput[];
+    gates?: GateInput[];
+    runsMode?: RunsMode;
+    simpleTotalFeet?: number;
+    simpleCorners?: number;
+    simpleShape?: SimpleShape;
+  }) => void;
 }
 
 // Owns all runs/gates/simple-mode state for the advanced estimator.
@@ -152,6 +165,28 @@ export function useRunsEditor(): UseRunsEditorReturn {
     setGates((prev) => prev.filter((g) => g.id !== id));
   }, []);
 
+  const hydrate = useCallback((partial: {
+    runs?: RunInput[];
+    gates?: GateInput[];
+    runsMode?: RunsMode;
+    simpleTotalFeet?: number;
+    simpleCorners?: number;
+    simpleShape?: SimpleShape;
+  }) => {
+    if (partial.runs) {
+      setRuns(partial.runs);
+      runIdCtrRef.current = Math.max(runIdCtrRef.current, maxIdSuffix(partial.runs, "run"));
+    }
+    if (partial.gates) {
+      setGates(partial.gates);
+      gateIdCtrRef.current = Math.max(gateIdCtrRef.current, maxIdSuffix(partial.gates, "gate"));
+    }
+    if (partial.runsMode) setRunsMode(partial.runsMode);
+    if (partial.simpleTotalFeet !== undefined) setSimpleTotalFeet(partial.simpleTotalFeet);
+    if (partial.simpleCorners !== undefined) setSimpleCorners(partial.simpleCorners);
+    if (partial.simpleShape) setSimpleShape(partial.simpleShape);
+  }, []);
+
   return {
     runs, setRuns, gates, setGates,
     runsMode, simpleTotalFeet, simpleCorners, simpleShape,
@@ -160,5 +195,6 @@ export function useRunsEditor(): UseRunsEditorReturn {
     handleRunsModeChange,
     addRun, updateRun, removeRun, addGate, updateGate, removeGate,
     newRunId, makeDefaultRun,
+    hydrate,
   };
 }
