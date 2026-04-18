@@ -89,7 +89,7 @@ export async function updateCustomer(fd: FormData) {
 
   if (error) throw new Error(`Failed to update customer: ${error.message}`);
 
-  redirect(`/dashboard/customers/${customerId}`);
+  redirect(`/dashboard/customers/${customerId}?saved=1`);
 }
 
 /* ── Delete Customer ── */

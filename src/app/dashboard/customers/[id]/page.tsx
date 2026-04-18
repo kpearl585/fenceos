@@ -33,10 +33,13 @@ const JOB_STATUS_STYLES: Record<string, string> = {
 
 export default async function CustomerDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ saved?: string }>;
 }) {
   const { id } = await params;
+  const { saved } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -93,6 +96,15 @@ export default async function CustomerDetailPage({
           &larr; Back to Customers
         </Link>
       </div>
+
+      {saved === "1" && (
+        <div className="mb-4 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg px-4 py-2 flex items-center gap-2">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Customer details saved
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
