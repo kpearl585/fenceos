@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { FenceProjectInput, FenceEstimateResult } from "@/lib/fence-graph/types";
+import { sendEmail, estimateAcceptedOwnerEmail } from "@/lib/email";
 import { z } from "zod";
 
 // ── Generate a shareable quote link ───────────────────────────────
@@ -201,25 +202,69 @@ export async function acceptQuote(
       return { success: false, error: "Quote link has expired or has already been accepted" };
     }
 
-    // Update estimate with acceptance data
-    const { error } = await admin
+    // Update estimate with acceptance data. Select the row back so we can
+    // build the owner notification without a second round-trip.
+    const acceptedAt = new Date().toISOString();
+    const customerName = validated.signature.trim();
+    const { data: quote, error } = await admin
       .from("fence_graphs")
       .update({
-        customer_accepted_at: new Date().toISOString(),
-        customer_signature: validated.signature.trim(),
+        customer_accepted_at: acceptedAt,
+        customer_signature: customerName,
         customer_ip_address: validated.ipAddress,
         acceptance_user_agent: validated.userAgent,
         status: "accepted", // Update status from draft to accepted
       })
-      .eq("public_token", validated.token);
+      .eq("public_token", validated.token)
+      .select("id, org_id, total_cost")
+      .single();
 
-    if (error) {
+    if (error || !quote) {
       console.error("Error accepting quote:", error);
       return { success: false, error: "Failed to accept quote. Please try again." };
     }
 
-    // TODO: Send email notification to contractor
-    // This will be implemented in the next phase
+    // Notify the contractor owner. Non-blocking — acceptance is already
+    // recorded, and a delivery failure must not roll back the acceptance.
+    try {
+      const [ownerRes, orgRes] = await Promise.all([
+        admin
+          .from("users")
+          .select("email")
+          .eq("org_id", quote.org_id)
+          .eq("role", "owner")
+          .single(),
+        admin
+          .from("organizations")
+          .select("name")
+          .eq("id", quote.org_id)
+          .single(),
+      ]);
+
+      const ownerEmail = ownerRes.data?.email;
+      if (ownerEmail) {
+        const orgName = orgRes.data?.name ?? "FenceEstimatePro";
+        const total = Number(quote.total_cost) || 0;
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fenceestimatepro.com";
+        const estimateUrl = `${baseUrl}/dashboard/estimates/${quote.id}`;
+        const fmt = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(total);
+
+        await sendEmail({
+          to: ownerEmail,
+          subject: `Estimate Accepted — ${customerName} (${fmt})`,
+          html: estimateAcceptedOwnerEmail({
+            ownerEmail,
+            orgName,
+            customerName,
+            total,
+            estimateUrl,
+            acceptedAt,
+          }),
+        });
+      }
+    } catch (emailErr) {
+      console.error("[acceptQuote] Owner notification failed:", emailErr);
+    }
 
     return { success: true };
   } catch (err) {
