@@ -24,7 +24,7 @@ export async function getEstimatorConfig(): Promise<{
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles")
+      .from("users")
       .select("org_id")
       .eq("auth_id", user.id)
       .single();

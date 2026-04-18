@@ -16,7 +16,7 @@ export default async function SavedAdvancedEstimatesPage() {
 
   const admin = createAdminClient();
   const { data: profile } = await admin
-    .from("profiles").select("org_id").eq("auth_id", user.id).single();
+    .from("users").select("org_id").eq("auth_id", user.id).single();
   if (!profile) redirect("/dashboard");
 
   const { data: estimates } = await admin
