@@ -5,6 +5,7 @@ import { ensureProfile } from "@/lib/bootstrap";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as XLSX from "xlsx";
+import { getStripe } from "@/lib/stripe/client";
 
 async function getAuthContext() {
   const supabase = await createClient();
@@ -290,6 +291,13 @@ export async function deleteAccount() {
   const permanentDeletionDate = new Date(deletionDate);
   permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 30);
 
+  // Look up Stripe subscription before the soft-delete so we can cancel it.
+  const { data: org } = await admin
+    .from('organizations')
+    .select('stripe_subscription_id')
+    .eq('id', profile.org_id)
+    .single();
+
   await admin
     .from('organizations')
     .update({
@@ -299,9 +307,20 @@ export async function deleteAccount() {
     })
     .eq('id', profile.org_id);
 
-  // TODO: Cancel Stripe subscription if active
-  // const subscription = await getStripeSubscription(profile.org_id);
-  // if (subscription) await stripe.subscriptions.cancel(subscription.id);
+  // Cancel Stripe subscription immediately so the deleted account stops
+  // getting billed. The customer.subscription.deleted webhook clears
+  // stripe_subscription_id and sets plan='free'; Stripe failures here
+  // must not block account deletion — the reconcile cron catches drift.
+  if (org?.stripe_subscription_id) {
+    try {
+      await getStripe().subscriptions.cancel(org.stripe_subscription_id);
+    } catch (err) {
+      console.error(
+        `[deleteAccount] Failed to cancel Stripe subscription ${org.stripe_subscription_id} for org ${profile.org_id}:`,
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
 
   // Sign out user
   await supabase.auth.signOut();
