@@ -126,16 +126,10 @@ export async function getQuoteByToken(token: string): Promise<{
 
     const admin = createAdminClient();
 
-    // Check if token is valid (not expired, not accepted)
-    const { data: isValid } = await admin.rpc("is_token_valid", {
-      token: validatedToken,
-    });
-
-    if (!isValid) {
-      return { success: false, error: "Quote link has expired or is no longer valid" };
-    }
-
-    // Fetch quote data with org branding
+    // Load the row regardless of acceptance/expiry state — the page
+    // renders a different surface for accepted and expired quotes and
+    // needs the data either way. `acceptQuote` re-checks is_token_valid
+    // before mutating, so this read-only fetch can't enable re-accepts.
     const { data: quote, error } = await admin
       .from("fence_graphs")
       .select(`
