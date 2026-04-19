@@ -14,7 +14,7 @@ config({ path: path.resolve(process.cwd(), ".env.local") });
 
 import * as fs from "fs";
 import OpenAI from "openai";
-import { SYSTEM_PROMPT } from "../src/lib/fence-graph/ai-extract/prompt";
+import { SYSTEM_PROMPT, USER_PROMPT_IMAGE } from "../src/lib/fence-graph/ai-extract/prompt";
 import { EXTRACTION_JSON_SCHEMA, validateExtraction } from "../src/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResult } from "../src/lib/fence-graph/ai-extract/types";
 
@@ -67,6 +67,11 @@ interface TestCase {
   priority: "high" | "medium" | "low";
   type: "text" | "image";
   input: string;
+  // Image cases: path relative to repo root (e.g. "test-fixtures/photos/clear-yard.jpg").
+  // When the file is missing, the runner skips with a "pending photo" note
+  // so Kelvin can stage photos incrementally without breaking the suite.
+  photoPath?: string;
+  photoMime?: "image/jpeg" | "image/png" | "image/webp";
   expected: {
     runs?: Array<{
       linearFeet: number;
@@ -256,25 +261,54 @@ async function runTests() {
     console.log(`Running only ${priorityFilter} priority tests (${testCases.length} cases)\n`);
   }
 
-  // Skip image tests for now (note this clearly)
-  const textTests = testCases.filter(tc => tc.type === "text");
-  if (textTests.length < testCases.length) {
-    console.log(`⚠️  Skipping ${testCases.length - textTests.length} image test(s) — image extraction requires separate harness\n`);
-  }
+  // Image tests run alongside text ones. Each image case with a missing
+  // photo file is skipped with a clear note so the suite stays green
+  // while Kelvin stages real yard photos into test-fixtures/photos/.
+  let skippedImageTests = 0;
 
   // Run each test
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
 
-  for (const testCase of textTests) {
+  for (const testCase of testCases) {
+    // Build the messages per test type — text vs image.
+    let messages: OpenAI.Chat.ChatCompletionMessageParam[];
+
+    if (testCase.type === "image") {
+      const photoRel = testCase.photoPath;
+      if (!photoRel) {
+        console.log(`[${testCase.priority.toUpperCase()}] ${testCase.id}... ⏭️  SKIP (no photoPath)`);
+        skippedImageTests++;
+        continue;
+      }
+      const photoAbs = path.join(process.cwd(), photoRel);
+      if (!fs.existsSync(photoAbs)) {
+        console.log(
+          `[${testCase.priority.toUpperCase()}] ${testCase.id}... ⏭️  SKIP (photo not staged: ${photoRel})`
+        );
+        skippedImageTests++;
+        continue;
+      }
+      const buffer  = fs.readFileSync(photoAbs);
+      const base64  = buffer.toString("base64");
+      const mime    = testCase.photoMime ?? "image/jpeg";
+      const context = testCase.input && testCase.input.trim().length > 0 ? testCase.input : undefined;
+      messages = [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user",   content: USER_PROMPT_IMAGE(base64, mime, context) },
+      ];
+    } else {
+      messages = [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user",   content: `Extract fence project data from the following contractor input:\n\n${testCase.input}` },
+      ];
+    }
+
     process.stdout.write(`[${testCase.priority.toUpperCase()}] ${testCase.id}... `);
 
     try {
       // Extract using REAL pipeline
-      const { result, inputTokens, outputTokens } = await runExtraction(client, [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Extract fence project data from the following contractor input:\n\n${testCase.input}` },
-      ]);
+      const { result, inputTokens, outputTokens } = await runExtraction(client, messages);
 
       totalInputTokens += inputTokens;
       totalOutputTokens += outputTokens;
@@ -336,6 +370,9 @@ async function runTests() {
 
   console.log(`Total: ${results.length} | Passed: ${passed} | Failed: ${failed} | Pass Rate: ${passRate}%`);
   console.log(`Tokens: ${totalInputTokens} input, ${totalOutputTokens} output (${totalInputTokens + totalOutputTokens} total)`);
+  if (skippedImageTests > 0) {
+    console.log(`Skipped: ${skippedImageTests} image test(s) — stage photos in test-fixtures/photos/ to enable them.`);
+  }
 
   // Group by priority
   const byPriority = {
