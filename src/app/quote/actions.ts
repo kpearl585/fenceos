@@ -110,6 +110,7 @@ export async function getQuoteByToken(token: string): Promise<{
     legal_terms_snapshot: string | null;
     payment_terms_snapshot: string | null;
     contract_pdf_url: string | null;
+    ar_enabled: boolean;
     org: {
       name: string;
       phone: string;
@@ -145,6 +146,7 @@ export async function getQuoteByToken(token: string): Promise<{
         legal_terms_snapshot,
         payment_terms_snapshot,
         contract_pdf_url,
+        ar_enabled,
         org_id
       `)
       .eq("public_token", validatedToken)
@@ -168,6 +170,10 @@ export async function getQuoteByToken(token: string): Promise<{
       .eq("org_id", quote.org_id)
       .single();
 
+    // `ar_enabled` was added by migration 20260419010000 but isn't in
+    // the generated Supabase types yet. Narrow locally.
+    const quoteAr = quote as unknown as { ar_enabled: boolean | null };
+
     return {
       success: true,
       quote: {
@@ -183,6 +189,7 @@ export async function getQuoteByToken(token: string): Promise<{
         legal_terms_snapshot: quote.legal_terms_snapshot ?? null,
         payment_terms_snapshot: quote.payment_terms_snapshot ?? null,
         contract_pdf_url: quote.contract_pdf_url ?? null,
+        ar_enabled: quoteAr.ar_enabled ?? false,
         org: {
           name: org?.name ?? "Fence Company",
           phone: branding?.phone ?? "",

@@ -21,3 +21,7 @@ node_modules
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# AR asset pipeline staging (raw downloaded files are large, optimized output goes in panels/)
+public/ar-assets/raw/
+supabase/.temp/
