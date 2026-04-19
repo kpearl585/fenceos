@@ -142,4 +142,12 @@ export const RateLimiters = {
       limit: 5,
       windowMs: 15 * 60 * 1000,
     }),
+
+  /** AR sessions: 60 per hour per token/org */
+  arSessionCreate: (key: string) =>
+    checkRateLimit({
+      key: `ar-session:${key}`,
+      limit: 60,
+      windowMs: 60 * 60 * 1000,
+    }),
 };
