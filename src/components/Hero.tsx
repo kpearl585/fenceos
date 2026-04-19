@@ -10,7 +10,16 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left -- Copy */}
           <div>
-            <div className="inline-flex items-center gap-2 bg-[rgba(22,163,74,0.15)] border border-accent/20 rounded-full px-4 py-1.5 mb-6">
+            <a
+              href="/try-it"
+              className="group inline-flex items-center gap-2 bg-[rgba(201,168,76,0.12)] border border-[#c9a84c]/30 hover:border-[#c9a84c]/70 rounded-full px-4 py-1.5 mb-3 transition-colors"
+            >
+              <span className="text-[10px] font-bold tracking-wider bg-[#c9a84c] text-neutral-950 rounded-sm px-1.5 py-0.5">NEW</span>
+              <span className="text-xs font-semibold text-[#e6d394] uppercase tracking-wide group-hover:text-[#f0dfaa]">
+                Try our AI Fence Estimator &mdash; free, no signup &rarr;
+              </span>
+            </a>
+            <div className="inline-flex items-center gap-2 bg-[rgba(22,163,74,0.15)] border border-accent/20 rounded-full px-4 py-1.5 mb-6 ml-0 sm:ml-3">
               <span className="w-2 h-2 rounded-full bg-accent-light animate-pulse" />
               <span className="text-xs font-semibold text-accent-light uppercase tracking-wide">The only run-based fence estimation engine</span>
             </div>

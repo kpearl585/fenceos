@@ -29,13 +29,20 @@ export async function signup(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const refCode = (formData.get("ref") as string | null) ?? "";
+  const rawClaimToken = (formData.get("claim_token") as string | null) ?? "";
+  const claimToken = /^[0-9a-f-]{36}$/i.test(rawClaimToken) ? rawClaimToken : "";
+
+  const metadata: Record<string, string> = {};
+  if (refCode) metadata.referral_code = refCode;
+  if (claimToken) metadata.claim_token = claimToken;
 
   const { error, data: signUpData } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      // Store referral code in user metadata so it's available after email confirmation
-      data: refCode ? { referral_code: refCode } : {},
+      // Metadata persists through email confirmation and is readable on
+      // the user object in /onboarding, where we consume claim_token.
+      data: metadata,
     },
   });
 

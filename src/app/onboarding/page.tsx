@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import { saveOnboarding } from "./actions";
+import { consumeClaimToken } from "@/lib/photo-estimate/consume-claim-token";
 import Link from "next/link";
 import { Metadata } from "next";
 
@@ -25,6 +26,17 @@ export default async function OnboardingPage(props: {
     .select("name")
     .eq("id", profile.org_id)
     .single();
+
+  // Transfer a pending AI Photo Estimator claim (if any) into a
+  // fence_graphs row before we branch on onboarding status. Safe in
+  // both branches: the helper no-ops on bad/claimed tokens.
+  const claimToken =
+    typeof user.user_metadata?.claim_token === "string"
+      ? user.user_metadata.claim_token
+      : null;
+  if (claimToken) {
+    await consumeClaimToken(user, profile.org_id, claimToken);
+  }
 
   const isDefaultName = !org?.name || org.name.endsWith("'s Org");
   if (!isDefaultName) redirect("/dashboard");

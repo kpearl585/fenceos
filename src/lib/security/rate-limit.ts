@@ -150,4 +150,17 @@ export const RateLimiters = {
       limit: 60,
       windowMs: 60 * 60 * 1000,
     }),
+
+  /** Public AI Photo Estimator: 3 per 24 hours per IP.
+   *  In-memory only — a determined attacker hitting multiple Vercel
+   *  function instances can exceed this. The authoritative abuse defense
+   *  is the Postgres daily $ cap enforced by
+   *  public.increment_photo_estimate_cost(). Treat this limiter as a
+   *  friction layer, not the last line of defense. */
+  photoEstimatePublic: (ip: string) =>
+    checkRateLimit({
+      key: `photo-estimate-public:${ip}`,
+      limit: 3,
+      windowMs: 24 * 60 * 60 * 1000,
+    }),
 };

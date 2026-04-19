@@ -7,13 +7,26 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Create Account | FenceEstimatePro" };
 
 export default async function SignupPage(props: {
-  searchParams: Promise<{ error?: string; message?: string; ref?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    message?: string;
+    ref?: string;
+    claim_token?: string;
+    email?: string;
+  }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect("/dashboard");
 
-  const { error, message, ref } = await props.searchParams;
+  const { error, message, ref, claim_token, email: prefilledEmail } =
+    await props.searchParams;
+  const safeClaimToken =
+    claim_token && /^[0-9a-f-]{36}$/i.test(claim_token) ? claim_token : "";
+  const safeEmail =
+    prefilledEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(prefilledEmail)
+      ? prefilledEmail
+      : "";
 
   return (
     <div className="min-h-screen flex bg-fence-950">
@@ -68,14 +81,25 @@ export default async function SignupPage(props: {
             <div className="mb-5 p-3.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-sm">{message}</div>
           )}
 
+          {safeClaimToken && (
+            <div className="mb-5 p-3.5 bg-fence-500/10 border border-fence-500/30 text-fence-200 rounded-lg text-sm">
+              Creating your account will save your AI photo estimate to your
+              dashboard.
+            </div>
+          )}
+
           <form action={signup} className="space-y-4">
             {ref && <input type="hidden" name="ref" value={ref} />}
+            {safeClaimToken && (
+              <input type="hidden" name="claim_token" value={safeClaimToken} />
+            )}
             <div>
               <label className="block text-white/70 text-sm mb-1.5">Email address</label>
               <input
                 type="email"
                 name="email"
                 required
+                defaultValue={safeEmail}
                 placeholder="you@company.com"
                 className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:border-fence-500 focus:ring-1 focus:ring-fence-500 transition"
               />
