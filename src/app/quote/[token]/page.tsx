@@ -244,6 +244,37 @@ export default async function QuoteViewPage({ params }: Props) {
           </div>
         </div>
 
+        {/* Terms — shown inline so the customer sees exactly what
+            they're agreeing to before signing. Same text is also
+            embedded in the signed contract PDF. */}
+        {(quote.legal_terms_snapshot || quote.payment_terms_snapshot) && (
+          <details className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8 group">
+            <summary className="flex items-center justify-between px-6 py-4 cursor-pointer select-none bg-gray-50 border-b border-gray-200 group-open:border-b-gray-200">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Terms & Conditions</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Review the legal and payment terms before accepting.</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="p-6 space-y-6">
+              {quote.legal_terms_snapshot && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Legal Terms</h3>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{quote.legal_terms_snapshot}</p>
+                </div>
+              )}
+              {quote.payment_terms_snapshot && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Payment Terms</h3>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{quote.payment_terms_snapshot}</p>
+                </div>
+              )}
+            </div>
+          </details>
+        )}
+
         {/* Acceptance Form or Contact Info */}
         {!isAccepted && !isExpired ? (
           <QuoteAcceptanceForm token={token} />
