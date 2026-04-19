@@ -1,5 +1,6 @@
 import { getQuoteByToken } from "../actions";
 import { QuoteAcceptanceForm } from "./QuoteAcceptanceForm";
+import ARViewerButton from "@/components/ar/ARViewerButton";
 import { Metadata } from "next";
 import Link from "next/link";
 
@@ -135,6 +136,34 @@ export default async function QuoteViewPage({ params }: Props) {
                   Please contact {quote.org.name} to request an updated quote.
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* AR Preview — only for AR-enabled quotes that aren't yet
+            accepted or expired. Sits above Project Details so the
+            homeowner has a chance to see the fence in AR before they
+            start reviewing pricing and acceptance. */}
+        {quote.ar_enabled && !isAccepted && !isExpired && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
+            <div className="bg-fence-50 border-b border-fence-200 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-fence-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3 2 8l10 5 10-5-10-5Z" />
+                    <path d="m2 12 10 5 10-5" />
+                    <path d="m2 17 10 5 10-5" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">See Your Fence In AR</h2>
+                  <p className="text-sm text-gray-600">Preview your fence on your actual property using your phone</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <ARViewerButton token={token} launchedBy="customer" variant="primary" />
+              <p className="text-xs text-gray-500 mt-3">Works on most modern iPhones and Android phones. No app download required.</p>
             </div>
           </div>
         )}
