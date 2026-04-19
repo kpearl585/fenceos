@@ -62,19 +62,42 @@ export default function ResultCard({ data, onTryAnother }: Props) {
   const conf = confidenceLabel(extraction.confidence);
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<
-    "idle" | "invalid" | "pending"
+    "idle" | "invalid" | "submitting" | "sent" | "error"
   >("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  function handleEmailSubmit(e: React.FormEvent) {
+  async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Session D wires this up to /api/public/photo-estimate/claim. For
-    // now, reject obviously bad addresses and stub out with a "pending"
-    // visual so the wave-1 screen reads complete.
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    const trimmed = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       setEmailStatus("invalid");
       return;
     }
-    setEmailStatus("pending");
+    setEmailStatus("submitting");
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/public/photo-estimate/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claim_token: data.claim_token, email: trimmed }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEmailStatus("error");
+        setErrorMessage(
+          typeof json?.error === "string"
+            ? json.error
+            : "Something went wrong. Please try again."
+        );
+        return;
+      }
+      setEmailStatus("sent");
+    } catch {
+      setEmailStatus("error");
+      setErrorMessage(
+        "We couldn't reach the server. Check your connection and try again."
+      );
+    }
   }
 
   return (
@@ -171,17 +194,24 @@ export default function ResultCard({ data, onTryAnother }: Props) {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              if (emailStatus !== "idle") setEmailStatus("idle");
+              if (emailStatus !== "idle" && emailStatus !== "sent") {
+                setEmailStatus("idle");
+                setErrorMessage(null);
+              }
             }}
-            disabled={emailStatus === "pending"}
+            disabled={emailStatus === "submitting" || emailStatus === "sent"}
             className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-fence-500 focus:ring-1 focus:ring-fence-500 focus:outline-none disabled:bg-gray-100"
           />
           <button
             type="submit"
-            disabled={emailStatus === "pending"}
+            disabled={emailStatus === "submitting" || emailStatus === "sent"}
             className="inline-flex items-center justify-center rounded-lg bg-fence-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-fence-700 disabled:opacity-50"
           >
-            {emailStatus === "pending" ? "Check your inbox" : "Save estimate"}
+            {emailStatus === "submitting"
+              ? "Sending…"
+              : emailStatus === "sent"
+              ? "Check your inbox"
+              : "Save estimate"}
           </button>
         </form>
         {emailStatus === "invalid" && (
@@ -189,13 +219,15 @@ export default function ResultCard({ data, onTryAnother }: Props) {
             Please enter a valid email address.
           </p>
         )}
-        {emailStatus === "pending" && (
+        {emailStatus === "error" && errorMessage && (
+          <p role="alert" className="mt-2 text-xs text-red-700">
+            {errorMessage}
+          </p>
+        )}
+        {emailStatus === "sent" && (
           <p className="mt-2 text-xs text-fence-700">
-            Email delivery is wired up in the next release. Your estimate ID is{" "}
-            <code className="rounded bg-white px-1 py-0.5">
-              {data.claim_token.slice(0, 8)}
-            </code>
-            .
+            We just emailed you a link to claim this estimate. Check your
+            inbox (and spam folder, just in case).
           </p>
         )}
       </div>
