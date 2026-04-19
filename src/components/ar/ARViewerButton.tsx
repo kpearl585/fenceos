@@ -243,9 +243,38 @@ export default function ARViewerButton({
                 />
               )}
 
-              <p className="text-xs text-gray-500 text-center">
-                Powered by FenceEstimatePro
-              </p>
+              <div className="text-xs text-gray-500 text-center space-y-1">
+                <p>Powered by FenceEstimatePro</p>
+                <p className="text-gray-400">
+                  3D model by{' '}
+                  <a
+                    href="https://skfb.ly/otBYu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-gray-600"
+                  >
+                    plaggy
+                  </a>
+                  {' '}&middot;{' '}
+                  <a
+                    href="https://creativecommons.org/licenses/by/4.0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-gray-600"
+                  >
+                    CC BY 4.0
+                  </a>
+                  {' '}&middot;{' '}
+                  <a
+                    href="/credits"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-gray-600"
+                  >
+                    Credits
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
         </div>

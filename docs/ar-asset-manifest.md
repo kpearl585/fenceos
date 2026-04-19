@@ -24,11 +24,24 @@ wood privacy fence (intended to be tiled along a path in AR).
 
 ### Source
 
-- **Model:** "CC0 - Wooden Fence" by **plaggy** on Sketchfab
-- **URL:** https://sketchfab.com/3d-models/cc0-woode-fence-39c5f9ac62a64259aa3478040339fa2a
-- **License:** [CC0 1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/)
-- **Attribution:** Not legally required under CC0. We still credit
-  **plaggy** in this document as a matter of good practice.
+- **Model:** "CC0 - Woode Fence" by **plaggy** on Sketchfab
+- **Short link:** https://skfb.ly/otBYu
+- **Full URL:** https://sketchfab.com/3d-models/cc0-woode-fence-39c5f9ac62a64259aa3478040339fa2a
+- **License:** [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
+  — commercial use is allowed; attribution is required.
+- **Modifications made:** we compress the GLB with
+  [`gltf-transform optimize`](https://gltf-transform.dev/cli) using
+  `--compress meshopt --texture-compress webp`. The USDZ is shipped as-is.
+- **Attribution text (use verbatim wherever crediting):**
+
+  > "CC0 - Woode Fence" ([skfb.ly/otBYu](https://skfb.ly/otBYu)) by plaggy is
+  > licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  > Modified: optimized (meshopt + webp) for mobile AR use.
+
+> **Note on the asset's filename:** the author titled the upload
+> "CC0 - Woode Fence", but Sketchfab lists the actual license as
+> CC BY 4.0, not CC0. We follow Sketchfab's license metadata — CC BY 4.0
+> — because it is what Sketchfab serves at download time.
 
 ### File details
 
