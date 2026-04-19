@@ -134,6 +134,32 @@ export async function POST(request: NextRequest) {
         console.error(`[webhook] Failed to update subscription for org ${orgId}:`, subUpdateErr.message);
         return NextResponse.json({ error: "DB update failed" }, { status: 500 });
       }
+
+      // Cross-product synergy: an active FEP sub grants a 'docs_bundle'
+      // entitlement on the shared Pearl platform so the subscriber can
+      // download ContractorDocs templates at no extra charge. The grant is
+      // attached to the user_id captured at checkout (sub.metadata.user_id);
+      // org-wide grants are a follow-up.
+      const subscriberUserId = sub.metadata?.user_id;
+      if (subscriberUserId && sub.status === "active") {
+        const periodEnd = sub.items?.data?.[0]?.current_period_end;
+        const expiresAt = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
+        const { error: entErr } = await supabase.from("entitlements").upsert(
+          {
+            user_id: subscriberUserId,
+            feature: "docs_bundle",
+            source: "fep_sub",
+            source_ref: sub.id,
+            granted_at: new Date().toISOString(),
+            expires_at: expiresAt,
+          },
+          { onConflict: "user_id,feature" },
+        );
+        if (entErr) {
+          console.error(`[webhook] docs_bundle grant failed for user ${subscriberUserId}:`, entErr.message);
+          // Non-fatal — sub update already succeeded.
+        }
+      }
     }
   }
 
@@ -151,6 +177,23 @@ export async function POST(request: NextRequest) {
       if (cancelErr) {
         console.error(`[webhook] Failed to cancel subscription for org ${orgId}:`, cancelErr.message);
         return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+      }
+
+      // Mirror the reverse: expire the docs_bundle entitlement. Only expire
+      // if the grant was sourced from this sub (source_ref matches);
+      // purchase-based grants (source='docs_purchase') are unaffected.
+      const subscriberUserId = sub.metadata?.user_id;
+      if (subscriberUserId) {
+        const { error: expErr } = await supabase
+          .from("entitlements")
+          .update({ expires_at: new Date().toISOString() })
+          .eq("user_id", subscriberUserId)
+          .eq("feature", "docs_bundle")
+          .eq("source", "fep_sub")
+          .eq("source_ref", sub.id);
+        if (expErr) {
+          console.error(`[webhook] docs_bundle expire failed for user ${subscriberUserId}:`, expErr.message);
+        }
       }
     }
   }
