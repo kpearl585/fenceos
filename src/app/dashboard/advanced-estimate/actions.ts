@@ -33,7 +33,7 @@ export async function getOrgMaterialPrices(): Promise<Record<string, number>> {
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles")
+      .from("users")
       .select("org_id")
       .eq("auth_id", user.id)
       .single();
@@ -81,7 +81,7 @@ export async function saveAdvancedEstimate(
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles")
+      .from("users")
       .select("org_id")
       .eq("auth_id", user.id)
       .single();
@@ -213,7 +213,7 @@ export async function listAdvancedEstimates(): Promise<{
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles")
+      .from("users")
       .select("org_id")
       .eq("auth_id", user.id)
       .single();
@@ -246,7 +246,7 @@ interface OrgInfo {
 async function getOrgInfo(userId: string): Promise<OrgInfo | null> {
   const admin = createAdminClient();
   const { data: profile, error: profileErr } = await admin
-    .from("profiles").select("org_id").eq("auth_id", userId).single();
+    .from("users").select("org_id").eq("auth_id", userId).single();
   if (profileErr || !profile) {
     if (profileErr) {
       Sentry.captureException(profileErr, { tags: { step: 'getOrgInfo.profile' }, level: 'warning' });
@@ -421,7 +421,7 @@ export async function getOrgCalibration(): Promise<WasteCalibration> {
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return DEFAULT_WASTE_CALIBRATION;
 
     const { data: org } = await admin
@@ -451,7 +451,7 @@ export async function getSavedEstimate(id: string): Promise<{
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return null;
 
     // ✅ SECURITY: org_id filter prevents unauthorized access
@@ -494,7 +494,7 @@ export async function closeoutEstimate(
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
 
     // ✅ SECURITY: Rate limit closeout submissions
@@ -577,7 +577,7 @@ export async function closeoutEstimateEnhanced(
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
 
     // ✅ SECURITY: Rate limit enhanced closeout submissions
@@ -649,7 +649,7 @@ export async function getAccuracyMetrics(days: number = 30): Promise<AccuracyMet
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return null;
 
     // Call the database function
@@ -683,7 +683,7 @@ export async function getOrgEstimatorConfig(): Promise<{
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles")
+      .from("users")
       .select("org_id")
       .eq("auth_id", user.id)
       .single();

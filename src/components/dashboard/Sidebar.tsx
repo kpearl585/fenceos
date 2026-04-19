@@ -26,12 +26,19 @@ export function Sidebar({ items, orgName }: { items: NavItem[]; orgName: string 
         <p className="text-sm text-fence-200 truncate mt-0.5 font-medium">{orgName}</p>
       </div>
 
-      {/* Nav */}
+      {/* Nav — active item is the longest href that prefixes the current path,
+          so a more specific child (e.g. /dashboard/advanced-estimate/saved)
+          wins over its parent (/dashboard/advanced-estimate). */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {items.map((item) => {
-          const active = item.href === "/dashboard"
+          const matchesPrefix = item.href === "/dashboard"
             ? pathname === "/dashboard"
-            : pathname.startsWith(item.href);
+            : pathname === item.href || pathname.startsWith(item.href + "/");
+          const active = matchesPrefix && !items.some(other =>
+            other.href !== item.href
+            && other.href.startsWith(item.href + "/")
+            && (pathname === other.href || pathname.startsWith(other.href + "/"))
+          );
 
           return (
             <Link

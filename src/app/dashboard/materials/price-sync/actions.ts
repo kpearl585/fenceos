@@ -22,7 +22,7 @@ export async function parsePriceSyncCsv(
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
 
     // Parse CSV
@@ -76,7 +76,7 @@ export async function applyPriceUpdates(
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, updatedCount: 0, error: "Profile not found" };
 
     const now = new Date().toISOString();
@@ -118,7 +118,7 @@ export async function getPriceFreshness(): Promise<{
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return { totalMaterials: 0, pricedMaterials: 0, staleCount: 0, neverUpdated: 0, lastSyncDate: null };
 
     const { data: materials } = await admin

@@ -6,6 +6,7 @@ import { planHasJobs } from "@/lib/planLimits";
 import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import ChangeOrderForm from "@/components/jobs/ChangeOrderForm";
+import GenerateDocsPanel from "@/components/jobs/GenerateDocsPanel";
 import MarkPaidModal from "@/components/jobs/MarkPaidModal";
 import ActivityTimeline from "@/components/jobs/ActivityTimeline";
 import {
@@ -702,6 +703,9 @@ export default async function JobDetailPage({
           </p>
         )}
       </div>
+      {/* Documents — pre-filled contracts, lien waivers, change orders */}
+      <GenerateDocsPanel jobId={job.id} />
+
       {/*  CHANGE ORDERS  */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
         <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">

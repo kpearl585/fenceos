@@ -640,7 +640,7 @@ export function depositReminderEmail(opts: {
           </table>
 
           <p style="margin:0;color:#9ca3af;font-size:13px;line-height:1.6;border-top:1px solid #e5e7eb;padding-top:20px;">
-            Stripe payment integration coming soon — you'll be able to collect deposits directly through FenceEstimatePro.
+            Collect the deposit directly from the customer using your preferred method (check, ACH, card terminal, or invoice). The accepted estimate above has their contact details.
           </p>
         </td></tr>
 

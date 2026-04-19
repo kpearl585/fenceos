@@ -36,7 +36,7 @@ export async function createEstimateFromFenceGraph(
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("id, org_id").eq("auth_id", user.id).single();
+      .from("users").select("id, org_id").eq("auth_id", user.id).single();
     if (!profile) return { success: false, error: "Profile not found" };
 
     // ✅ BILLING: Subscription + monthly cap gate.

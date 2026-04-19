@@ -257,7 +257,7 @@ async function getAuthContext(): Promise<{ userId: string; orgId: string } | nul
 
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
+      .from("users").select("org_id").eq("auth_id", user.id).single();
     if (!profile) return null;
 
     return { userId: user.id, orgId: profile.org_id };
