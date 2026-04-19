@@ -84,7 +84,13 @@ export default async function EstimatesPage({
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <p className="text-gray-400 text-sm">{q || status ? "No estimates match your search." : "No estimates yet."}</p>
           {!q && !status && (
-            <Link href="/dashboard/advanced-estimate" className="mt-3 inline-block text-sm text-fence-600 font-semibold hover:underline">Create your first estimate →</Link>
+            <>
+              <Link href="/dashboard/advanced-estimate" className="mt-3 inline-block text-sm text-fence-600 font-semibold hover:underline">Create your first estimate →</Link>
+              <p className="mt-4 text-xs text-gray-400">
+                Looking for a saved draft from the Estimator?{" "}
+                <Link href="/dashboard/advanced-estimate/saved" className="text-fence-600 font-semibold hover:underline">Check Saved Drafts</Link>.
+              </p>
+            </>
           )}
         </div>
       ) : (
