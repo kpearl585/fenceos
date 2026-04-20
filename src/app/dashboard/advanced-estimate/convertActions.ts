@@ -26,6 +26,17 @@ interface ConvertInput {
   };
 }
 
+// The Advanced Estimator's FenceType union uses "wood" as the broad
+// category ("vinyl" | "wood" | "chain_link" | "aluminum"), but the
+// estimates table's check constraint allows:
+//   wood_privacy | chain_link | vinyl | aluminum
+// So a user picking "wood" in the Advanced Estimator would otherwise
+// hit estimates_fence_type_check on convert. Map once, here.
+function toEstimatesFenceType(fenceType: string): string {
+  if (fenceType === "wood") return "wood_privacy";
+  return fenceType;
+}
+
 export async function createEstimateFromFenceGraph(
   input: ConvertInput
 ): Promise<{ success: boolean; estimateId?: string; error?: string }> {
@@ -104,7 +115,7 @@ export async function createEstimateFromFenceGraph(
         customer_id: customerId,
         title: projectName,
         status: "draft",
-        fence_type: fenceType,
+        fence_type: toEstimatesFenceType(fenceType),
         linear_feet: totalLF,
         gate_count: result.bom.filter(b => b.category === "gates").reduce((s, b) => s + b.qty, 0),
         post_spacing: 8,
