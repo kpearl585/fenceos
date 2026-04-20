@@ -45,6 +45,66 @@ interface Props {
   hasCustomConfig: boolean;
 }
 
+type FenceType = "vinyl" | "wood" | "chain_link" | "aluminum";
+type SpeedPreset = "slow" | "average" | "fast" | "custom";
+
+const SPEED_MULTIPLIER: Record<Exclude<SpeedPreset, "custom">, number> = {
+  slow:    1.2, // 20% more hours per activity
+  average: 1.0,
+  fast:    0.8, // 20% fewer hours per activity
+};
+
+const SPEED_COPY: Record<Exclude<SpeedPreset, "custom">, { label: string; blurb: string }> = {
+  slow:    { label: "Slower",  blurb: "Newer crew, tough terrain, or extra prep — pads labor ~20%." },
+  average: { label: "Average", blurb: "Industry default — a seasoned two-person residential crew." },
+  fast:    { label: "Faster",  blurb: "Experienced crew working quick access, flat ground — trims labor ~20%." },
+};
+
+const FENCE_TYPE_COPY: Record<FenceType, { label: string }> = {
+  vinyl:      { label: "Vinyl" },
+  wood:       { label: "Wood" },
+  chain_link: { label: "Chain link" },
+  aluminum:   { label: "Aluminum" },
+};
+
+// Compare the current per-activity hours for a fence type to the defaults.
+// Returns "slow" / "average" / "fast" when every activity is uniformly
+// scaled from defaults (within a small rounding tolerance). Returns
+// "custom" if the user hand-tweaked individual activities so no single
+// speed preset describes them.
+function detectSpeedPreset(
+  current: Record<string, number>,
+  defaults: Record<string, number>
+): SpeedPreset {
+  const keys = Object.keys(defaults);
+  const ratios: number[] = [];
+  for (const k of keys) {
+    const def = defaults[k];
+    const cur = current[k];
+    if (!def || cur === undefined) continue;
+    ratios.push(cur / def);
+  }
+  if (ratios.length === 0) return "average";
+  const avg = ratios.reduce((s, r) => s + r, 0) / ratios.length;
+  const uniform = ratios.every((r) => Math.abs(r - avg) < 0.02);
+  if (!uniform) return "custom";
+  if (avg >= 1.1) return "slow";
+  if (avg <= 0.9) return "fast";
+  return "average";
+}
+
+function scaleActivitiesByPreset<T extends Record<string, number>>(
+  defaults: T,
+  preset: Exclude<SpeedPreset, "custom">
+): T {
+  const mult = SPEED_MULTIPLIER[preset];
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(defaults)) {
+    out[k] = Math.round(v * mult * 1000) / 1000;
+  }
+  return out as T;
+}
+
 export default function EstimatorSettingsClient({ config: initialConfig, hasCustomConfig }: Props) {
   const [config, setConfig] = useState(initialConfig);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -53,6 +113,9 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
   // disclosure until someone intentionally opens it.
   const [activeSection, setActiveSection] = useState<string>("essentials");
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+  // Per-activity labor hours are hidden under a disclosure inside the
+  // Labor tab. 99% of contractors only need the speed preset.
+  const [showPerActivity, setShowPerActivity] = useState<boolean>(false);
 
   function update<K extends keyof OrgEstimatorConfig>(section: K, value: OrgEstimatorConfig[K]) {
     setConfig(prev => ({ ...prev, [section]: value }));
@@ -312,35 +375,120 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── CREW LABOR HOURS ── */}
         {activeSection === "labor" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Crew labor hours</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              How many hours your crew spends on each install step, per fence type. The defaults match a seasoned two-person crew. Lower numbers mean a faster crew; higher numbers pad your bid. Change only if you&rsquo;ve timed your crew and know they run faster or slower than the defaults.
+            <h2 className="font-semibold text-fence-900 mb-1">Crew speed</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              How fast is your crew for each fence type? The defaults match a seasoned two-person residential crew. Pick <span className="font-medium">Slower</span> or <span className="font-medium">Faster</span> if your crew runs meaningfully off the average &mdash; we scale the whole install timeline behind the scenes.
             </p>
 
-            {(["vinyl", "wood", "chain_link", "aluminum"] as const).map(ft => (
-              <div key={ft} className="mb-6">
-                <h3 className="text-sm font-bold text-gray-700 mb-2 capitalize">{ft.replace("_", " ")}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {Object.entries(config.labor[ft]).map(([key, val]) => {
-                    const copy = LABOR_ACTIVITY_COPY[key] ?? {
-                      label: key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase()),
-                      help: "",
-                    };
-                    return numField(
-                      copy.label,
-                      val as number,
-                      (v) => update("labor", {
-                        ...config.labor,
-                        [ft]: { ...config.labor[ft], [key]: v },
-                      }),
-                      { step: 0.01, unit: "hrs/unit", help: copy.help }
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+            <div className="space-y-2">
+              {(["vinyl", "wood", "chain_link", "aluminum"] as const).map(ft => {
+                const currentPreset = detectSpeedPreset(
+                  config.labor[ft] as unknown as Record<string, number>,
+                  DEFAULT_ESTIMATOR_CONFIG.labor[ft] as unknown as Record<string, number>
+                );
 
-            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+                const applyPreset = (preset: Exclude<SpeedPreset, "custom">) => {
+                  const scaled = scaleActivitiesByPreset(
+                    DEFAULT_ESTIMATOR_CONFIG.labor[ft] as unknown as Record<string, number>,
+                    preset
+                  );
+                  update("labor", {
+                    ...config.labor,
+                    [ft]: { ...config.labor[ft], ...scaled },
+                  });
+                };
+
+                return (
+                  <div key={ft} className="rounded-xl border border-gray-200 p-4">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="font-semibold text-gray-900">{FENCE_TYPE_COPY[ft].label}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {currentPreset === "custom"
+                            ? "Custom per-activity hours set — pick a preset to reset, or scroll down to tweak individually."
+                            : SPEED_COPY[currentPreset].blurb}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1" role="radiogroup" aria-label={`${FENCE_TYPE_COPY[ft].label} crew speed`}>
+                        {(["slow", "average", "fast"] as const).map((opt) => {
+                          const active = currentPreset === opt;
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              role="radio"
+                              aria-checked={active}
+                              onClick={() => applyPreset(opt)}
+                              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${
+                                active
+                                  ? "bg-fence-600 text-white border-fence-600"
+                                  : "bg-white text-gray-600 border-gray-200 hover:border-fence-400 hover:text-fence-700"
+                              }`}
+                            >
+                              {SPEED_COPY[opt].label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Per-activity disclosure for power users */}
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setShowPerActivity((v) => !v)}
+                aria-expanded={showPerActivity}
+                className="text-xs font-semibold text-gray-500 hover:text-fence-700 flex items-center gap-1.5"
+              >
+                <svg
+                  className={`w-3 h-3 transition-transform ${showPerActivity ? "rotate-90" : ""}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+                {showPerActivity ? "Hide" : "Show"} per-activity hours (power-user tuning)
+              </button>
+
+              {showPerActivity && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 mb-4">
+                    Edit the underlying labor hours per activity. Useful if your crew is unusually fast at one task but slow at another. Changes here pull the fence type out of any preset and into &quot;Custom.&quot;
+                  </p>
+                  {(["vinyl", "wood", "chain_link", "aluminum"] as const).map(ft => (
+                    <div key={ft} className="mb-6">
+                      <h3 className="text-sm font-bold text-gray-700 mb-2 capitalize">{ft.replace("_", " ")}</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {Object.entries(config.labor[ft]).map(([key, val]) => {
+                          const copy = LABOR_ACTIVITY_COPY[key] ?? {
+                            label: key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase()),
+                            help: "",
+                          };
+                          return numField(
+                            copy.label,
+                            val as number,
+                            (v) => update("labor", {
+                              ...config.labor,
+                              [ft]: { ...config.labor[ft], [key]: v },
+                            }),
+                            { step: 0.01, unit: "hrs/unit", help: copy.help }
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
               <span className="font-semibold">Waste % and crew hours per day</span> moved to <span className="font-semibold">Essentials</span> above &mdash; most contractors want those at their fingertips.
             </div>
           </div>
