@@ -29,8 +29,7 @@ export default async function EstimatorSettingsPage() {
           </div>
           <h1 className="text-2xl font-bold text-fence-950">Estimator Settings</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            Customize labor rates, material assumptions, overhead, and pricing to match your crew and market.
-            Changes apply to all new estimates.
+            Start with the Essentials &mdash; that&rsquo;s what most contractors need. The engine is pre-tuned to industry defaults; open <span className="font-medium">Show advanced settings</span> only if you need to fine-tune crew hours, material math, or gate multipliers.
           </p>
         </div>
         <EstimatorSettingsClient config={config} hasCustomConfig={hasCustomConfig} />
