@@ -250,6 +250,63 @@
         ],
         "minConfidence": 0.75
       }
+    },
+    {
+      "id": "photo-clear-yard-daylight",
+      "priority": "high",
+      "type": "image",
+      "input": "Backyard wood privacy fence, 6ft tall.",
+      "photoPath": "test-fixtures/photos/clear-yard-daylight.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "minConfidence": 0.7
+      }
+    },
+    {
+      "id": "photo-aerial-property-view",
+      "priority": "high",
+      "type": "image",
+      "input": "Aerial view of a residential property in Tampa, FL. Needs perimeter fence.",
+      "photoPath": "test-fixtures/photos/aerial-property-view.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "minConfidence": 0.6
+      }
+    },
+    {
+      "id": "photo-hand-drawn-sketch",
+      "priority": "medium",
+      "type": "image",
+      "input": "Customer sketch with dimensions marked in feet.",
+      "photoPath": "test-fixtures/photos/hand-drawn-sketch.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "minConfidence": 0.7
+      }
+    },
+    {
+      "id": "photo-ambiguous-no-fence",
+      "priority": "medium",
+      "type": "image",
+      "input": "",
+      "photoPath": "test-fixtures/photos/ambiguous-no-fence.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "allowFailure": true,
+        "expectFlags": true,
+        "minConfidence": 0.0
+      }
+    },
+    {
+      "id": "photo-existing-fence-replacement",
+      "priority": "medium",
+      "type": "image",
+      "input": "Existing chain-link fence — quote replacement with 6ft wood privacy.",
+      "photoPath": "test-fixtures/photos/existing-fence-replacement.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "minConfidence": 0.6
+      }
     }
   ]
 }

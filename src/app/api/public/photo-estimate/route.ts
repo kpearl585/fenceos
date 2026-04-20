@@ -27,6 +27,7 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
+import { APIError as OpenAIAPIError } from "openai";
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { RateLimiters } from "@/lib/security/rate-limit";
@@ -355,6 +356,41 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // OpenAI SDK failures (quota exhausted, rate limits, upstream outage,
+    // invalid key, etc.) bubble up as APIError. Return 503 with a
+    // user-facing nudge to retry, and log enough structure in Vercel
+    // logs that we can skip the "unknown 500" debug loop next time.
+    if (err instanceof OpenAIAPIError) {
+      const status = err.status ?? 0;
+      const code = err.code ?? null;
+      console.error(
+        "[photo-estimate] OpenAI error",
+        JSON.stringify({
+          status,
+          code,
+          type: err.type ?? null,
+          message: err.message,
+        })
+      );
+      Sentry.captureException(err, {
+        tags: {
+          phase: "sprint_2_photo_estimator",
+          step: "openai_call",
+          openai_status: String(status),
+          openai_code: code ?? "unknown",
+        },
+      });
+
+      const userMessage =
+        status === 401 || status === 403 || code === "insufficient_quota"
+          ? "Our AI estimator is temporarily unavailable. We're looking into it — please try again in a few minutes."
+          : status === 429
+          ? "Our AI estimator is handling more traffic than usual. Please try again in a few minutes."
+          : "Our AI estimator is having trouble. Please try again in a few minutes.";
+
+      return NextResponse.json({ error: userMessage }, { status: 503 });
     }
 
     Sentry.captureException(err, {
