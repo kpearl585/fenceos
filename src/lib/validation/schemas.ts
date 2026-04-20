@@ -34,6 +34,10 @@ export const GateInputSchema = z.object({
   gateType: z.enum(["single", "double"]),
   widthFt: z.number().min(1).max(30).finite(),
   isPoolGate: z.boolean().optional(),
+  hinges: z.enum(["standard", "self_closing"]).optional(),
+  latch: z.enum(["standard", "lokk_latch", "magnetic", "slide_bolt"]).optional(),
+  hardwareColor: z.enum(["black", "bronze", "white"]).optional(),
+  postInsert: z.enum(["none", "aluminum", "steel"]).optional(),
 }).passthrough();
 
 export const FenceProjectInputSchema = z.object({

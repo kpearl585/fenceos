@@ -11,34 +11,100 @@ import Link from "next/link";
 // the per-run input.runs[].gates shape (AI extract output) so the
 // summary stays honest regardless of which path produced the graph.
 function summarizeGates(input: FenceProjectInput): Array<{ key: string; label: string; count: number }> {
-  const GATE_TYPE_LABEL: Record<string, string> = {
+  // AI-extract shape uses `type: walk | drive | double_drive | pool`.
+  // Estimator shape uses `gateType: single | double` + `isPoolGate`.
+  const AI_TYPE_LABEL: Record<string, string> = {
     walk:         "walk gate",
     drive:        "drive gate",
     double_drive: "double drive gate",
     pool:         "pool-code gate",
   };
+  const HINGE_LABEL: Record<string, string> = {
+    standard:     "standard hinges",
+    self_closing: "self-closing hinges",
+  };
+  const LATCH_LABEL: Record<string, string> = {
+    standard:   "standard latch",
+    lokk_latch: "LokkLatch",
+    magnetic:   "magnetic latch",
+    slide_bolt: "slide-bolt latch",
+  };
+  const COLOR_LABEL: Record<string, string> = {
+    black: "black", bronze: "bronze", white: "white",
+  };
+  const POST_INSERT_LABEL: Record<string, string> = {
+    aluminum: "aluminum post insert",
+    steel:    "steel post insert",
+  };
+
   const map = new Map<string, { key: string; label: string; count: number }>();
-  const push = (widthFt: number, type: string) => {
+
+  const hardwareSuffix = (g: {
+    hinges?: string; latch?: string; hardwareColor?: string; postInsert?: string;
+  }): string => {
+    const parts: string[] = [];
+    const color = g.hardwareColor ? COLOR_LABEL[g.hardwareColor] : null;
+    if (g.hinges && HINGE_LABEL[g.hinges]) {
+      parts.push(color ? `${color} ${HINGE_LABEL[g.hinges]}` : HINGE_LABEL[g.hinges]);
+    }
+    if (g.latch && LATCH_LABEL[g.latch]) {
+      parts.push(color && !g.hinges ? `${color} ${LATCH_LABEL[g.latch]}` : LATCH_LABEL[g.latch]);
+    }
+    if (g.postInsert && POST_INSERT_LABEL[g.postInsert]) {
+      parts.push(POST_INSERT_LABEL[g.postInsert]);
+    }
+    return parts.length ? ` · ${parts.join(", ")}` : "";
+  };
+
+  const pushAI = (widthFt: number, type: string) => {
     if (!Number.isFinite(widthFt) || widthFt <= 0) return;
-    const typeLabel = GATE_TYPE_LABEL[type] ?? "gate";
-    const key = `${widthFt}-${type}`;
+    const typeLabel = AI_TYPE_LABEL[type] ?? "gate";
+    const key = `ai-${widthFt}-${type}`;
     const label = `${widthFt}-ft ${typeLabel}`;
     const existing = map.get(key);
     if (existing) existing.count += 1;
     else map.set(key, { key, label, count: 1 });
   };
 
-  const topLevel = (input as unknown as { gates?: Array<{ widthFt?: number; type?: string }> }).gates;
+  const pushEstimator = (g: {
+    widthFt?: number; gateType?: string; isPoolGate?: boolean;
+    hinges?: string; latch?: string; hardwareColor?: string; postInsert?: string;
+  }) => {
+    const widthFt = typeof g.widthFt === "number" ? g.widthFt : NaN;
+    if (!Number.isFinite(widthFt) || widthFt <= 0) return;
+    const baseLabel = g.isPoolGate
+      ? "pool-code gate"
+      : g.gateType === "double" ? "double gate" : "walk gate";
+    const suffix = hardwareSuffix(g);
+    const key = `est-${widthFt}-${g.gateType ?? "single"}-${g.isPoolGate ? "pool" : ""}-${suffix}`;
+    const label = `${widthFt}-ft ${baseLabel}${suffix}`;
+    const existing = map.get(key);
+    if (existing) existing.count += 1;
+    else map.set(key, { key, label, count: 1 });
+  };
+
+  const topLevel = (input as unknown as {
+    gates?: Array<{
+      widthFt?: number; type?: string; gateType?: string; isPoolGate?: boolean;
+      hinges?: string; latch?: string; hardwareColor?: string; postInsert?: string;
+    }>;
+  }).gates;
   if (Array.isArray(topLevel)) {
     for (const g of topLevel) {
-      if (typeof g?.widthFt === "number" && typeof g?.type === "string") push(g.widthFt, g.type);
+      if (typeof g?.widthFt === "number" && typeof g?.type === "string") {
+        pushAI(g.widthFt, g.type);
+      } else if (typeof g?.widthFt === "number" && typeof g?.gateType === "string") {
+        pushEstimator(g);
+      }
     }
   }
-  const runs = (input as unknown as { runs?: Array<{ gates?: Array<{ widthFt?: number; type?: string }> }> }).runs;
+  const runs = (input as unknown as {
+    runs?: Array<{ gates?: Array<{ widthFt?: number; type?: string }> }>;
+  }).runs;
   if (Array.isArray(runs)) {
     for (const run of runs) {
       for (const g of run?.gates ?? []) {
-        if (typeof g?.widthFt === "number" && typeof g?.type === "string") push(g.widthFt, g.type);
+        if (typeof g?.widthFt === "number" && typeof g?.type === "string") pushAI(g.widthFt, g.type);
       }
     }
   }
