@@ -1,6 +1,12 @@
 "use client";
 import type { RunInput } from "@/lib/fence-graph/engine";
-import type { GateType } from "@/lib/fence-graph/types";
+import type {
+  GateType,
+  GateHingeType,
+  GateLatchType,
+  GateHardwareColor,
+  GatePostInsert,
+} from "@/lib/fence-graph/types";
 import { HelpTooltip } from "@/components/Tooltip";
 import type { UseRunsEditorReturn } from "../hooks/useRunsEditor";
 import {
@@ -15,6 +21,27 @@ import {
 
 const START_END_TYPES = ["end", "corner", "gate"] as const;
 const GATE_TYPES: GateType[] = ["single", "double"];
+
+const GATE_HINGE_OPTIONS: { value: GateHingeType; label: string }[] = [
+  { value: "standard", label: "Standard" },
+  { value: "self_closing", label: "Self-closing" },
+];
+const GATE_LATCH_OPTIONS: { value: GateLatchType; label: string }[] = [
+  { value: "standard", label: "Standard" },
+  { value: "lokk_latch", label: "LokkLatch" },
+  { value: "magnetic", label: "Magnetic" },
+  { value: "slide_bolt", label: "Slide bolt" },
+];
+const HARDWARE_COLOR_OPTIONS: { value: GateHardwareColor; label: string }[] = [
+  { value: "black", label: "Black" },
+  { value: "bronze", label: "Bronze" },
+  { value: "white", label: "White" },
+];
+const POST_INSERT_OPTIONS: { value: GatePostInsert; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "aluminum", label: "Aluminum" },
+  { value: "steel", label: "Steel" },
+];
 
 interface RunsEditorProps {
   editor: UseRunsEditorReturn;
@@ -237,6 +264,52 @@ export default function RunsEditor({ editor }: RunsEditorProps) {
                             className="rounded"
                           />
                           <label htmlFor={`pool_${gate.id}`} className="text-xs text-gray-600">Pool gate</label>
+                        </div>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Hinges</label>
+                          <select
+                            value={gate.hinges ?? ""}
+                            onChange={(e) => updateGate(gate.id, { hinges: (e.target.value || undefined) as GateHingeType | undefined })}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-fence-400"
+                          >
+                            <option value="">—</option>
+                            {GATE_HINGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Latch</label>
+                          <select
+                            value={gate.latch ?? ""}
+                            onChange={(e) => updateGate(gate.id, { latch: (e.target.value || undefined) as GateLatchType | undefined })}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-fence-400"
+                          >
+                            <option value="">—</option>
+                            {GATE_LATCH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Color</label>
+                          <select
+                            value={gate.hardwareColor ?? ""}
+                            onChange={(e) => updateGate(gate.id, { hardwareColor: (e.target.value || undefined) as GateHardwareColor | undefined })}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-fence-400"
+                          >
+                            <option value="">—</option>
+                            {HARDWARE_COLOR_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Post insert</label>
+                          <select
+                            value={gate.postInsert ?? ""}
+                            onChange={(e) => updateGate(gate.id, { postInsert: (e.target.value || undefined) as GatePostInsert | undefined })}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-fence-400"
+                          >
+                            <option value="">—</option>
+                            {POST_INSERT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
                         </div>
                       </div>
                     </div>

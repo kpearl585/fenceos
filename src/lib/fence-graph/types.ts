@@ -134,12 +134,21 @@ export interface RunInput {
   notes?: string;
 }
 
+export type GateHingeType = "standard" | "self_closing";
+export type GateLatchType = "standard" | "lokk_latch" | "magnetic" | "slide_bolt";
+export type GateHardwareColor = "black" | "bronze" | "white";
+export type GatePostInsert = "none" | "aluminum" | "steel";
+
 export interface GateInput {
   id: string;
   afterRunId: string;      // which run this gate follows
   gateType: GateType;
   widthFt: number;         // total opening width
   isPoolGate: boolean;
+  hinges?: GateHingeType;           // hinge style
+  latch?: GateLatchType;            // latch style
+  hardwareColor?: GateHardwareColor; // hinge/latch finish color
+  postInsert?: GatePostInsert;       // reinforcing insert inside hinge post
 }
 
 export interface FenceProjectInput {

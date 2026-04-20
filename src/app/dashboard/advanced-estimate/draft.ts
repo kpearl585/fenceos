@@ -52,6 +52,10 @@ const VALID_POST_TYPES = new Set<RunInput["startType"]>(["end", "corner", "gate"
 const VALID_SLOPE_METHODS = new Set(["racked", "stepped", "level"]);
 const VALID_PANEL_STYLES = new Set(["privacy", "picket", "semi_privacy", "lattice_top"]);
 const VALID_GATE_TYPES = new Set<GateInput["gateType"]>(["single", "double"]);
+const VALID_GATE_HINGES = new Set(["standard", "self_closing"]);
+const VALID_GATE_LATCHES = new Set(["standard", "lokk_latch", "magnetic", "slide_bolt"]);
+const VALID_HARDWARE_COLORS = new Set(["black", "bronze", "white"]);
+const VALID_POST_INSERTS = new Set(["none", "aluminum", "steel"]);
 
 function parseRunInput(u: unknown): RunInput | null {
   if (!u || typeof u !== "object" || Array.isArray(u)) return null;
@@ -87,13 +91,26 @@ function parseGateInput(u: unknown): GateInput | null {
   if (typeof g.gateType !== "string" || !VALID_GATE_TYPES.has(g.gateType as GateInput["gateType"])) return null;
   if (typeof g.widthFt !== "number" || !Number.isFinite(g.widthFt)) return null;
   if (typeof g.isPoolGate !== "boolean") return null;
-  return {
+  const out: GateInput = {
     id: g.id,
     afterRunId: g.afterRunId,
     gateType: g.gateType as GateInput["gateType"],
     widthFt: g.widthFt,
     isPoolGate: g.isPoolGate,
   };
+  if (typeof g.hinges === "string" && VALID_GATE_HINGES.has(g.hinges)) {
+    out.hinges = g.hinges as GateInput["hinges"];
+  }
+  if (typeof g.latch === "string" && VALID_GATE_LATCHES.has(g.latch)) {
+    out.latch = g.latch as GateInput["latch"];
+  }
+  if (typeof g.hardwareColor === "string" && VALID_HARDWARE_COLORS.has(g.hardwareColor)) {
+    out.hardwareColor = g.hardwareColor as GateInput["hardwareColor"];
+  }
+  if (typeof g.postInsert === "string" && VALID_POST_INSERTS.has(g.postInsert)) {
+    out.postInsert = g.postInsert as GateInput["postInsert"];
+  }
+  return out;
 }
 
 // Returns a partial draft containing only the fields that pass type-narrowing.
