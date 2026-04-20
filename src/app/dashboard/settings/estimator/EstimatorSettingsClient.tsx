@@ -20,6 +20,26 @@ const REGION_OPTIONS = [
   { value: "mountain", label: "Mountain (-2%)" },
 ];
 
+// Plain-English copy for each labor-hour activity. Keyed by the engine
+// key so the Object.entries(config.labor[ft]) loop can look up a
+// contractor-readable label + explanation instead of displaying the
+// raw camelCase field name.
+const LABOR_ACTIVITY_COPY: Record<string, { label: string; help: string }> = {
+  holeDig:        { label: "Digging a post hole",          help: "Hours to auger one post hole. 0.25 hrs ≈ 15 min per hole." },
+  postSet:        { label: "Setting a post",                help: "Hours to plumb, brace, and concrete one post in place." },
+  sectionInstall: { label: "Installing one panel section",  help: "Hours to hang and fasten a complete section between two posts." },
+  cutting:        { label: "Cutting a section to length",   help: "Hours when a run doesn’t end on a clean panel and you have to trim." },
+  racking:        { label: "Racking / stepping for slope",  help: "Extra hours per section when the ground slopes enough to need racking." },
+  concretePour:   { label: "Pouring concrete per post",     help: "Hours to mix and pour dry-set concrete into one post hole." },
+  railInstall:    { label: "Hanging a wood rail",           help: "Hours to attach one horizontal rail between posts (2×4 or similar)." },
+  boardNailing:   { label: "Nailing boards to rails",       help: "Hours to fasten a full section of vertical boards onto the rails." },
+  bobInstall:     { label: "Board-on-board adder",          help: "Extra hours per section when doing board-on-board instead of flat boards." },
+  topRail:        { label: "Installing chain-link top rail",help: "Hours to cut, assemble, and tie off the top rail on a chain-link run." },
+  fabricStretch:  { label: "Stretching chain-link fabric",  help: "Hours per section to stretch and tie off the chain-link mesh." },
+  tieWire:        { label: "Finishing with tie wire",       help: "Hours per section for finish ties after stretching the fabric." },
+  panelInstall:   { label: "Installing an aluminum panel",  help: "Hours to hang and fasten one aluminum panel." },
+};
+
 interface Props {
   config: OrgEstimatorConfig;
   hasCustomConfig: boolean;
@@ -289,64 +309,62 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         )}
 
 
-        {/* ── LABOR RATES ── */}
+        {/* ── CREW LABOR HOURS ── */}
         {activeSection === "labor" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Labor Rates</h2>
-            <p className="text-xs text-gray-400 mb-4">Hours per unit for each activity. Adjust to match your crew speed.</p>
+            <h2 className="font-semibold text-fence-900 mb-1">Crew labor hours</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              How many hours your crew spends on each install step, per fence type. The defaults match a seasoned two-person crew. Lower numbers mean a faster crew; higher numbers pad your bid. Change only if you&rsquo;ve timed your crew and know they run faster or slower than the defaults.
+            </p>
 
             {(["vinyl", "wood", "chain_link", "aluminum"] as const).map(ft => (
               <div key={ft} className="mb-6">
                 <h3 className="text-sm font-bold text-gray-700 mb-2 capitalize">{ft.replace("_", " ")}</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {Object.entries(config.labor[ft]).map(([key, val]) => (
-                    numField(
-                      key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase()),
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Object.entries(config.labor[ft]).map(([key, val]) => {
+                    const copy = LABOR_ACTIVITY_COPY[key] ?? {
+                      label: key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase()),
+                      help: "",
+                    };
+                    return numField(
+                      copy.label,
                       val as number,
                       (v) => update("labor", {
                         ...config.labor,
                         [ft]: { ...config.labor[ft], [key]: v },
                       }),
-                      { step: 0.01, unit: "hrs/unit" }
-                    )
-                  ))}
+                      { step: 0.01, unit: "hrs/unit", help: copy.help }
+                    );
+                  })}
                 </div>
               </div>
             ))}
 
-            <div className="border-t pt-4 mt-4">
-              <h3 className="text-sm font-bold text-gray-700 mb-2">Production Schedule</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {numField("Hours Per Work Day", config.production.hoursPerDay,
-                  (v) => update("production", { hoursPerDay: v }),
-                  { min: 4, max: 14, step: 0.5, unit: "hrs", help: "Productive install hours per day" }
-                )}
-                {numField("Default Waste %", config.waste.defaultPct * 100,
-                  (v) => update("waste", { defaultPct: v / 100 }),
-                  { min: 1, max: 25, step: 0.5, unit: "%", help: "Applied to material quantities" }
-                )}
-              </div>
+            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+              <span className="font-semibold">Waste % and crew hours per day</span> moved to <span className="font-semibold">Essentials</span> above &mdash; most contractors want those at their fingertips.
             </div>
           </div>
         )}
 
-        {/* ── OVERHEAD ── */}
+        {/* ── JOB OVERHEAD ── */}
         {activeSection === "overhead" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Job Overhead</h2>
-            <p className="text-xs text-gray-400 mb-4">Fixed time per job and daily cleanup. Added to every estimate.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {numField("Setup (per job)", config.overhead.fixed.setupHrs,
+            <h2 className="font-semibold text-fence-900 mb-1">Job overhead</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              The non-install hours every job eats no matter what: getting set up, laying out the run, cleaning up at the end. The engine adds these to every estimate so you don&rsquo;t bid the hands-on hours and eat the rest.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {numField("Getting set up at the job site", config.overhead.fixed.setupHrs,
                 (v) => update("overhead", { ...config.overhead, fixed: { ...config.overhead.fixed, setupHrs: v } }),
-                { unit: "hrs", help: "Truck unload, tool staging" }
+                { unit: "hrs", help: "Unloading the truck, staging tools, prepping before install starts. Typical: 1–2 hrs." }
               )}
-              {numField("Layout (per job)", config.overhead.fixed.layoutHrs,
+              {numField("Measuring and laying out the fence", config.overhead.fixed.layoutHrs,
                 (v) => update("overhead", { ...config.overhead, fixed: { ...config.overhead.fixed, layoutHrs: v } }),
-                { unit: "hrs", help: "Measure, stake, string lines" }
+                { unit: "hrs", help: "Measure, stake corners, string lines, mark post locations. Typical: 0.5–1.5 hrs." }
               )}
-              {numField("Cleanup (per day)", config.overhead.perDay.cleanupHrs,
+              {numField("End-of-day cleanup", config.overhead.perDay.cleanupHrs,
                 (v) => update("overhead", { ...config.overhead, perDay: { cleanupHrs: v } }),
-                { unit: "hrs", help: "End-of-day sweep, scrap loading" }
+                { unit: "hrs/day", help: "Sweep the site, load scraps, secure tools. Added every workday. Typical: 0.5 hrs." }
               )}
             </div>
           </div>
@@ -356,19 +374,21 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {activeSection === "concrete" && (
           <div>
             <h2 className="font-semibold text-fence-900 mb-1">Concrete</h2>
-            <p className="text-xs text-gray-400 mb-4">Bag yield and depth assumptions for post setting.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {numField("80lb Bag Yield", config.concrete.bagYieldCuFt,
+            <p className="text-sm text-gray-500 mb-4">
+              How the engine figures out how many bags of concrete and gravel to order per post, and how deep the posts go on sandy or wet soil. These are physics-driven industry standards &mdash; most contractors never need to touch them.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {numField("How much concrete does an 80-lb bag fill?", config.concrete.bagYieldCuFt,
                 (v) => update("concrete", { ...config.concrete, bagYieldCuFt: v }),
-                { step: 0.05, unit: "cu ft", help: "Yield per 80lb concrete bag" }
+                { step: 0.05, unit: "cu ft", help: "Industry standard: 0.6 cu ft per 80-lb bag. Only change if you use non-standard mix." }
               )}
-              {numField("Gravel Bag Yield", config.concrete.gravelBagCuFt,
+              {numField("How much gravel does a 40-lb bag fill?", config.concrete.gravelBagCuFt,
                 (v) => update("concrete", { ...config.concrete, gravelBagCuFt: v }),
-                { step: 0.05, unit: "cu ft", help: "Yield per 40lb gravel bag" }
+                { step: 0.05, unit: "cu ft", help: "Industry standard: 0.5 cu ft per 40-lb bag. Rarely needs changing." }
               )}
-              {numField("FL Sandy Depth Override", config.concrete.floridaDepthIn,
+              {numField("Post depth for sandy or wet soil (Florida)", config.concrete.floridaDepthIn,
                 (v) => update("concrete", { ...config.concrete, floridaDepthIn: v }),
-                { min: 24, max: 60, step: 1, unit: "inches", help: "Min depth for sandy/wet soil" }
+                { min: 24, max: 60, step: 1, unit: "inches", help: "Minimum post depth when soil is sandy or wet. Florida code minimum is typically 42 inches." }
               )}
             </div>
           </div>
@@ -377,32 +397,34 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── MATERIAL ASSUMPTIONS ── */}
         {activeSection === "material" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Material Assumptions</h2>
-            <p className="text-xs text-gray-400 mb-4">Spacing, sizing, and quantity assumptions for BOM calculation.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {numField("Vinyl Pickets/Foot", config.material.vinylPicketsPerFoot,
+            <h2 className="font-semibold text-fence-900 mb-1">Material assumptions</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Spacing and sizing numbers the engine uses to figure out how many pickets, boards, rails, and fasteners to order. These are industry standards &mdash; only change them if your supplier ships unusual stock or you run a non-standard spacing.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {numField("Vinyl pickets per foot of fence", config.material.vinylPicketsPerFoot,
                 (v) => update("material", { ...config.material, vinylPicketsPerFoot: v }),
-                { min: 1, max: 4, step: 0.5, help: "Pickets per linear foot (6\" OC = 2)" }
+                { min: 1, max: 4, step: 0.5, help: "How many pickets in 1 linear foot. 6-inch on-center spacing = 2 pickets/ft. Rarely changes." }
               )}
-              {numField("Wood Board Width", config.material.woodPicketWidth,
+              {numField("Actual width of a wood board", config.material.woodPicketWidth,
                 (v) => update("material", { ...config.material, woodPicketWidth: v }),
-                { step: 0.25, unit: "inches", help: "Actual width of 1x6 board" }
+                { step: 0.25, unit: "inches", help: "A nominal 1×6 board actually measures 5.5\" wide. Industry standard; only change for unusual stock." }
               )}
-              {numField("Board-on-Board Overlap", config.material.woodBoBOverlapPct * 100,
+              {numField("Board-on-board overlap", config.material.woodBoBOverlapPct * 100,
                 (v) => update("material", { ...config.material, woodBoBOverlapPct: v / 100 }),
-                { min: 10, max: 40, step: 1, unit: "%", help: "Board overlap percentage" }
+                { min: 10, max: 40, step: 1, unit: "%", help: "On board-on-board privacy fences, how much each board overlaps the next. 24% is typical." }
               )}
-              {numField("Screws Per Section", config.material.screwsPerSection,
+              {numField("Screws or nails per fence section", config.material.screwsPerSection,
                 (v) => update("material", { ...config.material, screwsPerSection: v }),
-                { min: 10, max: 50, step: 1, help: "Screws needed per fence section" }
+                { min: 10, max: 50, step: 1, help: "How many fasteners go into one panel. 25 is the industry average for a 6-ft privacy section." }
               )}
-              {numField("CL Post Spacing", config.material.chainLinkPostOcFt,
+              {numField("Chain-link line post spacing", config.material.chainLinkPostOcFt,
                 (v) => update("material", { ...config.material, chainLinkPostOcFt: v }),
-                { min: 6, max: 12, step: 0.5, unit: "ft OC", help: "Chain link line post spacing" }
+                { min: 6, max: 12, step: 0.5, unit: "ft OC", help: "How far apart chain-link line posts sit. 10 feet on-center is the industry standard." }
               )}
-              {numField("CL Top Rail Stock", config.material.chainLinkTopRailStockFt,
+              {numField("Chain-link top rail stock length", config.material.chainLinkTopRailStockFt,
                 (v) => update("material", { ...config.material, chainLinkTopRailStockFt: v }),
-                { min: 10, max: 24, step: 1, unit: "ft", help: "Standard top rail stock length" }
+                { min: 10, max: 24, step: 1, unit: "ft", help: "Standard top-rail pipe comes in 21-ft lengths. Only change if your supplier sells different stock." }
               )}
             </div>
           </div>
@@ -411,168 +433,187 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── GATES ── */}
         {activeSection === "gates" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Gate Settings</h2>
-            <p className="text-xs text-gray-400 mb-4">Base labor hours, width multipliers, clearance gaps.</p>
+            <h2 className="font-semibold text-fence-900 mb-1">Gates</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              How the engine prices gates. Base install hours, extra time for wider gates, hinge and latch clearances, and the pool-code bump. Defaults reflect average residential gate work.
+            </p>
 
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Base Labor Hours</h3>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {numField("Single Gate", config.gateLaborBase.single,
+            <h3 className="text-sm font-bold text-gray-700 mb-2">Base install hours</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              {numField("Hours to install a single gate", config.gateLaborBase.single,
                 (v) => update("gateLaborBase", { ...config.gateLaborBase, single: v }),
-                { unit: "hrs" }
+                { unit: "hrs", help: "Base time to hang, level, and latch a standard walk gate. Typical: 1.5 hrs." }
               )}
-              {numField("Double Gate", config.gateLaborBase.double,
+              {numField("Hours to install a double gate", config.gateLaborBase.double,
                 (v) => update("gateLaborBase", { ...config.gateLaborBase, double: v }),
-                { unit: "hrs" }
+                { unit: "hrs", help: "Base time for a double drive gate — both leaves plus center alignment. Typical: 3 hrs." }
               )}
             </div>
 
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Width Multipliers</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-              {numField("Small (<=4ft)", config.gateWidthMultipliers.small,
+            <h3 className="text-sm font-bold text-gray-700 mb-2">Gate size adjustment</h3>
+            <p className="text-xs text-gray-500 mb-2">Multiplier applied to base gate hours when the gate is wider than standard. 1.0 = no adjustment, 1.3 = +30%.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              {numField("Small gate (up to 4 ft)", config.gateWidthMultipliers.small,
                 (v) => update("gateWidthMultipliers", { ...config.gateWidthMultipliers, small: v }),
-                { step: 0.1, unit: "x" }
+                { step: 0.1, unit: "x", help: "Most walk gates. Baseline." }
               )}
-              {numField("Standard (5-6ft)", config.gateWidthMultipliers.standard,
+              {numField("Standard gate (5–6 ft)", config.gateWidthMultipliers.standard,
                 (v) => update("gateWidthMultipliers", { ...config.gateWidthMultipliers, standard: v }),
-                { step: 0.1, unit: "x" }
+                { step: 0.1, unit: "x", help: "Wider walk gate or narrow drive. Typical +10%." }
               )}
-              {numField("Wide (7-12ft)", config.gateWidthMultipliers.wide,
+              {numField("Wide gate (7–12 ft)", config.gateWidthMultipliers.wide,
                 (v) => update("gateWidthMultipliers", { ...config.gateWidthMultipliers, wide: v }),
-                { step: 0.1, unit: "x" }
+                { step: 0.1, unit: "x", help: "Typical single drive gate. Typical +30%." }
               )}
-              {numField("Extra Wide (13ft+)", config.gateWidthMultipliers.extraWide,
+              {numField("Extra-wide gate (13 ft or wider)", config.gateWidthMultipliers.extraWide,
                 (v) => update("gateWidthMultipliers", { ...config.gateWidthMultipliers, extraWide: v }),
-                { step: 0.1, unit: "x" }
+                { step: 0.1, unit: "x", help: "Large drive gate. Typical +50%." }
               )}
             </div>
 
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Clearance Gaps</h3>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {numField("Hinge Gap", config.gateGaps.hinge,
+            <h3 className="text-sm font-bold text-gray-700 mb-2">Clearance gaps</h3>
+            <p className="text-xs text-gray-500 mb-2">How much space the engine leaves between gate and post so the gate swings freely. Don&rsquo;t zero these out &mdash; you&rsquo;ll end up with gates that scrape or won&rsquo;t latch.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+              {numField("Hinge-side gap", config.gateGaps.hinge,
                 (v) => update("gateGaps", { ...config.gateGaps, hinge: v }),
-                { step: 0.25, unit: "inches" }
+                { step: 0.25, unit: "inches", help: "Clearance between gate and post on the hinge side. Typical: 0.75\"." }
               )}
-              {numField("Latch Gap", config.gateGaps.latch,
+              {numField("Latch-side gap", config.gateGaps.latch,
                 (v) => update("gateGaps", { ...config.gateGaps, latch: v }),
-                { step: 0.25, unit: "inches" }
+                { step: 0.25, unit: "inches", help: "Clearance on the latch side. Typical: 0.5\"." }
               )}
-              {numField("Center Gap (dbl)", config.gateGaps.center,
+              {numField("Double-gate center gap", config.gateGaps.center,
                 (v) => update("gateGaps", { ...config.gateGaps, center: v }),
-                { step: 0.25, unit: "inches" }
+                { step: 0.25, unit: "inches", help: "Clearance between the two halves of a double gate. Typical: 1\"." }
               )}
             </div>
 
-            {numField("Pool Gate Multiplier", config.gatePoolMultiplier,
-              (v) => setConfig(prev => ({ ...prev, gatePoolMultiplier: v })),
-              { step: 0.1, unit: "x", help: "Additional labor factor for pool code compliance" }
-            )}
+            <h3 className="text-sm font-bold text-gray-700 mb-2">Pool-code adder</h3>
+            <div className="max-w-md">
+              {numField("Extra labor for pool-code gates", config.gatePoolMultiplier,
+                (v) => setConfig(prev => ({ ...prev, gatePoolMultiplier: v })),
+                { step: 0.1, unit: "x", help: "Multiplier on gate labor when pool-code compliance is required (self-closing hinges, latch height, etc.). Typical +20%." }
+              )}
+            </div>
           </div>
         )}
 
-        {/* ── EQUIPMENT ── */}
+        {/* ── EQUIPMENT RENTAL ── */}
         {activeSection === "equipment" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Equipment Rental</h2>
-            <p className="text-xs text-gray-400 mb-4">Daily rental costs added to estimates automatically.</p>
-            <div className="grid grid-cols-2 gap-4">
-              {numField("Post Hole Auger", config.equipment.augerPerDay,
+            <h2 className="font-semibold text-fence-900 mb-1">Equipment rental</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Day rates for tools and machines. The engine only adds these to jobs where they actually get used (a chop saw only on aluminum jobs, a stretcher only on chain link, etc.). Set the rate to what you pay at your rental yard &mdash; or $0 if you own the tool outright.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {numField("Post-hole auger", config.equipment.augerPerDay,
                 (v) => update("equipment", { ...config.equipment, augerPerDay: v }),
-                { unit: "$/day", help: "Always included" }
+                { unit: "$/day", help: "Added to every job — if you own yours, set this to 0." }
               )}
-              {numField("Concrete Mixer", config.equipment.mixerPerDay,
+              {numField("Concrete mixer", config.equipment.mixerPerDay,
                 (v) => update("equipment", { ...config.equipment, mixerPerDay: v }),
-                { unit: "$/day", help: "Added when >= 25 concrete bags" }
+                { unit: "$/day", help: "Added only when the job needs 25+ concrete bags (larger pours)." }
               )}
-              {numField("Fence Stretcher", config.equipment.stretcherPerDay,
+              {numField("Chain-link stretcher", config.equipment.stretcherPerDay,
                 (v) => update("equipment", { ...config.equipment, stretcherPerDay: v }),
-                { unit: "$/day", help: "Chain link jobs only" }
+                { unit: "$/day", help: "Added only on chain-link jobs." }
               )}
-              {numField("Metal Chop Saw", config.equipment.sawPerDay,
+              {numField("Metal chop saw", config.equipment.sawPerDay,
                 (v) => update("equipment", { ...config.equipment, sawPerDay: v }),
-                { unit: "$/day", help: "Aluminum jobs only" }
+                { unit: "$/day", help: "Added only on aluminum jobs." }
               )}
             </div>
           </div>
         )}
 
-        {/* ── LOGISTICS ── */}
+        {/* ── DELIVERY ── */}
         {activeSection === "logistics" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Delivery & Logistics</h2>
-            <p className="text-xs text-gray-400 mb-4">Material delivery fee, waived above threshold.</p>
-            <div className="grid grid-cols-2 gap-4">
-              {numField("Delivery Fee", config.logistics.deliveryFee,
+            <h2 className="font-semibold text-fence-900 mb-1">Delivery</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              What your supplier charges to drop materials at the job site &mdash; passed through to the customer&rsquo;s estimate. Set the free-delivery threshold to match your supplier&rsquo;s waiver rule.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {numField("Material delivery fee", config.logistics.deliveryFee,
                 (v) => update("logistics", { ...config.logistics, deliveryFee: v }),
-                { unit: "$", help: "Flat delivery charge" }
+                { unit: "$", help: "Flat fee added to every estimate unless the order exceeds the threshold below. Typical: $95." }
               )}
-              {numField("Free Delivery Above", config.logistics.freeDeliveryThreshold,
+              {numField("Free delivery above", config.logistics.freeDeliveryThreshold,
                 (v) => update("logistics", { ...config.logistics, freeDeliveryThreshold: v }),
-                { unit: "$", help: "Waived when materials exceed this amount" }
+                { unit: "$", help: "Material order total above which the delivery fee is waived. Typical: $500." }
               )}
             </div>
           </div>
         )}
 
-        {/* ── REMOVAL ── */}
+        {/* ── OLD FENCE REMOVAL ── */}
         {activeSection === "removal" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Old Fence Removal</h2>
-            <p className="text-xs text-gray-400 mb-4">Labor and disposal rates for existing fence tear-out.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {numField("Removal Labor", config.removal.laborPerLf,
+            <h2 className="font-semibold text-fence-900 mb-1">Old fence removal</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Tear-out is separate from install &mdash; the engine charges for it only when the estimate has removal turned on. Set these to what it actually costs your crew to take down an old fence, extract concrete footings, and haul the mess away.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {numField("Tear-out hours per foot", config.removal.laborPerLf,
                 (v) => update("removal", { ...config.removal, laborPerLf: v }),
-                { step: 0.01, unit: "hrs/LF", help: "Labor per linear foot of tear-down" }
+                { step: 0.01, unit: "hrs/LF", help: "Hours to tear down existing fence per linear foot. 0.08 ≈ 5 min/ft." }
               )}
-              {numField("Post Extraction", config.removal.postExtractionHrs,
+              {numField("Extracting an old post + concrete footing", config.removal.postExtractionHrs,
                 (v) => update("removal", { ...config.removal, postExtractionHrs: v }),
-                { step: 0.05, unit: "hrs/post", help: "Extract old concrete/posts" }
+                { step: 0.05, unit: "hrs/post", help: "Hours per post to dig out the old concrete footing. Typical: 0.25 hrs." }
               )}
-              {numField("Disposal Cost", config.removal.disposalCost,
+              {numField("Dumpster / disposal fee", config.removal.disposalCost,
                 (v) => update("removal", { ...config.removal, disposalCost: v }),
-                { unit: "$", help: "Flat dumpster/haul-away cost" }
+                { unit: "$", help: "Flat cost for hauling the old fence and debris away. Typical: $325." }
               )}
             </div>
           </div>
         )}
 
-        {/* ── PRICING ── */}
+        {/* ── PRICING RULES ── */}
         {activeSection === "pricing" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Pricing Rules</h2>
-            <p className="text-xs text-gray-400 mb-4">Commercial rules applied to final estimate totals.</p>
-            {numField("Minimum Job Charge", config.pricing.minimumJobCharge,
-              (v) => update("pricing", { minimumJobCharge: v }),
-              { unit: "$", help: "Floor price regardless of scope. Set to 0 to disable." }
-            )}
+            <h2 className="font-semibold text-fence-900 mb-1">Pricing rules</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Business rules applied on top of the calculated estimate. Today there&rsquo;s just one &mdash; a minimum charge below which you won&rsquo;t take a job.
+            </p>
+            <div className="max-w-md">
+              {numField("Minimum job charge", config.pricing.minimumJobCharge,
+                (v) => update("pricing", { minimumJobCharge: v }),
+                { unit: "$", help: "Floor price regardless of scope, so tiny jobs still cover your overhead. Example: $500. Set to 0 to disable." }
+              )}
+            </div>
           </div>
         )}
 
-        {/* ── REGION ── */}
+        {/* ── REGION DETAILS ── */}
         {activeSection === "region" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Regional Pricing</h2>
-            <p className="text-xs text-gray-400 mb-4">Adjust material and labor costs for your area.</p>
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Region</label>
+            <h2 className="font-semibold text-fence-900 mb-1">Region details</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Region is also in <span className="font-semibold">Essentials</span> &mdash; this tab shows the raw multipliers the preset applies so you can fine-tune if your area is unusual. A &quot;1.0&quot; multiplier = national average.
+            </p>
+            <div className="mb-6">
+              <label className="block font-medium text-gray-700 mb-1">Region</label>
               <select
                 value={config.region.key}
                 onChange={(e) => update("region", { ...config.region, key: e.target.value })}
-                className="w-full max-w-xs border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                className="w-full max-w-md bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
               >
                 {REGION_OPTIONS.map(r => (
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
-              <p className="text-xs text-gray-400 mt-1">Sets default material prices based on regional wholesale averages.</p>
+              <p className="text-xs text-gray-500 mt-1">Picking a region sets material and labor multipliers below to the regional wholesale average.</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {numField("Labor Multiplier", config.region.laborMultiplier,
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {numField("Labor cost adjustment", config.region.laborMultiplier,
                 (v) => update("region", { ...config.region, laborMultiplier: v }),
-                { step: 0.05, unit: "x", help: "1.0 = base. 1.15 = 15% higher labor costs." }
+                { step: 0.05, unit: "x", help: "1.0 = national average. 1.15 = crew wages run 15% higher in your area." }
               )}
-              {numField("Material Multiplier", config.region.materialMultiplier,
+              {numField("Material cost adjustment", config.region.materialMultiplier,
                 (v) => update("region", { ...config.region, materialMultiplier: v }),
-                { step: 0.05, unit: "x", help: "Additional adjustment on top of region pricing." }
+                { step: 0.05, unit: "x", help: "1.0 = national average. Bump up for high-cost markets, down for low-cost." }
               )}
             </div>
           </div>
