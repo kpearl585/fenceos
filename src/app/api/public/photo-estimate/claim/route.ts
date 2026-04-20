@@ -19,6 +19,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { PhotoEstimateClaimSchema } from "@/lib/validation/photo-estimate-schemas";
 import { sendClaimEmail } from "@/lib/email/send-claim-email";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { trackPhotoEstimatorEvent } from "@/lib/photo-estimate/track-event";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -77,6 +78,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Reject email-rebind once an email is on file. The claim_token is
+    // already a soft secret (it's in the result-card URL / in the claim
+    // email), so if it leaks, an attacker could otherwise overwrite the
+    // legitimate address and hijack the signup flow. Record the attempt
+    // for monitoring — a spike in this event is a leak signal.
+    if (row.email && row.email.toLowerCase() !== email.toLowerCase()) {
+      await trackPhotoEstimatorEvent({
+        event: "email_rebind_rejected",
+        claimToken: claim_token,
+        ipAddress: ip,
+        properties: {
+          existing_email_domain: row.email.split("@")[1] ?? null,
+          attempted_email_domain: email.split("@")[1] ?? null,
+        },
+      });
+      return NextResponse.json(
+        {
+          error:
+            "This estimate is already linked to a different email address. If that's you, check your inbox for the original claim link.",
+        },
+        { status: 409 }
+      );
+    }
+
     const { error: updateErr } = await admin
       .from("public_photo_estimates")
       .update({
@@ -88,6 +113,16 @@ export async function POST(request: NextRequest) {
     if (updateErr) {
       throw new Error(`Failed to record email: ${updateErr.message}`);
     }
+
+    await trackPhotoEstimatorEvent({
+      event: "email_captured",
+      claimToken: claim_token,
+      ipAddress: ip,
+      properties: {
+        email_domain: email.split("@")[1] ?? null,
+        resubmit: Boolean(row.email),
+      },
+    });
 
     // Narrow the jsonb columns just enough to email the user useful
     // details. Shape-check defensively — a malformed row shouldn't 500.

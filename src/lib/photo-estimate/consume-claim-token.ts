@@ -11,6 +11,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import * as Sentry from "@sentry/nextjs";
 import type { User } from "@supabase/supabase-js";
+import { trackPhotoEstimatorEvent } from "@/lib/photo-estimate/track-event";
 
 type EstimateJson = {
   totalLinearFeet?: number;
@@ -99,6 +100,15 @@ export async function consumeClaimToken(
     }
 
     await clearUserMetadataClaimToken(admin, user);
+
+    await trackPhotoEstimatorEvent({
+      event: "signup_claimed",
+      claimToken,
+      properties: {
+        fence_graph_id: inserted.id,
+        total_linear_feet: totalLinearFeet,
+      },
+    });
 
     return { success: true, fenceGraphId: inserted.id };
   } catch (err) {
