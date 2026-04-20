@@ -70,11 +70,22 @@ export async function generateQuoteLink(
       .eq("org_id", profile.org_id)
       .single();
 
+    // Fall back to the shared contractor-terms template when the org
+    // hasn't customized its legal / payment terms. Keeps fresh orgs
+    // from sending quotes with an empty Terms section and matches the
+    // standard 13-clause pattern used by established Florida fence
+    // contractors (see src/lib/contracts/default-terms.ts).
+    const { DEFAULT_LEGAL_TERMS, DEFAULT_PAYMENT_TERMS } = await import(
+      "@/lib/contracts/default-terms"
+    );
+    const legalTerms   = (settings?.legal_terms   ?? "").trim() || DEFAULT_LEGAL_TERMS;
+    const paymentTerms = (settings?.payment_terms ?? "").trim() || DEFAULT_PAYMENT_TERMS;
+
     await admin
       .from("fence_graphs")
       .update({
-        legal_terms_snapshot: settings?.legal_terms ?? "",
-        payment_terms_snapshot: settings?.payment_terms ?? "",
+        legal_terms_snapshot:   legalTerms,
+        payment_terms_snapshot: paymentTerms,
       })
       .eq("id", validated.estimateId);
 
