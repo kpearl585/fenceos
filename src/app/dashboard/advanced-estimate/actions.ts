@@ -61,7 +61,8 @@ export async function saveAdvancedEstimate(
   result: FenceEstimateResult,
   name: string,
   laborRate: number,
-  wastePct: number
+  wastePct: number,
+  markupPct?: number
 ): Promise<{ success: true; id: string } | { success: false; error: string } | PaywallBlock> {
   const startTime = Date.now();
 
@@ -71,6 +72,7 @@ export async function saveAdvancedEstimate(
       name,
       laborRate,
       wastePct,
+      markupPct,
       input,
       result,
     });
@@ -93,12 +95,41 @@ export async function saveAdvancedEstimate(
 
     const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
 
+    // Resolve the markup used to compute the customer-facing bid price.
+    // If the UI passes an explicit markupPct, use it. Otherwise convert
+    // the org's configured target margin (gross margin %) into the
+    // equivalent markup so the saved bid_price at least reflects the
+    // contractor's intended margin rather than bare engine cost.
+    let effectiveMarkupPct: number | null =
+      typeof validated.markupPct === "number" ? validated.markupPct : null;
+    if (effectiveMarkupPct === null) {
+      const { data: orgSettings } = await admin
+        .from("org_settings")
+        .select("target_margin_pct")
+        .eq("org_id", profile.org_id)
+        .maybeSingle();
+      const targetMargin =
+        typeof (orgSettings as { target_margin_pct?: number } | null)?.target_margin_pct === "number"
+          ? (orgSettings as { target_margin_pct: number }).target_margin_pct
+          : null;
+      if (targetMargin !== null && targetMargin > 0 && targetMargin < 1) {
+        // markup = margin / (1 - margin); express as a percentage.
+        effectiveMarkupPct = +((targetMargin / (1 - targetMargin)) * 100).toFixed(2);
+      }
+    }
+    const bidPrice =
+      effectiveMarkupPct !== null && Number.isFinite(effectiveMarkupPct)
+        ? Math.round(validated.result.totalCost * (1 + effectiveMarkupPct / 100) * 100) / 100
+        : null;
+
     // Add Sentry context for better debugging
     Sentry.setContext('advanced_estimator', {
       total_linear_feet: totalLF,
       labor_rate: laborRate,
       waste_pct: wastePct,
-      total_cost: result.totalCost
+      markup_pct: effectiveMarkupPct,
+      total_cost: result.totalCost,
+      bid_price: bidPrice,
     });
     Sentry.setUser({ id: user.id });
 
@@ -117,8 +148,10 @@ export async function saveAdvancedEstimate(
         result_json: validated.result as unknown as Record<string, unknown>,
         labor_rate: validated.laborRate,
         waste_pct: validated.wastePct,
+        markup_pct: effectiveMarkupPct,
         total_lf: totalLF,
         total_cost: validated.result.totalCost,
+        bid_price: bidPrice,
         status: "draft",
       })
       .select("id")

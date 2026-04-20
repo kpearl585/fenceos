@@ -105,6 +105,11 @@ export async function getQuoteByToken(token: string): Promise<{
     labor_rate: number;
     waste_pct: number;
     total_cost: number;
+    // Customer-facing price = total_cost + markup. Always populated on
+    // the returned shape — getQuoteByToken applies a fallback (org's
+    // target margin) if the DB column is null on legacy rows.
+    bid_price: number;
+    markup_pct: number | null;
     customer_accepted_at: string | null;
     token_expires_at: string | null;
     legal_terms_snapshot: string | null;
@@ -141,6 +146,8 @@ export async function getQuoteByToken(token: string): Promise<{
         labor_rate,
         waste_pct,
         total_cost,
+        bid_price,
+        markup_pct,
         customer_accepted_at,
         token_expires_at,
         legal_terms_snapshot,
@@ -170,9 +177,39 @@ export async function getQuoteByToken(token: string): Promise<{
       .eq("org_id", quote.org_id)
       .single();
 
-    // `ar_enabled` was added by migration 20260419010000 but isn't in
-    // the generated Supabase types yet. Narrow locally.
-    const quoteAr = quote as unknown as { ar_enabled: boolean | null };
+    // `ar_enabled` / `bid_price` / `markup_pct` were added by later
+    // migrations but aren't in the generated Supabase types yet.
+    // Narrow locally so TypeScript doesn't complain.
+    const quoteNarrow = quote as unknown as {
+      ar_enabled: boolean | null;
+      bid_price: number | null;
+      markup_pct: number | null;
+    };
+
+    // Derive bid_price for legacy rows that saved before the column
+    // existed. Uses the org's current target margin (gross margin %,
+    // e.g. 0.35) converted to the equivalent markup, applied to cost.
+    let resolvedBidPrice: number;
+    const resolvedMarkupPct = quoteNarrow.markup_pct;
+    if (typeof quoteNarrow.bid_price === "number") {
+      resolvedBidPrice = quoteNarrow.bid_price;
+    } else {
+      const { data: settings } = await admin
+        .from("org_settings")
+        .select("target_margin_pct")
+        .eq("org_id", quote.org_id)
+        .maybeSingle();
+      const margin =
+        typeof (settings as { target_margin_pct?: number } | null)?.target_margin_pct === "number"
+          ? (settings as { target_margin_pct: number }).target_margin_pct
+          : null;
+      if (margin !== null && margin > 0 && margin < 1 && quote.total_cost > 0) {
+        // price = cost / (1 - margin)
+        resolvedBidPrice = Math.round((quote.total_cost / (1 - margin)) * 100) / 100;
+      } else {
+        resolvedBidPrice = quote.total_cost; // last-resort: show cost
+      }
+    }
 
     return {
       success: true,
@@ -184,12 +221,14 @@ export async function getQuoteByToken(token: string): Promise<{
         labor_rate: quote.labor_rate,
         waste_pct: quote.waste_pct,
         total_cost: quote.total_cost,
+        bid_price: resolvedBidPrice,
+        markup_pct: resolvedMarkupPct,
         customer_accepted_at: quote.customer_accepted_at,
         token_expires_at: quote.token_expires_at,
         legal_terms_snapshot: quote.legal_terms_snapshot ?? null,
         payment_terms_snapshot: quote.payment_terms_snapshot ?? null,
         contract_pdf_url: quote.contract_pdf_url ?? null,
-        ar_enabled: quoteAr.ar_enabled ?? false,
+        ar_enabled: quoteNarrow.ar_enabled ?? false,
         org: {
           name: org?.name ?? "Fence Company",
           phone: branding?.phone ?? "",

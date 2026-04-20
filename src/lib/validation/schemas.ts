@@ -78,6 +78,12 @@ export const SaveEstimateSchema = z.object({
     .max(100, "Waste % cannot exceed 100%")
     .finite(),
 
+  markupPct: z.number()
+    .min(0,   "Markup % cannot be negative")
+    .max(500, "Markup % unreasonably high")
+    .finite()
+    .optional(),
+
   input: FenceProjectInputSchema,
 
   // Result is engine output; cap outermost numeric fields and let the

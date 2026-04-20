@@ -375,12 +375,12 @@ export default async function QuoteViewPage({ params }: Props) {
               <div className="flex justify-between items-center">
                 <span className="text-lg font-medium text-gray-900">Total project investment</span>
                 <span className="text-3xl font-bold text-fence-900">
-                  ${quote.total_cost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ${quote.bid_price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               {totalLF > 0 && (
                 <p className="text-sm text-gray-600 mt-2">
-                  ${(quote.total_cost / totalLF).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per linear foot &middot; {totalLF.toFixed(0)} LF total
+                  ${(quote.bid_price / totalLF).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per linear foot &middot; {totalLF.toFixed(0)} LF total
                 </p>
               )}
               <p className="text-sm text-gray-600 mt-1">
