@@ -63,5 +63,9 @@ export async function saveOnboarding(fd: FormData) {
   // component, new org_contact table, or just stop collecting it).
   void state;
 
-  redirect("/dashboard?welcome=1");
+  // Hand the freshly-onboarded contractor to the estimator setup wizard
+  // before the dashboard. It's 3 questions of friendly-voice setup that
+  // tune the engine to their region + crew. Users who skip it still land
+  // in the dashboard from within the wizard.
+  redirect("/onboarding/estimator-setup");
 }
