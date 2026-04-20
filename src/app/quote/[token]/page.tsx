@@ -1,8 +1,68 @@
 import { getQuoteByToken } from "../actions";
 import { QuoteAcceptanceForm } from "./QuoteAcceptanceForm";
 import ARViewerButton from "@/components/ar/ARViewerButton";
+import type { BomItem } from "@/lib/fence-graph/types";
 import { Metadata } from "next";
 import Link from "next/link";
+
+// Category labels shown in the customer-facing Scope of Work table.
+// Keys map to BomItem.category strings the engine emits; anything not
+// in the map gets skipped (internal line items like regulatory or
+// edge-case flags shouldn't leak into the customer view).
+const SCOPE_CATEGORY_LABEL: Record<string, string> = {
+  posts:     "Posts & rails",
+  panels:    "Fence panels",
+  pickets:   "Pickets",
+  rails:     "Rails",
+  fabric:    "Chain-link fabric",
+  concrete:  "Concrete & footings",
+  hardware:  "Hardware & fasteners",
+  gates:     "Gates",
+  equipment: "Equipment",
+  logistics: "Delivery",
+  removal:   "Old fence removal",
+};
+
+// Fixed display order so the table always reads "foundation up".
+const SCOPE_CATEGORY_ORDER = [
+  "posts", "panels", "pickets", "rails", "fabric",
+  "concrete", "hardware", "gates",
+  "removal", "equipment", "logistics",
+];
+
+interface ScopeGroup {
+  label: string;
+  items: { name: string; qty: number; unit: string }[];
+}
+
+function buildScopeGroups(bom: BomItem[]): ScopeGroup[] {
+  const byCategory = new Map<string, BomItem[]>();
+  for (const item of bom) {
+    if (!SCOPE_CATEGORY_LABEL[item.category]) continue;
+    if ((item.qty ?? 0) <= 0) continue;
+    const list = byCategory.get(item.category) ?? [];
+    list.push(item);
+    byCategory.set(item.category, list);
+  }
+  const out: ScopeGroup[] = [];
+  for (const category of SCOPE_CATEGORY_ORDER) {
+    const items = byCategory.get(category);
+    if (!items || items.length === 0) continue;
+    out.push({
+      label: SCOPE_CATEGORY_LABEL[category],
+      items: items.map(it => ({ name: it.name, qty: it.qty, unit: it.unit })),
+    });
+  }
+  return out;
+}
+
+function formatDuration(totalHrs: number, hoursPerDay: number): string {
+  if (!totalHrs || !hoursPerDay) return "Typically 2–4 days";
+  const days = Math.max(1, Math.ceil(totalHrs / hoursPerDay));
+  if (days === 1) return "About 1 day";
+  if (days <= 5)  return `${days} days`;
+  return `${days} days (may span multiple weeks depending on weather)`;
+}
 
 export const metadata: Metadata = {
   title: "View Quote - FenceEstimatePro",
@@ -218,60 +278,152 @@ export default async function QuoteViewPage({ params }: Props) {
               </div>
             )}
 
-            {/* Pricing */}
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Investment</h3>
-              <div className="bg-fence-50 border border-fence-200 rounded-lg p-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium text-gray-900">Total Project Cost</span>
-                  <span className="text-3xl font-bold text-fence-900">
-                    ${quote.total_cost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  Includes all materials, labor, and installation
-                </p>
+          </div>
+        </div>
+
+        {/* Scope of Work — what the customer is actually buying. Builds
+            from result.bom grouped by category. Deliberately shows
+            quantity only (no per-line dollar amounts) so we can't be
+            accidentally leaking cost-vs-price details. */}
+        {result_data?.bom && result_data.bom.length > 0 && (() => {
+          const groups = buildScopeGroups(result_data.bom as BomItem[]);
+          if (groups.length === 0) return null;
+          return (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
+              <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+                <h2 className="text-lg font-bold text-gray-900">Scope of Work</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Materials and work included in this quote.</p>
+              </div>
+              <div className="px-6 py-2">
+                <ul className="divide-y divide-gray-100">
+                  {groups.map(group => (
+                    <li key={group.label} className="py-3">
+                      <p className="font-semibold text-gray-900 text-sm">{group.label}</p>
+                      <ul className="mt-1 text-sm text-gray-500 space-y-0.5">
+                        {group.items.map((it, i) => (
+                          <li key={i}>
+                            &bull; {it.name}
+                            <span className="text-gray-400"> ({it.qty} {it.unit})</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                  <li className="py-3">
+                    <p className="font-semibold text-gray-900 text-sm">Crew labor &amp; install</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      &bull; Professional installation by experienced crew, site cleanup, debris removal
+                      {typeof result_data.totalLaborHrs === "number" && result_data.totalLaborHrs > 0 && (
+                        <span className="text-gray-400"> (~{Math.round(result_data.totalLaborHrs)} crew-hours)</span>
+                      )}
+                    </p>
+                  </li>
+                </ul>
               </div>
             </div>
+          );
+        })()}
 
-            {/* What's Included */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">What&apos;s Included</h3>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-fence-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">All materials (posts, rails, panels, concrete, hardware)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-fence-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">Professional installation by experienced crew</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-fence-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">Site cleanup and debris removal</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-fence-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">2-year workmanship warranty</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-fence-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">Manufacturer materials warranty (varies by product)</span>
-                </li>
-              </ul>
+        {/* Project Timeline + Warranty row — same pair the PDF proposal
+            carries so the web share quote matches what the customer
+            eventually sees in PDF form. */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Project Timeline</h2>
+            </div>
+            <div className="p-6 space-y-2 text-sm text-gray-700">
+              <p>
+                <span className="font-semibold text-gray-900">Estimated duration:</span>{" "}
+                {formatDuration(
+                  typeof result_data?.totalLaborHrs === "number" ? result_data.totalLaborHrs : 0,
+                  8
+                )}
+              </p>
+              <p className="text-xs text-gray-500">
+                Installation typically begins within 2&ndash;3 weeks of deposit, subject to weather, material availability, and permit timing.
+              </p>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Warranty</h2>
+            </div>
+            <div className="p-6 space-y-2 text-sm text-gray-700">
+              <p><span className="font-semibold text-gray-900">Workmanship:</span> 1 year from completion.</p>
+              <p><span className="font-semibold text-gray-900">Materials:</span> manufacturer warranty, varies by product.</p>
+              <p className="text-xs text-gray-500">
+                Excludes acts of nature, soil settling, and modifications made after installation.
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Investment — lump-sum total + per-LF + valid-until. Mirrors
+            the PDF's "Investment Summary" box rather than a bare number. */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
+          <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900">Investment</h2>
+            {quote.token_expires_at && (
+              <p className="text-xs text-gray-500">
+                Valid until {new Date(quote.token_expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+            )}
+          </div>
+          <div className="p-6">
+            <div className="bg-fence-50 border border-fence-200 rounded-lg p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-medium text-gray-900">Total project investment</span>
+                <span className="text-3xl font-bold text-fence-900">
+                  ${quote.total_cost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              {totalLF > 0 && (
+                <p className="text-sm text-gray-600 mt-2">
+                  ${(quote.total_cost / totalLF).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per linear foot &middot; {totalLF.toFixed(0)} LF total
+                </p>
+              )}
+              <p className="text-sm text-gray-600 mt-1">
+                Includes all materials, crew labor, site cleanup, and installation.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Ready to get started — mirrors the PDF's "next steps" block
+            and keeps momentum flowing from the scope tables into the
+            acceptance form below. */}
+        {!isAccepted && !isExpired && (
+          <div className="bg-fence-50 border border-fence-200 rounded-xl p-6 mb-8">
+            <h2 className="text-lg font-bold text-fence-900 mb-1">Ready to get started?</h2>
+            <p className="text-sm text-fence-800 mb-4">Here&rsquo;s what happens next:</p>
+            <ol className="space-y-2 text-sm text-fence-900">
+              <li className="flex items-start gap-2">
+                <span className="inline-flex w-5 h-5 items-center justify-center bg-fence-600 text-white rounded-full text-xs font-bold flex-shrink-0">1</span>
+                <span>Review the scope, pricing, and terms above.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="inline-flex w-5 h-5 items-center justify-center bg-fence-600 text-white rounded-full text-xs font-bold flex-shrink-0">2</span>
+                <span>Sign below to accept. Your contractor is notified immediately.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="inline-flex w-5 h-5 items-center justify-center bg-fence-600 text-white rounded-full text-xs font-bold flex-shrink-0">3</span>
+                <span>Deposit + scheduling details follow from {quote.org.name}.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="inline-flex w-5 h-5 items-center justify-center bg-fence-600 text-white rounded-full text-xs font-bold flex-shrink-0">4</span>
+                <span>Crew installs. Final walkthrough when it&rsquo;s done.</span>
+              </li>
+            </ol>
+            {(quote.org.phone || quote.org.email) && (
+              <p className="text-xs text-fence-700 mt-4">
+                Questions? {quote.org.phone && <>Call <a href={`tel:${quote.org.phone}`} className="underline">{quote.org.phone}</a></>}
+                {quote.org.phone && quote.org.email && " or "}
+                {quote.org.email && <>email <a href={`mailto:${quote.org.email}`} className="underline">{quote.org.email}</a></>}.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Terms — shown inline so the customer sees exactly what
             they're agreeing to before signing. Same text is also
