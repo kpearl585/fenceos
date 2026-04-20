@@ -1,9 +1,49 @@
 import { getQuoteByToken } from "../actions";
 import { QuoteAcceptanceForm } from "./QuoteAcceptanceForm";
 import ARViewerButton from "@/components/ar/ARViewerButton";
-import type { BomItem } from "@/lib/fence-graph/types";
+import type { BomItem, FenceProjectInput } from "@/lib/fence-graph/types";
 import { Metadata } from "next";
 import Link from "next/link";
+
+// Roll up gates from the estimator input into the few human-readable
+// lines the homeowner cares about: "1 × 4-ft walk gate" etc. Handles
+// both the top-level input.gates shape (legacy / some UI flows) and
+// the per-run input.runs[].gates shape (AI extract output) so the
+// summary stays honest regardless of which path produced the graph.
+function summarizeGates(input: FenceProjectInput): Array<{ key: string; label: string; count: number }> {
+  const GATE_TYPE_LABEL: Record<string, string> = {
+    walk:         "walk gate",
+    drive:        "drive gate",
+    double_drive: "double drive gate",
+    pool:         "pool-code gate",
+  };
+  const map = new Map<string, { key: string; label: string; count: number }>();
+  const push = (widthFt: number, type: string) => {
+    if (!Number.isFinite(widthFt) || widthFt <= 0) return;
+    const typeLabel = GATE_TYPE_LABEL[type] ?? "gate";
+    const key = `${widthFt}-${type}`;
+    const label = `${widthFt}-ft ${typeLabel}`;
+    const existing = map.get(key);
+    if (existing) existing.count += 1;
+    else map.set(key, { key, label, count: 1 });
+  };
+
+  const topLevel = (input as unknown as { gates?: Array<{ widthFt?: number; type?: string }> }).gates;
+  if (Array.isArray(topLevel)) {
+    for (const g of topLevel) {
+      if (typeof g?.widthFt === "number" && typeof g?.type === "string") push(g.widthFt, g.type);
+    }
+  }
+  const runs = (input as unknown as { runs?: Array<{ gates?: Array<{ widthFt?: number; type?: string }> }> }).runs;
+  if (Array.isArray(runs)) {
+    for (const run of runs) {
+      for (const g of run?.gates ?? []) {
+        if (typeof g?.widthFt === "number" && typeof g?.type === "string") push(g.widthFt, g.type);
+      }
+    }
+  }
+  return Array.from(map.values());
+}
 
 // Category labels shown in the customer-facing Scope of Work table.
 // Keys map to BomItem.category strings the engine emits; anything not
@@ -287,38 +327,85 @@ export default async function QuoteViewPage({ params }: Props) {
             accidentally leaking cost-vs-price details. */}
         {result_data?.bom && result_data.bom.length > 0 && (() => {
           const groups = buildScopeGroups(result_data.bom as BomItem[]);
-          if (groups.length === 0) return null;
+          const gateSummary = summarizeGates(input);
+          const fenceSummaryLine =
+            totalLF > 0 ? `${totalLF.toFixed(0)} linear feet of ${fenceHeight}-ft ${fenceType} fence` : null;
+          const hasAnySummary = !!fenceSummaryLine || gateSummary.length > 0 || groups.length > 0;
+          if (!hasAnySummary) return null;
+
+          const Check = () => (
+            <svg className="w-5 h-5 text-fence-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          );
+
           return (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
               <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
                 <h2 className="text-lg font-bold text-gray-900">Scope of Work</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Materials and work included in this quote.</p>
+                <p className="text-xs text-gray-500 mt-0.5">What&rsquo;s included in this quote.</p>
               </div>
-              <div className="px-6 py-2">
-                <ul className="divide-y divide-gray-100">
-                  {groups.map(group => (
-                    <li key={group.label} className="py-3">
-                      <p className="font-semibold text-gray-900 text-sm">{group.label}</p>
-                      <ul className="mt-1 text-sm text-gray-500 space-y-0.5">
-                        {group.items.map((it, i) => (
-                          <li key={i}>
-                            &bull; {it.name}
-                            <span className="text-gray-400"> ({it.qty} {it.unit})</span>
-                          </li>
-                        ))}
-                      </ul>
+              <div className="p-6">
+                {/* Simple summary — the four lines a homeowner actually
+                    cares about. Keeps the default view from feeling
+                    like a bill of materials. */}
+                <ul className="space-y-3 text-sm text-gray-800">
+                  {fenceSummaryLine && (
+                    <li className="flex items-start gap-2">
+                      <Check />
+                      <span>{fenceSummaryLine}</span>
+                    </li>
+                  )}
+                  {gateSummary.map(g => (
+                    <li key={g.key} className="flex items-start gap-2">
+                      <Check />
+                      <span>{g.count} &times; {g.label}</span>
                     </li>
                   ))}
-                  <li className="py-3">
-                    <p className="font-semibold text-gray-900 text-sm">Crew labor &amp; install</p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      &bull; Professional installation by experienced crew, site cleanup, debris removal
+                  <li className="flex items-start gap-2">
+                    <Check />
+                    <span>
+                      All materials, hardware, concrete, and professional installation
                       {typeof result_data.totalLaborHrs === "number" && result_data.totalLaborHrs > 0 && (
-                        <span className="text-gray-400"> (~{Math.round(result_data.totalLaborHrs)} crew-hours)</span>
+                        <span className="text-gray-500"> (~{Math.round(result_data.totalLaborHrs)} crew-hours)</span>
                       )}
-                    </p>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check />
+                    <span>Site cleanup and debris removal</span>
                   </li>
                 </ul>
+
+                {/* Full materials breakdown — disclosure for homeowners
+                    who want to see every post and panel counted out.
+                    Most customers will never open this; the ones who do
+                    are the detail-oriented buyers who appreciate it. */}
+                {groups.length > 0 && (
+                  <details className="mt-6 group">
+                    <summary className="text-xs font-semibold text-gray-500 hover:text-fence-700 cursor-pointer flex items-center gap-1.5 list-none">
+                      <svg className="w-3 h-3 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                      Show full materials breakdown
+                    </summary>
+                    <ul className="mt-4 pt-4 border-t border-gray-100 divide-y divide-gray-100">
+                      {groups.map(group => (
+                        <li key={group.label} className="py-3">
+                          <p className="font-semibold text-gray-900 text-sm">{group.label}</p>
+                          <ul className="mt-1 text-sm text-gray-500 space-y-0.5">
+                            {group.items.map((it, i) => (
+                              <li key={i}>
+                                &bull; {it.name}
+                                <span className="text-gray-400"> ({it.qty} {it.unit})</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
               </div>
             </div>
           );
