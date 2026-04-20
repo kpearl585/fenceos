@@ -33,6 +33,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { RateLimiters } from "@/lib/security/rate-limit";
 import { publicExtractFromImage } from "@/lib/ai-extract/publicExtractFromImage";
 import { estimateFence } from "@/lib/fence-graph/engine";
+import { trackPhotoEstimatorEvent } from "@/lib/photo-estimate/track-event";
 import type { FenceProjectInput } from "@/lib/fence-graph/types";
 import {
   PhotoEstimateRequestSchema,
@@ -209,6 +210,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Funnel event — the upload passed client + server validation and
+    // is about to burn OpenAI tokens. Tracked here (not earlier) so we
+    // exclude formData-parse errors and bot probes.
+    await trackPhotoEstimatorEvent({
+      event: "photo_upload_submitted",
+      ipAddress: ip,
+      properties: {
+        mime,
+        size_bytes: imageField.size,
+        has_additional_context: Boolean(additionalContext),
+        has_location_hint: Boolean(locationHint),
+      },
+    });
+
     // 5) Upload original to private bucket — grouped by day for cleanup.
     const originalBuffer = Buffer.from(await imageField.arrayBuffer());
     const day = new Date().toISOString().slice(0, 10);
@@ -265,6 +280,14 @@ export async function POST(request: NextRequest) {
     // 9) If extraction is blocked, return a helpful 422 but keep the
     //    claim_token row so the user can see the flags in the UI.
     if (extraction.blocked || !extraction.data) {
+      await trackPhotoEstimatorEvent({
+        event: "extraction_blocked",
+        ipAddress: ip,
+        properties: {
+          blockers: extraction.blockers,
+          cost_cents: extraction.costCents,
+        },
+      });
       return NextResponse.json(
         {
           error:
@@ -327,6 +350,21 @@ export async function POST(request: NextRequest) {
         `Failed to persist photo estimate: ${insertErr?.message ?? "unknown"}`
       );
     }
+
+    await trackPhotoEstimatorEvent({
+      event: "extraction_returned",
+      claimToken: inserted.claim_token,
+      ipAddress: ip,
+      properties: {
+        confidence: extraction.data.confidence,
+        run_count: extraction.data.runs.length,
+        gate_count: gateCount,
+        total_linear_feet: totalLinearFeet,
+        fence_type: firstRun?.fenceType ?? null,
+        cost_cents: extraction.costCents,
+        flag_count: extraction.data.flags.length,
+      },
+    });
 
     return NextResponse.json({
       claim_token: inserted.claim_token,
