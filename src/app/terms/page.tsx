@@ -76,27 +76,34 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">9. Limitation of Liability</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">9. AI-Generated Estimates</h2>
+            <p className="mb-3">The AI Photo Estimator generates fence estimates from photos using automated computer-vision analysis. These estimates are <span className="text-white/90">informational only</span> and are provided for convenience during the pre-bid stage.</p>
+            <p className="mb-3">AI-generated estimates do <span className="text-white/90">not</span> constitute a professional bid, contract, warranty, or guarantee of any kind. Dimensions, fence types, gate counts, and price ranges are model-generated and may contain material errors. You must independently verify every measurement and product specification before relying on an AI estimate for any business decision, including but not limited to customer bids, material orders, permit applications, or job scheduling.</p>
+            <p>Pearl Ventures and FenceEstimatePro are not liable for any loss, damage, or cost arising from reliance on an AI-generated estimate. By using the AI Photo Estimator you acknowledge and accept these limitations.</p>
+          </section>
+
+          <section>
+            <h2 className="text-white font-semibold text-lg mb-3">10. Limitation of Liability</h2>
             <p>To the maximum extent permitted by law, Pearl Ventures shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service. Our total liability to you shall not exceed the amount you paid in the 12 months preceding the claim.</p>
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">10. Termination</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">11. Termination</h2>
             <p>We reserve the right to suspend or terminate your account for violation of these terms, non-payment, or any activity that we determine to be harmful to the Service or other users. Upon termination, you may request an export of your data within 30 days.</p>
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">11. Changes to Terms</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">12. Changes to Terms</h2>
             <p>We may update these Terms at any time. We will notify you of material changes via email or an in-app notice. Continued use of the Service after changes constitutes acceptance of the updated Terms.</p>
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">12. Governing Law</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">13. Governing Law</h2>
             <p>These Terms are governed by the laws of the State of Florida. Any disputes shall be resolved in the courts of Marion County, Florida.</p>
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">13. Contact</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">14. Contact</h2>
             <p>Questions about these Terms? Contact us at <a href="mailto:support@fenceestimatepro.com" className="text-fence-400 hover:text-fence-300">support@fenceestimatepro.com</a></p>
           </section>
         </div>

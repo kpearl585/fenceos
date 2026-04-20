@@ -127,6 +127,16 @@ export default async function ClaimPage({
             &middot; This estimate expires in 30 days.
           </p>
         </div>
+
+        <p className="mt-6 text-center text-xs text-fence-200/60">
+          Need help?{" "}
+          <a
+            href="mailto:support@fenceestimatepro.com"
+            className="underline hover:text-fence-100"
+          >
+            support@fenceestimatepro.com
+          </a>
+        </p>
       </section>
     </main>
   );

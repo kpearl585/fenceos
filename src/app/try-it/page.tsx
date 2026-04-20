@@ -42,6 +42,16 @@ export default function TryItPage() {
           Photos are used only to generate your estimate and are deleted within
           7 days. We&rsquo;ll never share them.
         </p>
+
+        <p className="mt-4 text-center text-xs text-fence-200/50">
+          Something not working?{" "}
+          <a
+            href="mailto:support@fenceestimatepro.com"
+            className="underline hover:text-fence-100"
+          >
+            support@fenceestimatepro.com
+          </a>
+        </p>
       </section>
     </main>
   );

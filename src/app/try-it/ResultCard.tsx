@@ -157,6 +157,18 @@ export default function ResultCard({ data, onTryAnother }: Props) {
         </p>
       </div>
 
+      {/* Persistent AI disclaimer — separate from the confidence chip so
+          users with a high-confidence result don't miss the "not a bid"
+          framing. This is the one piece of copy that has to survive any
+          rush to ship. */}
+      <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+        <p className="text-sm text-amber-900">
+          <span className="font-semibold">This is an AI estimate from a photo, not a contract price.</span>{" "}
+          Always walk the site and measure before bidding a real job.
+          Measurements and counts are model-generated and may be wrong.
+        </p>
+      </div>
+
       {/* Summary */}
       {extraction.rawSummary && (
         <p className="mt-6 italic text-gray-600">“{extraction.rawSummary}”</p>

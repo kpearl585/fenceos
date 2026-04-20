@@ -33,7 +33,7 @@ export async function consumeClaimToken(
 
     const { data: row, error: fetchErr } = await admin
       .from("public_photo_estimates")
-      .select("id, claimed_at, extraction_json, estimate_json")
+      .select("id, claimed_at, extraction_json, estimate_json, image_storage_path")
       .eq("claim_token", claimToken)
       .maybeSingle();
 
@@ -72,6 +72,7 @@ export async function consumeClaimToken(
         total_lf: totalLinearFeet,
         total_cost: totalCost,
         status: "draft",
+        source_photo_storage_path: row.image_storage_path ?? null,
       })
       .select("id")
       .single();
