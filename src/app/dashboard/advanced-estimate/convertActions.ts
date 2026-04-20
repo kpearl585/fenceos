@@ -9,6 +9,7 @@ import { RateLimiters } from "@/lib/security/rate-limit";
 import { enforceBillingGate } from "@/lib/subscription";
 import { getOrgMarginTargets, marginStatus } from "@/lib/marginTargets";
 import type { FenceEstimateResult } from "@/lib/fence-graph/types";
+import { toEstimatesFenceType } from "@/lib/fence-graph/enum-normalizers";
 
 interface ConvertInput {
   result: FenceEstimateResult;
@@ -24,17 +25,6 @@ interface ConvertInput {
     phone: string;
     email: string;
   };
-}
-
-// The Advanced Estimator's FenceType union uses "wood" as the broad
-// category ("vinyl" | "wood" | "chain_link" | "aluminum"), but the
-// estimates table's check constraint allows:
-//   wood_privacy | chain_link | vinyl | aluminum
-// So a user picking "wood" in the Advanced Estimator would otherwise
-// hit estimates_fence_type_check on convert. Map once, here.
-function toEstimatesFenceType(fenceType: string): string {
-  if (fenceType === "wood") return "wood_privacy";
-  return fenceType;
 }
 
 export async function createEstimateFromFenceGraph(
