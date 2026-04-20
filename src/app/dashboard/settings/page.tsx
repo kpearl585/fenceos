@@ -5,6 +5,7 @@ import { canAccess } from "@/lib/roles";
 import { saveOrgSettings, saveOrgContact, deleteAccount } from "./actions";
 import OrgNameForm from "@/components/settings/OrgNameForm";
 import BrandingForm from "@/components/settings/BrandingForm";
+import InsuranceCertUpload from "@/components/settings/InsuranceCertUpload";
 import TeamMembersSection from "@/components/settings/TeamMembersSection";
 import BillingPortalButton from "@/components/settings/BillingPortalButton";
 import ExportDataButton from "@/components/settings/ExportDataButton";
@@ -22,12 +23,33 @@ export default async function SettingsPage() {
   if (!canAccess(profile.role, "owner")) redirect("/dashboard");
 
   const adminSettings = createAdminClient();
-  const [{ data: orgSettings }, { data: branding }, { data: orgUsers }, { data: org }] = await Promise.all([
+  const [
+    { data: orgSettings },
+    { data: branding },
+    { data: orgUsers },
+    { data: org },
+    { data: insuranceCert },
+  ] = await Promise.all([
     supabase.from("org_settings").select("*").eq("org_id", profile.org_id).single(),
     supabase.from("org_branding").select("*").eq("org_id", profile.org_id).single(),
     adminSettings.from("users").select("id, full_name, email, role, created_at").eq("org_id", profile.org_id).order("created_at"),
     adminSettings.from("organizations").select("name, slug, id, plan, plan_status, trial_ends_at").eq("id", profile.org_id).single(),
+    adminSettings
+      .from("org_contractor_docs")
+      .select("filename, file_size_bytes, uploaded_at, expires_at")
+      .eq("org_id", profile.org_id)
+      .eq("doc_type", "insurance_cert")
+      .maybeSingle(),
   ]);
+
+  const insuranceCertExisting = insuranceCert
+    ? {
+        filename: insuranceCert.filename as string,
+        fileSizeBytes: Number(insuranceCert.file_size_bytes) || 0,
+        uploadedAt: insuranceCert.uploaded_at as string,
+        expiresAt: (insuranceCert.expires_at as string | null) ?? null,
+      }
+    : null;
 
   const planLabel: Record<string, string> = {
     starter: "Starter — $49/mo",
@@ -183,6 +205,17 @@ export default async function SettingsPage() {
               Save Contact Info
             </button>
           </form>
+        </div>
+
+        {/* HOA Packet — contractor documents that get bundled into HOA
+            submittal PDFs on demand. Upload once per renewal; every packet
+            pulls from here. Owner-only per RLS. */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-fence-900 mb-1">HOA Packet</h2>
+          <p className="text-xs text-gray-500 mb-4">
+            Upload your insurance certificate once. FEP will bundle it into every HOA submittal packet you generate from a quote, so you don&rsquo;t have to chase the PDF for every job.
+          </p>
+          <InsuranceCertUpload orgId={profile.org_id} existing={insuranceCertExisting} />
         </div>
 
         {/* Branding */}

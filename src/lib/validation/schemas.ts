@@ -102,6 +102,31 @@ export const SaveEstimateSchema = z.object({
   }).passthrough(),
 });
 
+// ═══════════════════════════════════════════════════════════════
+// HOA PACKET GENERATION
+// Customer details are prompted at packet time because fence_graphs
+// has no customer_id link. Neighbor details are optional — they go on
+// the adjoining-fence consent page in future PRs; v1 only uses them
+// if provided to avoid a mostly-blank form.
+// ═══════════════════════════════════════════════════════════════
+export const GenerateHoaPacketSchema = z.object({
+  estimateId: z.string().uuid("Invalid estimate ID"),
+  customerName: z.string().min(1, "Customer name required").max(200).trim(),
+  customerAddress: z.string().min(1, "Customer address required").max(500).trim(),
+  customerCity: z.string().max(100).trim().optional().or(z.literal("")),
+  customerState: z.string().max(50).trim().optional().or(z.literal("")),
+  customerZip: z.string().max(20).trim().optional().or(z.literal("")),
+  hoaName: z.string().max(200).trim().optional().or(z.literal("")),
+});
+
+export const UploadContractorDocSchema = z.object({
+  docType: z.enum(["insurance_cert", "w9", "license"]),
+  storagePath: z.string().min(1).max(500),
+  filename: z.string().min(1).max(255),
+  fileSizeBytes: z.number().int().min(1).max(15 * 1024 * 1024),  // 15MB hard cap
+  expiresAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD").optional().or(z.literal("")),
+});
+
 export const GenerateCustomerProposalPdfSchema = GenerateAdvancedPdfSchema.extend({
   markupPct: z.number().min(0).max(500).finite(),
   fenceType: z.enum(["vinyl", "wood", "chain_link", "aluminum"]),
