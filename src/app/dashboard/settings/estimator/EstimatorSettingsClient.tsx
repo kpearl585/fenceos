@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { OrgEstimatorConfig } from "@/lib/fence-graph/config/types";
 import type { DeepPartial } from "@/lib/fence-graph/config/types";
 import { DEFAULT_ESTIMATOR_CONFIG } from "@/lib/fence-graph/config/defaults";
@@ -27,7 +28,11 @@ interface Props {
 export default function EstimatorSettingsClient({ config: initialConfig, hasCustomConfig }: Props) {
   const [config, setConfig] = useState(initialConfig);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [activeSection, setActiveSection] = useState<string>("labor");
+  // Default contractors to the plain-English Essentials view. Industry-
+  // constant and engine-internal settings stay hidden under the Advanced
+  // disclosure until someone intentionally opens it.
+  const [activeSection, setActiveSection] = useState<string>("essentials");
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
   function update<K extends keyof OrgEstimatorConfig>(section: K, value: OrgEstimatorConfig[K]) {
     setConfig(prev => ({ ...prev, [section]: value }));
@@ -127,40 +132,162 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
     }
   }
 
-  const sections = [
-    { id: "labor", label: "Labor Rates" },
-    { id: "overhead", label: "Overhead" },
+  const advancedSections = [
+    { id: "labor", label: "Crew labor hours" },
+    { id: "overhead", label: "Job overhead" },
     { id: "concrete", label: "Concrete" },
-    { id: "material", label: "Materials" },
+    { id: "material", label: "Material assumptions" },
     { id: "gates", label: "Gates" },
-    { id: "equipment", label: "Equipment" },
-    { id: "logistics", label: "Logistics" },
-    { id: "removal", label: "Removal" },
-    { id: "pricing", label: "Pricing" },
-    { id: "region", label: "Region" },
+    { id: "equipment", label: "Equipment rental" },
+    { id: "logistics", label: "Delivery" },
+    { id: "removal", label: "Old fence removal" },
+    { id: "pricing", label: "Pricing rules" },
+    { id: "region", label: "Region details" },
   ];
+
+  function toggleAdvanced() {
+    const next = !showAdvanced;
+    setShowAdvanced(next);
+    // Collapsing Advanced snaps back to Essentials so the content pane
+    // never renders a section the user can no longer navigate to.
+    if (!next && activeSection !== "essentials") setActiveSection("essentials");
+  }
 
   return (
     <div className="space-y-4">
-      {/* Section nav */}
-      <div className="bg-white rounded-xl border border-gray-200 p-2 flex flex-wrap gap-1">
-        {sections.map(s => (
+      {/* Section nav — two-level: Essentials pill + Advanced disclosure */}
+      <div className="bg-white rounded-xl border border-gray-200 p-2">
+        <div className="flex items-center gap-1 flex-wrap">
           <button
-            key={s.id}
-            onClick={() => setActiveSection(s.id)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              activeSection === s.id
+            onClick={() => setActiveSection("essentials")}
+            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeSection === "essentials"
                 ? "bg-fence-600 text-white"
                 : "text-gray-500 hover:text-fence-700 hover:bg-gray-50"
             }`}
           >
-            {s.label}
+            Essentials
           </button>
-        ))}
+          <button
+            onClick={toggleAdvanced}
+            aria-expanded={showAdvanced}
+            className="ml-auto px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-fence-700 flex items-center gap-1.5"
+          >
+            <svg
+              className={`w-3 h-3 transition-transform ${showAdvanced ? "rotate-90" : ""}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+            {showAdvanced ? "Hide advanced settings" : "Show advanced settings"}
+          </button>
+        </div>
+        {showAdvanced && (
+          <div className="mt-2 pt-2 border-t border-gray-100 flex flex-wrap gap-1">
+            {advancedSections.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setActiveSection(s.id)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  activeSection === s.id
+                    ? "bg-fence-100 text-fence-700 border border-fence-200"
+                    : "text-gray-500 hover:text-fence-700 hover:bg-gray-50"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Content */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
+
+        {/* ── ESSENTIALS ── */}
+        {activeSection === "essentials" && (
+          <div>
+            <h2 className="text-lg font-semibold text-fence-900 mb-1">Essentials</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              The few settings most contractors actually set. The engine uses industry defaults for everything else &mdash; open
+              <span className="font-medium"> Show advanced settings</span> above only if you need to change crew labor hours, concrete math, gate multipliers, and similar internals.
+            </p>
+
+            <div className="space-y-4">
+              {/* Region */}
+              <div className="bg-fence-50 border border-fence-200 rounded-xl p-5">
+                <label className="block font-semibold text-fence-900 mb-1">Where do you work?</label>
+                <p className="text-sm text-gray-600 mb-3">
+                  We adjust labor and material averages based on your region.
+                </p>
+                <select
+                  value={config.region.key}
+                  onChange={(e) => update("region", { ...config.region, key: e.target.value })}
+                  className="w-full max-w-md bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                >
+                  {REGION_OPTIONS.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Waste */}
+              <div className="bg-fence-50 border border-fence-200 rounded-xl p-5">
+                <label className="block font-semibold text-fence-900 mb-1">Default material waste</label>
+                <p className="text-sm text-gray-600 mb-3">
+                  Extra material ordered beyond what the plan calls for &mdash; cut scrap, broken pickets, spare posts. 5% is the industry norm for a seasoned crew. We&rsquo;ll also learn from your closed jobs and adjust this over time.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={25}
+                    step={0.5}
+                    value={Math.round(config.waste.defaultPct * 1000) / 10}
+                    onChange={(e) => update("waste", { defaultPct: Number(e.target.value) / 100 })}
+                    className="w-28 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                    aria-label="Default material waste percentage"
+                  />
+                  <span className="text-sm text-gray-500">percent</span>
+                </div>
+              </div>
+
+              {/* Hours per day */}
+              <div className="bg-fence-50 border border-fence-200 rounded-xl p-5">
+                <label className="block font-semibold text-fence-900 mb-1">Crew hours per work day</label>
+                <p className="text-sm text-gray-600 mb-3">
+                  How many hands-on install hours your crew puts in per day (not counting travel or lunch). Most residential crews run 6&ndash;8 productive hours.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={4}
+                    max={14}
+                    step={0.5}
+                    value={config.production.hoursPerDay}
+                    onChange={(e) => update("production", { hoursPerDay: Number(e.target.value) })}
+                    className="w-28 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                    aria-label="Crew hours per work day"
+                  />
+                  <span className="text-sm text-gray-500">hours</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Pointer to main Settings for labor rate + target margin */}
+            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
+              <span className="font-semibold">Looking for labor rate or target margin?</span>{" "}
+              Those live on the main{" "}
+              <Link href="/dashboard/settings" className="underline font-medium">Settings page</Link>{" "}
+              &mdash; they apply across your whole account, not just the estimator.
+            </div>
+          </div>
+        )}
+
 
         {/* ── LABOR RATES ── */}
         {activeSection === "labor" && (
