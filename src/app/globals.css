@@ -4,7 +4,19 @@
 @tailwind components;
 @tailwind utilities;
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  /*
+   * Lock to the light color scheme for native form controls. Without
+   * this, macOS / Windows Chrome users with OS-level dark mode get
+   * inputs rendered with white-on-dark system styling, which ignores
+   * our CSS `color` declarations. Our pages are either light-themed
+   * (dashboard, quote portal) or custom-dark (landing) — neither is
+   * system-dark — so declaring `light` keeps the native controls in
+   * a predictable state.
+   */
+  color-scheme: light;
+}
 body {
   background: #080808;
   color: #F2F2F2;
@@ -52,7 +64,21 @@ body {
   input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
   textarea,
   select {
-    color: #111827; /* gray-900 — same as the dashboard's default body text */
+    color: #111827;           /* gray-900 — same as the dashboard's default body text */
+    background-color: #ffffff; /* explicit so OS dark-mode clients can't tint it */
+  }
+
+  /* Native autofill (Chrome/Safari) applies a yellow-ish fill that
+   * overrides both background-color and color via an internal shadow.
+   * Box-shadow inset trick forces our white + dark-gray values to stick. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: #111827;
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    transition: background-color 5000s ease-in-out 0s;
   }
 }
 
