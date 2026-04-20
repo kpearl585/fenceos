@@ -111,6 +111,17 @@ export const RateLimiters = {
       windowMs: 60 * 60 * 1000,
     }),
 
+  /** HOA packet generation: 20 per hour per org.
+   *  Tighter than pdfGeneration because each call merges an arbitrary
+   *  user-uploaded PDF — CPU + memory heavier, and contractors generate
+   *  one packet per HOA job (not dozens per day like estimates). */
+  hoaPacketGeneration: (orgId: string) =>
+    checkRateLimit({
+      key: `hoa-packet:${orgId}`,
+      limit: 20,
+      windowMs: 60 * 60 * 1000,
+    }),
+
   /** Excel export: 50 per hour per org */
   excelExport: (orgId: string) =>
     checkRateLimit({
