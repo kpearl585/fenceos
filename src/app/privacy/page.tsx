@@ -99,17 +99,29 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">9. Children's Privacy</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">9. AI Photo Estimator</h2>
+            <p className="mb-3">Our AI Photo Estimator lets anyone upload a yard photo to generate a rough fence estimate without creating an account. When you use it:</p>
+            <ul className="space-y-2 list-disc list-inside">
+              <li><span className="text-white/90">The photo is sent to OpenAI</span> for the Vision analysis that produces the estimate. We do not use your photos to train any model, and OpenAI&rsquo;s API terms state the same.</li>
+              <li><span className="text-white/90">Uploaded photos are stored privately in our Supabase bucket</span> and automatically deleted after 7 days. EXIF / location metadata is stripped before the Vision call.</li>
+              <li><span className="text-white/90">Your email, if provided,</span> is used only to deliver the claim link for your estimate and to create your account if you sign up. We do not add you to any marketing list without your consent.</li>
+              <li><span className="text-white/90">Anonymous estimates</span> (no email provided) are kept for 30 days then purged.</li>
+              <li><span className="text-white/90">Your IP address</span> is recorded against each upload strictly for abuse prevention and rate-limiting.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-white font-semibold text-lg mb-3">10. Children's Privacy</h2>
             <p>FenceEstimatePro is a business tool intended for adults. We do not knowingly collect data from anyone under 18. If you believe a minor has created an account, contact us immediately.</p>
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">10. Changes to This Policy</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">11. Changes to This Policy</h2>
             <p>We may update this Privacy Policy. Material changes will be communicated via email or in-app notification at least 7 days before taking effect.</p>
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">11. Contact</h2>
+            <h2 className="text-white font-semibold text-lg mb-3">12. Contact</h2>
             <p>Privacy questions: <a href="mailto:privacy@fenceestimatepro.com" className="text-fence-400 hover:text-fence-300">privacy@fenceestimatepro.com</a><br/>
             General: <a href="mailto:support@fenceestimatepro.com" className="text-fence-400 hover:text-fence-300">support@fenceestimatepro.com</a><br/>
             Pearl Ventures · Ocala, Florida</p>

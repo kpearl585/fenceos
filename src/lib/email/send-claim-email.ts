@@ -62,6 +62,8 @@ export async function sendClaimEmail(input: SendClaimEmailInput): Promise<void> 
                 </p>
 
                 <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">Or copy this link: <span style="color:#2563eb;word-break:break-all;">${claimUrl}</span></p>
+
+                <p style="margin:20px 0 0;padding:12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#78350f;"><strong>This is an AI estimate from a photo, not a contract price.</strong> Always walk the site and measure before bidding a real job. Measurements are model-generated and may be wrong.</p>
               </td>
             </tr>
             <tr>

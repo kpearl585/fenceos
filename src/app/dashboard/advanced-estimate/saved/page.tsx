@@ -21,7 +21,7 @@ export default async function SavedAdvancedEstimatesPage() {
 
   const { data: estimates } = await admin
     .from("fence_graphs")
-    .select("id, name, total_lf, total_cost, status, closed_at, closeout_actual_waste_pct, created_at, input_json")
+    .select("id, name, total_lf, total_cost, status, closed_at, closeout_actual_waste_pct, created_at, input_json, source_photo_storage_path")
     .eq("org_id", profile.org_id)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -85,12 +85,24 @@ export default async function SavedAdvancedEstimatesPage() {
               {openEstimates.map((est) => {
                 const input = est.input_json as { fenceType?: string; productLineId?: string } | null;
                 const fenceType = input?.fenceType ?? "vinyl";
+                const fromPhoto = Boolean((est as { source_photo_storage_path?: string | null }).source_photo_storage_path);
                 return (
                   <Link key={est.id} href={`/dashboard/advanced-estimate/${est.id}`}
                     className="block bg-white rounded-xl border border-gray-200 hover:border-fence-400 hover:shadow-sm transition-all px-5 py-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-semibold text-fence-900">{est.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-fence-900">{est.name}</p>
+                          {fromPhoto && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-fence-50 border border-fence-200 px-2 py-0.5 text-[10px] font-medium text-fence-700 uppercase tracking-wide">
+                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l3-3h3l2-2h4l2 2h3l3 3v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                              </svg>
+                              From photo
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-400 mt-0.5 capitalize">
                           {fenceType.replace("_", " ")} · {est.total_lf ?? "—"} LF · {new Date(est.created_at).toLocaleDateString()}
                         </p>
