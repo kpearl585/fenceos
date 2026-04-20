@@ -96,7 +96,9 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
   const handleSave = useCallback(async () => {
     if (!result) return;
     setSaveStatus("saving");
-    const res = await saveAdvancedEstimate(input, result, projectName, laborRate, wastePct / 100);
+    const res = await saveAdvancedEstimate(
+      input, result, projectName, laborRate, wastePct / 100, markupPct,
+    );
     if (isPaywallBlock(res)) {
       setPaywallBlock(res);
       setSaveStatus("idle");
@@ -104,7 +106,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
     }
     setSaveStatus(res.success ? "saved" : "error");
     setTimeout(() => setSaveStatus("idle"), STATUS_RESET_MS);
-  }, [input, result, projectName, laborRate, wastePct]);
+  }, [input, result, projectName, laborRate, wastePct, markupPct]);
 
   const handlePdfDownload = useCallback(async () => {
     if (!result) return;
