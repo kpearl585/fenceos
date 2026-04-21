@@ -5,6 +5,7 @@ import { countPanelsToBuy } from "../segmentation";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
 import { mergePrices } from "../pricing/defaultPrices";
 import { calculateAllGateCosts } from "../gatePricing";
+import { hingeDescription, latchDescription, postInsertDescription } from "./gateHardwareLabels";
 import type { OrgEstimatorConfig } from "../config/types";
 import { DEFAULT_ESTIMATOR_CONFIG } from "../config/defaults";
 
@@ -213,14 +214,22 @@ export function generateVinylBom(
       // Hinges
       const hingeKey = hw.hingeSku;
       if (!gateSkuMap.has(hingeKey)) {
-        gateSkuMap.set(hingeKey, { qty: 0, desc: "Heavy Duty Hinge (pair)", unitCost: hw.hingeUnitPrice });
+        gateSkuMap.set(hingeKey, {
+          qty: 0,
+          desc: hingeDescription(hw.hingeSku, "Heavy Duty Hinge (pair)"),
+          unitCost: hw.hingeUnitPrice,
+        });
       }
       gateSkuMap.get(hingeKey)!.qty += hw.hingeQty;
 
       // Latch
       const latchKey = hw.latchSku;
       if (!gateSkuMap.has(latchKey)) {
-        gateSkuMap.set(latchKey, { qty: 0, desc: hw.latchSku === "GATE_LATCH_POOL" ? "Pool-Code Self-Closing Latch" : "Gate Latch", unitCost: hw.latchUnitPrice });
+        gateSkuMap.set(latchKey, {
+          qty: 0,
+          desc: latchDescription(hw.latchSku, "Gate Latch"),
+          unitCost: hw.latchUnitPrice,
+        });
       }
       gateSkuMap.get(latchKey)!.qty += hw.latchQty;
 
@@ -249,6 +258,21 @@ export function generateVinylBom(
           gateSkuMap.set(springKey, { qty: 0, desc: "Spring Closer (pool code)", unitCost: hw.springCloserUnitPrice! });
         }
         gateSkuMap.get(springKey)!.qty += hw.springCloserQty;
+      }
+
+      // Post insert (contractor explicitly picked aluminum/steel for vinyl
+      // hinge post reinforcement). Vinyl-specific in practice but we
+      // honor the contractor's call regardless of fence type.
+      if (hw.postInsertSku && hw.postInsertQty) {
+        const insertKey = hw.postInsertSku;
+        if (!gateSkuMap.has(insertKey)) {
+          gateSkuMap.set(insertKey, {
+            qty: 0,
+            desc: postInsertDescription(hw.postInsertSku),
+            unitCost: hw.postInsertUnitPrice!,
+          });
+        }
+        gateSkuMap.get(insertKey)!.qty += hw.postInsertQty;
       }
 
       totalGateLaborHours += gateCost.laborHours;

@@ -12,6 +12,7 @@ import { calcTotalConcrete } from "../concrete";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
 import { mergePrices } from "../pricing/defaultPrices";
 import { calculateAllGateCosts } from "../gatePricing";
+import { hingeDescription, latchDescription, postInsertDescription } from "./gateHardwareLabels";
 import type { OrgEstimatorConfig } from "../config/types";
 import { DEFAULT_ESTIMATOR_CONFIG } from "../config/defaults";
 
@@ -163,15 +164,22 @@ export function generateChainLinkBom(
       // Hinges
       const hingeKey = hw.hingeSku;
       if (!gateSkuMap.has(hingeKey)) {
-        gateSkuMap.set(hingeKey, { qty: 0, desc: "Heavy Duty Hinge (pair)", unitCost: hw.hingeUnitPrice });
+        gateSkuMap.set(hingeKey, {
+          qty: 0,
+          desc: hingeDescription(hw.hingeSku, "Heavy Duty Hinge (pair)"),
+          unitCost: hw.hingeUnitPrice,
+        });
       }
       gateSkuMap.get(hingeKey)!.qty += hw.hingeQty;
 
       // Latch
       const latchKey = hw.latchSku;
       if (!gateSkuMap.has(latchKey)) {
-        const latchDesc = hw.latchSku === "GATE_LATCH_POOL" ? "Pool Gate Latch (self-closing)" : "Gate Latch";
-        gateSkuMap.set(latchKey, { qty: 0, desc: latchDesc, unitCost: hw.latchUnitPrice });
+        gateSkuMap.set(latchKey, {
+          qty: 0,
+          desc: latchDescription(hw.latchSku, "Gate Latch"),
+          unitCost: hw.latchUnitPrice,
+        });
       }
       gateSkuMap.get(latchKey)!.qty += hw.latchQty;
 
@@ -200,6 +208,19 @@ export function generateChainLinkBom(
           gateSkuMap.set(springKey, { qty: 0, desc: "Spring Closer (pool code)", unitCost: hw.springCloserUnitPrice! });
         }
         gateSkuMap.get(springKey)!.qty += hw.springCloserQty;
+      }
+
+      // Post insert (contractor-selected hinge-post reinforcement)
+      if (hw.postInsertSku && hw.postInsertQty) {
+        const insertKey = hw.postInsertSku;
+        if (!gateSkuMap.has(insertKey)) {
+          gateSkuMap.set(insertKey, {
+            qty: 0,
+            desc: postInsertDescription(hw.postInsertSku),
+            unitCost: hw.postInsertUnitPrice!,
+          });
+        }
+        gateSkuMap.get(insertKey)!.qty += hw.postInsertQty;
       }
 
       totalGateLaborHours += gateCost.laborHours;

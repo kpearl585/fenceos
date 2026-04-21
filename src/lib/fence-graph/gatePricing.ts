@@ -2,9 +2,36 @@
 // Deterministic gate cost modeling to eliminate variance
 // Replaces loose gate estimates with precise material + labor calculations
 
-import type { GateSpec } from "./types";
+import type {
+  GateSpec,
+  GateLatchType,
+  GateHingeType,
+  GatePostInsert,
+} from "./types";
 import type { OrgEstimatorConfig } from "./config/types";
 import { DEFAULT_ESTIMATOR_CONFIG } from "./config/defaults";
+
+// ── Hardware → SKU maps ──────────────────────────────────────────
+// Contractor selections on GateInput map to these SKUs. When the
+// contractor leaves a field unset, the engine falls back to existing
+// defaults below (HINGE_HD / GATE_LATCH / GATE_LATCH_POOL) so legacy
+// estimates keep pricing the same.
+const LATCH_SKU_BY_TYPE: Record<GateLatchType, string> = {
+  standard:   "GATE_LATCH",
+  lokk_latch: "LATCH_LOKK_LATCH",
+  magnetic:   "LATCH_MAGNETIC",
+  slide_bolt: "LATCH_SLIDE_BOLT",
+};
+const HINGE_SKU_BY_TYPE: Record<GateHingeType, string> = {
+  standard:     "HINGE_HD",
+  self_closing: "HINGE_SELF_CLOSING",
+};
+// Post-insert: "none" is explicit user choice meaning "no insert".
+// Undefined means "contractor didn't pick one" (also no insert).
+const POST_INSERT_SKU_BY_TYPE: Record<Exclude<GatePostInsert, "none">, string> = {
+  aluminum: "ALUM_INSERT",   // reuses existing general-hardware SKU
+  steel:    "STEEL_INSERT",
+};
 
 export interface GateHardware {
   gateSku: string;
@@ -25,6 +52,11 @@ export interface GateHardware {
   springCloserSku?: string;
   springCloserQty?: number;
   springCloserUnitPrice?: number;
+  // Post insert (reinforcing sleeve inside the hinge post — vinyl fences
+  // usually need this for heavy gates; contractor explicitly selects).
+  postInsertSku?: string;
+  postInsertQty?: number;
+  postInsertUnitPrice?: number;
 }
 
 export interface GateCost {
@@ -68,6 +100,16 @@ export function calculateGateCost(
     isPoolGate,
     priceMap,
     missingPriceSkus,
+    // Contractor-selected hardware from GateSpec (any may be undefined).
+    // hardwareColor is intentionally not passed through — color is
+    // metadata only in this PR (see README / PR #37). Different finish
+    // colors typically cost the same from major distributors; if that
+    // ever changes we can add color-aware SKU suffixes here.
+    {
+      hinges: gateSpec.hinges,
+      latch: gateSpec.latch,
+      postInsert: gateSpec.postInsert,
+    },
   );
 
   // Calculate material cost
@@ -149,6 +191,12 @@ function assembleGateHardware(
   isPoolGate: boolean | undefined,
   priceMap: Record<string, number>,
   missingPriceSkus: string[] = [],
+  // Contractor selections (all optional — undefined means "use engine default").
+  selections: {
+    hinges?: GateHingeType;
+    latch?: GateLatchType;
+    postInsert?: GatePostInsert;
+  } = {},
 ): GateHardware {
   // Nullish-coalesce so `undefined` is caught (missing) and `0` is preserved
   // (legitimate zero price — e.g. comped item). Missing SKUs are recorded
@@ -163,6 +211,22 @@ function assembleGateHardware(
     return v;
   };
 
+  // ── Hinge SKU ────────────────────────────────────────────────────
+  // Contractor selection wins. When unset, use HINGE_HD (engine default).
+  const hingeSku = selections.hinges
+    ? HINGE_SKU_BY_TYPE[selections.hinges]
+    : "HINGE_HD";
+
+  // ── Latch SKU ────────────────────────────────────────────────────
+  // Precedence: contractor's explicit `latch` wins. Only fall through
+  // to the pool default when contractor did NOT pick one. Previous
+  // behavior silently overrode contractor choice when isPoolGate=true,
+  // which confused contractors who intentionally specced a LokkLatch or
+  // magnetic latch on a pool gate. See PR #39 discussion.
+  const latchSku = selections.latch
+    ? LATCH_SKU_BY_TYPE[selections.latch]
+    : (isPoolGate ? "GATE_LATCH_POOL" : "GATE_LATCH");
+
   // Double-gate SKUs (GATE_*_DBL) are priced as one complete kit containing
   // both leaves. Single-gate SKUs are one leaf. Keeping gateQty at 1 for
   // doubles matches how the vendor invoices them and prevents the prior
@@ -172,17 +236,20 @@ function assembleGateHardware(
     gateQty: 1,
     gateUnitPrice: p(gateSku),
 
-    // Hinges: HINGE_HD is priced per pair.
-    // Single walk gate: 2 pairs (one top, one bottom — sag prevention on heavier gates).
+    // Hinges: priced per pair.
+    // Single walk gate: 2 pairs (top + bottom for sag prevention).
     // Double drive gate: 4 pairs (2 per leaf).
-    hingeSku: "HINGE_HD",
+    // Quantity stays fixed even when switching to self-closing hinges;
+    // revisiting quantity policy (Tru-Close is often installed at
+    // fewer pairs) is a separate engine debate, not a pricing one.
+    hingeSku,
     hingeQty: gateType === "double" ? 4 : 2,
-    hingeUnitPrice: p("HINGE_HD"),
+    hingeUnitPrice: p(hingeSku),
 
     // Latch
-    latchSku: isPoolGate ? "GATE_LATCH_POOL" : "GATE_LATCH",
+    latchSku,
     latchQty: 1, // 1 latch per gate
-    latchUnitPrice: p(isPoolGate ? "GATE_LATCH_POOL" : "GATE_LATCH"),
+    latchUnitPrice: p(latchSku),
 
     // Gate stops (pair)
     stopSku: "GATE_STOP",
@@ -197,11 +264,33 @@ function assembleGateHardware(
     hardware.dropRodUnitPrice = p("DROP_ROD");
   }
 
-  // Pool gates may need spring closer
-  if (isPoolGate) {
+  // ── Spring closer ───────────────────────────────────────────────
+  // Pool gates legally require a self-closing mechanism. Historically
+  // we've added a GATE_SPRING_CLOSER line to pool gates as a separate
+  // add-on. If the contractor explicitly picks self-closing hinges
+  // (HINGE_SELF_CLOSING — Tru-Close has the spring built in), skip the
+  // separate closer to avoid double-pricing.
+  const selfClosingHingesPicked = selections.hinges === "self_closing";
+  if (isPoolGate && !selfClosingHingesPicked) {
     hardware.springCloserSku = "GATE_SPRING_CLOSER";
     hardware.springCloserQty = 1;
     hardware.springCloserUnitPrice = p("GATE_SPRING_CLOSER");
+  }
+
+  // ── Post insert ──────────────────────────────────────────────────
+  // Contractor explicitly selects a reinforcing insert for the hinge
+  // post. Vinyl-specific in the real world (aluminum or steel 2x2
+  // sleeve inside a 5x5 vinyl hinge post for heavy gates); engine adds
+  // the line regardless of fence type — respect contractor's call.
+  // "none" means "explicitly no insert" (same effect as unselected).
+  if (
+    selections.postInsert &&
+    selections.postInsert !== "none"
+  ) {
+    const insertSku = POST_INSERT_SKU_BY_TYPE[selections.postInsert];
+    hardware.postInsertSku = insertSku;
+    hardware.postInsertQty = 1;
+    hardware.postInsertUnitPrice = p(insertSku);
   }
 
   return hardware;
@@ -227,6 +316,10 @@ function calculateGateMaterialCost(hardware: GateHardware): number {
 
   if (hardware.springCloserSku && hardware.springCloserQty && hardware.springCloserUnitPrice) {
     total += hardware.springCloserQty * hardware.springCloserUnitPrice;
+  }
+
+  if (hardware.postInsertSku && hardware.postInsertQty && hardware.postInsertUnitPrice) {
+    total += hardware.postInsertQty * hardware.postInsertUnitPrice;
   }
 
   return total;
@@ -295,6 +388,7 @@ function generateGateBreakdown(
   if (hardware.stopQty) parts.push(`1× stop`);
   if (hardware.dropRodQty) parts.push(`1× drop rod`);
   if (hardware.springCloserQty) parts.push(`1× spring closer`);
+  if (hardware.postInsertQty) parts.push(`1× ${hardware.postInsertSku?.toLowerCase().replace(/_/g, " ") ?? "post insert"}`);
 
   parts.push(`${laborHours}hrs labor`);
 
