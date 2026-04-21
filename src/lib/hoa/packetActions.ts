@@ -165,7 +165,7 @@ export async function generateHoaPacket(input: unknown): Promise<{
       },
     };
 
-    const pdfBytes = await buildHoaPacketPdf(coverData, certBytes);
+    const pdfBytes = await buildHoaPacketPdf(coverData, estimateInput, certBytes);
     const safeName = (estimate.name || "fence-project")
       .replace(/[^a-z0-9\-_]+/gi, "-")
       .slice(0, 60)
