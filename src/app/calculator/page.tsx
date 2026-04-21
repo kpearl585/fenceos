@@ -31,15 +31,20 @@ export default function CalculatorPage() {
   return (
     <>
       <SiteNav />
-      <main className="bg-gradient-to-br from-fence-950 via-fence-900 to-fence-800 min-h-screen text-white pt-16">
+      <main className="relative bg-background min-h-screen text-text pt-16 overflow-hidden">
+        {/* Ambient grid + glow */}
+        <div className="pointer-events-none absolute inset-0 grid-pattern opacity-40" />
+        <div className="pointer-events-none absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-accent/10 rounded-full blur-3xl" />
+
         {/* Header */}
-        <section className="px-6 py-16 text-center">
-          <div className="inline-flex items-center gap-2 bg-fence-700/50 border border-fence-600/50 rounded-full px-4 py-1.5 mb-6">
-            <span className="text-xs font-semibold text-fence-200 uppercase tracking-wide">Free Fence Cost Calculator</span>
+        <section className="relative px-6 py-16 text-center">
+          <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/30 rounded-full px-4 py-1.5 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-light animate-pulse" />
+            <span className="text-xs font-semibold text-accent-light uppercase tracking-wider">Free Fence Cost Calculator</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Estimate Your Fence Cost in 60 Seconds</h1>
-          <p className="mt-4 text-lg text-fence-200 max-w-xl mx-auto">
-            Get a ballpark before you call a contractor — or use it to check if your quote is fair.
+          <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-text">Estimate Your Fence Cost in 60 Seconds</h1>
+          <p className="mt-4 text-lg text-muted max-w-xl mx-auto">
+            Get a ballpark before you call a contractor &mdash; or use it to check if your quote is fair.
           </p>
         </section>
         <CalculatorClient />

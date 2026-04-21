@@ -114,32 +114,32 @@ const HELP_ARTICLES = [
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-fence-950">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-white/10 bg-fence-900">
+      <div className="border-b border-border bg-surface">
         <div className="max-w-5xl mx-auto px-6 py-8">
-          <Link href="/" className="flex items-center gap-2 mb-6 text-white/60 hover:text-white transition-colors">
+          <Link href="/" className="flex items-center gap-2 mb-6 text-muted hover:text-text transition-colors duration-150">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             <span className="text-sm">Back to Home</span>
           </Link>
 
-          <h1 className="text-4xl font-bold text-white mb-3">Help Center</h1>
-          <p className="text-lg text-white/70">
+          <h1 className="font-display text-4xl font-bold text-text mb-3">Help Center</h1>
+          <p className="text-lg text-muted">
             Everything you need to know about FenceEstimatePro
           </p>
 
           {/* Search (placeholder for now) */}
           <div className="mt-8">
             <div className="relative">
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="search"
                 placeholder="Search help articles..."
-                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-fence-500"
+                className="w-full pl-12 pr-4 py-3 border border-border bg-surface-3 text-text rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
               />
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function HelpPage() {
             <div key={section.category}>
               <div className="flex items-center gap-3 mb-6">
                 <span className="text-3xl">{section.icon}</span>
-                <h2 className="text-2xl font-bold text-white">{section.category}</h2>
+                <h2 className="font-display text-2xl font-bold text-text">{section.category}</h2>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -161,17 +161,17 @@ export default function HelpPage() {
                   <Link
                     key={article.href}
                     href={article.href}
-                    className="group p-6 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-fence-500/50 transition-all"
+                    className="group p-6 bg-surface-2 border border-border rounded-xl hover:bg-surface-3 hover:border-accent/40 transition-all duration-150"
                   >
-                    <h3 className="text-lg font-semibold text-white group-hover:text-fence-400 transition-colors mb-2">
+                    <h3 className="text-lg font-semibold text-text group-hover:text-accent-light transition-colors duration-150 mb-2">
                       {article.title}
                     </h3>
-                    <p className="text-sm text-white/60 mb-3">
+                    <p className="text-sm text-muted mb-3">
                       {article.description}
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/40">{article.time}</span>
-                      <svg className="w-4 h-4 text-fence-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span className="text-xs text-muted/70">{article.time}</span>
+                      <svg className="w-4 h-4 text-accent opacity-0 group-hover:opacity-100 transition-opacity duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -183,17 +183,17 @@ export default function HelpPage() {
         </div>
 
         {/* Contact Support */}
-        <div className="mt-16 p-8 bg-fence-500/10 border border-fence-500/20 rounded-xl">
+        <div className="mt-16 p-8 bg-accent/10 border border-accent/30 rounded-xl accent-glow">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <h3 className="text-xl font-bold text-white mb-2">Still need help?</h3>
-              <p className="text-white/70">
+              <h3 className="font-display text-xl font-bold text-text mb-2">Still need help?</h3>
+              <p className="text-muted">
                 Our support team is here to help you get the most out of FenceEstimatePro
               </p>
             </div>
             <a
               href="mailto:support@fenceestimatepro.com"
-              className="bg-fence-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-fence-700 transition-colors whitespace-nowrap"
+              className="bg-accent hover:bg-accent-light text-background px-6 py-3 rounded-lg font-semibold transition-colors duration-150 whitespace-nowrap"
             >
               Contact Support
             </a>

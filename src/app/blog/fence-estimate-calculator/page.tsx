@@ -29,21 +29,21 @@ export const metadata: Metadata = {
 export default function ArticlePage() {
   return (
     <main>
-      <section className="bg-gradient-to-br from-fence-950 via-fence-900 to-fence-800 text-white px-6 py-16">
+      <section className="bg-background text-text relative overflow-hidden border-b border-border px-6 py-16">
         <div className="max-w-3xl mx-auto">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 text-fence-300 hover:text-white text-sm mb-8 transition-colors"
+            className="inline-flex items-center gap-2 text-muted hover:text-text text-sm mb-8 transition-colors duration-150"
           >
             &larr; Back to Blog
           </Link>
-          <span className="inline-block bg-green-500/20 text-green-300 text-xs font-bold px-3 py-1 rounded-full mb-4">
+          <span className="inline-block bg-accent/10 text-accent-light border border-accent/20 text-xs font-bold px-3 py-1 rounded-full mb-4">
             Estimating
           </span>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight text-text">
             Free Fence Estimate Calculator: How the Math Actually Works
           </h1>
-          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-fence-300">
+          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted">
             <span>March 4, 2026</span>
             <span>&middot;</span>
             <span>6 min read</span>
