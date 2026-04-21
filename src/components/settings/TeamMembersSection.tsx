@@ -18,9 +18,9 @@ type Props = {
 }
 
 const ROLE_BADGE: Record<string, string> = {
-  owner: 'bg-green-100 text-green-700',
-  sales: 'bg-blue-100 text-blue-700',
-  foreman: 'bg-amber-100 text-amber-700',
+  owner: 'bg-accent/15 text-accent-light',
+  sales: 'bg-surface-3 text-muted',
+  foreman: 'bg-warning/15 text-warning',
 }
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
@@ -69,35 +69,35 @@ export default function TeamMembersSection({ members, orgId, currentUserId }: Pr
       <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
         {Object.entries(ROLE_DESCRIPTIONS).map(([role, desc]) => (
           <div key={role} className="flex items-start gap-2">
-            <span className={`mt-0.5 shrink-0 px-2 py-0.5 rounded text-xs font-semibold ${ROLE_BADGE[role]}`}>
+            <span className={`mt-0.5 shrink-0 px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${ROLE_BADGE[role]}`}>
               {role}
             </span>
-            <span className="text-xs text-gray-500">{desc}</span>
+            <span className="text-xs text-muted">{desc}</span>
           </div>
         ))}
       </div>
 
       {members.length === 0 ? (
-        <p className="text-sm text-gray-400 mb-4">No team members yet.</p>
+        <p className="text-sm text-muted mb-4">No team members yet.</p>
       ) : (
         <table className="w-full text-sm mb-6">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-2 font-semibold text-gray-600">Name</th>
-              <th className="text-left py-2 font-semibold text-gray-600">Email</th>
-              <th className="text-left py-2 font-semibold text-gray-600">Role</th>
-              <th className="text-left py-2 font-semibold text-gray-600">Joined</th>
+            <tr className="border-b border-border text-xs uppercase tracking-wider">
+              <th className="text-left py-2 font-semibold text-muted">Name</th>
+              <th className="text-left py-2 font-semibold text-muted">Email</th>
+              <th className="text-left py-2 font-semibold text-muted">Role</th>
+              <th className="text-left py-2 font-semibold text-muted">Joined</th>
               <th className="py-2" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {members.map((m) => (
               <tr key={m.id}>
-                <td className="py-2 font-medium">{m.full_name || '—'}</td>
-                <td className="py-2 text-gray-600">{m.email}</td>
+                <td className="py-2 font-medium text-text">{m.full_name || '\u2014'}</td>
+                <td className="py-2 text-muted">{m.email}</td>
                 <td className="py-2">
                   {m.role === 'owner' ? (
-                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${ROLE_BADGE.owner}`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${ROLE_BADGE.owner}`}>
                       owner
                     </span>
                   ) : (
@@ -105,14 +105,14 @@ export default function TeamMembersSection({ members, orgId, currentUserId }: Pr
                       defaultValue={m.role}
                       disabled={isPending}
                       onChange={(e) => handleRoleChange(m.id, e.target.value as 'sales' | 'foreman')}
-                      className="text-xs font-semibold px-2 py-0.5 rounded border border-gray-200 bg-white"
+                      className="text-xs font-semibold px-2 py-0.5 rounded border border-border bg-surface-3 text-text focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                     >
                       <option value="sales">sales</option>
                       <option value="foreman">foreman</option>
                     </select>
                   )}
                 </td>
-                <td className="py-2 text-gray-400 text-xs">
+                <td className="py-2 text-muted text-xs">
                   {new Date(m.created_at).toLocaleDateString()}
                 </td>
                 <td className="py-2 text-right">
@@ -120,7 +120,7 @@ export default function TeamMembersSection({ members, orgId, currentUserId }: Pr
                     <button
                       onClick={() => handleRemove(m.id)}
                       disabled={isPending}
-                      className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50"
+                      className="text-xs text-danger hover:text-danger/80 font-medium disabled:opacity-50 transition-colors duration-150"
                     >
                       Remove
                     </button>
@@ -132,10 +132,10 @@ export default function TeamMembersSection({ members, orgId, currentUserId }: Pr
         </table>
       )}
 
-      <div className="border-t border-gray-200 pt-4">
-        <h3 className="text-sm font-semibold text-fence-900 mb-3">Invite Team Member</h3>
+      <div className="border-t border-border pt-4">
+        <h3 className="text-sm font-semibold text-text mb-3">Invite Team Member</h3>
         {message && (
-          <div className={`mb-3 p-3 rounded-lg text-sm font-medium ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+          <div className={`mb-3 p-3 rounded-lg text-sm font-medium ${message.type === 'error' ? 'bg-danger/10 text-danger border border-danger/30' : 'bg-accent/10 text-accent-light border border-accent/30'}`}>
             {message.type === 'error' ? ' ' : ' '}{message.text}
           </div>
         )}
@@ -146,12 +146,12 @@ export default function TeamMembersSection({ members, orgId, currentUserId }: Pr
             placeholder="colleague@example.com"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+            className="flex-1 border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
           />
           <select
             value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value as 'sales' | 'foreman')}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+            className="border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
           >
             <option value="foreman">Foreman</option>
             <option value="sales">Sales</option>
@@ -159,9 +159,9 @@ export default function TeamMembersSection({ members, orgId, currentUserId }: Pr
           <button
             type="submit"
             disabled={isPending}
-            className="bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 disabled:opacity-50 whitespace-nowrap"
+            className="bg-accent hover:bg-accent-light accent-glow text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:opacity-50 whitespace-nowrap"
           >
-            {isPending ? 'Sending…' : 'Send Invite'}
+            {isPending ? 'Sending\u2026' : 'Send Invite'}
           </button>
         </form>
       </div>

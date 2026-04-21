@@ -127,20 +127,20 @@ export default function InsuranceCertUpload({ orgId, existing }: InsuranceCertUp
   return (
     <div className="space-y-3">
       {current ? (
-        <div className="flex items-start justify-between gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex items-start justify-between gap-4 p-4 bg-surface-3 rounded-lg border border-border">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <svg className="w-5 h-5 text-danger shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
               </svg>
-              <p className="text-sm font-medium text-gray-900 truncate">{current.filename}</p>
+              <p className="text-sm font-medium text-text truncate">{current.filename}</p>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {formatSize(current.fileSizeBytes)} · Uploaded {formatDate(current.uploadedAt)}
+            <p className="text-xs text-muted mt-1">
+              {formatSize(current.fileSizeBytes)} &middot; Uploaded {formatDate(current.uploadedAt)}
               {current.expiresAt && (
                 <>
-                  {" · "}
-                  <span className={expired ? "text-red-600 font-medium" : expiringSoon ? "text-amber-600 font-medium" : ""}>
+                  {" \u00b7 "}
+                  <span className={expired ? "text-danger font-medium" : expiringSoon ? "text-warning font-medium" : ""}>
                     {expired ? "Expired " : "Expires "}
                     {formatDate(current.expiresAt)}
                   </span>
@@ -153,7 +153,7 @@ export default function InsuranceCertUpload({ orgId, existing }: InsuranceCertUp
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="text-xs font-semibold text-fence-700 border border-fence-300 hover:bg-fence-50 px-3 py-1.5 rounded-md disabled:opacity-50"
+              className="text-xs font-semibold text-accent-light border border-accent/30 hover:bg-accent/10 px-3 py-1.5 rounded-md transition-colors duration-150 disabled:opacity-50"
             >
               Replace
             </button>
@@ -161,7 +161,7 @@ export default function InsuranceCertUpload({ orgId, existing }: InsuranceCertUp
               type="button"
               onClick={handleRemove}
               disabled={uploading}
-              className="text-xs font-semibold text-red-600 border border-red-300 hover:bg-red-50 px-3 py-1.5 rounded-md disabled:opacity-50"
+              className="text-xs font-semibold text-danger border border-danger/30 hover:bg-danger/10 px-3 py-1.5 rounded-md transition-colors duration-150 disabled:opacity-50"
             >
               Remove
             </button>
@@ -172,31 +172,31 @@ export default function InsuranceCertUpload({ orgId, existing }: InsuranceCertUp
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="w-full border-2 border-dashed border-gray-300 hover:border-fence-400 hover:bg-fence-50 rounded-lg p-6 text-center transition-colors disabled:opacity-50"
+          className="w-full border-2 border-dashed border-border hover:border-accent/60 bg-surface-3 rounded-lg p-6 text-center transition-colors duration-150 disabled:opacity-50"
         >
-          <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+          <svg className="w-8 h-8 text-muted mx-auto mb-2" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
-          <p className="text-sm font-medium text-gray-700">
-            {uploading ? "Uploading…" : "Upload insurance certificate (PDF)"}
+          <p className="text-sm font-medium text-text">
+            {uploading ? "Uploading\u2026" : "Upload insurance certificate (PDF)"}
           </p>
-          <p className="text-xs text-gray-400 mt-1">Max {MAX_SIZE_MB}MB</p>
+          <p className="text-xs text-muted mt-1">Max {MAX_SIZE_MB}MB</p>
         </button>
       )}
 
       {!current && (
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Expiration date <span className="text-gray-400 font-normal">(optional)</span>
+          <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+            Expiration date <span className="text-muted font-normal normal-case tracking-normal">(optional)</span>
           </label>
           <input
             type="date"
             value={expiresAt}
             onChange={(e) => setExpiresAt(e.target.value)}
             disabled={uploading}
-            className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-fence-500 focus:outline-none disabled:opacity-50"
+            className="w-full max-w-xs border border-border bg-surface-3 text-text rounded-md px-3 py-1.5 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150 disabled:opacity-50"
           />
-          <p className="text-xs text-gray-400 mt-1">We&rsquo;ll warn you 30 days before it expires.</p>
+          <p className="text-xs text-muted mt-1">We&rsquo;ll warn you 30 days before it expires.</p>
         </div>
       )}
 
@@ -210,17 +210,17 @@ export default function InsuranceCertUpload({ orgId, existing }: InsuranceCertUp
       />
 
       {error && (
-        <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>
+        <p className="text-xs text-danger bg-danger/10 border border-danger/30 rounded-md px-3 py-2">{error}</p>
       )}
 
       {expired && current && (
-        <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+        <p className="text-xs text-danger bg-danger/10 border border-danger/30 rounded-md px-3 py-2">
           This certificate has expired. Replace it before generating new HOA packets.
         </p>
       )}
       {expiringSoon && !expired && current && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-          Heads up — this certificate expires in {expDays} day{expDays === 1 ? "" : "s"}. Request a renewal from your insurer.
+        <p className="text-xs text-warning bg-warning/10 border border-warning/30 rounded-md px-3 py-2">
+          Heads up &mdash; this certificate expires in {expDays} day{expDays === 1 ? "" : "s"}. Request a renewal from your insurer.
         </p>
       )}
     </div>

@@ -7,6 +7,18 @@ import type { DeepPartial } from "@/lib/fence-graph/config/types";
 import { DEFAULT_ESTIMATOR_CONFIG } from "@/lib/fence-graph/config/defaults";
 import { saveEstimatorConfig, resetEstimatorConfig } from "./actions";
 
+// Shared dark-polish class patterns. Extracted so every input/label
+// across the ~20 sections of this screen reads the same on dark.
+const INPUT_CLASS =
+  "w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+const NUM_INPUT_CLASS =
+  "w-28 border border-border bg-surface-3 text-text rounded-lg px-3 py-1.5 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+const LABEL_CLASS =
+  "block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider";
+// Tab-style pill, shared between Essentials pill and the advanced sub-nav.
+const TAB_ACTIVE = "bg-accent text-white";
+const TAB_IDLE = "text-muted hover:text-text hover:bg-surface-3";
+
 const REGION_OPTIONS = [
   { value: "base", label: "Base (National Average)" },
   { value: "northeast", label: "Northeast (+15%)" },
@@ -129,7 +141,7 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
   ) {
     return (
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+        <label className={LABEL_CLASS}>{label}</label>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -138,11 +150,11 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
             step={opts.step ?? 0.01}
             value={value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="w-28 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+            className={NUM_INPUT_CLASS}
           />
-          {opts.unit && <span className="text-xs text-gray-400">{opts.unit}</span>}
+          {opts.unit && <span className="text-xs text-muted">{opts.unit}</span>}
         </div>
-        {opts.help && <p className="text-xs text-gray-400 mt-0.5">{opts.help}</p>}
+        {opts.help && <p className="text-xs text-muted mt-0.5">{opts.help}</p>}
       </div>
     );
   }
@@ -239,14 +251,12 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
   return (
     <div className="space-y-4">
       {/* Section nav — two-level: Essentials pill + Advanced disclosure */}
-      <div className="bg-white rounded-xl border border-gray-200 p-2">
+      <div className="bg-surface-2 rounded-xl border border-border p-2">
         <div className="flex items-center gap-1 flex-wrap">
           <button
             onClick={() => setActiveSection("essentials")}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              activeSection === "essentials"
-                ? "bg-fence-600 text-white"
-                : "text-gray-500 hover:text-fence-700 hover:bg-gray-50"
+            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-150 ${
+              activeSection === "essentials" ? TAB_ACTIVE : TAB_IDLE
             }`}
           >
             Essentials
@@ -254,7 +264,7 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
           <button
             onClick={toggleAdvanced}
             aria-expanded={showAdvanced}
-            className="ml-auto px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-fence-700 flex items-center gap-1.5"
+            className="ml-auto px-3 py-1.5 text-xs font-semibold text-muted hover:text-accent-light flex items-center gap-1.5 transition-colors duration-150"
           >
             <svg
               className={`w-3 h-3 transition-transform ${showAdvanced ? "rotate-90" : ""}`}
@@ -270,15 +280,15 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
           </button>
         </div>
         {showAdvanced && (
-          <div className="mt-2 pt-2 border-t border-gray-100 flex flex-wrap gap-1">
+          <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-1">
             {advancedSections.map(s => (
               <button
                 key={s.id}
                 onClick={() => setActiveSection(s.id)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-150 ${
                   activeSection === s.id
-                    ? "bg-fence-100 text-fence-700 border border-fence-200"
-                    : "text-gray-500 hover:text-fence-700 hover:bg-gray-50"
+                    ? "bg-accent/15 text-accent-light border border-accent/30"
+                    : TAB_IDLE
                 }`}
               >
                 {s.label}
@@ -289,28 +299,28 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
       </div>
 
       {/* Content */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-surface-2 rounded-xl border border-border p-6">
 
         {/* ── ESSENTIALS ── */}
         {activeSection === "essentials" && (
           <div>
-            <h2 className="text-lg font-semibold text-fence-900 mb-1">Essentials</h2>
-            <p className="text-sm text-gray-500 mb-6">
+            <h2 className="font-display text-lg font-semibold text-text mb-1">Essentials</h2>
+            <p className="text-sm text-muted mb-6">
               The few settings most contractors actually set. The engine uses industry defaults for everything else &mdash; open
-              <span className="font-medium"> Show advanced settings</span> above only if you need to change crew labor hours, concrete math, gate multipliers, and similar internals.
+              <span className="font-medium text-text"> Show advanced settings</span> above only if you need to change crew labor hours, concrete math, gate multipliers, and similar internals.
             </p>
 
             <div className="space-y-4">
               {/* Region */}
-              <div className="bg-fence-50 border border-fence-200 rounded-xl p-5">
-                <label className="block font-semibold text-fence-900 mb-1">Where do you work?</label>
-                <p className="text-sm text-gray-600 mb-3">
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-5">
+                <label className="block font-semibold text-text mb-1">Where do you work?</label>
+                <p className="text-sm text-muted mb-3">
                   We adjust labor and material averages based on your region.
                 </p>
                 <select
                   value={config.region.key}
                   onChange={(e) => update("region", { ...config.region, key: e.target.value })}
-                  className="w-full max-w-md bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                  className="w-full max-w-md border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                 >
                   {REGION_OPTIONS.map(r => (
                     <option key={r.value} value={r.value}>{r.label}</option>
@@ -319,9 +329,9 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
               </div>
 
               {/* Waste */}
-              <div className="bg-fence-50 border border-fence-200 rounded-xl p-5">
-                <label className="block font-semibold text-fence-900 mb-1">Default material waste</label>
-                <p className="text-sm text-gray-600 mb-3">
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-5">
+                <label className="block font-semibold text-text mb-1">Default material waste</label>
+                <p className="text-sm text-muted mb-3">
                   Extra material ordered beyond what the plan calls for &mdash; cut scrap, broken pickets, spare posts. 5% is the industry norm for a seasoned crew. We&rsquo;ll also learn from your closed jobs and adjust this over time.
                 </p>
                 <div className="flex items-center gap-2">
@@ -332,17 +342,17 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
                     step={0.5}
                     value={Math.round(config.waste.defaultPct * 1000) / 10}
                     onChange={(e) => update("waste", { defaultPct: Number(e.target.value) / 100 })}
-                    className="w-28 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                    className={NUM_INPUT_CLASS}
                     aria-label="Default material waste percentage"
                   />
-                  <span className="text-sm text-gray-500">percent</span>
+                  <span className="text-sm text-muted">percent</span>
                 </div>
               </div>
 
               {/* Hours per day */}
-              <div className="bg-fence-50 border border-fence-200 rounded-xl p-5">
-                <label className="block font-semibold text-fence-900 mb-1">Crew hours per work day</label>
-                <p className="text-sm text-gray-600 mb-3">
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-5">
+                <label className="block font-semibold text-text mb-1">Crew hours per work day</label>
+                <p className="text-sm text-muted mb-3">
                   How many hands-on install hours your crew puts in per day (not counting travel or lunch). Most residential crews run 6&ndash;8 productive hours.
                 </p>
                 <div className="flex items-center gap-2">
@@ -353,16 +363,16 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
                     step={0.5}
                     value={config.production.hoursPerDay}
                     onChange={(e) => update("production", { hoursPerDay: Number(e.target.value) })}
-                    className="w-28 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                    className={NUM_INPUT_CLASS}
                     aria-label="Crew hours per work day"
                   />
-                  <span className="text-sm text-gray-500">hours</span>
+                  <span className="text-sm text-muted">hours</span>
                 </div>
               </div>
             </div>
 
             {/* Pointer to main Settings for labor rate + target margin */}
-            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
+            <div className="mt-6 bg-warning/10 border border-warning/30 rounded-lg p-4 text-sm text-warning">
               <span className="font-semibold">Looking for labor rate or target margin?</span>{" "}
               Those live on the main{" "}
               <Link href="/dashboard/settings" className="underline font-medium">Settings page</Link>{" "}
@@ -375,9 +385,9 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── CREW LABOR HOURS ── */}
         {activeSection === "labor" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Crew speed</h2>
-            <p className="text-sm text-gray-500 mb-5">
-              How fast is your crew for each fence type? The defaults match a seasoned two-person residential crew. Pick <span className="font-medium">Slower</span> or <span className="font-medium">Faster</span> if your crew runs meaningfully off the average &mdash; we scale the whole install timeline behind the scenes.
+            <h2 className="font-display font-semibold text-text mb-1">Crew speed</h2>
+            <p className="text-sm text-muted mb-5">
+              How fast is your crew for each fence type? The defaults match a seasoned two-person residential crew. Pick <span className="font-medium text-text">Slower</span> or <span className="font-medium text-text">Faster</span> if your crew runs meaningfully off the average &mdash; we scale the whole install timeline behind the scenes.
             </p>
 
             <div className="space-y-2">
@@ -399,11 +409,11 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
                 };
 
                 return (
-                  <div key={ft} className="rounded-xl border border-gray-200 p-4">
+                  <div key={ft} className="rounded-xl border border-border bg-surface-3 p-4">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div>
-                        <p className="font-semibold text-gray-900">{FENCE_TYPE_COPY[ft].label}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="font-semibold text-text">{FENCE_TYPE_COPY[ft].label}</p>
+                        <p className="text-xs text-muted mt-0.5">
                           {currentPreset === "custom"
                             ? "Custom per-activity hours set — pick a preset to reset, or scroll down to tweak individually."
                             : SPEED_COPY[currentPreset].blurb}
@@ -419,10 +429,10 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
                               role="radio"
                               aria-checked={active}
                               onClick={() => applyPreset(opt)}
-                              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${
+                              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-150 border ${
                                 active
-                                  ? "bg-fence-600 text-white border-fence-600"
-                                  : "bg-white text-gray-600 border-gray-200 hover:border-fence-400 hover:text-fence-700"
+                                  ? "bg-accent text-white border-accent"
+                                  : "bg-surface-2 text-muted border-border hover:border-accent/50 hover:text-text"
                               }`}
                             >
                               {SPEED_COPY[opt].label}
@@ -442,7 +452,7 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
                 type="button"
                 onClick={() => setShowPerActivity((v) => !v)}
                 aria-expanded={showPerActivity}
-                className="text-xs font-semibold text-gray-500 hover:text-fence-700 flex items-center gap-1.5"
+                className="text-xs font-semibold text-muted hover:text-accent-light flex items-center gap-1.5 transition-colors duration-150"
               >
                 <svg
                   className={`w-3 h-3 transition-transform ${showPerActivity ? "rotate-90" : ""}`}
@@ -458,13 +468,13 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
               </button>
 
               {showPerActivity && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 mb-4">
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs text-muted mb-4">
                     Edit the underlying labor hours per activity. Useful if your crew is unusually fast at one task but slow at another. Changes here pull the fence type out of any preset and into &quot;Custom.&quot;
                   </p>
                   {(["vinyl", "wood", "chain_link", "aluminum"] as const).map(ft => (
                     <div key={ft} className="mb-6">
-                      <h3 className="text-sm font-bold text-gray-700 mb-2 capitalize">{ft.replace("_", " ")}</h3>
+                      <h3 className="text-sm font-bold text-text mb-2 capitalize">{ft.replace("_", " ")}</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {Object.entries(config.labor[ft]).map(([key, val]) => {
                           const copy = LABOR_ACTIVITY_COPY[key] ?? {
@@ -488,7 +498,7 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
               )}
             </div>
 
-            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+            <div className="mt-6 bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
               <span className="font-semibold">Waste % and crew hours per day</span> moved to <span className="font-semibold">Essentials</span> above &mdash; most contractors want those at their fingertips.
             </div>
           </div>
@@ -497,8 +507,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── JOB OVERHEAD ── */}
         {activeSection === "overhead" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Job overhead</h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <h2 className="font-display font-semibold text-text mb-1">Job overhead</h2>
+            <p className="text-sm text-muted mb-4">
               The non-install hours every job eats no matter what: getting set up, laying out the run, cleaning up at the end. The engine adds these to every estimate so you don&rsquo;t bid the hands-on hours and eat the rest.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -521,8 +531,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── CONCRETE ── */}
         {activeSection === "concrete" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Concrete</h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <h2 className="font-display font-semibold text-text mb-1">Concrete</h2>
+            <p className="text-sm text-muted mb-4">
               How the engine figures out how many bags of concrete and gravel to order per post, and how deep the posts go on sandy or wet soil. These are physics-driven industry standards &mdash; most contractors never need to touch them.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -545,8 +555,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── MATERIAL ASSUMPTIONS ── */}
         {activeSection === "material" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Material assumptions</h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <h2 className="font-display font-semibold text-text mb-1">Material assumptions</h2>
+            <p className="text-sm text-muted mb-4">
               Spacing and sizing numbers the engine uses to figure out how many pickets, boards, rails, and fasteners to order. These are industry standards &mdash; only change them if your supplier ships unusual stock or you run a non-standard spacing.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -581,12 +591,12 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── GATES ── */}
         {activeSection === "gates" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Gates</h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <h2 className="font-display font-semibold text-text mb-1">Gates</h2>
+            <p className="text-sm text-muted mb-4">
               How the engine prices gates. Base install hours, extra time for wider gates, hinge and latch clearances, and the pool-code bump. Defaults reflect average residential gate work.
             </p>
 
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Base install hours</h3>
+            <h3 className="text-sm font-bold text-text mb-2">Base install hours</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
               {numField("Hours to install a single gate", config.gateLaborBase.single,
                 (v) => update("gateLaborBase", { ...config.gateLaborBase, single: v }),
@@ -598,8 +608,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
               )}
             </div>
 
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Gate size adjustment</h3>
-            <p className="text-xs text-gray-500 mb-2">Multiplier applied to base gate hours when the gate is wider than standard. 1.0 = no adjustment, 1.3 = +30%.</p>
+            <h3 className="text-sm font-bold text-text mb-2">Gate size adjustment</h3>
+            <p className="text-xs text-muted mb-2">Multiplier applied to base gate hours when the gate is wider than standard. 1.0 = no adjustment, 1.3 = +30%.</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               {numField("Small gate (up to 4 ft)", config.gateWidthMultipliers.small,
                 (v) => update("gateWidthMultipliers", { ...config.gateWidthMultipliers, small: v }),
@@ -619,8 +629,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
               )}
             </div>
 
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Clearance gaps</h3>
-            <p className="text-xs text-gray-500 mb-2">How much space the engine leaves between gate and post so the gate swings freely. Don&rsquo;t zero these out &mdash; you&rsquo;ll end up with gates that scrape or won&rsquo;t latch.</p>
+            <h3 className="text-sm font-bold text-text mb-2">Clearance gaps</h3>
+            <p className="text-xs text-muted mb-2">How much space the engine leaves between gate and post so the gate swings freely. Don&rsquo;t zero these out &mdash; you&rsquo;ll end up with gates that scrape or won&rsquo;t latch.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
               {numField("Hinge-side gap", config.gateGaps.hinge,
                 (v) => update("gateGaps", { ...config.gateGaps, hinge: v }),
@@ -636,7 +646,7 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
               )}
             </div>
 
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Pool-code adder</h3>
+            <h3 className="text-sm font-bold text-text mb-2">Pool-code adder</h3>
             <div className="max-w-md">
               {numField("Extra labor for pool-code gates", config.gatePoolMultiplier,
                 (v) => setConfig(prev => ({ ...prev, gatePoolMultiplier: v })),
@@ -649,8 +659,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── EQUIPMENT RENTAL ── */}
         {activeSection === "equipment" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Equipment rental</h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <h2 className="font-display font-semibold text-text mb-1">Equipment rental</h2>
+            <p className="text-sm text-muted mb-4">
               Day rates for tools and machines. The engine only adds these to jobs where they actually get used (a chop saw only on aluminum jobs, a stretcher only on chain link, etc.). Set the rate to what you pay at your rental yard &mdash; or $0 if you own the tool outright.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -677,8 +687,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── DELIVERY ── */}
         {activeSection === "logistics" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Delivery</h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <h2 className="font-display font-semibold text-text mb-1">Delivery</h2>
+            <p className="text-sm text-muted mb-4">
               What your supplier charges to drop materials at the job site &mdash; passed through to the customer&rsquo;s estimate. Set the free-delivery threshold to match your supplier&rsquo;s waiver rule.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -697,8 +707,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── OLD FENCE REMOVAL ── */}
         {activeSection === "removal" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Old fence removal</h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <h2 className="font-display font-semibold text-text mb-1">Old fence removal</h2>
+            <p className="text-sm text-muted mb-4">
               Tear-out is separate from install &mdash; the engine charges for it only when the estimate has removal turned on. Set these to what it actually costs your crew to take down an old fence, extract concrete footings, and haul the mess away.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -721,8 +731,8 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── PRICING RULES ── */}
         {activeSection === "pricing" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Pricing rules</h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <h2 className="font-display font-semibold text-text mb-1">Pricing rules</h2>
+            <p className="text-sm text-muted mb-4">
               Business rules applied on top of the calculated estimate. Today there&rsquo;s just one &mdash; a minimum charge below which you won&rsquo;t take a job.
             </p>
             <div className="max-w-md">
@@ -737,22 +747,22 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         {/* ── REGION DETAILS ── */}
         {activeSection === "region" && (
           <div>
-            <h2 className="font-semibold text-fence-900 mb-1">Region details</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Region is also in <span className="font-semibold">Essentials</span> &mdash; this tab shows the raw multipliers the preset applies so you can fine-tune if your area is unusual. A &quot;1.0&quot; multiplier = national average.
+            <h2 className="font-display font-semibold text-text mb-1">Region details</h2>
+            <p className="text-sm text-muted mb-4">
+              Region is also in <span className="font-semibold text-text">Essentials</span> &mdash; this tab shows the raw multipliers the preset applies so you can fine-tune if your area is unusual. A &quot;1.0&quot; multiplier = national average.
             </p>
             <div className="mb-6">
-              <label className="block font-medium text-gray-700 mb-1">Region</label>
+              <label className={LABEL_CLASS}>Region</label>
               <select
                 value={config.region.key}
                 onChange={(e) => update("region", { ...config.region, key: e.target.value })}
-                className="w-full max-w-md bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                className={`${INPUT_CLASS} max-w-md`}
               >
                 {REGION_OPTIONS.map(r => (
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 mt-1">Picking a region sets material and labor multipliers below to the regional wholesale average.</p>
+              <p className="text-xs text-muted mt-1">Picking a region sets material and labor multipliers below to the regional wholesale average.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {numField("Labor cost adjustment", config.region.laborMultiplier,
@@ -769,25 +779,25 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
       </div>
 
       {/* Save / Reset bar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between sticky bottom-4 shadow-lg">
+      <div className="bg-surface-2 rounded-xl border border-border p-4 flex items-center justify-between sticky bottom-4 shadow-lg">
         <div className="flex items-center gap-3">
           <button
             onClick={handleSave}
             disabled={saveStatus === "saving"}
-            className="bg-fence-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 disabled:opacity-50"
+            className="bg-accent hover:bg-accent-light accent-glow text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:opacity-50"
           >
             {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error — Retry" : "Save Settings"}
           </button>
           {hasCustomConfig && (
             <button
               onClick={handleReset}
-              className="text-sm text-gray-400 hover:text-red-500"
+              className="text-sm text-muted hover:text-danger transition-colors duration-150"
             >
               Reset to Defaults
             </button>
           )}
         </div>
-        <p className="text-xs text-gray-400">Changes apply to all new estimates</p>
+        <p className="text-xs text-muted">Changes apply to all new estimates</p>
       </div>
     </div>
   );

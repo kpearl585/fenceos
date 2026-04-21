@@ -14,6 +14,14 @@ import { planHasCustomBranding } from "@/lib/planLimits";
 import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
+// Shared input/label class patterns — every field on this page uses
+// the same dark-polish combination. Keeping them as constants means a
+// single source of truth if the token system evolves.
+const INPUT_CLASS =
+  "w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+const LABEL_CLASS =
+  "block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider";
+
 export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -68,27 +76,27 @@ export default async function SettingsPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-fence-900">Settings</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Manage organization settings, branding, and users.</p>
+        <h1 className="font-display text-2xl font-bold text-text">Settings</h1>
+        <p className="text-sm text-muted mt-0.5">Manage organization settings, branding, and users.</p>
       </div>
 
       <div className="space-y-6">
         {/* Org Info */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-fence-900 mb-4">Organization</h2>
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-4">Organization</h2>
           <OrgNameForm orgId={org?.id || profile.org_id} currentName={org?.name || ""} />
         </div>
 
         {/* Estimator Settings Link */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-fence-900">Estimator Settings</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Customize labor rates, material assumptions, overhead, equipment, and pricing rules for your crew.</p>
+              <h2 className="font-semibold text-text">Estimator Settings</h2>
+              <p className="text-xs text-muted mt-0.5">Customize labor rates, material assumptions, overhead, equipment, and pricing rules for your crew.</p>
             </div>
             <Link
               href="/dashboard/settings/estimator"
-              className="bg-fence-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-fence-700 transition-colors whitespace-nowrap"
+              className="bg-accent hover:bg-accent-light accent-glow text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-150 whitespace-nowrap"
             >
               Configure
             </Link>
@@ -96,36 +104,36 @@ export default async function SettingsPage() {
         </div>
 
         {/* Legal / Payment Terms + Business Settings */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-fence-900 mb-4">Legal & Payment Terms</h2>
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-4">Legal & Payment Terms</h2>
           <form action={saveOrgSettings} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Legal Terms</label>
+              <label className={LABEL_CLASS}>Legal Terms</label>
               <textarea
                 name="legal_terms"
                 rows={6}
                 defaultValue={orgSettings?.legal_terms || ""}
                 placeholder="Enter your standard legal terms and conditions..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                className={INPUT_CLASS}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
+              <label className={LABEL_CLASS}>Payment Terms</label>
               <textarea
                 name="payment_terms"
                 rows={4}
                 defaultValue={orgSettings?.payment_terms || ""}
                 placeholder="Enter your payment terms..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                className={INPUT_CLASS}
               />
             </div>
 
             {/* Business defaults */}
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Business Defaults</h3>
+            <div className="border-t border-border pt-4">
+              <h3 className="text-sm font-semibold text-text mb-3">Business Defaults</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className={LABEL_CLASS}>
                     Target Gross Margin (%)
                   </label>
                   <input
@@ -135,11 +143,11 @@ export default async function SettingsPage() {
                     min="0"
                     max="100"
                     defaultValue={Number((orgSettings as Record<string, unknown>)?.target_margin_pct ?? 35)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                    className={INPUT_CLASS}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className={LABEL_CLASS}>
                     Default Labor Rate (per LF)
                   </label>
                   <input
@@ -148,13 +156,13 @@ export default async function SettingsPage() {
                     step="0.01"
                     min="0"
                     defaultValue={Number((orgSettings as Record<string, unknown>)?.default_labor_rate ?? 0)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                    className={INPUT_CLASS}
                   />
                 </div>
               </div>
             </div>
 
-            <button type="submit" className="bg-fence-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700">
+            <button type="submit" className="bg-accent hover:bg-accent-light accent-glow text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors duration-150">
               Save Settings
             </button>
           </form>
@@ -164,44 +172,44 @@ export default async function SettingsPage() {
             Deliberately outside the plan gate: every plan's quotes need a
             phone/email/address in the "from" block. Only branding (logo,
             colors) is Pro+. */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-fence-900 mb-1">Company Contact Info</h2>
-          <p className="text-xs text-gray-500 mb-4">
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-1">Company Contact Info</h2>
+          <p className="text-xs text-muted mb-4">
             Shown on every customer-facing proposal, invoice, and contract. Keep this up to date so customers know how to reach you.
           </p>
           <form action={saveOrgContact} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className={LABEL_CLASS}>Phone</label>
                 <input
                   name="phone"
                   type="tel"
                   defaultValue={(branding as Record<string, unknown> | null)?.phone as string || ""}
                   placeholder="(555) 867-5309"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                  className={INPUT_CLASS}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className={LABEL_CLASS}>Email</label>
                 <input
                   name="email"
                   type="email"
                   defaultValue={(branding as Record<string, unknown> | null)?.email as string || ""}
                   placeholder="quotes@yourcompany.com"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                  className={INPUT_CLASS}
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mailing Address</label>
+              <label className={LABEL_CLASS}>Mailing Address</label>
               <input
                 name="address"
                 defaultValue={(branding as Record<string, unknown> | null)?.address as string || ""}
                 placeholder="123 Main St, Springfield, IL 62701"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+                className={INPUT_CLASS}
               />
             </div>
-            <button type="submit" className="bg-fence-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700">
+            <button type="submit" className="bg-accent hover:bg-accent-light accent-glow text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors duration-150">
               Save Contact Info
             </button>
           </form>
@@ -210,17 +218,17 @@ export default async function SettingsPage() {
         {/* HOA Packet — contractor documents that get bundled into HOA
             submittal PDFs on demand. Upload once per renewal; every packet
             pulls from here. Owner-only per RLS. */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-fence-900 mb-1">HOA Packet</h2>
-          <p className="text-xs text-gray-500 mb-4">
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-1">HOA Packet</h2>
+          <p className="text-xs text-muted mb-4">
             Upload your insurance certificate once. FEP will bundle it into every HOA submittal packet you generate from a quote, so you don&rsquo;t have to chase the PDF for every job.
           </p>
           <InsuranceCertUpload orgId={profile.org_id} existing={insuranceCertExisting} />
         </div>
 
         {/* Branding */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-fence-900 mb-4">Branding</h2>
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-4">Branding</h2>
           {planHasCustomBranding((org as { plan?: string } | null)?.plan) ? (
             <BrandingForm
               orgId={profile.org_id}
@@ -230,12 +238,12 @@ export default async function SettingsPage() {
               initialFooterNote={branding?.footer_note || ''}
             />
           ) : (
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between p-4 bg-surface-3 rounded-lg border border-border">
               <div>
-                <p className="text-sm font-medium text-gray-700">Custom PDF Branding</p>
-                <p className="text-xs text-gray-400 mt-0.5">Add your logo and brand colors to all PDF estimates. Available on Pro and above.</p>
+                <p className="text-sm font-medium text-text">Custom PDF Branding</p>
+                <p className="text-xs text-muted mt-0.5">Add your logo and brand colors to all PDF estimates. Available on Pro and above.</p>
               </div>
-              <Link href="/dashboard/upgrade" className="bg-fence-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-fence-700 transition-colors whitespace-nowrap">
+              <Link href="/dashboard/upgrade" className="bg-accent hover:bg-accent-light accent-glow text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-150 whitespace-nowrap">
                 Upgrade to Pro
               </Link>
             </div>
@@ -244,27 +252,27 @@ export default async function SettingsPage() {
 
 
         {/* Billing */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-fence-900 mb-4">Plan & Billing</h2>
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-4">Plan & Billing</h2>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-700">Current Plan</p>
-              <p className="text-base font-bold text-fence-700 mt-1">{planName}</p>
+              <p className="text-sm font-medium text-text">Current Plan</p>
+              <p className="font-display text-base font-bold text-accent-light mt-1">{planName}</p>
               {planStatus === "trialing" && trialDaysLeft !== null && (
-                <p className="text-xs text-amber-600 mt-0.5">{trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} remaining in trial</p>
+                <p className="text-xs text-warning mt-0.5">{trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} remaining in trial</p>
               )}
               {planStatus === "active" && (
-                <p className="text-xs text-green-600 mt-0.5">Active subscription</p>
+                <p className="text-xs text-accent-light mt-0.5">Active subscription</p>
               )}
               {planStatus === "cancelled" && (
-                <p className="text-xs text-red-500 mt-0.5">Subscription cancelled</p>
+                <p className="text-xs text-danger mt-0.5">Subscription cancelled</p>
               )}
             </div>
             <div className="flex gap-2">
               {planStatus !== "active" && (
                 <a
                   href="/dashboard/upgrade"
-                  className="border border-fence-600 text-fence-600 hover:bg-fence-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                  className="border border-accent/40 text-accent-light hover:bg-accent/10 text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-150"
                 >
                   Upgrade Plan
                 </a>
@@ -275,8 +283,8 @@ export default async function SettingsPage() {
         </div>
 
         {/* Users */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-fence-900 mb-4">Team Members</h2>
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-4">Team Members</h2>
           <TeamMembersSection
             members={(orgUsers ?? []) as Array<{id: string; full_name: string | null; email: string; role: string; created_at: string}>}
             orgId={org?.id || profile.org_id}
@@ -285,13 +293,13 @@ export default async function SettingsPage() {
         </div>
 
         {/* Data & Privacy */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-fence-900 mb-4">Data & Privacy</h2>
+        <div className="bg-surface-2 rounded-xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-4">Data & Privacy</h2>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between p-4 bg-surface-3 rounded-lg border border-border">
               <div>
-                <p className="text-sm font-medium text-gray-700">Export Your Data</p>
-                <p className="text-xs text-gray-500 mt-0.5">Download all your estimates, customers, and materials as an Excel workbook (opens in Excel, Numbers, or Google Sheets).</p>
+                <p className="text-sm font-medium text-text">Export Your Data</p>
+                <p className="text-xs text-muted mt-0.5">Download all your estimates, customers, and materials as an Excel workbook (opens in Excel, Numbers, or Google Sheets).</p>
               </div>
               <ExportDataButton />
             </div>
@@ -299,17 +307,17 @@ export default async function SettingsPage() {
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-red-50 rounded-xl border border-red-200 p-6">
-          <h2 className="font-semibold text-red-900 mb-4">Danger Zone</h2>
+        <div className="bg-danger/5 rounded-xl border border-danger/30 p-6">
+          <h2 className="font-semibold text-danger mb-4">Danger Zone</h2>
           <div className="space-y-4">
-            <div className="flex items-start justify-between p-4 bg-white rounded-lg border border-red-200">
+            <div className="flex items-start justify-between p-4 bg-surface-2 rounded-lg border border-danger/30">
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-900">Delete Account</p>
-                <p className="text-xs text-red-600 mt-0.5">
+                <p className="text-sm font-medium text-text">Delete Account</p>
+                <p className="text-xs text-danger mt-0.5">
                   Permanently delete your account and all associated data. This action cannot be undone.
                   All estimates, customers, materials, and team members will be permanently deleted after 30 days.
                 </p>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted mt-2">
                   Active subscriptions will be cancelled. We recommend exporting your data first.
                 </p>
               </div>
