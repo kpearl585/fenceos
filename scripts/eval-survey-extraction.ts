@@ -28,8 +28,16 @@ import {
   SURVEY_SYSTEM_PROMPT,
   SURVEY_USER_PROMPT_IMAGE,
 } from "../src/lib/fence-graph/ai-extract/survey-prompt";
-import { EXTRACTION_JSON_SCHEMA } from "../src/lib/fence-graph/ai-extract/schema";
+import { SURVEY_EXTRACTION_JSON_SCHEMA } from "../src/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResult } from "../src/lib/fence-graph/ai-extract/types";
+
+// Survey extraction has two extra observation fields not in the shared
+// AiExtractionResult type. They're read from the response for reporting;
+// they don't flow downstream.
+type SurveyExtractionResult = AiExtractionResult & {
+  observedDimensions?: string[];
+  observedAnnotations?: string[];
+};
 
 // ────────────────────────────────────────────────────────────────────
 // Per-sample rubric
@@ -67,15 +75,20 @@ type Rubric =
 const RUBRICS: Record<string, Rubric> = {
   "00_keegan_original_marked-survey": {
     mode: "extract",
-    minRuns: 2,
-    maxRuns: 4,
-    minConfidence: 0.75,
-    // ~203 LF from the worked example baked into SURVEY_SYSTEM_PROMPT
-    expectedTotalLf: { value: 203, tolerancePct: 0.15 },
+    // Verified ground truth from customer (2026-04-21):
+    //   5 runs green: 73 (rear) + 92 (west, partial to corner) + 6.5 (connector)
+    //                 + 6 (post-gate to house) + 5 (house-to-neighbor right side)
+    //   1 gate: 5' walk gate between the 6.5 and 6 ft runs
+    //   Right side (east) is BLUE = existing, must NOT be counted
+    // Total new fence: 182.5 LF, 6' white vinyl privacy
+    minRuns: 4,
+    maxRuns: 6,
+    minConfidence: 0.7,
+    expectedTotalLf: { value: 182.5, tolerancePct: 0.1 },
     expectedFenceType: "vinyl",
-    expectedGateCount: 0,
+    expectedGateCount: 1,
     notes:
-      "Canonical case — hand legend, printed dimensions (73/92/15.3/130), 'Deco Rail 6H White Privacy Vinyl'. Already in prompt as worked example.",
+      "Canonical hard case. Tests: legend compliance (blue=existing must be excluded), mid-run gates, partial runs with handwritten dims over printed property dims, and short connector segments (5-7 ft).",
   },
   "01_raleigh_pink-marker_homeowner": {
     // Printed plat, pink highlighter only, NO legend, NO written dimensions
@@ -96,14 +109,17 @@ const RUBRICS: Record<string, Rubric> = {
   },
   "02_bigjerrys_digital-3color-markup_contractor": {
     mode: "extract",
-    minRuns: 1,
-    minConfidence: 0.7,
-    // Digital overlay with red=new, blue=distance, green=old-staying,
-    // and labeled gates ("~4' Single Gate", "~8' Double Gate"). Expect
-    // at least 2 gates (1 walk + 1 drive-ish).
+    // Ground truth from fence-estimating-training-dossier.md entry #8:
+    //   Fence type: horizontal wood semi-privacy ("The Skyline")
+    //   Gates: 4' single walk + 8' double drive
+    //   3-color digital legend: red=new, blue=distance-markers, green=old-staying
+    // Regression canary: whatever prompt changes we make, this must stay green.
+    minRuns: 3,
+    minConfidence: 0.8,
+    expectedFenceType: "wood",
     expectedGateCount: 2,
     notes:
-      "Big Jerry's digital 3-color contractor markup with explicit legend + labeled gates. Gold-standard contractor input.",
+      "Big Jerry's digital 3-color contractor markup with explicit legend + 4' walk + 8' double drive gates. Dossier-verified ground truth. Regression canary.",
   },
   "03_dcdob_pencil-xmarks_homeowner": {
     // Open question per advisor — current prompt says 'colored highlighter
@@ -141,7 +157,7 @@ interface SampleResult {
   sizeBytes: number;
   passed: boolean;
   rubric: Rubric;
-  actual: AiExtractionResult;
+  actual: SurveyExtractionResult;
   failures: string[];
   notes: string[];
   inputTokens: number;
@@ -151,7 +167,7 @@ interface SampleResult {
 
 function scoreResult(
   rubric: Rubric,
-  actual: AiExtractionResult
+  actual: SurveyExtractionResult
 ): { passed: boolean; failures: string[]; notes: string[] } {
   const failures: string[] = [];
   const notes: string[] = [];
@@ -263,7 +279,7 @@ async function runSample(
   client: OpenAI,
   sampleId: string,
   imagePath: string
-): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number; durationMs: number }> {
+): Promise<{ result: SurveyExtractionResult; inputTokens: number; outputTokens: number; durationMs: number }> {
   const mime = mimeFromPath(imagePath);
   if (!mime) throw new Error(`Unsupported image type: ${imagePath}`);
   const buffer = fs.readFileSync(imagePath);
@@ -276,9 +292,9 @@ async function runSample(
     response_format: {
       type: "json_schema",
       json_schema: {
-        name: "fence_extraction",
+        name: "survey_extraction",
         strict: true,
-        schema: EXTRACTION_JSON_SCHEMA,
+        schema: SURVEY_EXTRACTION_JSON_SCHEMA,
       },
     },
     messages: [
@@ -288,7 +304,7 @@ async function runSample(
   });
   const durationMs = Date.now() - started;
   const raw = response.choices[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(raw) as AiExtractionResult;
+  const parsed = JSON.parse(raw) as SurveyExtractionResult;
   return {
     result: parsed,
     inputTokens: response.usage?.prompt_tokens ?? 0,
@@ -388,6 +404,30 @@ function formatMarkdownReport(
     }
     if (r.notes.length > 0) {
       lines.push("**Notes:** " + r.notes.join("; "));
+      lines.push("");
+    }
+
+    // Surface the model's structured-CoT observations — these are the
+    // "show your work" layer. If the extraction is wrong, this is
+    // where to look to understand why.
+    if (r.actual.observedDimensions && r.actual.observedDimensions.length > 0) {
+      lines.push("<details><summary>observedDimensions (" + r.actual.observedDimensions.length + ")</summary>");
+      lines.push("");
+      for (const d of r.actual.observedDimensions) {
+        lines.push(`- ${d}`);
+      }
+      lines.push("");
+      lines.push("</details>");
+      lines.push("");
+    }
+    if (r.actual.observedAnnotations && r.actual.observedAnnotations.length > 0) {
+      lines.push("<details><summary>observedAnnotations (" + r.actual.observedAnnotations.length + ")</summary>");
+      lines.push("");
+      for (const a of r.actual.observedAnnotations) {
+        lines.push(`- ${a}`);
+      }
+      lines.push("");
+      lines.push("</details>");
       lines.push("");
     }
 

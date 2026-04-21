@@ -5,7 +5,12 @@ import * as Sentry from "@sentry/nextjs";
 import { SYSTEM_PROMPT, USER_PROMPT_TEXT, USER_PROMPT_IMAGE } from "@/lib/fence-graph/ai-extract/prompt";
 import { SURVEY_SYSTEM_PROMPT } from "@/lib/fence-graph/ai-extract/survey-prompt";
 import { CRITIQUE_SYSTEM_PROMPT, CRITIQUE_USER_PROMPT } from "@/lib/fence-graph/ai-extract/critique-prompt";
-import { EXTRACTION_JSON_SCHEMA, CRITIQUE_JSON_SCHEMA, validateExtraction } from "@/lib/fence-graph/ai-extract/schema";
+import {
+  EXTRACTION_JSON_SCHEMA,
+  SURVEY_EXTRACTION_JSON_SCHEMA,
+  CRITIQUE_JSON_SCHEMA,
+  validateExtraction,
+} from "@/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph/ai-extract/types";
 import type { CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import { detectHiddenCosts } from "@/lib/fence-graph/ai-extract/hiddenCostDetection";
@@ -166,59 +171,69 @@ async function runCritique(
 // the whole extraction helper — survey images need different guidance
 // than generic "yard photo" images, but the quality-ladder logic is
 // identical.
+// `jsonSchema` lets survey extraction swap in a structured-CoT schema
+// variant (observedDimensions + observedAnnotations) without affecting
+// photo extraction. The response object is a superset of AiExtractionResult
+// so callers can safely read the shared fields.
+// `skipLowDetailPass` is for survey: handwriting and small dims aren't
+// readable at detail:"low", so pass 1 just burns tokens on surveys.
 async function runImageExtraction(
   client: OpenAI,
   base64: string,
   mimeType: string,
   additionalText?: string,
   systemPrompt: string = SYSTEM_PROMPT,
+  jsonSchema: Record<string, unknown> = EXTRACTION_JSON_SCHEMA,
+  skipLowDetailPass: boolean = false,
 ): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number; usedHighDetail: boolean }> {
-  // Pass 1: low detail
-  const lowDetailContent = [
-    {
-      type: "image_url" as const,
-      image_url: { url: `data:${mimeType};base64,${base64}`, detail: "low" as const },
-    },
-    {
-      type: "text" as const,
-      text: additionalText
-        ? `Additional context: ${additionalText}\n\nExtract fence project data from this image.`
-        : "Extract fence project data from this image.",
-    },
-  ];
+  // Pass 1: low detail (skipped for surveys)
+  if (!skipLowDetailPass) {
+    const lowDetailContent = [
+      {
+        type: "image_url" as const,
+        image_url: { url: `data:${mimeType};base64,${base64}`, detail: "low" as const },
+      },
+      {
+        type: "text" as const,
+        text: additionalText
+          ? `Additional context: ${additionalText}\n\nExtract fence project data from this image.`
+          : "Extract fence project data from this image.",
+      },
+    ];
 
-  const pass1 = await client.chat.completions.create({
-    model: "gpt-4o",
-    temperature: 0.1,
-    response_format: {
-      type: "json_schema",
-      json_schema: { name: "fence_extraction", strict: true, schema: EXTRACTION_JSON_SCHEMA },
-    },
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: lowDetailContent },
-    ],
-  });
+    const pass1 = await client.chat.completions.create({
+      model: "gpt-4o",
+      temperature: 0.1,
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "fence_extraction", strict: true, schema: jsonSchema },
+      },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: lowDetailContent },
+      ],
+    });
 
-  const raw1 = pass1.choices[0]?.message?.content ?? "{}";
-  const result1 = JSON.parse(raw1) as AiExtractionResult;
+    const raw1 = pass1.choices[0]?.message?.content ?? "{}";
+    const result1 = JSON.parse(raw1) as AiExtractionResult;
 
-  // Check if we need high detail
-  const needsHighDetail =
-    result1.confidence < 0.75 ||
-    result1.runs.some(r => r.linearFeet === 0) ||
-    result1.runs.length === 0;
+    // Check if we need high detail
+    const needsHighDetail =
+      result1.confidence < 0.75 ||
+      result1.runs.some(r => r.linearFeet === 0) ||
+      result1.runs.length === 0;
 
-  if (!needsHighDetail) {
-    return {
-      result: result1,
-      inputTokens: pass1.usage?.prompt_tokens ?? 0,
-      outputTokens: pass1.usage?.completion_tokens ?? 0,
-      usedHighDetail: false,
-    };
+    if (!needsHighDetail) {
+      return {
+        result: result1,
+        inputTokens: pass1.usage?.prompt_tokens ?? 0,
+        outputTokens: pass1.usage?.completion_tokens ?? 0,
+        usedHighDetail: false,
+      };
+    }
   }
 
-  // Pass 2: high detail
+  // Pass 2 (or only pass, for surveys): high detail
   const highDetailContent = [
     {
       type: "image_url" as const,
@@ -235,7 +250,7 @@ async function runImageExtraction(
     temperature: 0.1,
     response_format: {
       type: "json_schema",
-      json_schema: { name: "fence_extraction", strict: true, schema: EXTRACTION_JSON_SCHEMA },
+      json_schema: { name: "fence_extraction", strict: true, schema: jsonSchema },
     },
     messages: [
       { role: "system", content: systemPrompt },
@@ -248,8 +263,8 @@ async function runImageExtraction(
 
   return {
     result: result2,
-    inputTokens: (pass1.usage?.prompt_tokens ?? 0) + (pass2.usage?.prompt_tokens ?? 0),
-    outputTokens: (pass1.usage?.completion_tokens ?? 0) + (pass2.usage?.completion_tokens ?? 0),
+    inputTokens: pass2.usage?.prompt_tokens ?? 0,
+    outputTokens: pass2.usage?.completion_tokens ?? 0,
     usedHighDetail: true,
   };
 }
@@ -532,7 +547,15 @@ export async function extractFromSurvey(
     const client = getOpenAI();
 
     const { result, inputTokens, outputTokens, usedHighDetail } = await runImageExtraction(
-      client, base64, mimeType, additionalText, SURVEY_SYSTEM_PROMPT,
+      client,
+      base64,
+      mimeType,
+      additionalText,
+      SURVEY_SYSTEM_PROMPT,
+      SURVEY_EXTRACTION_JSON_SCHEMA,
+      // Surveys need high detail — handwriting + small printed dims are
+      // unreadable at detail:"low", so skip the cheap first pass.
+      /* skipLowDetailPass */ true,
     );
 
     const validation = validateExtraction(result);
