@@ -76,10 +76,10 @@ export default function ARModelViewer({
       <div
         className={
           className ??
-          'w-full h-[500px] bg-fence-950 rounded-xl flex items-center justify-center'
+          'w-full h-[500px] bg-surface-3 border border-border rounded-xl flex items-center justify-center'
         }
       >
-        <div className="text-white/60 text-sm">Loading 3D preview…</div>
+        <div className="text-muted text-sm">Loading 3D preview…</div>
       </div>
     );
   }

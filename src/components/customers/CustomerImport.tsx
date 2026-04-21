@@ -110,11 +110,11 @@ export default function CustomerImport({ onSuccess }: { onSuccess: () => void })
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">Import customers from a CSV or Excel file.</p>
+        <p className="text-sm text-muted">Import customers from a CSV or Excel file.</p>
         <a
           href="/customer-import-template.csv"
           download
-          className="text-xs text-fence-600 hover:text-fence-700 font-medium flex items-center gap-1"
+          className="text-xs text-accent-light hover:text-accent font-semibold flex items-center gap-1 transition-colors duration-150"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -129,8 +129,8 @@ export default function CustomerImport({ onSuccess }: { onSuccess: () => void })
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onClick={() => fileRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
-            isDragging ? "border-fence-500 bg-fence-50" : "border-gray-200 hover:border-fence-400 hover:bg-gray-50"
+          className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors duration-150 ${
+            isDragging ? "border-accent bg-accent/10" : "border-border hover:border-accent/50 hover:bg-surface-3"
           }`}
         >
           <input
@@ -140,50 +140,50 @@ export default function CustomerImport({ onSuccess }: { onSuccess: () => void })
             className="hidden"
             onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
           />
-          <svg className="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-10 h-10 mx-auto mb-3 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          <p className="font-semibold text-gray-700 mb-1">Drop your file here or click to browse</p>
-          <p className="text-sm text-gray-400">CSV or Excel · Max 500 customers</p>
-          <p className="text-xs text-gray-400 mt-2">Columns: name, email, phone, address, city, state, zip, notes</p>
+          <p className="font-semibold text-text mb-1">Drop your file here or click to browse</p>
+          <p className="text-sm text-muted">CSV or Excel · Max 500 customers</p>
+          <p className="text-xs text-muted mt-2">Columns: name, email, phone, address, city, state, zip, notes</p>
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm text-danger">{error}</div>
       )}
 
       {step === "preview" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">{rows.length} customers ready to import</p>
-            <button onClick={reset} className="text-xs text-gray-400 hover:text-gray-600">Choose different file</button>
+            <p className="text-sm font-semibold text-text">{rows.length} customers ready to import</p>
+            <button onClick={reset} className="text-xs text-muted hover:text-text transition-colors duration-150">Choose different file</button>
           </div>
-          <div className="rounded-xl border border-gray-200 overflow-hidden">
+          <div className="rounded-xl border border-border overflow-hidden">
             <div className="overflow-x-auto max-h-64">
               <table className="w-full text-xs">
-                <thead className="bg-gray-50 sticky top-0">
+                <thead className="bg-surface-3 sticky top-0">
                   <tr>
                     {["Name", "Email", "Phone", "City", "State"].map(h => (
-                      <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500 uppercase tracking-wider text-xs">{h}</th>
+                      <th key={h} className="px-3 py-2 text-left font-semibold text-muted uppercase tracking-wider text-xs">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border">
                   {rows.slice(0, 20).map((row, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-gray-800">{row.name}</td>
-                      <td className="px-3 py-2 text-gray-500">{row.email || "—"}</td>
-                      <td className="px-3 py-2 text-gray-500">{row.phone || "—"}</td>
-                      <td className="px-3 py-2 text-gray-500">{row.city || "—"}</td>
-                      <td className="px-3 py-2 text-gray-500">{row.state || "—"}</td>
+                    <tr key={i} className="hover:bg-surface-3 transition-colors duration-150">
+                      <td className="px-3 py-2 font-medium text-text">{row.name}</td>
+                      <td className="px-3 py-2 text-muted">{row.email || "—"}</td>
+                      <td className="px-3 py-2 text-muted">{row.phone || "—"}</td>
+                      <td className="px-3 py-2 text-muted">{row.city || "—"}</td>
+                      <td className="px-3 py-2 text-muted">{row.state || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             {rows.length > 20 && (
-              <div className="px-3 py-2 bg-gray-50 text-xs text-gray-400 text-center border-t border-gray-100">
+              <div className="px-3 py-2 bg-surface-3 text-xs text-muted text-center border-t border-border">
                 + {rows.length - 20} more customers
               </div>
             )}
@@ -191,11 +191,11 @@ export default function CustomerImport({ onSuccess }: { onSuccess: () => void })
           <div className="flex gap-3">
             <button
               onClick={runImport}
-              className="flex-1 bg-fence-600 text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-fence-700 transition-colors"
+              className="flex-1 bg-accent hover:bg-accent-light accent-glow text-white py-2.5 rounded-xl font-semibold text-sm transition-colors duration-150"
             >
               Import {rows.length} Customers
             </button>
-            <button onClick={reset} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">
+            <button onClick={reset} className="px-4 py-2.5 border border-border bg-surface-3 hover:bg-surface-2 rounded-xl text-sm text-text transition-colors duration-150">
               Cancel
             </button>
           </div>
@@ -204,19 +204,19 @@ export default function CustomerImport({ onSuccess }: { onSuccess: () => void })
 
       {step === "importing" && (
         <div className="text-center py-10">
-          <div className="w-8 h-8 border-2 border-fence-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-600">Importing {rows.length} customers...</p>
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-muted">Importing {rows.length} customers...</p>
         </div>
       )}
 
       {step === "done" && result && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-center">
-          <svg className="w-10 h-10 text-green-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="rounded-xl border border-accent/30 bg-accent/10 p-6 text-center">
+          <svg className="w-10 h-10 text-accent-light mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="font-semibold text-green-800 mb-1">{result.message}</p>
-          {result.skipped > 0 && <p className="text-sm text-green-600">{result.skipped} duplicates were skipped.</p>}
-          <button onClick={reset} className="mt-4 text-sm text-green-700 hover:text-green-900 font-medium">Import another file</button>
+          <p className="font-semibold text-accent-light mb-1">{result.message}</p>
+          {result.skipped > 0 && <p className="text-sm text-muted">{result.skipped} duplicates were skipped.</p>}
+          <button onClick={reset} className="mt-4 text-sm text-accent-light hover:text-accent font-semibold transition-colors duration-150">Import another file</button>
         </div>
       )}
     </div>

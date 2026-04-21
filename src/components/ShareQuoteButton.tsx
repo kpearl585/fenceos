@@ -51,7 +51,7 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-fence-600 hover:bg-fence-700 text-white rounded-lg font-semibold transition-colors"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-light accent-glow text-white rounded-lg font-semibold transition-colors duration-150"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -62,17 +62,17 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+      <div className="bg-surface-2 border border-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-fence-50 border-b border-fence-200 px-6 py-4 flex items-center justify-between">
+        <div className="bg-accent/10 border-b border-accent/20 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Share Quote with Customer</h2>
-            <p className="text-sm text-gray-600 mt-1">{estimateName}</p>
+            <h2 className="text-xl font-bold text-text">Share Quote with Customer</h2>
+            <p className="text-sm text-muted mt-1">{estimateName}</p>
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-muted hover:text-text transition-colors duration-150"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -85,7 +85,7 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
             <>
               {/* Expiry Days */}
               <div>
-                <label htmlFor="expiryDays" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="expiryDays" className="block text-xs font-semibold text-muted mb-2 uppercase tracking-wider">
                   Quote Valid For
                 </label>
                 <select
@@ -93,7 +93,7 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
                   value={expiryDays}
                   onChange={(e) => setExpiryDays(Number(e.target.value))}
                   disabled={status === "generating"}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-fence-500"
+                  className="w-full px-4 py-2 border border-border bg-surface-3 text-text rounded-lg focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                 >
                   <option value={7}>7 days</option>
                   <option value={14}>14 days</option>
@@ -101,35 +101,35 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
                   <option value={60}>60 days</option>
                   <option value={90}>90 days</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Customer will be able to view and accept the quote until it expires.
                 </p>
               </div>
 
               {/* Info Box */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-blue-900 mb-2">What happens when you share?</h3>
-                <ul className="space-y-1 text-sm text-blue-800">
+              <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-accent-light mb-2">What happens when you share?</h3>
+                <ul className="space-y-1 text-sm text-text">
                   <li className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-accent-light mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <span>A unique, secure link is generated for this quote</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-accent-light mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <span>Customer can view all project details without logging in</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-accent-light mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <span>Customer can accept the quote with an e-signature</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-accent-light mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <span>You&apos;ll be notified when the quote is accepted</span>
@@ -138,8 +138,8 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
               </div>
 
               {status === "error" && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-sm text-red-800">
+                <div className="bg-danger/10 border border-danger/30 rounded-lg p-4">
+                  <p className="text-sm text-danger">
                     Failed to generate quote link. Please try again.
                   </p>
                 </div>
@@ -149,7 +149,7 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
               <button
                 onClick={handleGenerate}
                 disabled={status === "generating"}
-                className="w-full bg-fence-600 hover:bg-fence-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full bg-accent hover:bg-accent-light accent-glow text-white font-bold py-3 px-6 rounded-lg transition-colors duration-150 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {status === "generating" ? (
                   <>
@@ -172,21 +172,21 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
           ) : (
             <>
               {/* Success State */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="bg-accent/10 border border-accent/30 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-accent-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <h3 className="text-sm font-semibold text-green-900">Quote Link Generated!</h3>
+                  <h3 className="text-sm font-semibold text-accent-light">Quote Link Generated!</h3>
                 </div>
-                <p className="text-sm text-green-800">
+                <p className="text-sm text-text">
                   Share this link with your customer. It expires in {expiryDays} days.
                 </p>
               </div>
 
               {/* URL Display */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-xs font-semibold text-muted mb-2 uppercase tracking-wider">
                   Shareable Link
                 </label>
                 <div className="flex gap-2">
@@ -194,15 +194,15 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
                     type="text"
                     value={quoteUrl}
                     readOnly
-                    className="flex-1 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 font-mono"
+                    className="flex-1 px-4 py-2 bg-surface-3 border border-border rounded-lg text-sm text-text font-mono"
                   />
                   <button
                     onClick={handleCopy}
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-surface-3 hover:bg-surface-2 border border-border rounded-lg text-sm font-semibold text-text transition-colors duration-150 flex items-center gap-2"
                   >
                     {copied ? (
                       <>
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-accent-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         Copied!
@@ -223,7 +223,7 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
               <div className="grid md:grid-cols-2 gap-3">
                 <button
                   onClick={handleEmailClick}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-300 hover:border-fence-500 rounded-lg font-semibold text-gray-700 hover:text-fence-600 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-3 border-2 border-border hover:border-accent rounded-lg font-semibold text-text hover:text-accent-light transition-colors duration-150"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -235,7 +235,7 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
                   href={quoteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-300 hover:border-fence-500 rounded-lg font-semibold text-gray-700 hover:text-fence-600 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-3 border-2 border-border hover:border-accent rounded-lg font-semibold text-text hover:text-accent-light transition-colors duration-150"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -247,7 +247,7 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
               {/* Done Button */}
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"
+                className="w-full bg-surface-3 hover:bg-surface-2 border border-border text-text font-semibold py-2 px-4 rounded-lg transition-colors duration-150"
               >
                 Done
               </button>
