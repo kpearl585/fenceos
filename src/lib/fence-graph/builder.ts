@@ -34,6 +34,17 @@ function buildGateSpec(gate: GateInput, gateGaps: OrgEstimatorConfig["gateGaps"]
   const hingeGap = gateGaps.hinge;
   const latchGap = gateGaps.latch;
 
+  // Contractor hardware selections — passed through as-is. The pricing
+  // engine reads these to swap SKUs / add line items. When undefined,
+  // the engine falls back to its existing defaults (HINGE_HD / GATE_LATCH
+  // / pool-code variants) so legacy estimates keep pricing the same.
+  const hardware = {
+    hinges: gate.hinges,
+    latch: gate.latch,
+    hardwareColor: gate.hardwareColor,
+    postInsert: gate.postInsert,
+  };
+
   if (gate.gateType === "single") {
     const leafWidth = openingWidth_in - hingeGap - latchGap;
     return {
@@ -45,6 +56,7 @@ function buildGateSpec(gate: GateInput, gateGaps: OrgEstimatorConfig["gateGaps"]
       latchGap_in: latchGap,
       dropRodRequired: false,
       isPoolGate: gate.isPoolGate,
+      ...hardware,
     };
   } else {
     const centerGap = gateGaps.center;
@@ -61,6 +73,7 @@ function buildGateSpec(gate: GateInput, gateGaps: OrgEstimatorConfig["gateGaps"]
       centerGap_in: centerGap,
       dropRodRequired: true,
       isPoolGate: gate.isPoolGate,
+      ...hardware,
     };
   }
 }

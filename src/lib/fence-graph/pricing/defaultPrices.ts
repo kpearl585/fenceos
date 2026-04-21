@@ -106,10 +106,20 @@ export const DEFAULT_PRICES_BASE: Record<string, number> = {
   // ── GATE HARDWARE ──────────────────────────────────────────────
   HINGE_HD: 18.50,              // Heavy duty hinge (per pair)
   GATE_LATCH: 28.00,            // Standard gate latch
-  GATE_LATCH_POOL: 42.00,       // Pool-code self-closing latch
+  GATE_LATCH_POOL: 42.00,       // Pool-code self-closing latch (generic)
   GATE_STOP: 9.50,              // Gate stop (pair)
   DROP_ROD: 38.00,              // Drop rod for double gates
   GATE_SPRING_CLOSER: 32.00,    // Spring closer mechanism
+
+  // ── GATE HARDWARE (contractor-selected upgrades) ───────────────
+  // NOTE: These defaults are rough estimates based on retail/pro pricing
+  // as of Apr 2026. Contractors should tune them in Materials → Prices
+  // for their own cost basis. All prices are per-unit unless noted.
+  HINGE_SELF_CLOSING: 48.00,    // Tru-Close / adjustable self-closing hinge (per pair)
+  LATCH_LOKK_LATCH: 72.00,      // LokkLatch Pro / pool-code compliant
+  LATCH_MAGNETIC: 58.00,        // Magna-Latch / magnetic pool-code latch
+  LATCH_SLIDE_BOLT: 18.00,      // Heavy-duty sliding bolt (simple)
+  STEEL_INSERT: 32.00,          // Steel hinge-post insert (for heavier gates on vinyl posts)
 
   // ── CONCRETE & FOUNDATION ──────────────────────────────────────
   CONCRETE_80LB: 5.75,

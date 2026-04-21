@@ -54,6 +54,13 @@ export interface Section {
   scrap_in: number;     // nominal - actual (waste)
 }
 
+// Gate hardware enums (also used by GateInput below — defined here so
+// GateSpec can reference them without forward-declaration).
+export type GateHingeType = "standard" | "self_closing";
+export type GateLatchType = "standard" | "lokk_latch" | "magnetic" | "slide_bolt";
+export type GateHardwareColor = "black" | "bronze" | "white";
+export type GatePostInsert = "none" | "aluminum" | "steel";
+
 export interface GateSpec {
   gateType: GateType;
   openingWidth_in: number;        // Clear opening between posts (user input)
@@ -65,6 +72,12 @@ export interface GateSpec {
   centerGap_in?: number;          // Center gap for double gates
   dropRodRequired: boolean;
   isPoolGate: boolean;
+  // Contractor-selected hardware (all optional — undefined = engine default).
+  // Carried forward from GateInput so the pricing engine can look up SKUs.
+  hinges?: GateHingeType;
+  latch?: GateLatchType;
+  hardwareColor?: GateHardwareColor;  // Metadata only — doesn't affect price today.
+  postInsert?: GatePostInsert;
 }
 
 export interface FenceGraph {
@@ -133,11 +146,6 @@ export interface RunInput {
   panelStyle?: PanelStyle; // defaults to product line default
   notes?: string;
 }
-
-export type GateHingeType = "standard" | "self_closing";
-export type GateLatchType = "standard" | "lokk_latch" | "magnetic" | "slide_bolt";
-export type GateHardwareColor = "black" | "bronze" | "white";
-export type GatePostInsert = "none" | "aluminum" | "steel";
 
 export interface GateInput {
   id: string;
