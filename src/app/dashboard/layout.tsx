@@ -7,6 +7,7 @@ import { Header } from "@/components/dashboard/Header";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { TrialBanner } from "@/components/dashboard/TrialBanner";
 import HelpModule from "@/components/dashboard/HelpModule";
+import PostHogProvider from "@/components/PostHogProvider";
 
 export default async function DashboardLayout({
   children,
@@ -109,8 +110,22 @@ export default async function DashboardLayout({
     );
   }
 
+  // PostHog identity — assembled from data already fetched above so
+  // this mount adds zero extra DB queries. Root layout has a null-
+  // identity PostHogProvider for anon pageviews; the dashboard variant
+  // below upgrades the same PostHog instance with the user's identity.
+  const phIdentity = {
+    userId: user.id,
+    email: profile.email ?? null,
+    fullName: profile.full_name ?? null,
+    orgId: profile.org_id,
+    orgName: org?.name ?? null,
+    plan: (org?.plan as string | null) ?? null,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <PostHogProvider identity={phIdentity} />
       <Sidebar items={visibleNav} orgName={orgName} />
       <Header
         email={profile.email}

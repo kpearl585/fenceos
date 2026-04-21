@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { generateQuoteLink } from "@/app/quote/actions";
+import { captureEvent } from "@/lib/analytics/posthog-client";
 
 interface Props {
   estimateId: string;
@@ -22,6 +23,10 @@ export default function ShareQuoteButton({ estimateId, estimateName }: Props) {
     if (result.success && result.url) {
       setStatus("success");
       setQuoteUrl(result.url);
+      captureEvent("quote_shared", {
+        estimate_id: estimateId,
+        expiry_days: expiryDays,
+      });
     } else {
       setStatus("error");
       setTimeout(() => setStatus("idle"), 3000);
