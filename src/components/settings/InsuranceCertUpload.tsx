@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/browser";
-import { recordContractorDocUpload, deleteContractorDoc } from "@/lib/hoa/contractorDocs";
+import { recordHoaDocUpload, deleteHoaDoc } from "@/lib/hoa/hoaDocs";
 
 interface InsuranceCertUploadProps {
   orgId: string;
@@ -62,7 +62,7 @@ export default function InsuranceCertUpload({ orgId, existing }: InsuranceCertUp
       const path = `${orgId}/insurance_cert.pdf`;
 
       const { error: uploadError } = await supabase.storage
-        .from("contractor-docs")
+        .from("hoa-docs")
         .upload(path, file, { upsert: true, contentType: "application/pdf" });
 
       if (uploadError) {
@@ -71,7 +71,7 @@ export default function InsuranceCertUpload({ orgId, existing }: InsuranceCertUp
         return;
       }
 
-      const result = await recordContractorDocUpload({
+      const result = await recordHoaDocUpload({
         docType: "insurance_cert",
         storagePath: path,
         filename: file.name,
@@ -110,7 +110,7 @@ export default function InsuranceCertUpload({ orgId, existing }: InsuranceCertUp
     if (!confirm("Remove your insurance certificate?")) return;
     setUploading(true);
     setError("");
-    const result = await deleteContractorDoc("insurance_cert");
+    const result = await deleteHoaDoc("insurance_cert");
     if (result.error) {
       setError(result.error);
     } else {

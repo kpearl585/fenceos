@@ -107,7 +107,7 @@ export async function generateHoaPacket(input: unknown): Promise<{
         .eq("org_id", profile.org_id)
         .maybeSingle(),
       admin
-        .from("org_contractor_docs")
+        .from("org_hoa_docs")
         .select("storage_path")
         .eq("org_id", profile.org_id)
         .eq("doc_type", "insurance_cert")
@@ -122,7 +122,7 @@ export async function generateHoaPacket(input: unknown): Promise<{
     if (certRow?.storage_path) {
       try {
         const { data, error } = await admin.storage
-          .from("contractor-docs")
+          .from("hoa-docs")
           .download(certRow.storage_path);
         if (error) throw error;
         if (data) {

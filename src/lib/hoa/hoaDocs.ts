@@ -3,16 +3,16 @@ import { z } from "zod";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import { canAccess } from "@/lib/roles";
-import { UploadContractorDocSchema } from "@/lib/validation/schemas";
+import { UploadHoaDocSchema } from "@/lib/validation/schemas";
 import { RateLimiters } from "@/lib/security/rate-limit";
 
-// Record (or replace) a contractor-doc upload. The file itself is
-// uploaded client-side to Supabase Storage via the browser client and
-// the existing `contractor_docs_insert` policy (owner-only). This action
-// only records the metadata row after a successful upload.
-export async function recordContractorDocUpload(input: unknown) {
+// Record (or replace) an HOA-doc upload. The file itself is uploaded
+// client-side to Supabase Storage via the browser client and the
+// `hoa_docs_insert` policy (owner-only). This action only records the
+// metadata row after a successful upload.
+export async function recordHoaDocUpload(input: unknown) {
   try {
-    const validated = UploadContractorDocSchema.parse(input);
+    const validated = UploadHoaDocSchema.parse(input);
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -20,7 +20,7 @@ export async function recordContractorDocUpload(input: unknown) {
 
     const profile = await ensureProfile(supabase, user);
     if (!canAccess(profile.role, "owner")) {
-      return { error: "Only the account owner can upload contractor documents." };
+      return { error: "Only the account owner can upload HOA documents." };
     }
 
     // Rate limit: re-uploading the same cert 50 times/hour means something
@@ -41,7 +41,7 @@ export async function recordContractorDocUpload(input: unknown) {
 
     const admin = createAdminClient();
     const { error } = await admin
-      .from("org_contractor_docs")
+      .from("org_hoa_docs")
       .upsert(
         {
           org_id: profile.org_id,
@@ -56,7 +56,7 @@ export async function recordContractorDocUpload(input: unknown) {
       );
 
     if (error) {
-      console.error("recordContractorDocUpload error:", error);
+      console.error("recordHoaDocUpload error:", error);
       return { error: "Failed to record upload. Try again." };
     }
 
@@ -66,13 +66,13 @@ export async function recordContractorDocUpload(input: unknown) {
       const first = err.issues[0];
       return { error: `Validation failed: ${first?.message ?? "invalid input"}` };
     }
-    console.error("recordContractorDocUpload unexpected:", err);
+    console.error("recordHoaDocUpload unexpected:", err);
     return { error: "An unexpected error occurred." };
   }
 }
 
-// Remove a stored contractor doc (both the storage object and metadata).
-export async function deleteContractorDoc(docType: string) {
+// Remove a stored HOA doc (both the storage object and metadata).
+export async function deleteHoaDoc(docType: string) {
   try {
     if (!["insurance_cert", "w9", "license"].includes(docType)) {
       return { error: "Unknown document type." };
@@ -84,30 +84,30 @@ export async function deleteContractorDoc(docType: string) {
 
     const profile = await ensureProfile(supabase, user);
     if (!canAccess(profile.role, "owner")) {
-      return { error: "Only the account owner can remove contractor documents." };
+      return { error: "Only the account owner can remove HOA documents." };
     }
 
     const admin = createAdminClient();
     const { data: existing } = await admin
-      .from("org_contractor_docs")
+      .from("org_hoa_docs")
       .select("storage_path")
       .eq("org_id", profile.org_id)
       .eq("doc_type", docType)
       .maybeSingle();
 
     if (existing?.storage_path) {
-      await admin.storage.from("contractor-docs").remove([existing.storage_path]);
+      await admin.storage.from("hoa-docs").remove([existing.storage_path]);
     }
 
     await admin
-      .from("org_contractor_docs")
+      .from("org_hoa_docs")
       .delete()
       .eq("org_id", profile.org_id)
       .eq("doc_type", docType);
 
     return { success: true };
   } catch (err) {
-    console.error("deleteContractorDoc error:", err);
+    console.error("deleteHoaDoc error:", err);
     return { error: "Failed to remove document." };
   }
 }

@@ -35,7 +35,7 @@ export default async function SettingsPage() {
     adminSettings.from("users").select("id, full_name, email, role, created_at").eq("org_id", profile.org_id).order("created_at"),
     adminSettings.from("organizations").select("name, slug, id, plan, plan_status, trial_ends_at").eq("id", profile.org_id).single(),
     adminSettings
-      .from("org_contractor_docs")
+      .from("org_hoa_docs")
       .select("filename, file_size_bytes, uploaded_at, expires_at")
       .eq("org_id", profile.org_id)
       .eq("doc_type", "insurance_cert")
