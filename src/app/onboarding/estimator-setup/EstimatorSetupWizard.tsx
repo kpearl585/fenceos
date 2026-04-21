@@ -28,6 +28,9 @@ interface Props {
   };
 }
 
+const INPUT_BASE = "bg-surface-3 border border-border text-text rounded-lg focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+const LABEL_CLASS = "block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5";
+
 export default function EstimatorSetupWizard({ initial }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(0);
@@ -76,37 +79,40 @@ export default function EstimatorSetupWizard({ initial }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-fence-950 flex flex-col">
-      <div className="flex items-center justify-between px-8 py-5 border-b border-white/5">
+    <div className="relative min-h-screen bg-background text-text flex flex-col overflow-hidden">
+      <div className="absolute inset-0 grid-pattern pointer-events-none" />
+      <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative flex items-center justify-between px-8 py-5 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-fence-500 rounded-lg flex items-center justify-center">
+          <div className="w-7 h-7 bg-accent rounded-lg flex items-center justify-center">
             <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </div>
-          <span className="text-white font-bold text-sm">FenceEstimatePro</span>
+          <span className="font-display font-bold text-sm">FenceEstimate<span className="text-accent-light">Pro</span></span>
         </div>
         <Link
           href="/dashboard"
-          className="text-white/40 text-xs hover:text-white/70"
+          className="text-muted text-xs hover:text-text transition-colors duration-150"
         >
           Skip &amp; go to dashboard
         </Link>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="relative flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-xl">
           {/* Progress bar (hidden on intro + done) */}
           {step > 0 && step < 4 && (
             <div className="mb-8">
-              <div className="flex items-center justify-between text-xs text-white/40 mb-2">
+              <div className="flex items-center justify-between text-xs text-muted mb-2 uppercase tracking-wider font-semibold">
                 <span>Step {step} of {totalSteps - 1}</span>
                 <span>{Math.round((step / (totalSteps - 1)) * 100)}%</span>
               </div>
-              <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-surface-3 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-fence-500 transition-all duration-300"
+                  className="h-full bg-accent transition-all duration-300"
                   style={{ width: `${(step / (totalSteps - 1)) * 100}%` }}
                 />
               </div>
@@ -116,9 +122,9 @@ export default function EstimatorSetupWizard({ initial }: Props) {
           {/* ── Step 0: Welcome ── */}
           {step === 0 && (
             <div>
-              <div className="w-12 h-12 bg-fence-500/10 border border-fence-500/20 rounded-xl flex items-center justify-center mb-6">
+              <div className="w-12 h-12 bg-accent/10 border border-accent/30 rounded-xl flex items-center justify-center mb-6">
                 <svg
-                  className="w-6 h-6 text-fence-400"
+                  className="w-6 h-6 text-accent-light"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -128,17 +134,17 @@ export default function EstimatorSetupWizard({ initial }: Props) {
                   <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.49 8.49 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.49-8.49 2.83-2.83" />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold text-white mb-3">
+              <h1 className="font-display text-3xl font-bold text-text mb-3">
                 Tune the estimator to your business
               </h1>
-              <p className="text-white/60 text-base leading-relaxed mb-8">
+              <p className="text-muted text-base leading-relaxed mb-8">
                 Three quick questions so your first estimate lands close to the mark. Takes about 90&nbsp;seconds. You can change any of this later in Settings.
               </p>
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="inline-flex items-center gap-2 bg-fence-600 hover:bg-fence-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-2 bg-accent hover:bg-accent-light accent-glow text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-150"
                 >
                   Let&rsquo;s go
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
@@ -147,7 +153,7 @@ export default function EstimatorSetupWizard({ initial }: Props) {
                 </button>
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 text-white/40 hover:text-white/70 font-medium px-4 py-3"
+                  className="inline-flex items-center gap-2 text-muted hover:text-text font-medium px-4 py-3 transition-colors duration-150"
                 >
                   Not now
                 </Link>
@@ -158,23 +164,23 @@ export default function EstimatorSetupWizard({ initial }: Props) {
           {/* ── Step 1: Region ── */}
           {step === 1 && (
             <div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="font-display text-2xl font-bold text-text mb-2">
                 Where do you mostly work?
               </h1>
-              <p className="text-white/50 text-sm leading-relaxed mb-6">
+              <p className="text-muted text-sm leading-relaxed mb-6">
                 We&rsquo;ll adjust your default labor rates and material prices based on the region. Pick the one that best matches your primary service area.
               </p>
-              <label className="block text-xs font-medium uppercase tracking-wide text-white/40 mb-1.5">
+              <label className={LABEL_CLASS}>
                 Region
               </label>
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-fence-500 focus:ring-1 focus:ring-fence-500"
+                className={`w-full ${INPUT_BASE} px-4 py-3 text-sm`}
                 disabled={busy}
               >
                 {REGION_OPTIONS.map((r) => (
-                  <option key={r.value} value={r.value} className="bg-fence-950 text-white">
+                  <option key={r.value} value={r.value}>
                     {r.label}
                   </option>
                 ))}
@@ -185,13 +191,13 @@ export default function EstimatorSetupWizard({ initial }: Props) {
           {/* ── Step 2: Crew hours ── */}
           {step === 2 && (
             <div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="font-display text-2xl font-bold text-text mb-2">
                 How many hours does your crew put in per day?
               </h1>
-              <p className="text-white/50 text-sm leading-relaxed mb-6">
-                Productive install time &mdash; not counting travel or lunch. Most residential crews run <span className="text-white">6&ndash;8 hours</span>. This tells the engine how to convert labor hours into calendar days.
+              <p className="text-muted text-sm leading-relaxed mb-6">
+                Productive install time &mdash; not counting travel or lunch. Most residential crews run <span className="text-text font-semibold">6&ndash;8 hours</span>. This tells the engine how to convert labor hours into calendar days.
               </p>
-              <label className="block text-xs font-medium uppercase tracking-wide text-white/40 mb-1.5">
+              <label className={LABEL_CLASS}>
                 Hours per work day
               </label>
               <div className="flex items-center gap-3">
@@ -202,10 +208,10 @@ export default function EstimatorSetupWizard({ initial }: Props) {
                   step={0.5}
                   value={hoursPerDay}
                   onChange={(e) => setHoursPerDay(Number(e.target.value))}
-                  className="w-36 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-lg font-semibold focus:outline-none focus:border-fence-500 focus:ring-1 focus:ring-fence-500"
+                  className={`w-36 ${INPUT_BASE} px-4 py-3 text-lg font-semibold font-display`}
                   disabled={busy}
                 />
-                <span className="text-white/40 text-sm">hours</span>
+                <span className="text-muted text-sm">hours</span>
               </div>
             </div>
           )}
@@ -213,13 +219,13 @@ export default function EstimatorSetupWizard({ initial }: Props) {
           {/* ── Step 3: Waste ── */}
           {step === 3 && (
             <div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="font-display text-2xl font-bold text-text mb-2">
                 How much extra material do you order?
               </h1>
-              <p className="text-white/50 text-sm leading-relaxed mb-6">
-                Beyond what the plan calls for &mdash; cut scrap, broken pickets, spare posts. <span className="text-white">5% is the industry default</span> for a seasoned crew. The engine learns from your closed jobs and adjusts this over time.
+              <p className="text-muted text-sm leading-relaxed mb-6">
+                Beyond what the plan calls for &mdash; cut scrap, broken pickets, spare posts. <span className="text-text font-semibold">5% is the industry default</span> for a seasoned crew. The engine learns from your closed jobs and adjusts this over time.
               </p>
-              <label className="block text-xs font-medium uppercase tracking-wide text-white/40 mb-1.5">
+              <label className={LABEL_CLASS}>
                 Default waste allowance
               </label>
               <div className="flex items-center gap-3">
@@ -230,10 +236,10 @@ export default function EstimatorSetupWizard({ initial }: Props) {
                   step={0.5}
                   value={wastePct}
                   onChange={(e) => setWastePct(Number(e.target.value))}
-                  className="w-36 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-lg font-semibold focus:outline-none focus:border-fence-500 focus:ring-1 focus:ring-fence-500"
+                  className={`w-36 ${INPUT_BASE} px-4 py-3 text-lg font-semibold font-display`}
                   disabled={busy}
                 />
-                <span className="text-white/40 text-sm">percent</span>
+                <span className="text-muted text-sm">percent</span>
               </div>
             </div>
           )}
@@ -241,20 +247,20 @@ export default function EstimatorSetupWizard({ initial }: Props) {
           {/* ── Step 4: Done ── */}
           {step === 4 && (
             <div className="text-center">
-              <div className="inline-flex w-16 h-16 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 mb-6">
-                <svg className="w-8 h-8 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+              <div className="inline-flex w-16 h-16 items-center justify-center rounded-full bg-accent/15 border border-accent/30 mb-6">
+                <svg className="w-8 h-8 text-accent-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold text-white mb-3">You&rsquo;re all set.</h1>
-              <p className="text-white/60 text-base leading-relaxed mb-8 max-w-md mx-auto">
-                The estimator is tuned to your business. Every setting we just walked through (and more) is available anytime under <span className="font-semibold text-white">Settings &rarr; Estimator</span>.
+              <h1 className="font-display text-3xl font-bold text-text mb-3">You&rsquo;re all set.</h1>
+              <p className="text-muted text-base leading-relaxed mb-8 max-w-md mx-auto">
+                The estimator is tuned to your business. Every setting we just walked through (and more) is available anytime under <span className="font-semibold text-text">Settings &rarr; Estimator</span>.
               </p>
               <div className="flex items-center justify-center gap-3">
                 <button
                   type="button"
                   onClick={() => router.push("/dashboard/advanced-estimate")}
-                  className="inline-flex items-center gap-2 bg-fence-600 hover:bg-fence-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-2 bg-accent hover:bg-accent-light accent-glow text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-150"
                 >
                   Make your first estimate
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
@@ -263,7 +269,7 @@ export default function EstimatorSetupWizard({ initial }: Props) {
                 </button>
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 text-white/40 hover:text-white/70 font-medium px-4 py-3"
+                  className="inline-flex items-center gap-2 text-muted hover:text-text font-medium px-4 py-3 transition-colors duration-150"
                 >
                   Go to dashboard
                 </Link>
@@ -273,7 +279,7 @@ export default function EstimatorSetupWizard({ initial }: Props) {
 
           {/* Error + nav */}
           {error && step > 0 && step < 4 && (
-            <p role="alert" className="mt-4 text-sm text-red-400">
+            <p role="alert" className="mt-4 text-sm text-danger">
               {error}
             </p>
           )}
@@ -284,7 +290,7 @@ export default function EstimatorSetupWizard({ initial }: Props) {
                 type="button"
                 onClick={back}
                 disabled={busy}
-                className="text-white/40 hover:text-white/70 text-sm font-medium disabled:opacity-50"
+                className="text-muted hover:text-text text-sm font-medium disabled:opacity-50 transition-colors duration-150"
               >
                 &larr; Back
               </button>
@@ -293,7 +299,7 @@ export default function EstimatorSetupWizard({ initial }: Props) {
                   type="button"
                   onClick={skip}
                   disabled={busy}
-                  className="text-white/40 hover:text-white/70 text-sm font-medium disabled:opacity-50"
+                  className="text-muted hover:text-text text-sm font-medium disabled:opacity-50 transition-colors duration-150"
                 >
                   Skip
                 </button>
@@ -301,7 +307,7 @@ export default function EstimatorSetupWizard({ initial }: Props) {
                   type="button"
                   onClick={next}
                   disabled={busy}
-                  className="inline-flex items-center gap-2 bg-fence-600 hover:bg-fence-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 bg-accent hover:bg-accent-light accent-glow text-white font-semibold px-5 py-2.5 rounded-lg transition-colors duration-150 disabled:opacity-50 disabled:hover:bg-accent"
                 >
                   {busy ? "Saving…" : step === 3 ? "Finish" : "Next"}
                   {!busy && (
