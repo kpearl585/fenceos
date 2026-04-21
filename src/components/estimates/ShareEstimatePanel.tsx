@@ -41,9 +41,9 @@ export function ShareEstimatePanel({
   }
 
   return (
-    <div className="bg-accent/5 border border-accent/20 rounded-xl p-5 mb-6">
+    <div className="bg-accent/10 border border-accent/30 rounded-xl p-5 mb-6">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 bg-accent/15 border border-accent/30 rounded-lg flex items-center justify-center">
+        <div className="w-7 h-7 bg-accent/15 rounded-lg flex items-center justify-center">
           <svg className="w-4 h-4 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
@@ -65,10 +65,10 @@ export function ShareEstimatePanel({
           type="button"
           onClick={copyLink}
           className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors duration-150 whitespace-nowrap ${
-            copied ? "bg-accent accent-glow text-white" : "border border-border text-text hover:border-accent/60 hover:text-accent-light"
+            copied ? "bg-accent text-white accent-glow" : "bg-surface-3 border border-border text-text hover:bg-surface-2"
           }`}
         >
-          {copied ? "Copied" : "Copy Link"}
+          {copied ? " Copied!" : "Copy Link"}
         </button>
       </div>
 
@@ -84,19 +84,19 @@ export function ShareEstimatePanel({
           type="submit"
           disabled={emailStatus === "sending" || emailStatus === "sent"}
           className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors duration-150 whitespace-nowrap ${
-            emailStatus === "sent" ? "bg-accent accent-glow text-white"
-            : emailStatus === "error" ? "bg-danger/15 text-danger border border-danger/30"
+            emailStatus === "sent" ? "bg-accent text-white accent-glow"
+            : emailStatus === "error" ? "bg-danger/10 text-danger border border-danger/30"
             : "bg-accent hover:bg-accent-light accent-glow text-white"
           }`}
         >
-          {emailStatus === "sending" ? "Sending..." : emailStatus === "sent" ? "Sent" : emailStatus === "error" ? "Error" : "Email Customer"}
+          {emailStatus === "sending" ? "Sending..." : emailStatus === "sent" ? " Sent!" : emailStatus === "error" ? "Error" : "Email Customer"}
         </button>
       </form>
       {emailStatus === "error" && (
         <p className="text-xs text-danger mt-1.5">Failed — RESEND_API_KEY not configured yet.</p>
       )}
       <p className="text-xs text-muted mt-3">
-        Customer clicks the link, reads the estimate, draws their signature, and hits Accept. You get an email the moment they sign.
+         Customer clicks the link, reads the estimate, draws their signature, and hits Accept. You get an email the moment they sign.
       </p>
     </div>
   );
