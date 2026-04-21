@@ -27,13 +27,13 @@ export default function ToggleSwitch({
         aria-checked={checked}
         aria-label={ariaLabel ?? label}
         onClick={onToggle}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? "bg-fence-600" : "bg-gray-200"}`}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface-2 ${checked ? "bg-accent" : "bg-surface-3 border border-border"}`}
       >
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`}
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-150 ${checked ? "translate-x-6" : "translate-x-1"}`}
         />
       </button>
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <span className="text-sm font-medium text-text">{label}</span>
       {checked && activeBadge}
     </div>
   );
