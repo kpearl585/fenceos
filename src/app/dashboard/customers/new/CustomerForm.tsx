@@ -4,58 +4,36 @@ import PhoneInput from "@/components/ui/PhoneInput";
 import { createCustomer } from "../actions";
 
 const inputClass =
-  "w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-fence-500 focus:border-fence-500";
+  "w-full border border-border bg-surface-3 text-text rounded-lg py-3 px-4 text-base placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+
+const labelClass = "block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider";
 
 export default function CustomerForm() {
   return (
     <form
       action={createCustomer}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8 max-w-2xl space-y-5"
+      className="bg-surface-2 rounded-xl border border-border p-5 sm:p-8 max-w-2xl space-y-5"
     >
-      {/* Name */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Name <span className="text-red-500">*</span>
+        <label className={labelClass}>
+          Name <span className="text-danger">*</span>
         </label>
-        <input
-          name="name"
-          required
-          placeholder="John Smith"
-          className={inputClass}
-        />
+        <input name="name" required placeholder="John Smith" className={inputClass} />
       </div>
 
-      {/* Phone — auto-formats as you type */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Phone
-        </label>
+        <label className={labelClass}>Phone</label>
         <PhoneInput name="phone" className={inputClass} />
       </div>
 
-      {/* Email */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Email
-        </label>
-        <input
-          name="email"
-          type="email"
-          placeholder="john@example.com"
-          className={inputClass}
-        />
+        <label className={labelClass}>Email</label>
+        <input name="email" type="email" placeholder="john@example.com" className={inputClass} />
       </div>
 
-      {/* Address */}
       <div className="space-y-3">
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Address
-        </label>
-        <input
-          name="address"
-          placeholder="Street address"
-          className={inputClass}
-        />
+        <label className={labelClass}>Address</label>
+        <input name="address" placeholder="Street address" className={inputClass} />
         <div className="grid grid-cols-3 gap-3">
           <input name="city"  placeholder="City"  className={inputClass} />
           <input name="state" placeholder="ST" maxLength={2} className={inputClass} />
@@ -63,23 +41,12 @@ export default function CustomerForm() {
         </div>
       </div>
 
-      {/* Notes */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Notes
-        </label>
-        <textarea
-          name="notes"
-          rows={3}
-          placeholder="Any additional notes about this customer..."
-          className={inputClass}
-        />
+        <label className={labelClass}>Notes</label>
+        <textarea name="notes" rows={3} placeholder="Any additional notes about this customer..." className={inputClass} />
       </div>
 
-      <button
-        type="submit"
-        className="w-full bg-fence-600 text-white py-4 rounded-xl text-lg font-bold hover:bg-fence-700 transition-colors"
-      >
+      <button type="submit" className="w-full bg-accent hover:bg-accent-light accent-glow text-white py-4 rounded-xl text-lg font-bold transition-colors duration-150">
         Save Customer
       </button>
     </form>
