@@ -44,15 +44,14 @@ export function Sidebar({ items, orgName }: { items: NavItem[]; orgName: string 
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
                 active
-                  ? "bg-accent text-white shadow-sm"
-                  : "text-accent-light hover:bg-surface-2 hover:text-white"
+                  ? "bg-accent text-white"
+                  : "text-muted hover:bg-surface-2 hover:text-text"
               }`}
             >
               <NavIcon name={item.icon} className="w-4 h-4 flex-shrink-0" />
               {item.label}
-              {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-accent-light" />}
             </Link>
           );
         })}

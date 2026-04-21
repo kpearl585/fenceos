@@ -7,15 +7,13 @@
 html {
   scroll-behavior: smooth;
   /*
-   * Lock to the light color scheme for native form controls. Without
-   * this, macOS / Windows Chrome users with OS-level dark mode get
-   * inputs rendered with white-on-dark system styling, which ignores
-   * our CSS `color` declarations. Our pages are either light-themed
-   * (dashboard, quote portal) or custom-dark (landing) — neither is
-   * system-dark — so declaring `light` keeps the native controls in
-   * a predictable state.
+   * Lock to the dark color scheme for native form controls. All surfaces
+   * (landing, dashboard, quote portal) now share the dark brand palette,
+   * so `dark` keeps native controls (scrollbars, date pickers, select
+   * chevrons) rendering consistently with our tokens instead of the
+   * browser default light scheme.
    */
-  color-scheme: light;
+  color-scheme: dark;
 }
 body {
   background: #080808;
@@ -45,39 +43,37 @@ body {
 }
 
 /*
- * Form control default text color.
+ * Form control defaults — dark brand palette.
  *
- * body sets color: #F2F2F2 for the dark landing/marketing pages. The
- * dashboard is light-themed with white backgrounds, but <input>, <textarea>,
- * and <select> inherit the body color by default — so every fillable field
- * in the dashboard was rendering near-white text on a white background
- * (invisible). The landing page's signup/login forms already set explicit
- * `text-white` / similar on their inputs for readability on dark
- * backgrounds, so this default only applies where a more specific utility
- * class hasn't been declared.
+ * <input>, <textarea>, and <select> inherit body color by default. Body
+ * uses our dark palette (text #F2F2F2 on background #080808), but inputs
+ * need their own surface + text treatment so they read as distinct
+ * controls instead of blending into the page background. We use
+ * `surface` (#0F0F0F) for the input fill and `text` (#F2F2F2) for
+ * typed values — matching the tokens used everywhere else.
  *
- * Lives in @layer base so Tailwind utilities like `text-white` /
- * `text-gray-900` / `text-fence-950` on a specific element win via
+ * Lives in @layer base so Tailwind utilities like `bg-white` /
+ * `text-gray-900` / `bg-surface-2` on a specific element win via
  * normal cascade.
  */
 @layer base {
   input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
   textarea,
   select {
-    color: #111827;           /* gray-900 — same as the dashboard's default body text */
-    background-color: #ffffff; /* explicit so OS dark-mode clients can't tint it */
+    color: #F2F2F2;            /* text token */
+    background-color: #0F0F0F;  /* surface token */
   }
 
-  /* Native autofill (Chrome/Safari) applies a yellow-ish fill that
-   * overrides both background-color and color via an internal shadow.
-   * Box-shadow inset trick forces our white + dark-gray values to stick. */
+  /* Native autofill (Chrome/Safari) forces its own yellow fill +
+   * dark text via an internal box-shadow. Invert the trick to keep
+   * our dark surface + light text visible. */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   textarea:-webkit-autofill,
   select:-webkit-autofill {
-    -webkit-text-fill-color: #111827;
-    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    -webkit-text-fill-color: #F2F2F2;
+    -webkit-box-shadow: 0 0 0px 1000px #0F0F0F inset;
     transition: background-color 5000s ease-in-out 0s;
   }
 }

@@ -21,15 +21,17 @@ function greeting() {
   return "Good evening";
 }
 
+// Single-accent rule: neutral surfaces for resting states, accent family
+// for positive / active states, danger for rejected. No pastel rainbow.
 const STATUS_COLORS: Record<string, string> = {
-  draft:     "bg-surface-2 text-muted",
-  quoted:    "bg-blue-100 text-blue-700",
-  approved:  "bg-green-100 text-green-700",
-  rejected:  "bg-red-100 text-red-600",
-  scheduled: "bg-purple-100 text-purple-700",
-  active:    "bg-blue-100 text-blue-700",
-  complete:  "bg-green-100 text-green-700",
-  cancelled: "bg-surface-2 text-muted",
+  draft:     "bg-surface-3 text-muted",
+  quoted:    "bg-accent/15 text-accent-light",
+  approved:  "bg-accent/20 text-accent-light",
+  rejected:  "bg-danger/15 text-danger",
+  scheduled: "bg-surface-3 text-text",
+  active:    "bg-accent text-white",
+  complete:  "bg-accent/20 text-accent-light",
+  cancelled: "bg-surface-3 text-muted",
 };
 
 export default async function DashboardHome({
@@ -124,8 +126,8 @@ export default async function DashboardHome({
         <div>
           <h1 className="text-2xl font-bold text-text">{greeting()}, {firstName}</h1>
           {welcome === "1" && (
-            <div className="mb-6 flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl px-5 py-3.5 text-sm font-medium">
-              <span>Welcome to FenceEstimatePro! Your account is set up. Start by adding a customer or creating your first estimate.</span>
+            <div className="mb-6 flex items-center gap-3 bg-accent/10 border border-accent/20 text-accent-light rounded-xl px-5 py-3.5 text-sm font-medium">
+              <span>Welcome to FenceEstimatePro. Your account is set up — start by adding a customer or creating your first estimate.</span>
             </div>
           )}
           <p className="text-sm text-muted mt-0.5">
@@ -134,43 +136,45 @@ export default async function DashboardHome({
         </div>
         <div className="flex gap-2">
           {canEstimate && (
-            <Link href="/dashboard/customers/new" className="hidden sm:inline-flex items-center gap-1.5 border border-border-strong text-text hover:bg-background text-sm font-medium px-3 py-2 rounded-lg transition-colors">
+            <Link href="/dashboard/customers/new" className="hidden sm:inline-flex items-center gap-1.5 border border-border hover:border-border-strong text-text hover:bg-surface-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors duration-150">
               + Customer
             </Link>
           )}
           {canEstimate && (
-            <Link href="/dashboard/advanced-estimate" className="inline-flex items-center gap-1.5 bg-accent hover:bg-accent-dark text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
+            <Link href="/dashboard/advanced-estimate" className="inline-flex items-center gap-1.5 bg-accent hover:bg-accent-light text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-150">
               + New Estimate
             </Link>
           )}
         </div>
       </div>
 
-      {/*  KPI Cards  */}
+      {/*  KPI Cards — unified surface-2 + tinted border for the margin
+          card's tone. Numeric values use font-display for consistency with
+          the landing page stats strip. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isOwner && (
-          <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
+          <div className="bg-surface-2 rounded-xl border border-border p-5">
             <p className="text-xs font-semibold text-muted uppercase tracking-wider">Revenue (Active+Done)</p>
-            <p className="text-2xl font-bold text-text mt-2">{fmt(totalRevenue)}</p>
+            <p className="text-2xl font-bold text-text font-display mt-2">{fmt(totalRevenue)}</p>
             <p className="text-xs text-muted mt-1">{completedJobs.length} jobs completed</p>
           </div>
         )}
-        <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
+        <div className="bg-surface-2 rounded-xl border border-border p-5">
           <p className="text-xs font-semibold text-muted uppercase tracking-wider">Active Jobs</p>
-          <p className="text-2xl font-bold text-text mt-2">{activeJobs.length}</p>
+          <p className="text-2xl font-bold text-text font-display mt-2">{activeJobs.length}</p>
           <p className="text-xs text-muted mt-1">{scheduledJobs.length} scheduled</p>
         </div>
         {canEstimate && (
-          <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
+          <div className="bg-surface-2 rounded-xl border border-border p-5">
             <p className="text-xs font-semibold text-muted uppercase tracking-wider">Pipeline Value</p>
-            <p className="text-2xl font-bold text-text mt-2">{fmt(pipelineValue)}</p>
+            <p className="text-2xl font-bold text-text font-display mt-2">{fmt(pipelineValue)}</p>
             <p className="text-xs text-muted mt-1">{quotedEstimates.length} quote{quotedEstimates.length !== 1 ? "s" : ""} out · {draftEstimates.length} draft{draftEstimates.length !== 1 ? "s" : ""}</p>
           </div>
         )}
         {isOwner && (
-          <div className={`rounded-xl border-2 p-5 shadow-sm ${avgMargin >= targetMargin ? "bg-green-50 border-green-200" : avgMargin >= warnMargin ? "bg-yellow-50 border-yellow-200" : "bg-red-50 border-red-200"}`}>
+          <div className={`bg-surface-2 rounded-xl border p-5 ${avgMargin >= targetMargin ? "border-accent/30" : avgMargin >= warnMargin ? "border-warning/30" : "border-danger/30"}`}>
             <p className="text-xs font-semibold text-muted uppercase tracking-wider">Avg Margin</p>
-            <p className={`text-2xl font-bold mt-2 ${avgMargin >= targetMargin ? "text-green-700" : avgMargin >= warnMargin ? "text-yellow-700" : "text-red-700"}`}>
+            <p className={`text-2xl font-bold font-display mt-2 ${avgMargin >= targetMargin ? "text-accent-light" : avgMargin >= warnMargin ? "text-warning" : "text-danger"}`}>
               {margins.length ? fmtPct(avgMargin) : "—"}
             </p>
             <p className="text-xs text-muted mt-1">Target: {fmtPct(targetMargin)}</p>
@@ -193,44 +197,52 @@ export default async function DashboardHome({
 
       {/*  Margin Alert  */}
       {isOwner && belowTargetJobs.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-          
+        <div className="bg-danger/10 border border-danger/20 rounded-xl p-4 flex items-start gap-3">
           <div className="flex-1">
-            <p className="text-sm font-semibold text-red-800">
+            <p className="text-sm font-semibold text-danger">
               {belowTargetJobs.length} job{belowTargetJobs.length !== 1 ? "s" : ""} below {fmtPct(warnMargin)} margin
             </p>
-            <p className="text-xs text-red-600 mt-0.5">
+            <p className="text-xs text-danger/80 mt-0.5">
               {belowTargetJobs.slice(0, 3).map((j: { customers: { name: string }[] | null }) => (j.customers as { name: string }[] | null)?.[0]?.name || "Unnamed").join(", ")}
               {belowTargetJobs.length > 3 ? ` + ${belowTargetJobs.length - 3} more` : ""}
             </p>
           </div>
-          <Link href="/dashboard/owner" className="text-xs font-semibold text-red-700 hover:text-red-900 whitespace-nowrap">
-            View P&L →
+          <Link href="/dashboard/owner" className="text-xs font-semibold text-danger hover:text-text whitespace-nowrap transition-colors duration-150">
+            View P&amp;L →
           </Link>
         </div>
       )}
 
-      {/*  Pipeline Bar  */}
+      {/*  Pipeline Bar — single-accent rule: zero-count stages sit neutral
+          on surface-3, active stages get accent green. Final "Complete"
+          stage uses the solid accent to signal terminal-positive. */}
       {canEstimate && (
-        <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
+        <div className="bg-surface-2 rounded-xl border border-border p-5">
           <h2 className="text-sm font-semibold text-text mb-4">Pipeline</h2>
           <div className="flex items-center gap-1 flex-wrap">
             {[
-              { label: "Draft", count: pipeline.draft, color: "bg-surface-3 text-text" },
-              { label: "Quoted", count: pipeline.quoted, color: "bg-blue-100 text-blue-700" },
-              { label: "Approved", count: pipeline.approved, color: "bg-green-100 text-green-700" },
-              { label: "Scheduled", count: pipeline.scheduled, color: "bg-purple-100 text-purple-700" },
-              { label: "Active", count: pipeline.active, color: "bg-blue-500 text-white" },
-              { label: "Complete", count: pipeline.complete, color: "bg-green-500 text-white" },
-            ].map((stage, i) => (
-              <div key={stage.label} className="flex items-center gap-1">
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${stage.color}`}>
-                  <span>{stage.label}</span>
-                  <span className="font-bold">{stage.count}</span>
+              { label: "Draft",     count: pipeline.draft     },
+              { label: "Quoted",    count: pipeline.quoted    },
+              { label: "Approved",  count: pipeline.approved  },
+              { label: "Scheduled", count: pipeline.scheduled },
+              { label: "Active",    count: pipeline.active,   solid: true },
+              { label: "Complete",  count: pipeline.complete, solid: true },
+            ].map((stage, i, arr) => {
+              const tone = stage.count === 0
+                ? "bg-surface-3 text-muted"
+                : stage.solid
+                  ? "bg-accent text-white"
+                  : "bg-accent/15 text-accent-light";
+              return (
+                <div key={stage.label} className="flex items-center gap-1">
+                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${tone}`}>
+                    <span>{stage.label}</span>
+                    <span className="font-bold font-display">{stage.count}</span>
+                  </div>
+                  {i < arr.length - 1 && <span className="text-muted text-xs">→</span>}
                 </div>
-                {i < 5 && <span className="text-muted text-xs">→</span>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -240,7 +252,7 @@ export default async function DashboardHome({
 
         {/* Recent Estimates */}
         {canEstimate && (
-          <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+          <div className="bg-surface-2 rounded-xl border border-border overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="font-semibold text-text text-sm">Recent Estimates</h2>
               <Link href="/dashboard/estimates" className="text-xs text-accent hover:text-accent-light font-medium">View all →</Link>
@@ -251,9 +263,9 @@ export default async function DashboardHome({
                 <Link href="/dashboard/advanced-estimate" className="mt-3 inline-block text-xs text-accent font-semibold hover:underline">Create your first estimate →</Link>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-border">
                 {recentEstimates.map((e: { id: string; title: string; status: string; total: number | null; gross_margin_pct: number | null; customers: { name: string }[] | null }) => (
-                  <Link key={e.id} href={`/dashboard/estimates/${e.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-background transition-colors group">
+                  <Link key={e.id} href={`/dashboard/estimates/${e.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-surface-3 transition-colors duration-150 group">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-text truncate group-hover:text-accent">{(e.customers as { name: string }[] | null)?.[0]?.name || "No customer"}</p>
                       <p className="text-xs text-muted truncate">{e.title}</p>
@@ -272,7 +284,7 @@ export default async function DashboardHome({
         )}
 
         {/* Live Jobs */}
-        <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="bg-surface-2 rounded-xl border border-border overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <h2 className="font-semibold text-text text-sm">Active & Scheduled Jobs</h2>
             <Link href="/dashboard/jobs" className="text-xs text-accent hover:text-accent-light font-medium">View all →</Link>
@@ -282,9 +294,9 @@ export default async function DashboardHome({
               <p className="text-sm text-muted">No active or scheduled jobs</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-border">
               {liveJobs.map((j: { id: string; status: string; total_price: number | null; gross_margin_pct: number | null; customers: { name: string }[] | null; estimates: { fence_type: string; linear_feet: number }[] | null }) => (
-                <Link key={j.id} href={`/dashboard/jobs/${j.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-background transition-colors group">
+                <Link key={j.id} href={`/dashboard/jobs/${j.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-surface-3 transition-colors duration-150 group">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-text truncate group-hover:text-accent">
                       {(j.customers as { name: string }[] | null)?.[0]?.name || "No customer"}
@@ -295,7 +307,7 @@ export default async function DashboardHome({
                   </div>
                   <div className="flex items-center gap-2 ml-3 flex-shrink-0">
                     {isOwner && j.gross_margin_pct && (
-                      <span className={`text-xs font-bold ${Number(j.gross_margin_pct) >= targetMargin ? "text-green-600" : Number(j.gross_margin_pct) >= warnMargin ? "text-yellow-600" : "text-red-500"}`}>
+                      <span className={`text-xs font-bold font-display ${Number(j.gross_margin_pct) >= targetMargin ? "text-accent-light" : Number(j.gross_margin_pct) >= warnMargin ? "text-warning" : "text-danger"}`}>
                         {fmtPct(j.gross_margin_pct)}
                       </span>
                     )}
@@ -311,30 +323,27 @@ export default async function DashboardHome({
       </div>
 
 
-      {/*  Quick Actions  */}
-      <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
+      {/*  Quick Actions — solid borders (dashed reads as scaffolding);
+          primary action gets the accent tint, secondaries stay neutral. */}
+      <div className="bg-surface-2 rounded-xl border border-border p-5">
         <h2 className="text-sm font-semibold text-text mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {canEstimate && (
-            <Link href="/dashboard/advanced-estimate" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-accent/30 hover:border-accent hover:bg-accent/10 transition-all group text-center">
-              <span className="text-2xl"></span>
-              <span className="text-xs font-semibold text-accent group-hover:text-text">New Estimate</span>
+            <Link href="/dashboard/advanced-estimate" className="flex items-center justify-center p-4 rounded-xl border border-accent/30 bg-accent/5 hover:border-accent/60 hover:bg-accent/10 transition-colors duration-150 text-center">
+              <span className="text-sm font-semibold text-accent-light">New Estimate</span>
             </Link>
           )}
           {canEstimate && (
-            <Link href="/dashboard/customers/new" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-border hover:border-border-strong hover:bg-background transition-all group text-center">
-              <span className="text-2xl"></span>
-              <span className="text-xs font-semibold text-muted group-hover:text-text">New Customer</span>
+            <Link href="/dashboard/customers/new" className="flex items-center justify-center p-4 rounded-xl border border-border hover:border-border-strong hover:bg-surface-3 transition-colors duration-150 text-center">
+              <span className="text-sm font-semibold text-muted hover:text-text">New Customer</span>
             </Link>
           )}
-          <Link href="/dashboard/jobs" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-border hover:border-border-strong hover:bg-background transition-all group text-center">
-            <span className="text-2xl"></span>
-            <span className="text-xs font-semibold text-muted group-hover:text-text">View Jobs</span>
+          <Link href="/dashboard/jobs" className="flex items-center justify-center p-4 rounded-xl border border-border hover:border-border-strong hover:bg-surface-3 transition-colors duration-150 text-center">
+            <span className="text-sm font-semibold text-muted hover:text-text">View Jobs</span>
           </Link>
           {canAccess(profile.role, "materials") && (
-            <Link href="/dashboard/materials" className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-border hover:border-border-strong hover:bg-background transition-all group text-center">
-              <span className="text-2xl"></span>
-              <span className="text-xs font-semibold text-muted group-hover:text-text">Materials</span>
+            <Link href="/dashboard/materials" className="flex items-center justify-center p-4 rounded-xl border border-border hover:border-border-strong hover:bg-surface-3 transition-colors duration-150 text-center">
+              <span className="text-sm font-semibold text-muted hover:text-text">Materials</span>
             </Link>
           )}
         </div>
