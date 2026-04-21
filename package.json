@@ -12,6 +12,7 @@
     "prepare": "node -e \"if (!process.env.CI) { require('child_process').execSync('husky') }\"",
     "test:ai-extraction": "tsx scripts/test-ai-extraction.ts",
     "test:ai-extraction:high": "tsx scripts/test-ai-extraction.ts high",
+    "eval:survey": "tsx scripts/eval-survey-extraction.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
