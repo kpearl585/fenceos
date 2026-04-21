@@ -13,7 +13,7 @@ export function TrialBanner({ daysRemaining, plan }: TrialBannerProps) {
 
   return (
     <div className={`w-full px-4 py-2.5 flex items-center justify-between gap-4 text-sm font-medium ${
-      expired ? "bg-red-600" : urgent ? "bg-amber-500" : "bg-fence-700"
+      expired ? "bg-red-600" : urgent ? "bg-amber-500" : "bg-accent-dark"
     } text-white`}>
       <span>
         {expired
@@ -24,7 +24,7 @@ export function TrialBanner({ daysRemaining, plan }: TrialBannerProps) {
       </span>
       <Link
         href="/dashboard/upgrade"
-        className="shrink-0 bg-white text-fence-800 font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
+        className="shrink-0 bg-surface text-text font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-surface-2 transition"
       >
         Upgrade Now
       </Link>

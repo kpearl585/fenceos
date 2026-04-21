@@ -187,18 +187,18 @@ export default async function QuoteViewPage({ params }: Props) {
   // Error state
   if (!result.success || !result.quote) {
     return (
-      <div className="min-h-screen bg-fence-950 flex items-center justify-center px-6">
-        <div className="max-w-md w-full bg-white rounded-xl border border-red-200 p-8 text-center">
+      <div className="min-h-screen bg-surface-2 flex items-center justify-center px-6">
+        <div className="max-w-md w-full bg-surface rounded-xl border border-red-200 p-8 text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Quote Not Found</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-bold text-text mb-2">Quote Not Found</h1>
+          <p className="text-muted mb-6">
             {result.error || "This quote link is invalid or has expired."}
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted">
             If you believe this is an error, please contact the contractor who sent you this link.
           </p>
         </div>
@@ -225,13 +225,13 @@ export default async function QuoteViewPage({ params }: Props) {
   const fenceHeight = input.fenceHeight || 6;
 
   return (
-    <div className="min-h-screen bg-fence-950">
+    <div className="min-h-screen bg-surface-2">
       {/* Header */}
-      <div className="border-b border-white/10 bg-fence-900">
+      <div className="border-b border-white/10 bg-surface-3">
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-fence-500 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-surface-20 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -311,10 +311,10 @@ export default async function QuoteViewPage({ params }: Props) {
             homeowner has a chance to see the fence in AR before they
             start reviewing pricing and acceptance. */}
         {quote.ar_enabled && !isAccepted && !isExpired && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
-            <div className="bg-fence-50 border-b border-fence-200 px-6 py-4">
+          <div className="bg-surface rounded-xl border border-border overflow-hidden mb-8">
+            <div className="bg-surface-2 border-b border-accent/30 px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-fence-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 3 2 8l10 5 10-5-10-5Z" />
                     <path d="m2 12 10 5 10-5" />
@@ -322,44 +322,44 @@ export default async function QuoteViewPage({ params }: Props) {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">See Your Fence In AR</h2>
-                  <p className="text-sm text-gray-600">Preview your fence on your actual property using your phone</p>
+                  <h2 className="text-lg font-bold text-text">See Your Fence In AR</h2>
+                  <p className="text-sm text-muted">Preview your fence on your actual property using your phone</p>
                 </div>
               </div>
             </div>
             <div className="p-6">
               <ARViewerButton token={token} launchedBy="customer" variant="primary" />
-              <p className="text-xs text-gray-500 mt-3">Works on most modern iPhones and Android phones. No app download required.</p>
+              <p className="text-xs text-muted mt-3">Works on most modern iPhones and Android phones. No app download required.</p>
             </div>
           </div>
         )}
 
         {/* Quote Details */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
-          <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-bold text-gray-900">Project Details</h2>
+        <div className="bg-surface rounded-xl border border-border overflow-hidden mb-8">
+          <div className="bg-background border-b border-border px-6 py-4">
+            <h2 className="text-lg font-bold text-text">Project Details</h2>
           </div>
 
           <div className="p-6 space-y-6">
             {/* Scope */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Scope of Work</h3>
+              <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Scope of Work</h3>
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-1">Fence Type</p>
-                  <p className="text-lg font-semibold text-gray-900 capitalize">{fenceType}</p>
+                <div className="bg-background rounded-lg p-4">
+                  <p className="text-sm text-muted mb-1">Fence Type</p>
+                  <p className="text-lg font-semibold text-text capitalize">{fenceType}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-1">Height</p>
-                  <p className="text-lg font-semibold text-gray-900">{fenceHeight} feet</p>
+                <div className="bg-background rounded-lg p-4">
+                  <p className="text-sm text-muted mb-1">Height</p>
+                  <p className="text-lg font-semibold text-text">{fenceHeight} feet</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-1">Total Linear Feet</p>
-                  <p className="text-lg font-semibold text-gray-900">{totalLF.toFixed(0)} LF</p>
+                <div className="bg-background rounded-lg p-4">
+                  <p className="text-sm text-muted mb-1">Total Linear Feet</p>
+                  <p className="text-lg font-semibold text-text">{totalLF.toFixed(0)} LF</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-1">Gates</p>
-                  <p className="text-lg font-semibold text-gray-900">{totalGates} {totalGates === 1 ? "gate" : "gates"}</p>
+                <div className="bg-background rounded-lg p-4">
+                  <p className="text-sm text-muted mb-1">Gates</p>
+                  <p className="text-lg font-semibold text-text">{totalGates} {totalGates === 1 ? "gate" : "gates"}</p>
                 </div>
               </div>
             </div>
@@ -367,15 +367,15 @@ export default async function QuoteViewPage({ params }: Props) {
             {/* Fence Runs */}
             {input.runs.length > 1 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Fence Sections</h3>
+                <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Fence Sections</h3>
                 <div className="space-y-2">
                   {input.runs.map((run, idx) => (
-                    <div key={idx} className="bg-gray-50 rounded-lg p-4">
+                    <div key={idx} className="bg-background rounded-lg p-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-900">Section {idx + 1}</span>
-                        <span className="text-sm text-gray-600">{run.linearFeet} LF</span>
+                        <span className="text-sm font-medium text-text">Section {idx + 1}</span>
+                        <span className="text-sm text-muted">{run.linearFeet} LF</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted mt-1">
                         {run.startType} to {run.endType}
                       </p>
                     </div>
@@ -400,22 +400,22 @@ export default async function QuoteViewPage({ params }: Props) {
           if (!hasAnySummary) return null;
 
           const Check = () => (
-            <svg className="w-5 h-5 text-fence-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           );
 
           return (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
-              <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
-                <h2 className="text-lg font-bold text-gray-900">Scope of Work</h2>
-                <p className="text-xs text-gray-500 mt-0.5">What&rsquo;s included in this quote.</p>
+            <div className="bg-surface rounded-xl border border-border overflow-hidden mb-8">
+              <div className="bg-background border-b border-border px-6 py-4">
+                <h2 className="text-lg font-bold text-text">Scope of Work</h2>
+                <p className="text-xs text-muted mt-0.5">What&rsquo;s included in this quote.</p>
               </div>
               <div className="p-6">
                 {/* Simple summary — the four lines a homeowner actually
                     cares about. Keeps the default view from feeling
                     like a bill of materials. */}
-                <ul className="space-y-3 text-sm text-gray-800">
+                <ul className="space-y-3 text-sm text-text">
                   {fenceSummaryLine && (
                     <li className="flex items-start gap-2">
                       <Check />
@@ -433,7 +433,7 @@ export default async function QuoteViewPage({ params }: Props) {
                     <span>
                       All materials, hardware, concrete, and professional installation
                       {typeof result_data.totalLaborHrs === "number" && result_data.totalLaborHrs > 0 && (
-                        <span className="text-gray-500"> (~{Math.round(result_data.totalLaborHrs)} crew-hours)</span>
+                        <span className="text-muted"> (~{Math.round(result_data.totalLaborHrs)} crew-hours)</span>
                       )}
                     </span>
                   </li>
@@ -449,21 +449,21 @@ export default async function QuoteViewPage({ params }: Props) {
                     are the detail-oriented buyers who appreciate it. */}
                 {groups.length > 0 && (
                   <details className="mt-6 group">
-                    <summary className="text-xs font-semibold text-gray-500 hover:text-fence-700 cursor-pointer flex items-center gap-1.5 list-none">
+                    <summary className="text-xs font-semibold text-muted hover:text-accent cursor-pointer flex items-center gap-1.5 list-none">
                       <svg className="w-3 h-3 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                         <polyline points="9 18 15 12 9 6" />
                       </svg>
                       Show full materials breakdown
                     </summary>
-                    <ul className="mt-4 pt-4 border-t border-gray-100 divide-y divide-gray-100">
+                    <ul className="mt-4 pt-4 border-t border-border divide-y divide-border">
                       {groups.map(group => (
                         <li key={group.label} className="py-3">
-                          <p className="font-semibold text-gray-900 text-sm">{group.label}</p>
-                          <ul className="mt-1 text-sm text-gray-500 space-y-0.5">
+                          <p className="font-semibold text-text text-sm">{group.label}</p>
+                          <ul className="mt-1 text-sm text-muted space-y-0.5">
                             {group.items.map((it, i) => (
                               <li key={i}>
                                 &bull; {it.name}
-                                <span className="text-gray-400"> ({it.qty} {it.unit})</span>
+                                <span className="text-muted"> ({it.qty} {it.unit})</span>
                               </li>
                             ))}
                           </ul>
@@ -481,31 +481,31 @@ export default async function QuoteViewPage({ params }: Props) {
             carries so the web share quote matches what the customer
             eventually sees in PDF form. */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Project Timeline</h2>
+          <div className="bg-surface rounded-xl border border-border overflow-hidden">
+            <div className="bg-background border-b border-border px-6 py-4">
+              <h2 className="text-sm font-bold text-text uppercase tracking-wide">Project Timeline</h2>
             </div>
-            <div className="p-6 space-y-2 text-sm text-gray-700">
+            <div className="p-6 space-y-2 text-sm text-text">
               <p>
-                <span className="font-semibold text-gray-900">Estimated duration:</span>{" "}
+                <span className="font-semibold text-text">Estimated duration:</span>{" "}
                 {formatDuration(
                   typeof result_data?.totalLaborHrs === "number" ? result_data.totalLaborHrs : 0,
                   8
                 )}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted">
                 Installation typically begins within 2&ndash;3 weeks of deposit, subject to weather, material availability, and permit timing.
               </p>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Warranty</h2>
+          <div className="bg-surface rounded-xl border border-border overflow-hidden">
+            <div className="bg-background border-b border-border px-6 py-4">
+              <h2 className="text-sm font-bold text-text uppercase tracking-wide">Warranty</h2>
             </div>
-            <div className="p-6 space-y-2 text-sm text-gray-700">
-              <p><span className="font-semibold text-gray-900">Workmanship:</span> 1 year from completion.</p>
-              <p><span className="font-semibold text-gray-900">Materials:</span> manufacturer warranty, varies by product.</p>
-              <p className="text-xs text-gray-500">
+            <div className="p-6 space-y-2 text-sm text-text">
+              <p><span className="font-semibold text-text">Workmanship:</span> 1 year from completion.</p>
+              <p><span className="font-semibold text-text">Materials:</span> manufacturer warranty, varies by product.</p>
+              <p className="text-xs text-muted">
                 Excludes acts of nature, soil settling, and modifications made after installation.
               </p>
             </div>
@@ -514,29 +514,29 @@ export default async function QuoteViewPage({ params }: Props) {
 
         {/* Investment — lump-sum total + per-LF + valid-until. Mirrors
             the PDF's "Investment Summary" box rather than a bare number. */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
-          <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Investment</h2>
+        <div className="bg-surface rounded-xl border border-border overflow-hidden mb-8">
+          <div className="bg-background border-b border-border px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-text">Investment</h2>
             {quote.token_expires_at && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted">
                 Valid until {new Date(quote.token_expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </p>
             )}
           </div>
           <div className="p-6">
-            <div className="bg-fence-50 border border-fence-200 rounded-lg p-6">
+            <div className="bg-surface-2 border border-accent/30 rounded-lg p-6">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-medium text-gray-900">Total project investment</span>
-                <span className="text-3xl font-bold text-fence-900">
+                <span className="text-lg font-medium text-text">Total project investment</span>
+                <span className="text-3xl font-bold text-text">
                   ${quote.bid_price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               {totalLF > 0 && (
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-muted mt-2">
                   ${(quote.bid_price / totalLF).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per linear foot &middot; {totalLF.toFixed(0)} LF total
                 </p>
               )}
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-muted mt-1">
                 Includes all materials, crew labor, site cleanup, and installation.
               </p>
             </div>
@@ -547,29 +547,29 @@ export default async function QuoteViewPage({ params }: Props) {
             and keeps momentum flowing from the scope tables into the
             acceptance form below. */}
         {!isAccepted && !isExpired && (
-          <div className="bg-fence-50 border border-fence-200 rounded-xl p-6 mb-8">
-            <h2 className="text-lg font-bold text-fence-900 mb-1">Ready to get started?</h2>
-            <p className="text-sm text-fence-800 mb-4">Here&rsquo;s what happens next:</p>
-            <ol className="space-y-2 text-sm text-fence-900">
+          <div className="bg-surface-2 border border-accent/30 rounded-xl p-6 mb-8">
+            <h2 className="text-lg font-bold text-text mb-1">Ready to get started?</h2>
+            <p className="text-sm text-accent-light mb-4">Here&rsquo;s what happens next:</p>
+            <ol className="space-y-2 text-sm text-text">
               <li className="flex items-start gap-2">
-                <span className="inline-flex w-5 h-5 items-center justify-center bg-fence-600 text-white rounded-full text-xs font-bold flex-shrink-0">1</span>
+                <span className="inline-flex w-5 h-5 items-center justify-center bg-accent text-white rounded-full text-xs font-bold flex-shrink-0">1</span>
                 <span>Review the scope, pricing, and terms above.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="inline-flex w-5 h-5 items-center justify-center bg-fence-600 text-white rounded-full text-xs font-bold flex-shrink-0">2</span>
+                <span className="inline-flex w-5 h-5 items-center justify-center bg-accent text-white rounded-full text-xs font-bold flex-shrink-0">2</span>
                 <span>Sign below to accept. Your contractor is notified immediately.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="inline-flex w-5 h-5 items-center justify-center bg-fence-600 text-white rounded-full text-xs font-bold flex-shrink-0">3</span>
+                <span className="inline-flex w-5 h-5 items-center justify-center bg-accent text-white rounded-full text-xs font-bold flex-shrink-0">3</span>
                 <span>Deposit + scheduling details follow from {quote.org.name}.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="inline-flex w-5 h-5 items-center justify-center bg-fence-600 text-white rounded-full text-xs font-bold flex-shrink-0">4</span>
+                <span className="inline-flex w-5 h-5 items-center justify-center bg-accent text-white rounded-full text-xs font-bold flex-shrink-0">4</span>
                 <span>Crew installs. Final walkthrough when it&rsquo;s done.</span>
               </li>
             </ol>
             {(quote.org.phone || quote.org.email) && (
-              <p className="text-xs text-fence-700 mt-4">
+              <p className="text-xs text-accent mt-4">
                 Questions? {quote.org.phone && <>Call <a href={`tel:${quote.org.phone}`} className="underline">{quote.org.phone}</a></>}
                 {quote.org.phone && quote.org.email && " or "}
                 {quote.org.email && <>email <a href={`mailto:${quote.org.email}`} className="underline">{quote.org.email}</a></>}.
@@ -582,27 +582,27 @@ export default async function QuoteViewPage({ params }: Props) {
             they're agreeing to before signing. Same text is also
             embedded in the signed contract PDF. */}
         {(quote.legal_terms_snapshot || quote.payment_terms_snapshot) && (
-          <details className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8 group">
-            <summary className="flex items-center justify-between px-6 py-4 cursor-pointer select-none bg-gray-50 border-b border-gray-200 group-open:border-b-gray-200">
+          <details className="bg-surface rounded-xl border border-border overflow-hidden mb-8 group">
+            <summary className="flex items-center justify-between px-6 py-4 cursor-pointer select-none bg-background border-b border-border group-open:border-b-gray-200">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Terms & Conditions</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Review the legal and payment terms before accepting.</p>
+                <h2 className="text-lg font-bold text-text">Terms & Conditions</h2>
+                <p className="text-xs text-muted mt-0.5">Review the legal and payment terms before accepting.</p>
               </div>
-              <svg className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </summary>
             <div className="p-6 space-y-6">
               {quote.legal_terms_snapshot && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Legal Terms</h3>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{quote.legal_terms_snapshot}</p>
+                  <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Legal Terms</h3>
+                  <p className="text-sm text-text whitespace-pre-wrap leading-relaxed">{quote.legal_terms_snapshot}</p>
                 </div>
               )}
               {quote.payment_terms_snapshot && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Payment Terms</h3>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{quote.payment_terms_snapshot}</p>
+                  <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Payment Terms</h3>
+                  <p className="text-sm text-text whitespace-pre-wrap leading-relaxed">{quote.payment_terms_snapshot}</p>
                 </div>
               )}
             </div>
@@ -613,36 +613,36 @@ export default async function QuoteViewPage({ params }: Props) {
         {!isAccepted && !isExpired ? (
           <QuoteAcceptanceForm token={token} />
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Contact Information</h3>
+          <div className="bg-surface rounded-xl border border-border p-6">
+            <h3 className="text-lg font-bold text-text mb-4">Contact Information</h3>
             <div className="space-y-3">
               {quote.org.phone && (
                 <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  <a href={`tel:${quote.org.phone}`} className="text-fence-600 hover:text-fence-700 font-medium">
+                  <a href={`tel:${quote.org.phone}`} className="text-accent hover:text-accent font-medium">
                     {quote.org.phone}
                   </a>
                 </div>
               )}
               {quote.org.email && (
                 <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  <a href={`mailto:${quote.org.email}`} className="text-fence-600 hover:text-fence-700 font-medium">
+                  <a href={`mailto:${quote.org.email}`} className="text-accent hover:text-accent font-medium">
                     {quote.org.email}
                   </a>
                 </div>
               )}
               {quote.org.address && (
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-muted mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="text-gray-700">{quote.org.address}</span>
+                  <span className="text-text">{quote.org.address}</span>
                 </div>
               )}
             </div>
@@ -652,7 +652,7 @@ export default async function QuoteViewPage({ params }: Props) {
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-sm text-white/50">
-            Powered by <Link href="/" className="text-fence-400 hover:text-fence-300">FenceEstimatePro</Link>
+            Powered by <Link href="/" className="text-accent-light hover:text-accent-light">FenceEstimatePro</Link>
           </p>
         </div>
       </div>

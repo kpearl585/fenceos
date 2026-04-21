@@ -94,10 +94,10 @@ export function QuoteAcceptanceForm({ token }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="bg-fence-50 border-b border-fence-200 px-6 py-4">
-        <h2 className="text-lg font-bold text-gray-900">Accept This Quote</h2>
-        <p className="text-sm text-gray-600 mt-1">
+    <div className="bg-surface rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-2 border-b border-accent/30 px-6 py-4">
+        <h2 className="text-lg font-bold text-text">Accept This Quote</h2>
+        <p className="text-sm text-muted mt-1">
           Sign below to accept the scope, pricing, and terms outlined above. A
           copy of the signed contract will be emailed to you.
         </p>
@@ -106,7 +106,7 @@ export function QuoteAcceptanceForm({ token }: Props) {
       <div className="p-6 space-y-6">
         {/* Printed name */}
         <div>
-          <label htmlFor="printed-name" className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="printed-name" className="block text-sm font-semibold text-text mb-2">
             Full Name
           </label>
           <input
@@ -115,7 +115,7 @@ export function QuoteAcceptanceForm({ token }: Props) {
             value={printedName}
             onChange={(e) => setPrintedName(e.target.value)}
             placeholder="John Smith"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-fence-500 focus:border-fence-500"
+            className="w-full px-4 py-3 border border-border-strong rounded-lg text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-fence-500 focus:border-accent"
             disabled={status === "submitting"}
             autoComplete="name"
           />
@@ -123,8 +123,8 @@ export function QuoteAcceptanceForm({ token }: Props) {
 
         {/* Email — optional but powers the "signed contract" email */}
         <div>
-          <label htmlFor="customer-email" className="block text-sm font-semibold text-gray-700 mb-2">
-            Email <span className="text-gray-400 font-normal">(optional — receive a copy of the signed contract)</span>
+          <label htmlFor="customer-email" className="block text-sm font-semibold text-text mb-2">
+            Email <span className="text-muted font-normal">(optional — receive a copy of the signed contract)</span>
           </label>
           <input
             id="customer-email"
@@ -132,7 +132,7 @@ export function QuoteAcceptanceForm({ token }: Props) {
             value={customerEmail}
             onChange={(e) => setCustomerEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-fence-500 focus:border-fence-500"
+            className="w-full px-4 py-3 border border-border-strong rounded-lg text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-fence-500 focus:border-accent"
             disabled={status === "submitting"}
             autoComplete="email"
           />
@@ -141,22 +141,22 @@ export function QuoteAcceptanceForm({ token }: Props) {
         {/* Drawn signature */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-semibold text-gray-700">
+            <label className="block text-sm font-semibold text-text">
               Signature
             </label>
             <button
               type="button"
               onClick={clearSignature}
-              className="text-sm text-gray-500 hover:text-gray-900"
+              className="text-sm text-muted hover:text-text"
               disabled={status === "submitting"}
             >
               Clear
             </button>
           </div>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-muted mb-3">
             Draw your signature in the box below using your mouse, trackpad, or finger.
           </p>
-          <div className="border-2 border-gray-300 rounded-lg bg-white overflow-hidden touch-none">
+          <div className="border-2 border-border-strong rounded-lg bg-surface overflow-hidden touch-none">
             <SignatureCanvas
               ref={sigRef}
               penColor="#1f2937"
@@ -168,7 +168,7 @@ export function QuoteAcceptanceForm({ token }: Props) {
             />
           </div>
           {!hasDrawn && (
-            <p className="text-xs text-gray-400 mt-2">Not signed yet</p>
+            <p className="text-xs text-muted mt-2">Not signed yet</p>
           )}
         </div>
 
@@ -183,9 +183,9 @@ export function QuoteAcceptanceForm({ token }: Props) {
           </div>
         )}
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Terms & Conditions</h3>
-          <p className="text-xs text-gray-600">
+        <div className="bg-background border border-border rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-text mb-2">Terms & Conditions</h3>
+          <p className="text-xs text-muted">
             By signing, you agree to the legal and payment terms captured in this
             contract at the time it was sent to you. Those terms cannot be changed
             retroactively — the signed contract PDF is the binding record.
@@ -195,7 +195,7 @@ export function QuoteAcceptanceForm({ token }: Props) {
         <button
           onClick={handleAccept}
           disabled={status === "submitting"}
-          className="w-full bg-fence-600 hover:bg-fence-700 text-white font-bold py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-accent hover:bg-accent-dark text-white font-bold py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {status === "submitting" ? (
             <>
@@ -215,7 +215,7 @@ export function QuoteAcceptanceForm({ token }: Props) {
           )}
         </button>
 
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-muted text-center">
           Your signature, IP address, and acceptance hash are recorded as legal
           evidence. Your information is never shared with third parties.
         </p>
