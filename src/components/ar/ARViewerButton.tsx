@@ -159,8 +159,8 @@ export default function ARViewerButton({
 
   const buttonClass =
     variant === 'primary'
-      ? 'inline-flex items-center gap-2 px-4 py-2 bg-fence-600 hover:bg-fence-700 text-white rounded-lg font-semibold transition-colors'
-      : 'inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 hover:border-fence-500 text-gray-700 hover:text-fence-600 rounded-lg font-semibold transition-colors';
+      ? 'inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-light accent-glow text-white rounded-lg font-semibold transition-colors duration-150'
+      : 'inline-flex items-center gap-2 px-4 py-2 bg-surface-3 border-2 border-border hover:border-accent text-text hover:text-accent-light rounded-lg font-semibold transition-colors duration-150';
 
   return (
     <>
@@ -176,16 +176,16 @@ export default function ARViewerButton({
 
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-6 z-50"
           role="dialog"
           aria-modal="true"
           aria-label={label}
         >
-          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-fence-50 border-b border-fence-200 px-6 py-4 flex items-center justify-between">
+          <div className="bg-surface-2 border border-border rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-accent/10 border-b border-accent/20 px-6 py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{label}</h2>
-                <p className="text-sm text-gray-600 mt-1">
+                <h2 className="text-xl font-bold text-text">{label}</h2>
+                <p className="text-sm text-muted mt-1">
                   {is3D
                     ? 'Explore your fence in 3D'
                     : 'Point your phone at your yard'}
@@ -193,7 +193,7 @@ export default function ARViewerButton({
               </div>
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-muted hover:text-text transition-colors duration-150"
                 aria-label="Close"
               >
                 {CLOSE_ICON}
@@ -202,21 +202,21 @@ export default function ARViewerButton({
 
             <div className="p-6 space-y-4">
               {!is3D && status !== 'error' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                  <strong>Tips for best results:</strong> Works best outdoors on
+                <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 text-sm text-text">
+                  <strong className="text-accent-light">Tips for best results:</strong> Works best outdoors on
                   grass, gravel, or concrete with even lighting. Point your
                   camera at the ground where you want to see the fence.
                 </div>
               )}
 
               {status === 'loading' && (
-                <div className="w-full h-[500px] bg-fence-950 rounded-xl flex items-center justify-center text-white/70 gap-2">
+                <div className="w-full h-[500px] bg-surface-3 border border-border rounded-xl flex items-center justify-center text-muted gap-2">
                   {SPINNER} <span>Loading 3D model…</span>
                 </div>
               )}
 
               {status === 'error' && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+                <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 text-sm text-danger">
                   <strong>Unable to load AR preview.</strong> {error}
                   <div className="mt-2">
                     <button
@@ -224,7 +224,7 @@ export default function ARViewerButton({
                         reset();
                         handleOpen();
                       }}
-                      className="text-red-700 underline hover:no-underline font-semibold"
+                      className="text-danger underline hover:no-underline font-semibold"
                     >
                       Try again
                     </button>
@@ -243,15 +243,15 @@ export default function ARViewerButton({
                 />
               )}
 
-              <div className="text-xs text-gray-500 text-center space-y-1">
+              <div className="text-xs text-muted text-center space-y-1">
                 <p>Powered by FenceEstimatePro</p>
-                <p className="text-gray-400">
+                <p className="text-muted">
                   3D model by{' '}
                   <a
                     href="https://skfb.ly/otBYu"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline hover:text-gray-600"
+                    className="underline hover:text-text transition-colors duration-150"
                   >
                     plaggy
                   </a>
@@ -260,7 +260,7 @@ export default function ARViewerButton({
                     href="https://creativecommons.org/licenses/by/4.0/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline hover:text-gray-600"
+                    className="underline hover:text-text transition-colors duration-150"
                   >
                     CC BY 4.0
                   </a>
@@ -269,7 +269,7 @@ export default function ARViewerButton({
                     href="/credits"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline hover:text-gray-600"
+                    className="underline hover:text-text transition-colors duration-150"
                   >
                     Credits
                   </a>

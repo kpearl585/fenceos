@@ -56,28 +56,28 @@ export default function ActivityTimeline({ jobCreatedAt, jobStatus, scheduledDat
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <h2 className="font-semibold text-fence-900 text-sm mb-4">Activity Timeline</h2>
+    <div className="bg-surface-2 rounded-xl border border-border p-5 shadow-sm">
+      <h2 className="font-semibold text-text text-sm mb-4">Activity Timeline</h2>
       <div className="relative">
         {/* Vertical line */}
-        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-100" />
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
         <ul className="space-y-4">
           {events.map((event, i) => (
             <li key={i} className="flex items-start gap-4 relative">
               <div className={`z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
-                event.done ? "bg-fence-100" : "bg-gray-100"
+                event.done ? "bg-accent/20 text-accent-light" : "bg-surface-3 text-muted"
               }`}>
                 <span className={event.done ? "" : "opacity-40"}>{event.icon}</span>
               </div>
               <div className="pt-1">
-                <p className={`text-sm font-semibold ${event.done ? "text-fence-900" : "text-gray-400"}`}>
+                <p className={`text-sm font-semibold ${event.done ? "text-text" : "text-muted"}`}>
                   {event.label}
                 </p>
                 {event.date && (
-                  <p className="text-xs text-gray-400 mt-0.5">{fmtDate(event.date)}</p>
+                  <p className="text-xs text-muted mt-0.5">{fmtDate(event.date)}</p>
                 )}
                 {!event.done && (
-                  <p className="text-xs text-gray-300 mt-0.5">Pending</p>
+                  <p className="text-xs text-muted opacity-60 mt-0.5">Pending</p>
                 )}
               </div>
             </li>

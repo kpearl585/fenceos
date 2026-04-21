@@ -103,28 +103,28 @@ export default function ChangeOrderForm({
 
       {/* Reason */}
       <div>
-        <label className="text-xs font-medium text-gray-600 block mb-1">
-          Reason <span className="text-red-500">*</span>
+        <label className="text-xs font-semibold text-muted block mb-1.5 uppercase tracking-wider">
+          Reason <span className="text-danger">*</span>
         </label>
         <input
           type="text"
           name="reason"
           required
           placeholder="e.g. Customer wants to add a double gate"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+          className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
         />
       </div>
 
       {/* Line Items */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-medium text-gray-600">
-            Line Items <span className="text-red-500">*</span>
+          <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+            Line Items <span className="text-danger">*</span>
           </label>
           <button
             type="button"
             onClick={addItem}
-            className="text-xs text-fence-600 font-semibold hover:text-fence-800 flex items-center gap-1"
+            className="text-xs text-accent-light font-semibold hover:text-accent flex items-center gap-1 transition-colors duration-150"
           >
             + Add Item
           </button>
@@ -132,14 +132,14 @@ export default function ChangeOrderForm({
 
         <div className="space-y-3">
           {items.map((item, idx) => (
-            <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+            <div key={item.id} className="bg-surface-2 border border-border rounded-lg p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-500">Item {idx + 1}</span>
+                <span className="text-xs font-semibold text-muted uppercase tracking-wider">Item {idx + 1}</span>
                 {items.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeItem(item.id)}
-                    className="text-xs text-red-400 hover:text-red-600"
+                    className="text-xs text-danger/80 hover:text-danger transition-colors duration-150"
                   >
                     Remove
                   </button>
@@ -151,10 +151,10 @@ export default function ChangeOrderForm({
                 <button
                   type="button"
                   onClick={() => updateItem(item.id, { type: "material", sku: "", name: "", unit_price: "" })}
-                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors duration-150 ${
                     item.type === "material"
-                      ? "bg-fence-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-accent text-white"
+                      : "bg-surface-3 text-muted hover:bg-surface-2 hover:text-text"
                   }`}
                 >
                   Material
@@ -162,10 +162,10 @@ export default function ChangeOrderForm({
                 <button
                   type="button"
                   onClick={() => updateItem(item.id, { type: "labor", sku: "" })}
-                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors duration-150 ${
                     item.type === "labor"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-accent text-white"
+                      : "bg-surface-3 text-muted hover:bg-surface-2 hover:text-text"
                   }`}
                 >
                   Labor
@@ -175,9 +175,9 @@ export default function ChangeOrderForm({
               {/* Material dropdown (if type = material) */}
               {item.type === "material" && materials.length > 0 && (
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Pick from catalog (optional)</label>
+                  <label className="text-xs text-muted block mb-1">Pick from catalog (optional)</label>
                   <select
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-fence-400"
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                     value={item.sku}
                     onChange={(e) => onMaterialSelect(item.id, e.target.value)}
                   >
@@ -193,21 +193,21 @@ export default function ChangeOrderForm({
 
               {/* Description */}
               <div>
-                <label className="text-xs text-gray-400 block mb-1">Description</label>
+                <label className="text-xs text-muted block mb-1">Description</label>
                 <input
                   type="text"
                   value={item.name}
                   onChange={(e) => updateItem(item.id, { name: e.target.value })}
                   placeholder={item.type === "labor" ? "e.g. Extra labor for double gate install" : "e.g. Double gate kit"}
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                 />
               </div>
 
               {/* Qty + Price */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Quantity</label>
+                  <label className="text-xs text-muted block mb-1">Quantity</label>
                   <input
                     type="number"
                     min="0.01"
@@ -215,11 +215,11 @@ export default function ChangeOrderForm({
                     value={item.qty}
                     onChange={(e) => updateItem(item.id, { qty: e.target.value })}
                     required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Unit Price ($)</label>
+                  <label className="text-xs text-muted block mb-1">Unit Price ($)</label>
                   <input
                     type="number"
                     min="0"
@@ -228,7 +228,7 @@ export default function ChangeOrderForm({
                     onChange={(e) => updateItem(item.id, { unit_price: e.target.value })}
                     placeholder="0.00"
                     required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                   />
                 </div>
               </div>
@@ -240,12 +240,12 @@ export default function ChangeOrderForm({
       <button
         type="submit"
         disabled={submitting}
-        className="w-full bg-fence-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors disabled:opacity-60"
+        className="w-full bg-accent hover:bg-accent-light accent-glow text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:opacity-50"
       >
         {submitting ? "Submitting…" : "Submit Change Order"}
       </button>
       {error && (
-        <p className="text-sm text-red-600 mt-2">{error}</p>
+        <p className="text-sm text-danger mt-2">{error}</p>
       )}
     </form>
   );

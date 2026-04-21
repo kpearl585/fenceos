@@ -29,10 +29,10 @@ const POSITION_CLASSES: Record<NonNullable<TooltipProps["position"]>, string> = 
 };
 
 const ARROW_CLASSES: Record<NonNullable<TooltipProps["position"]>, string> = {
-  top: "absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900",
-  bottom: "absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900",
-  left: "absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-gray-900",
-  right: "absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900",
+  top: "absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-surface-3",
+  bottom: "absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-surface-3",
+  left: "absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-surface-3",
+  right: "absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-surface-3",
 };
 
 export default function Tooltip({ content, children, position = "top" }: TooltipProps) {
@@ -104,7 +104,7 @@ export default function Tooltip({ content, children, position = "top" }: Tooltip
         <span
           id={tooltipId}
           role="tooltip"
-          className={`absolute ${POSITION_CLASSES[position]} px-3 py-2 bg-gray-900 text-white text-xs rounded-lg w-64 z-50 shadow-lg`}
+          className={`absolute ${POSITION_CLASSES[position]} px-3 py-2 bg-surface-3 border border-border text-text text-xs rounded-lg w-64 z-50 shadow-lg`}
         >
           {content}
           <span className={ARROW_CLASSES[position]} aria-hidden="true" />
@@ -120,7 +120,7 @@ export function HelpTooltip({ content }: { content: string }) {
     <Tooltip content={content}>
       <button
         type="button"
-        className="inline-flex items-center justify-center w-4 h-4 rounded-full text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-fence-400"
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full text-muted hover:text-text focus:outline-none focus:ring-2 focus:ring-accent transition-colors duration-150"
         aria-label="Help"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

@@ -43,13 +43,13 @@ export default function JobOutcomeForm({ jobId, estimatedTotal, existingOutcome 
   const variancePct = existingOutcome?.actual_total_cost ? (variance / estimatedTotal) * 100 : 0;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+    <div className="bg-surface-2 rounded-xl border border-border p-4 mb-6">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-fence-900 text-sm">Actual Job Costs</h3>
+        <h3 className="font-semibold text-text text-sm">Actual Job Costs</h3>
         {!isOpen && (
           <button
             onClick={() => setIsOpen(true)}
-            className="text-xs px-3 py-1.5 bg-fence-600 text-white rounded-lg font-semibold hover:bg-fence-700 transition-colors"
+            className="text-xs px-3 py-1.5 bg-accent hover:bg-accent-light accent-glow text-white rounded-lg font-semibold transition-colors duration-150"
           >
             {existingOutcome ? "Update" : "Log Costs"}
           </button>
@@ -60,36 +60,36 @@ export default function JobOutcomeForm({ jobId, estimatedTotal, existingOutcome 
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">Material Cost</p>
-              <p className="font-semibold">
+              <p className="text-muted">Material Cost</p>
+              <p className="font-semibold text-text">
                 ${existingOutcome.actual_material_cost?.toLocaleString() || "—"}
               </p>
             </div>
             <div>
-              <p className="text-gray-500">Labor Hours</p>
-              <p className="font-semibold">{existingOutcome.actual_labor_hours || "—"}</p>
+              <p className="text-muted">Labor Hours</p>
+              <p className="font-semibold text-text">{existingOutcome.actual_labor_hours || "—"}</p>
             </div>
             <div>
-              <p className="text-gray-500">Total Cost</p>
-              <p className="font-semibold">${actualTotal.toLocaleString()}</p>
+              <p className="text-muted">Total Cost</p>
+              <p className="font-semibold text-text">${actualTotal.toLocaleString()}</p>
             </div>
             <div>
-              <p className="text-gray-500">Variance</p>
-              <p className={`font-semibold ${variance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <p className="text-muted">Variance</p>
+              <p className={`font-semibold ${variance >= 0 ? "text-accent-light" : "text-danger"}`}>
                 {variance >= 0 ? "+" : ""}${variance.toLocaleString()} ({variancePct >= 0 ? "+" : ""}
                 {variancePct.toFixed(1)}%)
               </p>
             </div>
           </div>
           {existingOutcome.notes && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-xs text-gray-500">Notes:</p>
-              <p className="text-sm mt-1">{existingOutcome.notes}</p>
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs text-muted">Notes:</p>
+              <p className="text-sm mt-1 text-text">{existingOutcome.notes}</p>
             </div>
           )}
         </div>
       ) : !existingOutcome && !isOpen ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted">
           Log actual costs to track estimate accuracy and improve future quotes.
         </p>
       ) : null}
@@ -99,7 +99,7 @@ export default function JobOutcomeForm({ jobId, estimatedTotal, existingOutcome 
           <input type="hidden" name="jobId" value={jobId} />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
               Actual Material Cost ($)
             </label>
             <input
@@ -107,13 +107,13 @@ export default function JobOutcomeForm({ jobId, estimatedTotal, existingOutcome 
               name="actualMaterialCost"
               step="0.01"
               defaultValue={existingOutcome?.actual_material_cost || ""}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
               placeholder="0.00"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
               Actual Labor Hours
             </label>
             <input
@@ -121,14 +121,14 @@ export default function JobOutcomeForm({ jobId, estimatedTotal, existingOutcome 
               name="actualLaborHours"
               step="0.5"
               defaultValue={existingOutcome?.actual_labor_hours || ""}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
               placeholder="0"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Actual Total Cost ($) <span className="text-red-500">*</span>
+            <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+              Actual Total Cost ($) <span className="text-danger">*</span>
             </label>
             <input
               type="number"
@@ -136,35 +136,35 @@ export default function JobOutcomeForm({ jobId, estimatedTotal, existingOutcome 
               step="0.01"
               required
               defaultValue={existingOutcome?.actual_total_cost || ""}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
               placeholder="0.00"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted mt-1">
               Estimated: ${estimatedTotal.toLocaleString()}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
               Notes (optional)
             </label>
             <textarea
               name="notes"
               rows={3}
               defaultValue={existingOutcome?.notes || ""}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
               placeholder="Any issues or complications..."
             />
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="text-sm text-danger bg-danger/10 border border-danger/30 rounded-lg p-3">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="text-sm text-accent-light bg-accent/10 border border-accent/30 rounded-lg p-3">
               ✓ Job outcome saved successfully
             </div>
           )}
@@ -173,7 +173,7 @@ export default function JobOutcomeForm({ jobId, estimatedTotal, existingOutcome 
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 bg-fence-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-accent hover:bg-accent-light accent-glow text-white py-2 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? "Saving..." : "Save"}
             </button>
@@ -183,7 +183,7 @@ export default function JobOutcomeForm({ jobId, estimatedTotal, existingOutcome 
                 setIsOpen(false);
                 setError(null);
               }}
-              className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
+              className="flex-1 bg-surface-3 border border-border text-text py-2 rounded-lg text-sm font-semibold hover:bg-surface-2 transition-colors duration-150"
             >
               Cancel
             </button>

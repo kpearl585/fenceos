@@ -121,40 +121,40 @@ export function PaywallModal({ block, onClose }: PaywallModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm px-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="paywall-title"
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8"
+        className="bg-surface-2 border border-accent/20 accent-glow rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-4">
           <h3
             id="paywall-title"
-            className="text-xl font-bold text-fence-900 pr-4"
+            className="text-xl font-bold text-text pr-4"
           >
             {copy.title}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none p-1"
+            className="text-muted hover:text-text text-2xl leading-none p-1 transition-colors duration-150"
             aria-label="Close"
           >
             ×
           </button>
         </div>
 
-        <p className="text-gray-600 text-sm md:text-base mb-6 leading-relaxed">
+        <p className="text-muted text-sm md:text-base mb-6 leading-relaxed">
           {copy.body}
         </p>
 
         <div className="flex flex-col gap-2">
           <Link
             href={block.upgradeUrl}
-            className="w-full bg-fence-500 hover:bg-fence-600 text-white font-semibold text-base py-3 px-4 rounded-lg text-center transition-colors"
+            className="w-full bg-accent hover:bg-accent-light accent-glow text-white font-semibold text-base py-3 px-4 rounded-lg text-center transition-colors duration-150"
             onClick={onClose}
           >
             {copy.primaryCta}
@@ -162,7 +162,7 @@ export function PaywallModal({ block, onClose }: PaywallModalProps) {
           {copy.secondaryCta && (
             <button
               onClick={onClose}
-              className="w-full text-gray-500 hover:text-gray-700 font-medium text-sm py-2 transition-colors"
+              className="w-full text-muted hover:text-text font-medium text-sm py-2 transition-colors duration-150"
             >
               {copy.secondaryCta}
             </button>
