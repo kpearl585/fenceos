@@ -42,18 +42,18 @@ function confidenceLabel(confidence: number): {
   if (confidence >= 0.9) {
     return {
       label: "High confidence",
-      classes: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      classes: "bg-accent/15 text-accent-light border-accent/30",
     };
   }
   if (confidence >= 0.7) {
     return {
       label: "Moderate confidence",
-      classes: "bg-amber-50 text-amber-800 border-amber-200",
+      classes: "bg-warning/15 text-warning border-warning/30",
     };
   }
   return {
     label: "Rough estimate — please verify",
-    classes: "bg-orange-50 text-orange-800 border-orange-200",
+    classes: "bg-warning/10 text-warning border-warning/20",
   };
 }
 
@@ -101,18 +101,18 @@ export default function ResultCard({ data, onTryAnother }: Props) {
   }
 
   return (
-    <div className="p-6 sm:p-10 text-gray-900">
+    <div className="p-6 sm:p-10 text-text">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-fence-700">
+          <p className="text-xs font-semibold uppercase tracking-wider text-accent-light">
             Your fence estimate
           </p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight">
+          <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-text">
             {estimate.fenceTypeLabel}
           </h2>
         </div>
         <span
-          className={`self-start rounded-full border px-3 py-1 text-xs font-medium ${conf.classes}`}
+          className={`self-start rounded-full border px-3 py-1 text-xs font-semibold ${conf.classes}`}
         >
           {conf.label}
         </span>
@@ -120,38 +120,39 @@ export default function ResultCard({ data, onTryAnother }: Props) {
 
       {/* Stats grid */}
       <dl className="mt-6 grid grid-cols-3 gap-3">
-        <div className="rounded-xl bg-fence-50 border border-fence-200 p-4">
-          <dt className="text-xs font-medium text-fence-700">Total length</dt>
-          <dd className="mt-1 text-2xl font-bold text-gray-900">
+        <div className="rounded-xl bg-surface-3 border border-border p-4">
+          <dt className="text-xs font-medium text-muted uppercase tracking-wider">Total length</dt>
+          <dd className="mt-1 text-2xl font-bold font-display text-text">
             {estimate.totalLinearFeet}
-            <span className="ml-1 text-sm font-medium text-gray-500">ft</span>
+            <span className="ml-1 text-sm font-medium text-muted">ft</span>
           </dd>
         </div>
-        <div className="rounded-xl bg-fence-50 border border-fence-200 p-4">
-          <dt className="text-xs font-medium text-fence-700">Runs</dt>
-          <dd className="mt-1 text-2xl font-bold text-gray-900">
+        <div className="rounded-xl bg-surface-3 border border-border p-4">
+          <dt className="text-xs font-medium text-muted uppercase tracking-wider">Runs</dt>
+          <dd className="mt-1 text-2xl font-bold font-display text-text">
             {extraction.runs.length}
           </dd>
         </div>
-        <div className="rounded-xl bg-fence-50 border border-fence-200 p-4">
-          <dt className="text-xs font-medium text-fence-700">Gates</dt>
-          <dd className="mt-1 text-2xl font-bold text-gray-900">
+        <div className="rounded-xl bg-surface-3 border border-border p-4">
+          <dt className="text-xs font-medium text-muted uppercase tracking-wider">Gates</dt>
+          <dd className="mt-1 text-2xl font-bold font-display text-text">
             {estimate.gateCount}
           </dd>
         </div>
       </dl>
 
-      {/* Price range */}
-      <div className="mt-6 rounded-xl bg-gray-900 px-6 py-5 text-white">
-        <p className="text-xs font-medium uppercase tracking-wide text-fence-200">
+      {/* Price range — signature moment. Dark background + accent glow so
+          it reads as the hero stat, not just another card. */}
+      <div className="mt-6 rounded-xl bg-background border border-accent/20 accent-glow px-6 py-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-accent-light">
           Estimated price range
         </p>
-        <p className="mt-1 text-3xl sm:text-4xl font-bold">
+        <p className="mt-2 font-display text-3xl sm:text-4xl font-bold text-text">
           ${estimate.priceRangeLow.toLocaleString()}
-          <span className="mx-3 text-fence-300">–</span>
+          <span className="mx-3 text-muted">–</span>
           ${estimate.priceRangeHigh.toLocaleString()}
         </p>
-        <p className="mt-2 text-sm text-fence-200">
+        <p className="mt-2 text-sm text-muted">
           Ballpark only. A precise quote comes from a site visit with your
           local contractor.
         </p>
@@ -161,8 +162,8 @@ export default function ResultCard({ data, onTryAnother }: Props) {
           users with a high-confidence result don't miss the "not a bid"
           framing. This is the one piece of copy that has to survive any
           rush to ship. */}
-      <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-        <p className="text-sm text-amber-900">
+      <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
+        <p className="text-sm text-warning">
           <span className="font-semibold">This is an AI estimate from a photo, not a contract price.</span>{" "}
           Always walk the site and measure before bidding a real job.
           Measurements and counts are model-generated and may be wrong.
@@ -171,14 +172,14 @@ export default function ResultCard({ data, onTryAnother }: Props) {
 
       {/* Summary */}
       {extraction.rawSummary && (
-        <p className="mt-6 italic text-gray-600">“{extraction.rawSummary}”</p>
+        <p className="mt-6 italic text-muted">&ldquo;{extraction.rawSummary}&rdquo;</p>
       )}
 
       {/* Flags */}
       {extraction.flags.length > 0 && (
-        <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-900">Heads up</p>
-          <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-amber-800">
+        <div className="mt-6 rounded-lg border border-warning/30 bg-warning/10 p-4">
+          <p className="text-sm font-semibold text-warning">Heads up</p>
+          <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-warning/90">
             {extraction.flags.map((flag, i) => (
               <li key={i}>{flag}</li>
             ))}
@@ -186,12 +187,12 @@ export default function ResultCard({ data, onTryAnother }: Props) {
         </div>
       )}
 
-      {/* Email capture — wired fully in Session D */}
-      <div className="mt-8 rounded-xl border border-fence-200 bg-fence-50 p-5">
-        <p className="text-base font-semibold text-gray-900">
+      {/* Email capture */}
+      <div className="mt-8 rounded-xl border border-accent/20 bg-accent/5 p-5">
+        <p className="text-base font-semibold text-text">
           Save this estimate and get the full proposal
         </p>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-muted">
           We&rsquo;ll email you a link to claim this estimate and start your
           free trial. No spam, no credit card.
         </p>
@@ -212,12 +213,12 @@ export default function ResultCard({ data, onTryAnother }: Props) {
               }
             }}
             disabled={emailStatus === "submitting" || emailStatus === "sent"}
-            className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-fence-500 focus:ring-1 focus:ring-fence-500 focus:outline-none disabled:bg-gray-100"
+            className="flex-1 rounded-lg border border-border bg-surface-3 text-text px-3 py-2 text-sm placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={emailStatus === "submitting" || emailStatus === "sent"}
-            className="inline-flex items-center justify-center rounded-lg bg-fence-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-fence-700 disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-lg bg-accent hover:bg-accent-light accent-glow px-4 py-2 text-sm font-semibold text-white transition-colors duration-150 disabled:opacity-50 disabled:hover:bg-accent"
           >
             {emailStatus === "submitting"
               ? "Sending…"
@@ -227,17 +228,17 @@ export default function ResultCard({ data, onTryAnother }: Props) {
           </button>
         </form>
         {emailStatus === "invalid" && (
-          <p role="alert" className="mt-2 text-xs text-red-700">
+          <p role="alert" className="mt-2 text-xs text-danger">
             Please enter a valid email address.
           </p>
         )}
         {emailStatus === "error" && errorMessage && (
-          <p role="alert" className="mt-2 text-xs text-red-700">
+          <p role="alert" className="mt-2 text-xs text-danger">
             {errorMessage}
           </p>
         )}
         {emailStatus === "sent" && (
-          <p className="mt-2 text-xs text-fence-700">
+          <p className="mt-2 text-xs text-accent-light">
             We just emailed you a link to claim this estimate. Check your
             inbox (and spam folder, just in case).
           </p>
@@ -249,11 +250,11 @@ export default function ResultCard({ data, onTryAnother }: Props) {
         <button
           type="button"
           onClick={onTryAnother}
-          className="text-sm font-medium text-fence-700 hover:text-fence-800 underline-offset-4 hover:underline"
+          className="text-sm font-medium text-accent-light hover:text-accent underline-offset-4 hover:underline transition-colors duration-150"
         >
           ← Try another photo
         </button>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           Powered by FenceEstimatePro AI
         </p>
       </div>
