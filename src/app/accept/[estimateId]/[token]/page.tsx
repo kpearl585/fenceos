@@ -63,19 +63,21 @@ export default async function AcceptPage({
   // Expired estimate
   if (est.status === "expired") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-8 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">&#9203;</span>
+      <div className="relative min-h-screen bg-background text-text flex items-center justify-center p-4 overflow-hidden">
+        <div className="absolute inset-0 grid-pattern pointer-events-none" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-danger/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative bg-surface-2 rounded-2xl border border-border max-w-lg w-full p-8 text-center">
+          <div className="w-16 h-16 bg-danger/10 border border-danger/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="font-display text-2xl font-bold text-text mb-2">
             This Estimate Has Expired
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted mb-4">
             This estimate is no longer valid. Estimates expire after 30 days.
           </p>
-          <p className="text-gray-600 font-medium">
-            Contact <strong>{orgName}</strong> to request a new quote.
+          <p className="text-text font-medium">
+            Contact <strong className="text-accent-light">{orgName}</strong> to request a new quote.
           </p>
         </div>
       </div>
@@ -85,17 +87,19 @@ export default async function AcceptPage({
   // Already accepted
   if (est.status === "accepted" || est.status === "converted") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+      <div className="relative min-h-screen bg-background text-text flex items-center justify-center p-4 overflow-hidden">
+        <div className="absolute inset-0 grid-pattern pointer-events-none" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative bg-surface-2 rounded-2xl border border-accent/20 accent-glow max-w-lg w-full p-8 text-center">
+          <div className="w-16 h-16 bg-accent/15 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-accent-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="font-display text-2xl font-bold text-text mb-2">
             Estimate Accepted
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted mb-4">
             This estimate was accepted by{" "}
-            <strong>{est.accepted_by_name || "the customer"}</strong>
+            <strong className="text-text">{est.accepted_by_name || "the customer"}</strong>
             {est.accepted_at &&
               ` on ${new Date(est.accepted_at).toLocaleDateString("en-US", {
                 year: "numeric",
@@ -104,7 +108,7 @@ export default async function AcceptPage({
               })}`}
             .
           </p>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted">
             No further action is required.
           </p>
         </div>
@@ -115,12 +119,13 @@ export default async function AcceptPage({
   // Must be in 'quoted' status
   if (est.status !== "quoted") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="relative min-h-screen bg-background text-text flex items-center justify-center p-4 overflow-hidden">
+        <div className="absolute inset-0 grid-pattern pointer-events-none" />
+        <div className="relative bg-surface-2 rounded-2xl border border-border max-w-lg w-full p-8 text-center">
+          <h1 className="font-display text-2xl font-bold text-text mb-2">
             Estimate Not Available
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted">
             This estimate is not currently available for acceptance. Please
             contact your contractor.
           </p>
@@ -130,18 +135,21 @@ export default async function AcceptPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div className="relative min-h-screen bg-background text-text overflow-hidden">
+      <div className="absolute inset-0 grid-pattern pointer-events-none" />
+      <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative max-w-3xl mx-auto px-4 py-8">
+        {/* Header — signature panel with accent glow */}
+        <div className="bg-surface-2 rounded-2xl border border-accent/20 accent-glow p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm text-gray-500">Estimate from</p>
-              <h1 className="text-xl font-bold text-gray-900">{orgName}</h1>
+              <p className="text-xs text-muted uppercase tracking-wider">Estimate from</p>
+              <h1 className="font-display text-xl font-bold text-text mt-1">{orgName}</h1>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500">Total</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-xs text-muted uppercase tracking-wider">Total</p>
+              <p className="font-display text-3xl font-bold text-text mt-1">
                 {new Intl.NumberFormat("en-US", {
                   style: "currency",
                   currency: "USD",
@@ -149,14 +157,14 @@ export default async function AcceptPage({
               </p>
             </div>
           </div>
-          <div className="border-t border-gray-100 pt-4">
-            <h2 className="font-semibold text-gray-900 mb-1">{est.title}</h2>
-            <p className="text-sm text-gray-600">
+          <div className="border-t border-border pt-4">
+            <h2 className="font-semibold text-text mb-1">{est.title}</h2>
+            <p className="text-sm text-muted">
               {fenceLabel} · {est.linear_feet} ft
               {Number(est.gate_count) > 0 && ` · ${est.gate_count} gate(s)`}
             </p>
             {customer && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-muted mt-1">
                 {customer.name}
                 {customer.address && ` — ${customer.address}`}
                 {customer.city && `, ${customer.city}`}
@@ -167,21 +175,21 @@ export default async function AcceptPage({
         </div>
 
         {/* Line Items */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Estimate Details</h2>
+        <div className="bg-surface-2 rounded-2xl border border-border overflow-hidden mb-6">
+          <div className="px-6 py-4 border-b border-border">
+            <h2 className="font-semibold text-text">Estimate Details</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-gray-500 border-b border-gray-100 text-xs">
-                  <th className="text-left px-6 py-3 font-medium">Item</th>
-                  <th className="text-right px-4 py-3 font-medium">Qty</th>
-                  <th className="text-right px-4 py-3 font-medium">Price</th>
-                  <th className="text-right px-6 py-3 font-medium">Total</th>
+                <tr className="text-muted border-b border-border text-xs uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 font-semibold">Item</th>
+                  <th className="text-right px-4 py-3 font-semibold">Qty</th>
+                  <th className="text-right px-4 py-3 font-semibold">Price</th>
+                  <th className="text-right px-6 py-3 font-semibold">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {(lineItems ?? []).map(
                   (
                     li: {
@@ -193,18 +201,18 @@ export default async function AcceptPage({
                     },
                     idx: number
                   ) => (
-                    <tr key={idx}>
+                    <tr key={idx} className="text-text">
                       <td className="px-6 py-3">{li.description}</td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right font-mono">
                         {li.quantity} {li.unit}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right font-mono text-muted">
                         {new Intl.NumberFormat("en-US", {
                           style: "currency",
                           currency: "USD",
                         }).format(Number(li.unit_price))}
                       </td>
-                      <td className="px-6 py-3 text-right font-medium">
+                      <td className="px-6 py-3 text-right font-medium font-display">
                         {new Intl.NumberFormat("en-US", {
                           style: "currency",
                           currency: "USD",
@@ -215,14 +223,14 @@ export default async function AcceptPage({
                 )}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-gray-200">
+                <tr className="border-t-2 border-border-strong bg-surface-3">
                   <td
                     colSpan={3}
-                    className="px-6 py-3 text-right font-bold text-gray-900"
+                    className="px-6 py-3 text-right font-bold text-text"
                   >
                     Total
                   </td>
-                  <td className="px-6 py-3 text-right font-bold text-gray-900 text-lg">
+                  <td className="px-6 py-3 text-right font-bold font-display text-accent-light text-lg">
                     {new Intl.NumberFormat("en-US", {
                       style: "currency",
                       currency: "USD",
@@ -236,9 +244,9 @@ export default async function AcceptPage({
 
         {/* Payment Terms */}
         {est.payment_terms_snapshot && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 className="font-semibold text-gray-900 mb-3">Payment Terms</h2>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+          <div className="bg-surface-2 rounded-2xl border border-border p-6 mb-6">
+            <h2 className="font-semibold text-text mb-3">Payment Terms</h2>
+            <p className="text-sm text-muted whitespace-pre-wrap leading-relaxed">
               {est.payment_terms_snapshot}
             </p>
           </div>
@@ -246,12 +254,12 @@ export default async function AcceptPage({
 
         {/* Legal Terms */}
         {est.legal_terms_snapshot && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 className="font-semibold text-gray-900 mb-3">
-              Terms & Conditions
+          <div className="bg-surface-2 rounded-2xl border border-border p-6 mb-6">
+            <h2 className="font-semibold text-text mb-3">
+              Terms &amp; Conditions
             </h2>
-            <div className="max-h-64 overflow-y-auto border border-gray-100 rounded-lg p-4 bg-gray-50">
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+            <div className="max-h-64 overflow-y-auto border border-border rounded-lg p-4 bg-surface-3">
+              <p className="text-sm text-muted whitespace-pre-wrap leading-relaxed">
                 {est.legal_terms_snapshot}
               </p>
             </div>
