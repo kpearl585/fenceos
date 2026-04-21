@@ -31,10 +31,10 @@ export default async function DashboardLayout({
     const message = err instanceof Error ? err.message : "Unknown error";
     // Provisioning failed — show actionable error with refresh link
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-4">
-          <h1 className="text-xl font-bold text-fence-900 mb-2">Account setup failed</h1>
-          <p className="text-sm text-gray-500 mb-4">
+          <h1 className="text-xl font-bold text-text mb-2">Account setup failed</h1>
+          <p className="text-sm text-muted mb-4">
             We couldn't finish setting up your account. This is usually a temporary issue.
           </p>
           {process.env.NODE_ENV !== "production" && (
@@ -42,11 +42,11 @@ export default async function DashboardLayout({
           )}
           <a
             href="/dashboard"
-            className="inline-block px-4 py-2 bg-fence-600 text-white text-sm rounded hover:bg-fence-700 transition-colors"
+            className="inline-block px-4 py-2 bg-accent text-white text-sm rounded hover:bg-accent-dark transition-colors"
           >
             Retry
           </a>
-          <p className="text-xs text-gray-400 mt-4">
+          <p className="text-xs text-muted mt-4">
             If this keeps happening, contact{" "}
             <a href="mailto:support@fenceestimatepro.com" className="underline">
               support@fenceestimatepro.com
@@ -87,24 +87,24 @@ export default async function DashboardLayout({
   // Hard gate: expired trial — show upgrade wall instead of dashboard content
   if (isExpiredTrial) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="bg-surface rounded-2xl border border-border shadow-sm p-10 max-w-md w-full text-center">
           <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Your trial has ended</h2>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+          <h2 className="text-xl font-bold text-text mb-2">Your trial has ended</h2>
+          <p className="text-sm text-muted mb-6 leading-relaxed">
             Your 14-day free trial has expired. Your estimates, customers, and job history are saved — pick a plan to get back to work.
           </p>
           <a
             href="/dashboard/upgrade"
-            className="inline-block w-full bg-fence-600 hover:bg-fence-700 text-white font-bold text-sm py-3 px-6 rounded-xl transition-colors mb-3"
+            className="inline-block w-full bg-accent hover:bg-accent-dark text-white font-bold text-sm py-3 px-6 rounded-xl transition-colors mb-3"
           >
             Choose a Plan →
           </a>
-          <p className="text-xs text-gray-400">Starting at $49/month · Cancel anytime</p>
+          <p className="text-xs text-muted">Starting at $49/month · Cancel anytime</p>
         </div>
       </div>
     );
@@ -124,7 +124,7 @@ export default async function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <PostHogProvider identity={phIdentity} />
       <Sidebar items={visibleNav} orgName={orgName} />
       <Header
