@@ -18,7 +18,7 @@ export default function MaterialsImportBar({ materials }: { materials: Material[
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-500">{materials.length} items</span>
+      <span className="text-sm text-muted">{materials.length} items</span>
       <MaterialImport onImport={handleImport} />
     </div>
   );

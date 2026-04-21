@@ -19,11 +19,11 @@ export default async function NewCustomerPage() {
       <div className="mb-6">
         <Link
           href="/dashboard/customers"
-          className="text-sm text-fence-600 hover:text-fence-800 font-medium"
+          className="text-sm text-accent-light hover:text-accent font-medium transition-colors duration-150"
         >
-          &larr; Back to Customers
+          ← Back to Customers
         </Link>
-        <h1 className="text-2xl font-bold text-fence-900 mt-2">New Customer</h1>
+        <h1 className="font-display text-2xl font-bold text-text mt-2">New Customer</h1>
       </div>
       <CustomerForm />
     </>
