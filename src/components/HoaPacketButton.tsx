@@ -84,7 +84,7 @@ export default function HoaPacketButton({ estimateId, estimateName }: HoaPacketB
       <button
         type="button"
         onClick={() => { setOpen(true); setError(""); }}
-        className="w-full bg-fence-50 border border-fence-200 text-fence-800 hover:bg-fence-100 hover:border-fence-300 font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+        className="w-full bg-accent/10 border border-accent/30 text-accent-light hover:bg-accent/15 hover:border-accent/50 font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors duration-150 flex items-center justify-center gap-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -94,19 +94,19 @@ export default function HoaPacketButton({ estimateId, estimateName }: HoaPacketB
 
       {open && (
         <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+          <div className="bg-surface-2 border border-border rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-4">
               <div>
-                <h3 className="font-semibold text-fence-900">HOA Packet</h3>
-                <p className="text-xs text-gray-500 mt-0.5">For &ldquo;{estimateName}&rdquo;</p>
+                <h3 className="font-semibold text-text">HOA Packet</h3>
+                <p className="text-xs text-muted mt-0.5">For &ldquo;{estimateName}&rdquo;</p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                className="text-muted hover:text-text text-xl leading-none transition-colors duration-150"
                 aria-label="Close"
               >
                 ×
@@ -114,94 +114,94 @@ export default function HoaPacketButton({ estimateId, estimateName }: HoaPacketB
             </div>
 
             <div className="px-5 py-4 space-y-3">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted">
                 Packet includes your insurance certificate plus a cover page with these details.
               </p>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Customer name <span className="text-red-500">*</span>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                  Customer name <span className="text-danger normal-case tracking-normal">*</span>
                 </label>
                 <input
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   disabled={busy}
                   placeholder="Jane & John Homeowner"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-fence-500 focus:outline-none"
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Property address <span className="text-red-500">*</span>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                  Property address <span className="text-danger normal-case tracking-normal">*</span>
                 </label>
                 <input
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
                   disabled={busy}
                   placeholder="123 Oak Street"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-fence-500 focus:outline-none"
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">City</label>
                   <input
                     value={customerCity}
                     onChange={(e) => setCustomerCity(e.target.value)}
                     disabled={busy}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-fence-500 focus:outline-none"
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">State</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">State</label>
                   <input
                     value={customerState}
                     onChange={(e) => setCustomerState(e.target.value)}
                     disabled={busy}
                     maxLength={2}
                     placeholder="FL"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-fence-500 focus:outline-none uppercase"
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150 uppercase"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">ZIP</label>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">ZIP</label>
                 <input
                   value={customerZip}
                   onChange={(e) => setCustomerZip(e.target.value)}
                   disabled={busy}
                   maxLength={10}
-                  className="w-full max-w-[140px] border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-fence-500 focus:outline-none"
+                  className="w-full max-w-[140px] border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  HOA name <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                  HOA name <span className="text-muted normal-case tracking-normal font-normal">(optional)</span>
                 </label>
                 <input
                   value={hoaName}
                   onChange={(e) => setHoaName(e.target.value)}
                   disabled={busy}
                   placeholder="Roan Hills Homeowners Association"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-fence-500 focus:outline-none"
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                 />
               </div>
 
               {error && (
-                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>
+                <p className="text-xs text-danger bg-danger/10 border border-danger/30 rounded-md px-3 py-2">{error}</p>
               )}
             </div>
 
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2 rounded-b-xl">
+            <div className="px-5 py-3 bg-surface-3 border-t border-border flex items-center justify-end gap-2 rounded-b-xl">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 disabled={busy}
-                className="text-sm text-gray-600 hover:text-gray-800 font-medium px-3 py-2 disabled:opacity-50"
+                className="text-sm text-muted hover:text-text font-medium px-3 py-2 disabled:opacity-50 transition-colors duration-150"
               >
                 Cancel
               </button>
@@ -209,7 +209,7 @@ export default function HoaPacketButton({ estimateId, estimateName }: HoaPacketB
                 type="button"
                 onClick={handleGenerate}
                 disabled={busy}
-                className="bg-fence-700 hover:bg-fence-800 text-white font-semibold text-sm px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-accent hover:bg-accent-light accent-glow transition-colors duration-150 text-white font-semibold text-sm px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {busy ? "Generating…" : "Download packet"}
               </button>
