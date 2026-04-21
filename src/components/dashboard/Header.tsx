@@ -5,7 +5,7 @@ import Link from "next/link";
 const ROLE_BADGE: Record<Role, string> = {
   owner:   "bg-surface-2 border border-border text-accent-light",
   sales:   "bg-surface-2 border border-border text-info",
-  foreman: "bg-surface-2 border border-border text-accent",
+  foreman: "bg-surface-2 border border-border text-warning",
 };
 
 const ROLE_LABEL: Record<Role, string> = {
