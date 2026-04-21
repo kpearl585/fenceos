@@ -94,9 +94,9 @@ export function toEngineState(
 }
 
 function confidenceBadgeClass(c: number) {
-  if (c >= 0.85) return "text-green-700 bg-green-50 border-green-200";
-  if (c >= 0.65) return "text-amber-700 bg-amber-50 border-amber-200";
-  return "text-red-700 bg-red-50 border-red-200";
+  if (c >= 0.85) return "text-accent-light bg-accent/15 border-accent/30";
+  if (c >= 0.65) return "text-warning bg-warning/10 border-warning/30";
+  return "text-danger bg-danger/10 border-danger/30";
 }
 
 function confidenceLabel(c: number) {
@@ -104,6 +104,9 @@ function confidenceLabel(c: number) {
   if (c >= 0.65) return "Review recommended";
   return "Low confidence — review carefully";
 }
+
+const INPUT_CLASS = "w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+const LABEL_CLASS = "block text-xs font-semibold text-muted uppercase tracking-wider mb-2";
 
 export default function AiInputTab({ onApply, onPaywall }: Props) {
   // Per-instance ID counters so two AI tabs (or multiple extractions on
@@ -189,26 +192,27 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="bg-fence-950 text-white rounded-xl px-5 py-4">
+      {/* Header — signature panel, same accent-glow treatment as the
+          estimator summary card. */}
+      <div className="bg-background border border-accent/20 accent-glow text-text rounded-xl px-5 py-4">
         <div className="flex items-center gap-3 mb-1">
-          <svg className="w-5 h-5 text-fence-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
-          <p className="text-sm font-bold">AI Estimate Assistant</p>
-          <span className="text-xs bg-fence-800 text-fence-300 px-2 py-0.5 rounded font-semibold">GPT-4o</span>
+          <p className="font-display text-sm font-bold">AI Estimate Assistant</p>
+          <span className="text-xs bg-surface-2 text-accent-light border border-border px-2 py-0.5 rounded font-semibold uppercase tracking-wider">GPT-4o</span>
         </div>
-        <p className="text-xs text-fence-300">
+        <p className="text-xs text-muted">
           Describe the job or upload a site photo, sketch, or plan. AI extracts the runs — the engine does all the math.
         </p>
       </div>
 
       {/* Mode toggle */}
-      <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+      <div className="flex bg-surface-3 border border-border rounded-lg p-1 gap-1">
         {(["text", "image"] as const).map(m => (
           <button key={m}
             onClick={() => setMode(m)}
-            className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${mode === m ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors duration-150 ${mode === m ? "bg-accent text-white" : "text-muted hover:text-text"}`}
           >
             {m === "text" ? "Text Description" : "Photo / Sketch / Plan"}
           </button>
@@ -220,34 +224,34 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
         <div>
           {/* Quick Templates */}
           <div className="mb-4">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Quick Start Templates</label>
+            <label className={LABEL_CLASS}>Quick Start Templates</label>
             <div className="grid grid-cols-2 gap-2">
               {QUICK_TEMPLATES.map(template => (
                 <button
                   key={template.id}
                   onClick={() => setText(template.prompt)}
-                  className="text-left border border-gray-200 rounded-lg px-3 py-2 hover:border-fence-400 hover:bg-fence-50 transition-colors"
+                  className="text-left border border-border bg-surface-2 rounded-lg px-3 py-2 hover:border-accent/60 hover:bg-accent/5 transition-colors duration-150"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-lg">{template.icon}</span>
-                    <span className="text-xs font-semibold text-fence-900">{template.name}</span>
+                    <span className="text-xs font-semibold text-text">{template.name}</span>
                   </div>
-                  <p className="text-xs text-gray-500">{template.description}</p>
+                  <p className="text-xs text-muted">{template.description}</p>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2">Tap a template to prefill, then customize as needed</p>
+            <p className="text-xs text-muted mt-2">Tap a template to prefill, then customize as needed</p>
           </div>
 
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Describe the job</label>
+          <label className={LABEL_CLASS}>Describe the job</label>
           <textarea
             rows={5}
             placeholder={"Example: 180ft vinyl privacy 6ft fence on the back and sides of a residential property in Tampa. One walk gate on the left, one double drive gate across the back. Flat lot, sandy soil."}
             value={text}
             onChange={e => setText(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400 resize-none text-gray-700 placeholder:text-gray-300"
+            className="w-full border border-border bg-surface-3 text-text rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent resize-none placeholder:text-muted transition-colors duration-150"
           />
-          <p className="text-xs text-gray-400 mt-1">Include: footage, fence type, height, gates, soil, slope. More detail = higher accuracy.</p>
+          <p className="text-xs text-muted mt-1">Include: footage, fence type, height, gates, soil, slope. More detail = higher accuracy.</p>
         </div>
       )}
 
@@ -255,14 +259,14 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       {mode === "image" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Upload Image</label>
+            <label className={LABEL_CLASS}>Upload Image</label>
             {imagePreview ? (
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imagePreview} alt="Site plan" className="w-full rounded-xl border border-gray-200 max-h-64 object-contain bg-gray-50" />
+                <img src={imagePreview} alt="Site plan" className="w-full rounded-xl border border-border max-h-64 object-contain bg-surface-3" />
                 <button
                   onClick={() => { setImagePreview(null); setImageBase64(null); if (fileRef.current) fileRef.current.value = ""; }}
-                  className="absolute top-2 right-2 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-500 hover:text-red-500 shadow-sm"
+                  className="absolute top-2 right-2 bg-surface-2 border border-border rounded-lg px-2 py-1 text-xs text-muted hover:text-danger transition-colors duration-150"
                 >
                   Remove
                 </button>
@@ -272,24 +276,24 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
                 onClick={() => fileRef.current?.click()}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleImageFile(f); }}
-                className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-fence-400 hover:bg-fence-50 transition-colors"
+                className="border-2 border-dashed border-border bg-surface-3 rounded-xl p-8 text-center cursor-pointer hover:border-accent/60 hover:bg-accent/5 transition-colors duration-150"
               >
-                <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-8 h-8 text-muted mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
-                <p className="text-sm font-medium text-gray-500">Upload or drag a site photo, sketch, or plan</p>
-                <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP — max 4MB</p>
+                <p className="text-sm font-medium text-text">Upload or drag a site photo, sketch, or plan</p>
+                <p className="text-xs text-muted mt-1">JPG, PNG, WEBP — max 4MB</p>
               </div>
             )}
             <input ref={fileRef} type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageFile(f); }} className="hidden" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Additional context (optional)</label>
+            <label className={LABEL_CLASS}>Additional context (optional)</label>
             <input type="text"
               placeholder="e.g. 6ft vinyl privacy, back yard only, sandy soil"
               value={additionalContext}
               onChange={e => setAdditionalContext(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fence-400"
+              className={INPUT_CLASS}
             />
           </div>
         </div>
@@ -299,7 +303,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       <button
         onClick={handleExtract}
         disabled={loading || (mode === "text" ? !text.trim() : !imageBase64)}
-        className="w-full py-3 bg-fence-600 hover:bg-fence-700 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-40"
+        className="w-full py-3 bg-accent hover:bg-accent-light accent-glow text-white text-sm font-bold rounded-xl transition-colors duration-150 disabled:opacity-40 disabled:hover:bg-accent"
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
@@ -313,13 +317,13 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       </button>
 
       {rateRemaining !== null && rateRemaining <= 5 && (
-        <p className="text-xs text-amber-600 text-center">{rateRemaining} extraction{rateRemaining !== 1 ? "s" : ""} remaining this hour</p>
+        <p className="text-xs text-warning text-center">{rateRemaining} extraction{rateRemaining !== 1 ? "s" : ""} remaining this hour</p>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          <p className="text-sm text-red-700 font-semibold">Extraction failed</p>
-          <p className="text-xs text-red-600 mt-1">{error}</p>
+        <div className="bg-danger/10 border border-danger/30 rounded-xl px-4 py-3">
+          <p className="text-sm text-danger font-semibold">Extraction failed</p>
+          <p className="text-xs text-danger/80 mt-1">{error}</p>
         </div>
       )}
 
@@ -329,24 +333,24 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
           {/* Confidence header */}
           <div className={`border rounded-xl px-4 py-3 flex items-center justify-between gap-4 ${confidenceBadgeClass(result.confidence)}`}>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide">{confidenceLabel(result.confidence)}</p>
+              <p className="text-xs font-bold uppercase tracking-wider">{confidenceLabel(result.confidence)}</p>
               <p className="text-sm mt-0.5">{result.rawSummary}</p>
             </div>
-            <span className="text-2xl font-bold flex-shrink-0">{Math.round(result.confidence * 100)}%</span>
+            <span className="font-display text-2xl font-bold flex-shrink-0">{Math.round(result.confidence * 100)}%</span>
           </div>
 
           {/* Critical blockers — unified from validation + critique.
               Reads the explicit blockers array instead of substring-matching
               the legacy combined errors array. */}
           {criticallyBlocked && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-              <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">Cannot apply — resolve first</p>
+            <div className="bg-danger/10 border border-danger/30 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-danger uppercase tracking-wider mb-2">Cannot apply — resolve first</p>
               <ul className="space-y-1">
                 {[...validationBlockers, ...(critique?.criticalBlockers ?? [])].map((b, i) => (
-                  <li key={i} className="text-xs text-red-800 flex gap-2"><span className="font-bold">!</span><span>{b}</span></li>
+                  <li key={i} className="text-xs text-danger flex gap-2"><span className="font-bold">!</span><span>{b}</span></li>
                 ))}
                 {critique?.overallReadyToApply === false && (critique?.criticalBlockers?.length ?? 0) === 0 && (
-                  <li className="text-xs text-red-800 flex gap-2">
+                  <li className="text-xs text-danger flex gap-2">
                     <span className="font-bold">!</span>
                     <span>Quality-control review flagged this extraction as not ready to apply.</span>
                   </li>
@@ -357,11 +361,11 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
 
           {/* Auto-corrections + warnings (informational, safe to apply) */}
           {validationWarnings.length > 0 && (
-            <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
-              <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-2">Auto-corrected</p>
+            <div className="bg-warning/10 border border-warning/30 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-warning uppercase tracking-wider mb-2">Auto-corrected</p>
               <ul className="space-y-1">
                 {validationWarnings.map((e, i) => (
-                  <li key={i} className="text-xs text-orange-800 flex gap-2"><span className="text-orange-400">—</span><span>{e}</span></li>
+                  <li key={i} className="text-xs text-warning flex gap-2"><span className="text-warning/60">—</span><span>{e}</span></li>
                 ))}
               </ul>
             </div>
@@ -369,12 +373,12 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
 
           {/* Flags / assumptions */}
           {result.flags.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Verify before sending bid</p>
+            <div className="bg-warning/10 border border-warning/30 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-warning uppercase tracking-wider mb-2">Verify before sending bid</p>
               <ul className="space-y-1">
                 {result.flags.map((f, i) => (
-                  <li key={i} className="text-xs text-amber-800 flex gap-2">
-                    <span className="flex-shrink-0 text-amber-400">—</span><span>{f}</span>
+                  <li key={i} className="text-xs text-warning flex gap-2">
+                    <span className="flex-shrink-0 text-warning/60">—</span><span>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -383,12 +387,12 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
 
           {/* Hidden Cost Flags */}
           {result.hiddenCostFlags && result.hiddenCostFlags.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-              <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">⚠️ Potential Additional Costs</p>
+            <div className="bg-danger/10 border border-danger/30 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-danger uppercase tracking-wider mb-2">Potential Additional Costs</p>
               <ul className="space-y-1">
                 {result.hiddenCostFlags.map((f, i) => (
-                  <li key={i} className="text-xs text-red-800 flex gap-2">
-                    <span className="flex-shrink-0 text-red-400">•</span><span>{f}</span>
+                  <li key={i} className="text-xs text-danger flex gap-2">
+                    <span className="flex-shrink-0 text-danger/60">•</span><span>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -397,26 +401,26 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
 
           {/* Extracted runs preview */}
           {result.runs.length > 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <p className="text-sm font-semibold text-fence-900">{result.runs.length} run{result.runs.length !== 1 ? "s" : ""} extracted</p>
-                <p className="text-xs text-gray-400">Review before applying</p>
+            <div className="bg-surface-2 border border-border rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                <p className="text-sm font-semibold text-text">{result.runs.length} run{result.runs.length !== 1 ? "s" : ""} extracted</p>
+                <p className="text-xs text-muted">Review before applying</p>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-border">
                 {result.runs.map((run: AiExtractedRun, i: number) => (
                   <div key={i} className="px-4 py-3 flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-gray-800">{run.runLabel || `Run ${i + 1}`}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 capitalize">
+                      <p className="text-sm font-semibold text-text">{run.runLabel || `Run ${i + 1}`}</p>
+                      <p className="text-xs text-muted mt-0.5 capitalize">
                         {run.fenceType.replace("_", " ")} · {run.heightFt}ft · {run.productLineId.replace(/_/g, " ")}
                       </p>
                       {run.gates.length > 0 && (
-                        <p className="text-xs text-fence-600 mt-0.5">
+                        <p className="text-xs text-accent-light mt-0.5">
                           {run.gates.map(g => `${g.widthFt}ft ${g.type.replace("_", " ")}`).join(", ")}
                         </p>
                       )}
                       {(run.soilType !== "standard" || run.poolCode || run.isWindExposed) && (
-                        <p className="text-xs text-amber-600 mt-0.5">
+                        <p className="text-xs text-warning mt-0.5">
                           {[
                             run.soilType !== "standard" && `${run.soilType} soil`,
                             run.poolCode && "pool code",
@@ -425,27 +429,27 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
                         </p>
                       )}
                     </div>
-                    <p className="text-lg font-bold text-fence-900 flex-shrink-0 ml-3">{run.linearFeet} LF</p>
+                    <p className="font-display text-lg font-bold text-text flex-shrink-0 ml-3">{run.linearFeet} LF</p>
                   </div>
                 ))}
               </div>
-              <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <div className="px-4 py-3 bg-surface-3 border-t border-border flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-700">
+                  <p className="text-sm font-semibold text-text">
                     {result.runs.reduce((s, r) => s + r.linearFeet, 0)} LF total
                   </p>
                   {result.runs.some(r => r.fenceType !== result.runs[0].fenceType) && (
-                    <p className="text-xs text-amber-600 mt-0.5">Mixed fence types detected — dominant type will be set. Adjust fence type per run if needed.</p>
+                    <p className="text-xs text-warning mt-0.5">Mixed fence types detected — dominant type will be set. Adjust fence type per run if needed.</p>
                   )}
                 </div>
                 {applied ? (
-                  <span className="text-sm font-semibold text-green-700">Applied to estimate</span>
+                  <span className="text-sm font-semibold text-accent-light">Applied to estimate</span>
                 ) : (
                   <button
                     onClick={handleApply}
                     disabled={criticallyBlocked}
                     title={criticallyBlocked ? "Resolve critical blockers before applying" : undefined}
-                    className="px-4 py-2 bg-fence-600 text-white text-sm font-bold rounded-lg hover:bg-fence-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-accent hover:bg-accent-light accent-glow text-white text-sm font-bold rounded-lg transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent"
                   >
                     {criticallyBlocked ? "Blocked" : "Apply to Estimate"}
                   </button>
@@ -453,8 +457,8 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
               </div>
             </div>
           ) : (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-6 text-center">
-              <p className="text-sm text-gray-500">No runs extracted. Provide more detail and try again.</p>
+            <div className="bg-surface-2 border border-border rounded-xl px-4 py-6 text-center">
+              <p className="text-sm text-muted">No runs extracted. Provide more detail and try again.</p>
             </div>
           )}
         </div>

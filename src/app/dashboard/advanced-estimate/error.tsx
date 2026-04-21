@@ -21,11 +21,11 @@ export default function AdvancedEstimateError({
   }, [error]);
 
   return (
-    <div role="alert" className="max-w-2xl mx-auto mt-12 bg-white rounded-xl border border-red-200 p-8">
+    <div role="alert" className="max-w-2xl mx-auto mt-12 bg-surface-2 rounded-xl border border-danger/30 p-8">
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-danger/10 flex items-center justify-center">
           <svg
-            className="w-5 h-5 text-red-600"
+            className="w-5 h-5 text-danger"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -40,14 +40,14 @@ export default function AdvancedEstimateError({
           </svg>
         </div>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="font-display text-lg font-semibold text-text">
             Something went wrong with the estimator
           </h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-muted mt-1">
             We&apos;ve logged the error and our team has been notified. You can try again, or come back in a few minutes.
           </p>
           {error.digest && (
-            <p className="text-xs text-gray-400 mt-2 font-mono">
+            <p className="text-xs text-muted mt-2 font-mono">
               Reference: {error.digest}
             </p>
           )}
@@ -55,13 +55,13 @@ export default function AdvancedEstimateError({
             <button
               type="button"
               onClick={reset}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-fence-700 hover:bg-fence-600 text-white transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent hover:bg-accent-light accent-glow text-white transition-colors duration-150"
             >
               Try again
             </button>
             <a
               href="/dashboard"
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-transparent border border-border text-muted hover:text-text hover:bg-surface-2 transition-colors duration-150"
             >
               Back to dashboard
             </a>

@@ -214,17 +214,17 @@ export default function AdvancedEstimateClient({
       <div className="lg:col-span-3 space-y-4">
 
         {/* AI / Manual toggle */}
-        <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+        <div className="flex bg-surface-3 border border-border rounded-xl p-1 gap-1">
           <button
             onClick={() => setInputMode("manual")}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors ${inputMode === "manual" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors duration-150 ${inputMode === "manual" ? "bg-accent text-white" : "text-muted hover:text-text"}`}
           >
             Manual Input
           </button>
           <button
             onClick={() => setInputMode("ai")}
             disabled={!aiAvailable}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${inputMode === "ai" ? "bg-white text-fence-900 shadow-sm" : "text-gray-500 hover:text-gray-700"} disabled:opacity-40 disabled:cursor-not-allowed`}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors duration-150 flex items-center justify-center gap-2 ${inputMode === "ai" ? "bg-accent text-white" : "text-muted hover:text-text"} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
             AI Input
@@ -233,8 +233,8 @@ export default function AdvancedEstimateClient({
 
         {/* Draft-restored toast — fades after 5s via the mount effect. */}
         {draftRestored && (
-          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm">
-            <span className="text-green-800">
+          <div className="bg-accent/10 border border-accent/30 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm">
+            <span className="text-accent-light">
               <span className="font-semibold">Draft restored.</span>{" "}
               We saved your last in-progress estimate so you don&apos;t have to re-enter everything.
             </span>
@@ -243,7 +243,7 @@ export default function AdvancedEstimateClient({
                 setDraftRestored(false);
                 try { localStorage.removeItem(DRAFT_KEY); } catch {}
               }}
-              className="text-green-600 hover:text-green-800 ml-3 text-xs font-semibold underline"
+              className="text-accent-light hover:text-accent ml-3 text-xs font-semibold underline transition-colors duration-150"
             >
               Start fresh
             </button>
@@ -254,15 +254,15 @@ export default function AdvancedEstimateClient({
             AND hasn't dismissed. We don't stack this with the draft toast;
             the draft toast takes priority during the first few seconds. */}
         {!hasCustomConfig && !nudgeDismissed && !draftRestored && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start justify-between">
+          <div className="bg-surface-2 border border-border rounded-xl px-4 py-3 flex items-start justify-between">
             <div>
-              <p className="text-sm font-semibold text-blue-800">Using industry-standard rates</p>
-              <p className="text-xs text-blue-700 mt-0.5">
+              <p className="text-sm font-semibold text-text">Using industry-standard rates</p>
+              <p className="text-xs text-muted mt-0.5">
                 These estimates use default labor rates and material assumptions.{" "}
-                <a href="/dashboard/settings/estimator" className="underline font-semibold">Customize them in Estimator Settings</a> to match your crew speed and local pricing.
+                <a href="/dashboard/settings/estimator" className="underline font-semibold text-accent-light hover:text-accent transition-colors duration-150">Customize them in Estimator Settings</a> to match your crew speed and local pricing.
               </p>
             </div>
-            <button onClick={() => { setNudgeDismissed(true); try { localStorage.setItem("fep-nudge-dismissed", "true"); } catch {} }} className="text-blue-400 hover:text-blue-600 ml-3 text-lg leading-none">&times;</button>
+            <button onClick={() => { setNudgeDismissed(true); try { localStorage.setItem("fep-nudge-dismissed", "true"); } catch {} }} className="text-muted hover:text-text ml-3 text-lg leading-none transition-colors duration-150">&times;</button>
           </div>
         )}
 
@@ -365,14 +365,14 @@ export default function AdvancedEstimateClient({
           the results column is scrolled out of view. Shows the live total
           so the contractor always knows the price while editing inputs. */}
       {result && (
-        <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-fence-950 text-white px-4 py-3 flex items-center justify-between z-40 shadow-lg border-t border-fence-800">
+        <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-background text-text px-4 py-3 flex items-center justify-between z-40 border-t border-accent/20 accent-glow safe-area-pb">
           <div>
-            <p className="text-xs text-fence-300">Estimate Total</p>
-            <p className="text-xl font-bold">${Math.round(result.totalCost).toLocaleString()}</p>
+            <p className="text-xs text-muted uppercase tracking-wider">Estimate Total</p>
+            <p className="font-display text-xl font-bold text-text">${Math.round(result.totalCost).toLocaleString()}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-fence-300">{editor.totalLF} LF</p>
-            <p className="text-sm font-semibold text-fence-200">
+            <p className="text-xs text-muted uppercase tracking-wider">{editor.totalLF} LF</p>
+            <p className="font-display text-sm font-semibold text-accent-light">
               {editor.totalLF > 0 ? `$${Math.round(result.totalCost * (1 + Math.max(0, markupPct) / 100) / editor.totalLF)}/LF` : "—"}
             </p>
           </div>
