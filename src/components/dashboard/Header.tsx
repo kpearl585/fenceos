@@ -3,9 +3,9 @@ import type { Role } from "@/lib/roles";
 import Link from "next/link";
 
 const ROLE_BADGE: Record<Role, string> = {
-  owner:   "bg-amber-100 text-amber-800 border border-amber-200",
-  sales:   "bg-blue-100 text-blue-800 border border-blue-200",
-  foreman: "bg-green-100 text-green-800 border border-green-200",
+  owner:   "bg-surface-2 border border-border text-accent-light",
+  sales:   "bg-surface-2 border border-border text-info",
+  foreman: "bg-surface-2 border border-border text-accent",
 };
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -18,7 +18,7 @@ export function Header({ email, role, fullName }: { email: string; role: Role; f
   const displayName = fullName || email.split("@")[0];
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-surface border-b border-border flex items-center justify-between px-4 sm:px-6 lg:pl-68 shadow-sm">
+    <header className="sticky top-0 z-30 h-16 bg-surface border-b border-border flex items-center justify-between px-4 sm:px-6">
       {/* Mobile brand */}
       <div className="lg:hidden flex items-center gap-2">
         <div className="w-7 h-7 bg-accent rounded-md flex items-center justify-center">
