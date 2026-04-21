@@ -1,11 +1,12 @@
 "use client";
 import { useState, useRef, useCallback } from "react";
-import { extractFromText, extractFromImage } from "./aiActions";
+import { extractFromText, extractFromImage, extractFromSurvey } from "./aiActions";
 import type { AiExtractionResult, AiExtractedRun, CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import type { RunInput, GateInput, FenceType } from "@/lib/fence-graph/engine";
 import type { SoilType, GateType } from "@/lib/fence-graph/types";
 import { QUICK_TEMPLATES } from "@/lib/fence-graph/ai-extract/templates";
 import { isPaywallBlock, type PaywallBlock } from "@/lib/paywall";
+import { rasterizePdfFirstPage } from "@/lib/pdf/rasterize-client";
 
 export interface AiAppliedState {
   fenceType: FenceType;
@@ -117,11 +118,23 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   const newRunId = useCallback(() => `ai_run_${++runCtrRef.current}`, []);
   const newGateId = useCallback(() => `ai_gate_${++gateCtrRef.current}`, []);
 
-  const [mode, setMode] = useState<"text" | "image">("text");
+  const [mode, setMode] = useState<"text" | "image" | "survey">("text");
   const [text, setText] = useState("");
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageMime, setImageMime] = useState("image/jpeg");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // Survey-mode state. Survey PDFs are rendered to PNG on the client
+  // via pdfjs-dist, so `surveyBase64` ends up as an image under the
+  // hood — we just take a PDF-rendering step to get there.
+  const [surveyBase64, setSurveyBase64] = useState<string | null>(null);
+  const [surveyPreview, setSurveyPreview] = useState<string | null>(null);
+  const [surveyFilename, setSurveyFilename] = useState<string | null>(null);
+  const [surveyPages, setSurveyPages] = useState<number>(1);
+  const [renderingPdf, setRenderingPdf] = useState(false);
+  // Contractor can edit extracted `linearFeet` per run before Apply —
+  // keyed by run index in the AI result. AI extraction stays immutable;
+  // overrides layer on top on the way into the engine.
+  const [runLfOverrides, setRunLfOverrides] = useState<Record<number, number>>({});
   const [additionalContext, setAdditionalContext] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AiExtractionResult | null>(null);
@@ -136,6 +149,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const surveyFileRef = useRef<HTMLInputElement>(null);
 
   async function handleExtract() {
     setLoading(true);
@@ -146,10 +160,13 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
     setValidationBlockers([]);
     setCriticallyBlocked(false);
     setApplied(false);
+    setRunLfOverrides({});
 
     const res = mode === "text"
       ? await extractFromText(text)
-      : await extractFromImage(imageBase64!, imageMime, additionalContext || undefined);
+      : mode === "image"
+      ? await extractFromImage(imageBase64!, imageMime, additionalContext || undefined)
+      : await extractFromSurvey(surveyBase64!, "image/png", additionalContext || undefined);
 
     setLoading(false);
 
@@ -173,10 +190,54 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   function handleApply() {
     if (!result) return;
     if (criticallyBlocked) return; // hard guard in addition to the disabled button
-    const state = toEngineState(result, newRunId, newGateId);
+    // Apply contractor's edited linearFeet (per-run overrides) on the
+    // way into the engine. We don't mutate the AI result itself —
+    // overrides layer on top so the contractor can see what the AI
+    // said AND what they changed it to.
+    const edited: AiExtractionResult = Object.keys(runLfOverrides).length === 0
+      ? result
+      : {
+          ...result,
+          runs: result.runs.map((run, i) => {
+            const override = runLfOverrides[i];
+            return override != null && override !== run.linearFeet
+              ? { ...run, linearFeet: override }
+              : run;
+          }),
+        };
+    const state = toEngineState(edited, newRunId, newGateId);
     if (!state) return;
     onApply(state);
     setApplied(true);
+  }
+
+  async function handleSurveyFile(file: File) {
+    if (file.type !== "application/pdf") {
+      setError("Please upload a PDF file.");
+      return;
+    }
+    // 15 MB ceiling — multi-page surveys can hit 5-10 MB. Above this
+    // we'd push Vercel request-size limits on the extraction call.
+    if (file.size > 15 * 1024 * 1024) {
+      setError("PDF too large. Please keep it under 15 MB.");
+      return;
+    }
+    setError(null);
+    setRenderingPdf(true);
+    setSurveyBase64(null);
+    setSurveyPreview(null);
+    try {
+      const rendered = await rasterizePdfFirstPage(file);
+      setSurveyBase64(rendered.base64);
+      setSurveyPreview(rendered.dataUrl);
+      setSurveyFilename(file.name);
+      setSurveyPages(rendered.totalPages);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to render PDF";
+      setError(`Couldn't read that PDF: ${msg}`);
+    } finally {
+      setRenderingPdf(false);
+    }
   }
 
   function handleImageFile(file: File) {
@@ -209,12 +270,12 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
 
       {/* Mode toggle */}
       <div className="flex bg-surface-3 border border-border rounded-lg p-1 gap-1">
-        {(["text", "image"] as const).map(m => (
+        {(["text", "image", "survey"] as const).map(m => (
           <button key={m}
             onClick={() => setMode(m)}
             className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors duration-150 ${mode === m ? "bg-accent text-white" : "text-muted hover:text-text"}`}
           >
-            {m === "text" ? "Text Description" : "Photo / Sketch / Plan"}
+            {m === "text" ? "Text Description" : m === "image" ? "Photo / Sketch" : "Marked Survey"}
           </button>
         ))}
       </div>
@@ -299,10 +360,102 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
         </div>
       )}
 
+      {/* Marked Survey input — PDF upload + client-side render to PNG */}
+      {mode === "survey" && (
+        <div className="space-y-3">
+          <div className="bg-accent/5 border border-accent/20 rounded-xl px-4 py-3">
+            <p className="text-xs font-semibold text-accent-light uppercase tracking-wider mb-1">How this works</p>
+            <p className="text-xs text-muted leading-relaxed">
+              Upload a marked-up boundary survey (PDF). AI reads your colored highlights + handwritten notes, pulls run lengths from the printed dimensions, and proposes runs + gates. Review the proposed runs below and tweak before running the estimate.
+            </p>
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Upload Marked Survey (PDF)</label>
+            {surveyPreview ? (
+              <div className="relative bg-surface-3 border border-border rounded-xl overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={surveyPreview} alt="Rendered survey" className="w-full max-h-[500px] object-contain bg-white" />
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <span className="bg-surface-2 border border-border rounded-lg px-2 py-1 text-xs text-muted">
+                    {surveyFilename}
+                    {surveyPages > 1 ? ` · page 1 of ${surveyPages}` : ""}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSurveyPreview(null);
+                      setSurveyBase64(null);
+                      setSurveyFilename(null);
+                      setSurveyPages(1);
+                      if (surveyFileRef.current) surveyFileRef.current.value = "";
+                    }}
+                    className="bg-surface-2 border border-border rounded-lg px-2 py-1 text-xs text-muted hover:text-danger transition-colors duration-150"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => surveyFileRef.current?.click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => {
+                  e.preventDefault();
+                  const f = e.dataTransfer.files[0];
+                  if (f) handleSurveyFile(f);
+                }}
+                className="border-2 border-dashed border-border bg-surface-3 rounded-xl p-8 text-center cursor-pointer hover:border-accent/60 hover:bg-accent/5 transition-colors duration-150"
+              >
+                {renderingPdf ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="animate-spin w-6 h-6 text-accent-light" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <p className="text-sm font-medium text-text">Rendering PDF...</p>
+                  </div>
+                ) : (
+                  <>
+                    <svg className="w-8 h-8 text-muted mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-sm font-medium text-text">Upload or drag a marked-up PDF survey</p>
+                    <p className="text-xs text-muted mt-1">Only the first page is analyzed — max 15 MB</p>
+                  </>
+                )}
+              </div>
+            )}
+            <input
+              ref={surveyFileRef}
+              type="file"
+              accept="application/pdf"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) handleSurveyFile(f);
+              }}
+              className="hidden"
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Additional context (optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. 6ft white vinyl privacy, installed 4 inches above grade"
+              value={additionalContext}
+              onChange={e => setAdditionalContext(e.target.value)}
+              className={INPUT_CLASS}
+            />
+            <p className="text-xs text-muted mt-1">Tells the AI what handwriting to expect — helps when notes are hard to read.</p>
+          </div>
+        </div>
+      )}
+
       {/* CTA */}
       <button
         onClick={handleExtract}
-        disabled={loading || (mode === "text" ? !text.trim() : !imageBase64)}
+        disabled={
+          loading ||
+          (mode === "text" ? !text.trim() : mode === "image" ? !imageBase64 : !surveyBase64)
+        }
         className="w-full py-3 bg-accent hover:bg-accent-light accent-glow text-white text-sm font-bold rounded-xl transition-colors duration-150 disabled:opacity-40 disabled:hover:bg-accent"
       >
         {loading ? (
@@ -407,36 +560,81 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
                 <p className="text-xs text-muted">Review before applying</p>
               </div>
               <div className="divide-y divide-border">
-                {result.runs.map((run: AiExtractedRun, i: number) => (
-                  <div key={i} className="px-4 py-3 flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-text">{run.runLabel || `Run ${i + 1}`}</p>
-                      <p className="text-xs text-muted mt-0.5 capitalize">
-                        {run.fenceType.replace("_", " ")} · {run.heightFt}ft · {run.productLineId.replace(/_/g, " ")}
-                      </p>
-                      {run.gates.length > 0 && (
-                        <p className="text-xs text-accent-light mt-0.5">
-                          {run.gates.map(g => `${g.widthFt}ft ${g.type.replace("_", " ")}`).join(", ")}
+                {result.runs.map((run: AiExtractedRun, i: number) => {
+                  // Editable LF: AI suggestion is the initial value but
+                  // contractor can override before Apply. We track the
+                  // override separately so the original AI value is never
+                  // mutated — makes it easy to tell the contractor
+                  // "you changed this from N to M".
+                  const overrideLf = runLfOverrides[i];
+                  const displayLf = overrideLf ?? run.linearFeet;
+                  const wasEdited = overrideLf != null && overrideLf !== run.linearFeet;
+                  return (
+                    <div key={i} className="px-4 py-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-text">{run.runLabel || `Run ${i + 1}`}</p>
+                        <p className="text-xs text-muted mt-0.5 capitalize">
+                          {run.fenceType.replace("_", " ")} · {run.heightFt}ft · {run.productLineId.replace(/_/g, " ")}
                         </p>
-                      )}
-                      {(run.soilType !== "standard" || run.poolCode || run.isWindExposed) && (
-                        <p className="text-xs text-warning mt-0.5">
-                          {[
-                            run.soilType !== "standard" && `${run.soilType} soil`,
-                            run.poolCode && "pool code",
-                            run.isWindExposed && "wind exposed",
-                          ].filter(Boolean).join(" · ")}
-                        </p>
-                      )}
+                        {run.gates.length > 0 && (
+                          <p className="text-xs text-accent-light mt-0.5">
+                            {run.gates.map(g => `${g.widthFt}ft ${g.type.replace("_", " ")}`).join(", ")}
+                          </p>
+                        )}
+                        {(run.soilType !== "standard" || run.poolCode || run.isWindExposed) && (
+                          <p className="text-xs text-warning mt-0.5">
+                            {[
+                              run.soilType !== "standard" && `${run.soilType} soil`,
+                              run.poolCode && "pool code",
+                              run.isWindExposed && "wind exposed",
+                            ].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={displayLf}
+                            onChange={e => {
+                              const v = e.target.valueAsNumber;
+                              if (!Number.isFinite(v) || v < 0) return;
+                              setRunLfOverrides(prev => ({ ...prev, [i]: v }));
+                            }}
+                            className={`font-display text-lg font-bold w-20 text-right bg-surface-3 border rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150 ${
+                              wasEdited ? "border-accent/40 text-accent-light" : "border-border text-text"
+                            }`}
+                            aria-label={`Linear feet for run ${i + 1}`}
+                          />
+                          <span className="text-xs text-muted">LF</span>
+                        </div>
+                        {wasEdited && (
+                          <button
+                            type="button"
+                            onClick={() => setRunLfOverrides(prev => {
+                              const next = { ...prev };
+                              delete next[i];
+                              return next;
+                            })}
+                            className="text-[10px] text-muted hover:text-text transition-colors duration-150 underline underline-offset-2"
+                          >
+                            reset to AI ({run.linearFeet})
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <p className="font-display text-lg font-bold text-text flex-shrink-0 ml-3">{run.linearFeet} LF</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="px-4 py-3 bg-surface-3 border-t border-border flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-text">
-                    {result.runs.reduce((s, r) => s + r.linearFeet, 0)} LF total
+                    {result.runs.reduce((s, r, i) => s + (runLfOverrides[i] ?? r.linearFeet), 0)} LF total
+                    {Object.keys(runLfOverrides).length > 0 && (
+                      <span className="text-xs text-accent-light ml-2 font-normal">(edited)</span>
+                    )}
                   </p>
                   {result.runs.some(r => r.fenceType !== result.runs[0].fenceType) && (
                     <p className="text-xs text-warning mt-0.5">Mixed fence types detected — dominant type will be set. Adjust fence type per run if needed.</p>

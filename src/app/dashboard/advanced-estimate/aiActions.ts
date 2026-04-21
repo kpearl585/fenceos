@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 import * as Sentry from "@sentry/nextjs";
 import { SYSTEM_PROMPT, USER_PROMPT_TEXT, USER_PROMPT_IMAGE } from "@/lib/fence-graph/ai-extract/prompt";
+import { SURVEY_SYSTEM_PROMPT } from "@/lib/fence-graph/ai-extract/survey-prompt";
 import { CRITIQUE_SYSTEM_PROMPT, CRITIQUE_USER_PROMPT } from "@/lib/fence-graph/ai-extract/critique-prompt";
 import { EXTRACTION_JSON_SCHEMA, CRITIQUE_JSON_SCHEMA, validateExtraction } from "@/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph/ai-extract/types";
@@ -65,7 +66,7 @@ async function checkRateLimit(orgId: string): Promise<{ allowed: boolean; remain
 async function persistAudit(payload: {
   orgId: string;
   userId: string;
-  inputType: "text" | "image";
+  inputType: "text" | "image" | "survey";
   inputHash: string;
   rawExtraction: AiExtractionResult | null;
   critiqueJson: CritiqueResult | null;
@@ -161,11 +162,16 @@ async function runCritique(
 // ── Image quality ladder ──────────────────────────────────────────
 // First pass: detail:"low" (fast + cheap)
 // If confidence < 0.75 on key fields → re-run with detail:"high"
+// `systemPrompt` lets survey extraction swap the prompt without forking
+// the whole extraction helper — survey images need different guidance
+// than generic "yard photo" images, but the quality-ladder logic is
+// identical.
 async function runImageExtraction(
   client: OpenAI,
   base64: string,
   mimeType: string,
-  additionalText?: string
+  additionalText?: string,
+  systemPrompt: string = SYSTEM_PROMPT,
 ): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number; usedHighDetail: boolean }> {
   // Pass 1: low detail
   const lowDetailContent = [
@@ -189,7 +195,7 @@ async function runImageExtraction(
       json_schema: { name: "fence_extraction", strict: true, schema: EXTRACTION_JSON_SCHEMA },
     },
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: lowDetailContent },
     ],
   });
@@ -232,7 +238,7 @@ async function runImageExtraction(
       json_schema: { name: "fence_extraction", strict: true, schema: EXTRACTION_JSON_SCHEMA },
     },
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: highDetailContent },
     ],
   });
@@ -473,6 +479,112 @@ export async function extractFromImage(
     const msg = err instanceof Error ? err.message : "Image extraction failed";
     Sentry.captureException(err, {
       tags: { feature: "ai-extraction", step: "extract-image" },
+      level: "error",
+    });
+    return { success: false, error: msg };
+  }
+}
+
+// ── Public: Extract from marked survey ────────────────────────────
+// Contractor uploads a marked-up boundary survey / plat / site plan
+// (rendered to PNG client-side from the uploaded PDF). We pass the
+// image through the same quality ladder as `extractFromImage` but
+// with a survey-specific system prompt that teaches GPT-4o how to
+// read colored highlighter markup + handwritten annotations on
+// formal surveyed property drawings.
+export async function extractFromSurvey(
+  base64: string,
+  mimeType: string,
+  additionalText?: string,
+): Promise<AiExtractionResponse> {
+  const readiness = await checkAiReadiness();
+  if (!readiness.available) return { success: false, error: readiness.reason };
+
+  if (!base64) return { success: false, error: "Survey image data required" };
+
+  const auth = await getAuthContext();
+  if (!auth) return { success: false, error: "Not authenticated" };
+
+  // BILLING: Survey extraction is GPT-4o image + often needs high-detail pass.
+  const billingBlock = await enforceBillingGate(auth.orgId);
+  if (billingBlock) return billingBlock;
+
+  const rateCheck = await checkRateLimit(auth.orgId);
+  if (!rateCheck.allowed) {
+    return {
+      success: false,
+      error: rateCheck.error ?? `Rate limit reached (${RATE_LIMIT_PER_HOUR}/hour). Try again later.`,
+    };
+  }
+
+  // Survey renders (letter-size at 200 DPI) typically come out 1-3 MB
+  // base64. Give a slightly higher ceiling than photo path — raising
+  // DPI further would hurt payload without meaningfully improving
+  // handwriting legibility.
+  const sizeBytes = (base64.length * 3) / 4;
+  if (sizeBytes > 6_000_000) {
+    return { success: false, error: "Rendered survey too large. Try a lower-resolution PDF or crop to a single page." };
+  }
+
+  const inputHash = crypto.createHash("sha256").update(base64.slice(0, 1000)).digest("hex").slice(0, 16);
+
+  try {
+    const client = getOpenAI();
+
+    const { result, inputTokens, outputTokens, usedHighDetail } = await runImageExtraction(
+      client, base64, mimeType, additionalText, SURVEY_SYSTEM_PROMPT,
+    );
+
+    const validation = validateExtraction(result);
+    if (validation.data) Object.assign(result, validation.data);
+
+    if (usedHighDetail) {
+      result.flags = [`Used high-detail analysis (confidence was low on first pass)`, ...(result.flags ?? [])];
+    }
+
+    const critiqueInput = additionalText ?? "Marked survey upload (no additional contractor notes)";
+    const critique = await runCritique(client, result, critiqueInput);
+    if (critique?.questionsForContractor?.length) {
+      result.flags = [...(result.flags ?? []), ...critique.questionsForContractor.slice(0, 3)];
+    }
+
+    result.hiddenCostFlags = detectHiddenCosts(additionalText || "", result);
+
+    const criticallyBlocked =
+      validation.blocked ||
+      (critique?.criticalBlockers?.length ?? 0) > 0 ||
+      (critique != null && critique.overallReadyToApply === false);
+
+    void persistAudit({
+      orgId: auth.orgId,
+      userId: auth.userId,
+      inputType: "survey",
+      inputHash,
+      rawExtraction: result,
+      critiqueJson: critique,
+      validationErrors: validation.errors,
+      confidence: result.confidence,
+      inputTokens,
+      outputTokens,
+    });
+
+    return {
+      success: true,
+      result,
+      critique: critique ?? undefined,
+      validationErrors: validation.errors,
+      validationBlockers: validation.blockers,
+      validationWarnings: validation.warnings,
+      blocked: validation.blocked,
+      criticallyBlocked,
+      inputTokens,
+      outputTokens,
+      rateRemaining: rateCheck.remaining - 1,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Survey extraction failed";
+    Sentry.captureException(err, {
+      tags: { feature: "ai-extraction", step: "extract-survey" },
       level: "error",
     });
     return { success: false, error: msg };
