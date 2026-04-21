@@ -74,7 +74,7 @@ export default function VerifyMaterialsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fence-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
       </div>
     )
   }
@@ -88,8 +88,8 @@ export default function VerifyMaterialsPage() {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center">
         <div className="text-5xl mb-4"></div>
-        <h2 className="text-xl font-bold text-fence-900 mb-2">Materials Confirmed</h2>
-        <p className="text-gray-500 text-sm">Foreman has been notified. Redirecting…</p>
+        <h2 className="font-display text-xl font-bold text-text mb-2">Materials Confirmed</h2>
+        <p className="text-muted text-sm">Foreman has been notified. Redirecting&hellip;</p>
       </div>
     )
   }
@@ -98,9 +98,9 @@ export default function VerifyMaterialsPage() {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center">
         <div className="text-5xl mb-4"></div>
-        <h2 className="text-xl font-bold text-fence-900 mb-2">Already Approved</h2>
-        <p className="text-gray-500 text-sm mb-4">Materials have been verified and foreman-approved for this job.</p>
-        <Link href={`/dashboard/jobs/${jobId}`} className="text-fence-600 hover:underline text-sm">← Back to Job</Link>
+        <h2 className="font-display text-xl font-bold text-text mb-2">Already Approved</h2>
+        <p className="text-muted text-sm mb-4">Materials have been verified and foreman-approved for this job.</p>
+        <Link href={`/dashboard/jobs/${jobId}`} className="text-accent-light hover:text-accent text-sm transition-colors duration-150">&larr; Back to Job</Link>
       </div>
     )
   }
@@ -108,76 +108,76 @@ export default function VerifyMaterialsPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <Link href={`/dashboard/jobs/${jobId}`} className="text-sm text-fence-600 hover:text-fence-800 font-medium">
-          ← Back to Job
+        <Link href={`/dashboard/jobs/${jobId}`} className="text-sm text-accent-light hover:text-accent font-medium transition-colors duration-150">
+          &larr; Back to Job
         </Link>
       </div>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-fence-900">Materials Verification</h1>
-        <p className="text-gray-500 mt-1">{jobName} — {address || 'No address on file'}</p>
+        <h1 className="font-display text-2xl font-bold text-text">Materials Verification</h1>
+        <p className="text-muted mt-1">{jobName} &mdash; {address || 'No address on file'}</p>
       </div>
 
       {verifyStatus === 'employee_confirmed' && (
-        <div className="mb-4 p-3.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-sm font-medium">
+        <div className="mb-4 p-3.5 bg-surface-3 border border-border text-muted rounded-lg text-sm font-medium">
            You have already submitted this verification. Waiting for foreman approval.
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h2 className="font-semibold text-fence-900">Materials Checklist ({materials.length} items)</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Check each item to confirm it is loaded and ready.</p>
+        <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-4">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="font-semibold text-text">Materials Checklist ({materials.length} items)</h2>
+            <p className="text-xs text-muted mt-0.5">Check each item to confirm it is loaded and ready.</p>
           </div>
           {materials.length === 0 ? (
-            <p className="px-5 py-4 text-sm text-gray-400">No materials found for this job.</p>
+            <p className="px-5 py-4 text-sm text-muted">No materials found for this job.</p>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-border">
               {materials.map(m => (
-                <label key={m.id} className="flex items-center gap-4 px-5 py-3 cursor-pointer hover:bg-gray-50">
+                <label key={m.id} className="flex items-center gap-4 px-5 py-3 cursor-pointer hover:bg-surface-3 transition-colors duration-150">
                   <input
                     type="checkbox"
                     checked={!!checked[m.id]}
                     onChange={() => toggleItem(m.id)}
-                    className="w-5 h-5 rounded accent-fence-600"
+                    className="w-5 h-5 rounded accent-accent"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-gray-900">
-                      {m.qty}× {m.name}
+                    <span className="text-sm font-medium text-text">
+                      {m.qty}&times; {m.name}
                     </span>
-                    {m.sku && <span className="ml-2 text-xs text-gray-400">({m.sku})</span>}
-                    <span className="ml-2 text-xs text-gray-400">— confirm loaded</span>
+                    {m.sku && <span className="ml-2 text-xs text-muted font-mono">({m.sku})</span>}
+                    <span className="ml-2 text-xs text-muted">&mdash; confirm loaded</span>
                   </div>
-                  {checked[m.id] && <span className="text-green-500 text-sm"></span>}
+                  {checked[m.id] && <span className="text-accent-light text-sm"></span>}
                 </label>
               ))}
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Notes <span className="text-gray-400 font-normal">(optional)</span>
+        <div className="bg-surface-2 rounded-xl border border-border p-5 mb-4">
+          <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+            Notes <span className="text-muted font-normal normal-case tracking-normal">(optional)</span>
           </label>
           <textarea
             rows={3}
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            placeholder="Any missing items, substitutions, or notes for the foreman…"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-fence-500"
+            placeholder="Any missing items, substitutions, or notes for the foreman&hellip;"
+            className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
           />
         </div>
 
         <button
           type="submit"
           disabled={!allChecked || isPending || verifyStatus === 'employee_confirmed'}
-          className="w-full bg-fence-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-fence-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-accent hover:bg-accent-light accent-glow text-white py-3 rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent disabled:shadow-none transition-colors duration-150"
         >
-          {isPending ? 'Submitting…' : verifyStatus === 'employee_confirmed' ? 'Already Submitted' : 'All Materials Loaded — Submit for Foreman Approval'}
+          {isPending ? 'Submitting\u2026' : verifyStatus === 'employee_confirmed' ? 'Already Submitted' : 'All Materials Loaded \u2014 Submit for Foreman Approval'}
         </button>
         {!allChecked && materials.length > 0 && (
-          <p className="text-xs text-amber-600 text-center mt-2">Check all items before submitting.</p>
+          <p className="text-xs text-warning text-center mt-2">Check all items before submitting.</p>
         )}
       </form>
     </div>
