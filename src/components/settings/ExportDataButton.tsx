@@ -41,7 +41,7 @@ export default function ExportDataButton() {
     <button
       onClick={handleExport}
       disabled={isExporting}
-      className="bg-fence-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-fence-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+      className="bg-accent hover:bg-accent-light accent-glow text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-150 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isExporting ? "Exporting..." : "Export Data"}
     </button>

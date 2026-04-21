@@ -17,28 +17,28 @@ export default function OrgNameForm({ orgId, currentName }: { orgId: string; cur
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
+    <div className="flex flex-col gap-3">
+      <label className="text-xs font-semibold text-muted uppercase tracking-wider">
         Company Name
-        <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 400, marginLeft: '0.5rem' }}>Appears on estimates and customer-facing documents</span>
+        <span className="ml-2 text-xs font-normal text-muted normal-case tracking-normal">Appears on estimates and customer-facing documents</span>
       </label>
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+      <div className="flex gap-3 items-center">
         <input
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Your company name"
-          style={{ flex: 1, padding: '0.625rem 0.875rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem', color: '#111827', outline: 'none' }}
+          className="flex-1 border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
         />
         <button
           onClick={handleSave}
           disabled={saving || name === currentName}
-          style={{ padding: '0.625rem 1.25rem', background: saving ? '#9ca3af' : '#2D6A4F', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+          className="bg-accent hover:bg-accent-light accent-glow text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors duration-150 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? 'Saving\u2026' : 'Save'}
         </button>
       </div>
-      {status === 'success' && <span style={{ fontSize: '0.8rem', color: '#16a34a' }}>\u2713 Company name updated</span>}
-      {status === 'error' && <span style={{ fontSize: '0.8rem', color: '#dc2626' }}>Failed to save. Try again.</span>}
+      {status === 'success' && <span className="text-xs text-accent-light">\u2713 Company name updated</span>}
+      {status === 'error' && <span className="text-xs text-danger">Failed to save. Try again.</span>}
     </div>
   )
 }

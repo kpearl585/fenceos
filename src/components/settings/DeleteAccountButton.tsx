@@ -42,7 +42,7 @@ export default function DeleteAccountButton({ action }: Props) {
       <button
         type="submit"
         onClick={handleClick}
-        className="bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
+        className="bg-danger hover:bg-danger/90 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-150 whitespace-nowrap"
       >
         Delete Account
       </button>
