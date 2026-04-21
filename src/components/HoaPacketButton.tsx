@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { generateHoaPacket } from "@/lib/hoa/packetActions";
+import { captureEvent } from "@/lib/analytics/posthog-client";
 
 interface HoaPacketButtonProps {
   estimateId: string;
@@ -59,6 +60,15 @@ export default function HoaPacketButton({ estimateId, estimateName }: HoaPacketB
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      // Fire funnel event. No PII — no customer name/address. Only
+      // dimensions that help us see which contractors are using the
+      // feature and whether HOA-name is being filled in (signal of
+      // mature vs ad-hoc usage).
+      captureEvent("hoa_packet_generated", {
+        estimate_id: estimateId,
+        has_hoa_name: !!hoaName.trim(),
+      });
 
       setOpen(false);
     } catch (err) {

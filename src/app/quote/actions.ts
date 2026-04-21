@@ -9,6 +9,7 @@ import {
 } from "@/lib/email";
 import { processAcceptance } from "@/lib/contracts/processAcceptance";
 import type { PdfEstimateData } from "@/lib/contracts/generateEstimatePdf";
+import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { z } from "zod";
 
 // ── Generate a shareable quote link ───────────────────────────────
@@ -434,6 +435,24 @@ export async function acceptQuote(
       console.error("[acceptQuote] Row update failed after artifacts generated:", updateErr);
       return { success: false, error: "Failed to finalize acceptance. Please try again." };
     }
+
+    // Fire PostHog conversion event server-side. This is the terminal
+    // event in the contractor funnel — we do it server-side rather than
+    // client-side so browsers that block analytics don't drop the
+    // datapoint. `distinctId: quote-<token>` is a synthetic per-quote
+    // id so the customer (no Supabase UUID) is tracked without us
+    // storing their PII as an analytics identity. Grouped to the
+    // contractor's org so org-level conversion metrics work.
+    await captureServerEvent({
+      distinctId: `quote-${validated.token}`,
+      event: "quote_accepted",
+      orgId: quote.org_id,
+      properties: {
+        estimate_id: quote.id,
+        total_cost: total,
+        has_customer_email: !!validated.customerEmail,
+      },
+    });
 
     // Non-blocking: notify both sides. Delivery failure must not roll
     // back the acceptance — the row is already durable.

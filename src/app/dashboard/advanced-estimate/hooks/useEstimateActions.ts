@@ -16,6 +16,7 @@ import { createEstimateFromFenceGraph } from "../convertActions";
 import { STATUS_RESET_MS, CONVERT_ERROR_RESET_MS } from "../constants";
 import { validateEstimateBeforeConvert } from "../validation";
 import { isPaywallBlock, type PaywallBlock } from "@/lib/paywall";
+import { captureEvent } from "@/lib/analytics/posthog-client";
 
 function downloadBase64Pdf(base64: string, filename: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -105,6 +106,22 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
       return;
     }
     setSaveStatus(res.success ? "saved" : "error");
+    if (res.success) {
+      // Fire funnel event on save. Avoid PII (customer name etc.) —
+      // only aggregate project metrics that help us see which fence
+      // types + sizes are selling.
+      const gateCount = Array.isArray(input?.gates) ? input.gates.length : 0;
+      captureEvent("estimate_saved", {
+        product_line_id: input?.productLineId,
+        fence_height_ft: input?.fenceHeight,
+        total_runs: Array.isArray(input?.runs) ? input.runs.length : 0,
+        gate_count: gateCount,
+        labor_rate: laborRate,
+        waste_pct: wastePct,
+        markup_pct: markupPct,
+        total_cost: result?.totalCost,
+      });
+    }
     setTimeout(() => setSaveStatus("idle"), STATUS_RESET_MS);
   }, [input, result, projectName, laborRate, wastePct, markupPct]);
 

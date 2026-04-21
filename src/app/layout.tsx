@@ -2,7 +2,18 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import PostHogProvider from "@/components/PostHogProvider";
 import "./globals.css";
+
+// PostHog identity is resolved per-layout that needs it (currently
+// `dashboard/layout.tsx`). The root layout deliberately does NOT call
+// Supabase auth — doing so reads cookies via next/headers, which turns
+// every page (including the marketing pages + blog + /quote/[token])
+// into a dynamic SSR render. Marketing pages must stay statically
+// cacheable. Dashboard layout passes identity down via its own
+// PostHogProvider mount; this one at root runs identity=null so anon
+// pageviews are captured on marketing/quote pages without breaking
+// prerendering.
 
 export const viewport: Viewport = {
   themeColor: "#2D6A4F",
@@ -163,6 +174,9 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-background text-text font-body">
+        {/* Anon init only; dashboard layout mounts its own
+            PostHogProvider with identity for logged-in users. */}
+        <PostHogProvider identity={null} />
         {children}
         <Analytics />
         <SpeedInsights />
