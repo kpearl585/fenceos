@@ -13,32 +13,32 @@ const UPDATED = "April 19, 2026";
 
 export default function CreditsPage() {
   return (
-    <div className="min-h-screen bg-fence-950">
+    <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-6 py-16">
         <Link href="/" className="flex items-center gap-2 mb-12">
-          <div className="w-7 h-7 bg-fence-500 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <div className="w-7 h-7 bg-accent rounded-lg flex items-center justify-center accent-glow">
+            <svg className="w-4 h-4 text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </div>
-          <span className="text-white font-bold">FenceEstimatePro</span>
+          <span className="text-text font-bold">FenceEstimatePro</span>
         </Link>
 
-        <h1 className="text-3xl font-bold text-white mb-2">Credits &amp; Attributions</h1>
-        <p className="text-white/40 text-sm mb-12">Last updated: {UPDATED}</p>
+        <h1 className="font-display text-3xl font-bold text-text mb-2">Credits &amp; Attributions</h1>
+        <p className="text-muted text-sm mb-12">Last updated: {UPDATED}</p>
 
-        <div className="space-y-10 text-white/70 text-sm leading-relaxed">
+        <div className="space-y-10 text-text/70 text-sm leading-relaxed">
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">Overview</h2>
+            <h2 className="text-text font-semibold text-lg mb-3">Overview</h2>
             <p>
               FenceEstimatePro is built with help from an open-source community
               of creators. This page credits every third-party asset that ships
               inside our product along with its license, as required by the
               terms of those licenses. If you are the author of work credited
               here and would like us to correct an attribution, please{" "}
-              <Link href="/privacy" className="text-fence-300 underline hover:text-fence-200">
+              <Link href="/privacy" className="text-accent-light underline hover:text-accent">
                 contact us
               </Link>
               .
@@ -46,31 +46,31 @@ export default function CreditsPage() {
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">3D Models</h2>
+            <h2 className="text-text font-semibold text-lg mb-3">3D Models</h2>
 
             <div className="space-y-6">
-              <div className="border border-white/10 rounded-lg p-5">
-                <p className="text-white font-medium mb-1">Wood Privacy Fence (AR panel)</p>
-                <p className="text-white/50 text-xs mb-3">
+              <div className="border border-border bg-surface-2 rounded-lg p-5">
+                <p className="text-text font-medium mb-1">Wood Privacy Fence (AR panel)</p>
+                <p className="text-muted text-xs mb-3">
                   Used in the AR Quote feature to visualize 6-foot wood privacy fences on customer property.
                 </p>
                 <dl className="grid grid-cols-1 gap-y-2 text-xs">
                   <div className="flex">
-                    <dt className="w-24 text-white/40">Title</dt>
+                    <dt className="w-24 text-muted">Title</dt>
                     <dd>&ldquo;CC0 - Woode Fence&rdquo;</dd>
                   </div>
                   <div className="flex">
-                    <dt className="w-24 text-white/40">Author</dt>
+                    <dt className="w-24 text-muted">Author</dt>
                     <dd>plaggy</dd>
                   </div>
                   <div className="flex">
-                    <dt className="w-24 text-white/40">Source</dt>
+                    <dt className="w-24 text-muted">Source</dt>
                     <dd>
                       <a
                         href="https://skfb.ly/otBYu"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-fence-300 underline hover:text-fence-200"
+                        className="text-accent-light underline hover:text-accent"
                       >
                         skfb.ly/otBYu
                       </a>{" "}
@@ -78,27 +78,27 @@ export default function CreditsPage() {
                     </dd>
                   </div>
                   <div className="flex">
-                    <dt className="w-24 text-white/40">License</dt>
+                    <dt className="w-24 text-muted">License</dt>
                     <dd>
                       <a
                         href="https://creativecommons.org/licenses/by/4.0/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-fence-300 underline hover:text-fence-200"
+                        className="text-accent-light underline hover:text-accent"
                       >
                         CC BY 4.0
                       </a>
                     </dd>
                   </div>
                   <div className="flex">
-                    <dt className="w-24 text-white/40">Modifications</dt>
+                    <dt className="w-24 text-muted">Modifications</dt>
                     <dd>
                       Optimized for mobile AR using{" "}
                       <a
                         href="https://gltf-transform.dev/cli"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-fence-300 underline hover:text-fence-200"
+                        className="text-accent-light underline hover:text-accent"
                       >
                         gltf-transform
                       </a>{" "}
@@ -111,19 +111,19 @@ export default function CreditsPage() {
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">Software Libraries</h2>
+            <h2 className="text-text font-semibold text-lg mb-3">Software Libraries</h2>
             <p className="mb-4">
               FenceEstimatePro stands on the shoulders of many open-source
               projects. A non-exhaustive highlight of the libraries that power
               our product:
             </p>
-            <ul className="space-y-2 list-disc list-inside marker:text-fence-500">
+            <ul className="space-y-2 list-disc list-inside marker:text-accent">
               <li>
                 <a
                   href="https://nextjs.org/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-fence-300 underline hover:text-fence-200"
+                  className="text-accent-light underline hover:text-accent"
                 >
                   Next.js
                 </a>{" "}
@@ -134,7 +134,7 @@ export default function CreditsPage() {
                   href="https://supabase.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-fence-300 underline hover:text-fence-200"
+                  className="text-accent-light underline hover:text-accent"
                 >
                   Supabase
                 </a>{" "}
@@ -145,7 +145,7 @@ export default function CreditsPage() {
                   href="https://modelviewer.dev/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-fence-300 underline hover:text-fence-200"
+                  className="text-accent-light underline hover:text-accent"
                 >
                   &lt;model-viewer&gt;
                 </a>{" "}
@@ -156,7 +156,7 @@ export default function CreditsPage() {
                   href="https://tailwindcss.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-fence-300 underline hover:text-fence-200"
+                  className="text-accent-light underline hover:text-accent"
                 >
                   Tailwind CSS
                 </a>{" "}
@@ -167,7 +167,7 @@ export default function CreditsPage() {
                   href="https://gltf-transform.dev/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-fence-300 underline hover:text-fence-200"
+                  className="text-accent-light underline hover:text-accent"
                 >
                   glTF-Transform
                 </a>{" "}
@@ -177,7 +177,7 @@ export default function CreditsPage() {
           </section>
 
           <section>
-            <h2 className="text-white font-semibold text-lg mb-3">Contact</h2>
+            <h2 className="text-text font-semibold text-lg mb-3">Contact</h2>
             <p>
               Questions or corrections about anything credited on this page?
               Email us and we&apos;ll update it promptly.

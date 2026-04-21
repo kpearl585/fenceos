@@ -13,16 +13,16 @@ export const metadata: Metadata = {
 export default function ArticlePage() {
   return (
     <main>
-      <section className="bg-gradient-to-br from-fence-950 via-fence-900 to-fence-800 text-white px-6 py-16">
+      <section className="bg-background text-text relative overflow-hidden border-b border-border px-6 py-16">
         <div className="max-w-3xl mx-auto">
-          <Link href="/blog" className="inline-flex items-center gap-2 text-fence-300 hover:text-white text-sm mb-8 transition-colors">
+          <Link href="/blog" className="inline-flex items-center gap-2 text-muted hover:text-text text-sm mb-8 transition-colors duration-150">
             ← Back to Blog
           </Link>
-          <span className="inline-block bg-orange-500/20 text-orange-300 text-xs font-bold px-3 py-1 rounded-full mb-4">Operations</span>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+          <span className="inline-block bg-accent/10 text-accent-light border border-accent/20 text-xs font-bold px-3 py-1 rounded-full mb-4">Operations</span>
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight text-text">
             Fence Business Software vs Spreadsheets: The Real Cost of Staying Manual
           </h1>
-          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-fence-300">
+          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted">
             <span>March 1, 2026</span>
             <span>·</span>
             <span>9 min read</span>
@@ -116,16 +116,16 @@ export default function ArticlePage() {
 
           <p className="text-gray-700">At $49/month for fence business software, you're paying $588/year to eliminate $45,000+ in annual drag. That's a 75x return if the numbers hold — and most contractors see improvement within the first 30 days.</p>
 
-          <div className="bg-fence-950 rounded-2xl p-8 mt-12 text-center">
-            <h3 className="text-2xl font-bold text-white mb-3">Stop Leaving Money on the Table</h3>
-            <p className="text-fence-300 mb-6">FenceEstimatePro replaces spreadsheets with a complete estimating and job management system built for fence contractors. Start your free trial today.</p>
+          <div className="bg-background border border-border rounded-2xl p-8 mt-12 text-center">
+            <h3 className="text-2xl font-bold text-text mb-3">Stop Leaving Money on the Table</h3>
+            <p className="text-muted mb-6">FenceEstimatePro replaces spreadsheets with a complete estimating and job management system built for fence contractors. Start your free trial today.</p>
             <Link
               href="/signup"
-              className="inline-block bg-fence-500 hover:bg-fence-400 text-white font-bold px-8 py-4 rounded-xl text-lg transition-colors"
+              className="inline-block bg-accent hover:bg-accent-light text-background font-bold accent-glow px-8 py-4 rounded-xl text-lg transition-colors"
             >
               Try Free for 14 Days →
             </Link>
-            <p className="text-fence-400 text-sm mt-3">No credit card required. Cancel anytime.</p>
+            <p className="text-muted text-sm mt-3">No credit card required. Cancel anytime.</p>
           </div>
 
         </div>

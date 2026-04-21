@@ -33,7 +33,6 @@ const articles = [
     date: "March 4, 2026",
     readTime: "8 min read",
     category: "Estimating",
-    categoryColor: "bg-blue-500/20 text-blue-300",
   },
   {
     slug: "fence-contractor-software",
@@ -42,7 +41,6 @@ const articles = [
     date: "March 4, 2026",
     readTime: "7 min read",
     category: "Software",
-    categoryColor: "bg-purple-500/20 text-purple-300",
   },
   {
     slug: "fence-estimate-calculator",
@@ -51,7 +49,6 @@ const articles = [
     date: "March 4, 2026",
     readTime: "6 min read",
     category: "Estimating",
-    categoryColor: "bg-green-500/20 text-green-300",
   },
   {
     slug: "fence-estimating-software-for-contractors",
@@ -60,7 +57,6 @@ const articles = [
     date: "March 1, 2026",
     readTime: "7 min read",
     category: "Software",
-    categoryColor: "bg-purple-500/20 text-purple-300",
   },
   {
     slug: "fence-job-pricing-guide",
@@ -69,7 +65,6 @@ const articles = [
     date: "March 1, 2026",
     readTime: "8 min read",
     category: "Estimating",
-    categoryColor: "bg-blue-500/20 text-blue-300",
   },
   {
     slug: "fence-contractor-business-tips",
@@ -78,7 +73,6 @@ const articles = [
     date: "March 1, 2026",
     readTime: "9 min read",
     category: "Business",
-    categoryColor: "bg-orange-500/20 text-orange-300",
   },
   {
     slug: "fence-job-tracking-software",
@@ -87,7 +81,6 @@ const articles = [
     date: "March 1, 2026",
     readTime: "7 min read",
     category: "Operations",
-    categoryColor: "bg-teal-500/20 text-teal-300",
   },
   {
     slug: "fence-estimate-template",
@@ -96,7 +89,6 @@ const articles = [
     date: "March 1, 2026",
     readTime: "7 min read",
     category: "Estimating",
-    categoryColor: "bg-yellow-500/20 text-yellow-300",
   },
   {
     slug: "how-to-price-a-fence-job",
@@ -105,7 +97,6 @@ const articles = [
     date: "February 28, 2026",
     readTime: "8 min read",
     category: "Estimating",
-    categoryColor: "bg-blue-500/20 text-blue-300",
   },
   {
     slug: "fence-material-cost-breakdown",
@@ -114,7 +105,6 @@ const articles = [
     date: "February 25, 2026",
     readTime: "6 min read",
     category: "Materials",
-    categoryColor: "bg-green-500/20 text-green-300",
   },
   {
     slug: "why-fence-contractors-lose-margin",
@@ -123,42 +113,46 @@ const articles = [
     date: "February 20, 2026",
     readTime: "7 min read",
     category: "Business",
-    categoryColor: "bg-orange-500/20 text-orange-300",
   },
 ];
 
 export default function BlogPage() {
   return (
-    <main className="bg-gradient-to-br from-fence-950 via-fence-900 to-fence-800 min-h-screen text-white">
+    <main className="relative bg-background min-h-screen text-text overflow-hidden">
+      {/* Ambient grid + glow */}
+      <div className="pointer-events-none absolute inset-0 grid-pattern opacity-40" />
+      <div className="pointer-events-none absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-accent/10 rounded-full blur-3xl" />
+
       {/* Header */}
-      <section className="px-6 py-20 text-center">
-        <div className="inline-flex items-center gap-2 bg-fence-700/50 border border-fence-600/50 rounded-full px-4 py-1.5 mb-6">
-          <span className="text-xs font-semibold text-fence-200 uppercase tracking-wide">Blog</span>
+      <section className="relative px-6 py-20 text-center">
+        <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/30 rounded-full px-4 py-1.5 mb-6">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent-light animate-pulse" />
+          <span className="text-xs font-semibold text-accent-light uppercase tracking-wider">Blog</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Fence Business Insights</h1>
-        <p className="mt-4 text-lg text-fence-200 max-w-xl mx-auto">
+        <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-text">Fence Business Insights</h1>
+        <p className="mt-4 text-lg text-muted max-w-xl mx-auto">
           Practical guides for contractors who want to run a more profitable operation.
         </p>
       </section>
 
       {/* Articles Grid */}
-      <section className="max-w-5xl mx-auto px-6 pb-24 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <section className="relative max-w-5xl mx-auto px-6 pb-24 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {articles.map((article) => (
           <Link
             key={article.slug}
             href={`/blog/${article.slug}`}
-            className="group bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-fence-500/50 transition-all flex flex-col"
+            className="group bg-surface-2 border border-border rounded-2xl p-6 hover:bg-surface-3 hover:border-accent/40 transition-all duration-150 flex flex-col"
           >
-            <span className={`text-xs font-bold px-3 py-1 rounded-full self-start mb-4 ${article.categoryColor}`}>
+            <span className="text-xs font-semibold uppercase tracking-wider text-accent-light bg-accent/10 border border-accent/20 px-2.5 py-0.5 rounded-full self-start mb-4">
               {article.category}
             </span>
-            <h2 className="text-lg font-bold leading-snug group-hover:text-fence-300 transition-colors flex-1">
+            <h2 className="text-lg font-bold leading-snug text-text group-hover:text-accent-light transition-colors duration-150 flex-1">
               {article.title}
             </h2>
-            <p className="mt-3 text-sm text-fence-300 line-clamp-3">{article.description}</p>
-            <div className="mt-4 flex items-center gap-3 text-xs text-fence-400">
+            <p className="mt-3 text-sm text-muted line-clamp-3">{article.description}</p>
+            <div className="mt-4 flex items-center gap-3 text-xs text-muted/70">
               <span>{article.date}</span>
-              <span>·</span>
+              <span>&middot;</span>
               <span>{article.readTime}</span>
             </div>
           </Link>
