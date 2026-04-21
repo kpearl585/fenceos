@@ -133,8 +133,10 @@ export default function PhotoUploadForm() {
   const isSubmitting = phase.kind === "submitting";
 
   return (
-    <div className="p-6 sm:p-10 space-y-6 text-gray-900">
-      {/* Drop zone */}
+    <div className="p-6 sm:p-10 space-y-6 text-text">
+      {/* Drop zone — dashed border is the convention for drop targets
+          (signals the interaction). Uses tokenized accent for active/hover
+          states so it reads as on-brand with the landing page. */}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -153,13 +155,13 @@ export default function PhotoUploadForm() {
         tabIndex={0}
         aria-label="Upload a yard photo"
         className={[
-          "relative cursor-pointer rounded-xl border-2 border-dashed transition-colors outline-none",
-          "focus-visible:ring-2 focus-visible:ring-fence-500 focus-visible:ring-offset-2",
+          "relative cursor-pointer rounded-xl border-2 border-dashed transition-colors duration-150 outline-none",
+          "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-2",
           isDragging
-            ? "border-fence-500 bg-fence-50"
+            ? "border-accent bg-accent/10"
             : preview
-            ? "border-gray-300 bg-white"
-            : "border-gray-300 bg-gray-50 hover:border-fence-400 hover:bg-fence-50/50",
+            ? "border-border-strong bg-surface-3"
+            : "border-border bg-surface-3 hover:border-accent/60 hover:bg-accent/5",
         ].join(" ")}
       >
         <input
@@ -180,15 +182,15 @@ export default function PhotoUploadForm() {
               alt="Uploaded yard preview"
               className="mx-auto max-h-80 rounded-lg object-contain"
             />
-            <p className="mt-3 text-center text-sm text-gray-500">
+            <p className="mt-3 text-center text-sm text-muted">
               Click to replace, or drag another photo in.
             </p>
           </div>
         ) : (
           <div className="px-6 py-14 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-fence-100">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15">
               <svg
-                className="h-6 w-6 text-fence-600"
+                className="h-6 w-6 text-accent-light"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
@@ -201,10 +203,10 @@ export default function PhotoUploadForm() {
                 />
               </svg>
             </div>
-            <p className="text-base font-semibold text-gray-900">
+            <p className="text-base font-semibold text-text">
               Drop a yard photo here
             </p>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted">
               or click to browse — JPEG, PNG, or WebP up to 8 MB
             </p>
           </div>
@@ -215,7 +217,7 @@ export default function PhotoUploadForm() {
       {phase.kind === "error" && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
         >
           {phase.message}
         </div>
@@ -225,7 +227,7 @@ export default function PhotoUploadForm() {
       {(phase.kind === "ready" || phase.kind === "submitting") && (
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-text">
               Notes (optional)
             </span>
             <textarea
@@ -235,11 +237,11 @@ export default function PhotoUploadForm() {
               maxLength={500}
               placeholder="e.g. 6-ft wood privacy, two walk gates"
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-lg border border-gray-300 bg-white text-gray-900 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-fence-500 focus:ring-1 focus:ring-fence-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+              className="mt-1 block w-full rounded-lg border border-border bg-surface-3 text-text px-3 py-2 text-sm placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none disabled:opacity-50"
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-text">
               City / state (optional)
             </span>
             <input
@@ -249,7 +251,7 @@ export default function PhotoUploadForm() {
               maxLength={100}
               placeholder="Tampa, FL"
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-lg border border-gray-300 bg-white text-gray-900 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-fence-500 focus:ring-1 focus:ring-fence-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+              className="mt-1 block w-full rounded-lg border border-border bg-surface-3 text-text px-3 py-2 text-sm placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none disabled:opacity-50"
             />
           </label>
         </div>
@@ -257,7 +259,7 @@ export default function PhotoUploadForm() {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           Works best on daylight photos with the fence run clearly visible.
         </p>
         <div className="flex gap-2">
@@ -266,7 +268,7 @@ export default function PhotoUploadForm() {
               type="button"
               onClick={reset}
               disabled={isSubmitting}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:border-fence-400 hover:text-fence-700 disabled:opacity-50"
+              className="rounded-lg border border-border bg-transparent px-4 py-2 text-sm font-semibold text-muted hover:border-border-strong hover:text-text transition-colors duration-150 disabled:opacity-50"
             >
               Clear
             </button>
@@ -275,7 +277,7 @@ export default function PhotoUploadForm() {
             type="button"
             onClick={onSubmit}
             disabled={phase.kind !== "ready"}
-            className="inline-flex items-center gap-2 rounded-lg bg-fence-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-fence-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent hover:bg-accent-light accent-glow px-4 py-2 text-sm font-semibold text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent"
           >
             {isSubmitting ? (
               <>
@@ -329,7 +331,7 @@ export default function PhotoUploadForm() {
         <p
           role="status"
           aria-live="polite"
-          className="text-center text-sm text-gray-500"
+          className="text-center text-sm text-muted"
         >
           Analyzing your yard… this usually takes 15–30 seconds.
         </p>
