@@ -524,6 +524,54 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
             </div>
           )}
 
+          {/* Survey-only: AI's observation trail — what the model claims
+              to have seen on the page. Contractors can expand these and
+              spot hallucinated dims/annotations BEFORE applying. This is
+              the cheapest catch-a-bad-extraction checkpoint. */}
+          {(result.observedDimensions?.length || result.observedAnnotations?.length) && (
+            <details className="bg-surface-2 border border-border rounded-xl px-4 py-3 group">
+              <summary className="cursor-pointer flex items-center gap-2 text-xs font-semibold text-muted uppercase tracking-wider select-none">
+                <span>What the AI saw</span>
+                <span className="text-muted font-normal normal-case tracking-normal">— open to verify against your survey</span>
+              </summary>
+              <div className="mt-3 space-y-3">
+                {result.observedDimensions && result.observedDimensions.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-text mb-1">
+                      Dimensions ({result.observedDimensions.length})
+                    </p>
+                    <ul className="space-y-0.5 text-xs text-muted">
+                      {result.observedDimensions.map((d, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-muted/60">•</span>
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {result.observedAnnotations && result.observedAnnotations.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-text mb-1">
+                      Annotations ({result.observedAnnotations.length})
+                    </p>
+                    <ul className="space-y-0.5 text-xs text-muted">
+                      {result.observedAnnotations.map((a, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-muted/60">•</span>
+                          <span>{a}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <p className="text-xs text-warning/90 pt-2 border-t border-border">
+                  If any line doesn&rsquo;t match what&rsquo;s actually on your survey, the extracted runs are probably wrong — edit them below or add missing runs after applying.
+                </p>
+              </div>
+            </details>
+          )}
+
           {/* Flags / assumptions */}
           {result.flags.length > 0 && (
             <div className="bg-warning/10 border border-warning/30 rounded-xl px-4 py-3">
