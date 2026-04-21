@@ -119,7 +119,7 @@ export const GenerateHoaPacketSchema = z.object({
   hoaName: z.string().max(200).trim().optional().or(z.literal("")),
 });
 
-export const UploadContractorDocSchema = z.object({
+export const UploadHoaDocSchema = z.object({
   docType: z.enum(["insurance_cert", "w9", "license"]),
   storagePath: z.string().min(1).max(500),
   filename: z.string().min(1).max(255),
