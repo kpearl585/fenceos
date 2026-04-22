@@ -305,13 +305,13 @@ export default function ArticlePage() {
             </p>
             <p style={{ color: "#15803d", fontSize: "0.95rem" }}>
               <Link
-                href="/#waitlist"
+                href="/signup"
                 style={{ color: "#166534", textDecoration: "underline" }}
               >
-                Request early access to FenceEstimatePro
+                Start your 14-day free trial of FenceEstimatePro
               </Link>{" "}
               - the only fence estimation tool built on run-based geometry.
-              Plans start at $49/mo. No credit card required to start.
+              Plans start at $29/mo. No credit card required to start.
             </p>
           </div>
         </div>

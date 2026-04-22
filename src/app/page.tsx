@@ -13,7 +13,7 @@ import ROISection from "@/components/ROISection";
 import PricingSection from "@/components/PricingSection";
 import CTAFooter from "@/components/CTAFooter";
 import FAQSection from "@/components/FAQSection";
-import WaitlistSection from "@/components/WaitlistSection";
+import ContactSection from "@/components/ContactSection";
 import FounderStrip from "@/components/FounderStrip";
 import CrossSell from "@/components/CrossSell";
 
@@ -53,7 +53,7 @@ export default function Home() {
         <EngineSection />
         <PricingSection />
         <FAQSection />
-        <WaitlistSection />
+        <ContactSection />
         <CrossSell />
         <CTAFooter />
       </main>

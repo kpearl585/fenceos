@@ -106,10 +106,10 @@ export default function EngineSection() {
         <div className="text-center">
           <p className="text-[#6B7280] text-sm mb-1">The math is better. The quotes are tighter. The margins hold.</p>
           <a
-            href="#waitlist"
+            href="/signup"
             className="inline-flex items-center gap-2 bg-[#16A34A] hover:bg-[#22C55E] text-white font-bold px-8 py-4 rounded-xl transition-colors accent-glow mt-4"
           >
-            Get Early Access
+            Start Free Trial
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>

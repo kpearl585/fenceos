@@ -4,7 +4,7 @@ export default function ROISection() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-accent font-semibold text-sm uppercase tracking-widest mb-3">Do the math</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-text font-display">$49/month vs. one underbid job</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-text font-display">From $29/month vs. one underbid job</h2>
           <p className="mt-4 text-muted max-w-xl mx-auto">This isn't a software expense. It's an insurance policy on every job you quote.</p>
         </div>
 
@@ -30,7 +30,7 @@ export default function ROISection() {
               <li className="flex items-start gap-2"><span className="mt-0.5">&bull;</span>Margin locked before every quote</li>
               <li className="flex items-start gap-2"><span className="mt-0.5">&bull;</span>Materials auto-calculated - zero guessing</li>
               <li className="flex items-start gap-2"><span className="mt-0.5">&bull;</span>Change orders recalculate automatically</li>
-              <li className="flex items-start gap-2 font-bold text-accent-light"><span className="mt-0.5">&bull;</span>Cost: $49/month = $588/year</li>
+              <li className="flex items-start gap-2 font-bold text-accent-light"><span className="mt-0.5">&bull;</span>Cost: Starter $29/mo · Pro $79/mo · Business $149/mo</li>
             </ul>
           </div>
         </div>
@@ -38,9 +38,9 @@ export default function ROISection() {
         <div className="bg-surface-2 border border-[rgba(255,255,255,0.07)] rounded-2xl p-8 text-center">
           <p className="text-accent text-sm font-semibold uppercase tracking-wide mb-2">Return on investment</p>
           <p className="text-5xl font-bold text-text font-display mb-2">41x ROI</p>
-          <p className="text-muted">If it saves you from just one underbid job per month, you're up $1,200. That's $14,052 back in your pocket every year for $348.</p>
-          <a href="#waitlist" className="mt-6 inline-flex items-center gap-2 bg-accent hover:bg-accent-light text-white font-bold px-8 py-3.5 rounded-xl transition-colors">
-            Request Early Access &rarr;
+          <p className="text-muted">If it saves you from just one underbid job per month, you're up $1,200. That's $14,052 back in your pocket every year on the Starter plan ($348/year).</p>
+          <a href="/signup" className="mt-6 inline-flex items-center gap-2 bg-accent hover:bg-accent-light text-white font-bold px-8 py-3.5 rounded-xl transition-colors">
+            Start Free Trial &rarr;
           </a>
           <p className="mt-3 text-muted text-xs">14-day free trial • No credit card required</p>
         </div>

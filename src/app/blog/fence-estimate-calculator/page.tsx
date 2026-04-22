@@ -318,10 +318,10 @@ export default function ArticlePage() {
             </p>
             <p style={{ color: "#15803d", fontSize: "0.95rem" }}>
               <Link
-                href="/#waitlist"
+                href="/signup"
                 style={{ color: "#166534", textDecoration: "underline" }}
               >
-                Request early access to FenceEstimatePro
+                Start your 14-day free trial of FenceEstimatePro
               </Link>{" "}
               for run-based fence estimation with volumetric concrete, panel
               optimization, and margin lock. 5-minute estimates that actually
