@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "preinstall": "node -e \"const ua = process.env.npm_config_user_agent || ''; if (!ua.startsWith('pnpm/') && !process.env.CI) { console.error('\\n❌ This project uses pnpm. Run \\\"pnpm install\\\" instead of npm/yarn.\\n   Using npm here drifts pnpm-lock.yaml from package.json and breaks Vercel CI.\\n'); process.exit(1); }\"",
     "predev": "node scripts/copy-pdf-worker.js",
     "dev": "next dev",
     "prebuild": "node scripts/copy-pdf-worker.js",

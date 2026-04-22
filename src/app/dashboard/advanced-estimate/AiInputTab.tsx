@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useCallback } from "react";
 import { extractFromText, extractFromImage, extractFromSurvey } from "./aiActions";
-import type { AiExtractionResult, AiExtractedRun, CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
+import type { AiExtractionResult, AiExtractedRun, AiExtractedGate, CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import type { RunInput, GateInput, FenceType } from "@/lib/fence-graph/engine";
 import type { SoilType, GateType } from "@/lib/fence-graph/types";
 import { QUICK_TEMPLATES } from "@/lib/fence-graph/ai-extract/templates";
@@ -94,6 +94,43 @@ export function toEngineState(
   };
 }
 
+// Fence types the UI lets contractors switch between on a run row.
+// Matches AiExtractedRun["fenceType"] exactly.
+const FENCE_TYPE_OPTIONS: Array<AiExtractedRun["fenceType"]> = ["vinyl", "wood", "chain_link", "aluminum"];
+
+// When the contractor changes a run's fence type or height, we need to
+// pick a sensible productLineId. This picks the most common line per
+// (type, height) combo; contractors can't edit productLineId directly
+// because the downstream engine requires it to be in the schema-valid
+// enum — we keep it in sync with the type/height selection for them.
+function defaultProductLineId(fenceType: AiExtractedRun["fenceType"], heightFt: number): string {
+  const h = Math.round(heightFt);
+  if (fenceType === "vinyl") {
+    if (h <= 4) return "vinyl_picket_4ft";
+    if (h >= 8) return "vinyl_privacy_8ft";
+    return "vinyl_privacy_6ft";
+  }
+  if (fenceType === "wood") {
+    if (h <= 4) return "wood_picket_4ft";
+    if (h >= 8) return "wood_privacy_8ft";
+    return "wood_privacy_6ft";
+  }
+  if (fenceType === "chain_link") {
+    return h <= 4 ? "chain_link_4ft" : "chain_link_6ft";
+  }
+  // aluminum
+  return h <= 4 ? "aluminum_4ft" : "aluminum_6ft";
+}
+
+function gateTypeLabel(type: AiExtractedGate["type"]): string {
+  switch (type) {
+    case "walk": return "Walk";
+    case "drive": return "Drive";
+    case "double_drive": return "Double drive";
+    case "pool": return "Pool";
+  }
+}
+
 function confidenceBadgeClass(c: number) {
   if (c >= 0.85) return "text-accent-light bg-accent/15 border-accent/30";
   if (c >= 0.65) return "text-warning bg-warning/10 border-warning/30";
@@ -131,10 +168,16 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   const [surveyFilename, setSurveyFilename] = useState<string | null>(null);
   const [surveyPages, setSurveyPages] = useState<number>(1);
   const [renderingPdf, setRenderingPdf] = useState(false);
-  // Contractor can edit extracted `linearFeet` per run before Apply —
-  // keyed by run index in the AI result. AI extraction stays immutable;
-  // overrides layer on top on the way into the engine.
-  const [runLfOverrides, setRunLfOverrides] = useState<Record<number, number>>({});
+  // Contractor edits to AI-extracted runs, before Apply. AI result
+  // stays immutable; these layer on top on the way into the engine.
+  // - `runOverrides[i]`: patches to the i-th AI run (LF, type, height, gates)
+  // - `deletedRunIndices`: i-th AI run tombstoned (hallucinated run the AI shouldn't have emitted)
+  // - `addedRuns`: contractor-added runs appended after the AI list
+  // This model lets the AI output stay pristine in audit logs while the
+  // engine sees the corrected runs.
+  const [runOverrides, setRunOverrides] = useState<Record<number, Partial<AiExtractedRun>>>({});
+  const [deletedRunIndices, setDeletedRunIndices] = useState<Set<number>>(new Set());
+  const [addedRuns, setAddedRuns] = useState<AiExtractedRun[]>([]);
   const [additionalContext, setAdditionalContext] = useState("");
   const [loading, setLoading] = useState(false);
   // Separate loading state for Claude escalation — the main CTA stays
@@ -165,7 +208,9 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
     setValidationBlockers([]);
     setCriticallyBlocked(false);
     setApplied(false);
-    setRunLfOverrides({});
+    setRunOverrides({});
+    setDeletedRunIndices(new Set());
+    setAddedRuns([]);
     setExtractedWithModel(null);
 
     const res = mode === "text"
@@ -223,7 +268,9 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       setValidationWarnings(res.validationWarnings ?? []);
       setValidationBlockers(res.validationBlockers ?? []);
       setCriticallyBlocked(res.criticallyBlocked ?? res.blocked ?? false);
-      setRunLfOverrides({});
+      setRunOverrides({});
+      setDeletedRunIndices(new Set());
+      setAddedRuns([]);
       setApplied(false);
       setExtractedWithModel("claude-opus-4-7");
       if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
@@ -235,25 +282,75 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   function handleApply() {
     if (!result) return;
     if (criticallyBlocked) return; // hard guard in addition to the disabled button
-    // Apply contractor's edited linearFeet (per-run overrides) on the
-    // way into the engine. We don't mutate the AI result itself —
-    // overrides layer on top so the contractor can see what the AI
-    // said AND what they changed it to.
-    const edited: AiExtractionResult = Object.keys(runLfOverrides).length === 0
-      ? result
-      : {
-          ...result,
-          runs: result.runs.map((run, i) => {
-            const override = runLfOverrides[i];
-            return override != null && override !== run.linearFeet
-              ? { ...run, linearFeet: override }
-              : run;
-          }),
-        };
+    // Compose the final run list sent to the engine:
+    //   1. AI runs with overrides applied, filtered by deletedRunIndices
+    //   2. Contractor-added runs appended after
+    // The AI result itself stays pristine for audit logs; this is a
+    // layer on top so we can always trace what the model said vs. what
+    // the contractor actually bid.
+    const editedAiRuns = result.runs
+      .map((run, i) => {
+        if (deletedRunIndices.has(i)) return null;
+        const override = runOverrides[i];
+        return override ? { ...run, ...override } : run;
+      })
+      .filter((r): r is AiExtractedRun => r !== null);
+    const finalRuns = [...editedAiRuns, ...addedRuns];
+    if (finalRuns.length === 0) return;
+    const edited: AiExtractionResult = { ...result, runs: finalRuns };
     const state = toEngineState(edited, newRunId, newGateId);
     if (!state) return;
     onApply(state);
     setApplied(true);
+  }
+
+  // ── Row-level edit helpers ────────────────────────────────────────
+  // These work on BOTH AI runs (source="ai", keyed by i) and contractor-
+  // added runs (source="added", keyed by i in addedRuns). The row
+  // component below dispatches to the right setter.
+  function patchAiRun(i: number, patch: Partial<AiExtractedRun>) {
+    setRunOverrides((prev) => ({ ...prev, [i]: { ...prev[i], ...patch } }));
+  }
+  function patchAddedRun(i: number, patch: Partial<AiExtractedRun>) {
+    setAddedRuns((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+  function deleteAiRun(i: number) {
+    setDeletedRunIndices((prev) => {
+      const next = new Set(prev);
+      next.add(i);
+      return next;
+    });
+  }
+  function restoreAiRun(i: number) {
+    setDeletedRunIndices((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
+      return next;
+    });
+  }
+  function deleteAddedRun(i: number) {
+    setAddedRuns((prev) => prev.filter((_, idx) => idx !== i));
+  }
+  function addNewRun() {
+    if (!result) return;
+    // Seed from the dominant AI run so type/height/soil are pre-filled
+    // to what the contractor is most likely to want. LF starts at 0
+    // so the contractor has to type a real number — preferring an
+    // empty input over a misleading placeholder.
+    const template = result.runs[0];
+    const newRun: AiExtractedRun = {
+      linearFeet: 0,
+      fenceType: template?.fenceType ?? "vinyl",
+      productLineId: template?.productLineId ?? "vinyl_privacy_6ft",
+      heightFt: template?.heightFt ?? 6,
+      gates: [],
+      soilType: template?.soilType ?? "standard",
+      slopePercent: 0,
+      isWindExposed: false,
+      poolCode: false,
+      runLabel: "Added by contractor",
+    };
+    setAddedRuns((prev) => [...prev, newRun]);
   }
 
   async function handleSurveyFile(file: File) {
@@ -697,99 +794,105 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
                 <p className="text-xs text-muted">Review before applying</p>
               </div>
               <div className="divide-y divide-border">
-                {result.runs.map((run: AiExtractedRun, i: number) => {
-                  // Editable LF: AI suggestion is the initial value but
-                  // contractor can override before Apply. We track the
-                  // override separately so the original AI value is never
-                  // mutated — makes it easy to tell the contractor
-                  // "you changed this from N to M".
-                  const overrideLf = runLfOverrides[i];
-                  const displayLf = overrideLf ?? run.linearFeet;
-                  const wasEdited = overrideLf != null && overrideLf !== run.linearFeet;
+                {result.runs.map((run, i) => {
+                  const override = runOverrides[i];
+                  const deleted = deletedRunIndices.has(i);
+                  const merged: AiExtractedRun = override ? { ...run, ...override } : run;
                   return (
-                    <div key={i} className="px-4 py-3 flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-text">{run.runLabel || `Run ${i + 1}`}</p>
-                        <p className="text-xs text-muted mt-0.5 capitalize">
-                          {run.fenceType.replace("_", " ")} · {run.heightFt}ft · {run.productLineId.replace(/_/g, " ")}
-                        </p>
-                        {run.gates.length > 0 && (
-                          <p className="text-xs text-accent-light mt-0.5">
-                            {run.gates.map(g => `${g.widthFt}ft ${g.type.replace("_", " ")}`).join(", ")}
-                          </p>
-                        )}
-                        {(run.soilType !== "standard" || run.poolCode || run.isWindExposed) && (
-                          <p className="text-xs text-warning mt-0.5">
-                            {[
-                              run.soilType !== "standard" && `${run.soilType} soil`,
-                              run.poolCode && "pool code",
-                              run.isWindExposed && "wind exposed",
-                            ].filter(Boolean).join(" · ")}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={displayLf}
-                            onChange={e => {
-                              const v = e.target.valueAsNumber;
-                              if (!Number.isFinite(v) || v < 0) return;
-                              setRunLfOverrides(prev => ({ ...prev, [i]: v }));
-                            }}
-                            className={`font-display text-lg font-bold w-20 text-right bg-surface-3 border rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150 ${
-                              wasEdited ? "border-accent/40 text-accent-light" : "border-border text-text"
-                            }`}
-                            aria-label={`Linear feet for run ${i + 1}`}
-                          />
-                          <span className="text-xs text-muted">LF</span>
-                        </div>
-                        {wasEdited && (
-                          <button
-                            type="button"
-                            onClick={() => setRunLfOverrides(prev => {
-                              const next = { ...prev };
-                              delete next[i];
-                              return next;
-                            })}
-                            className="text-[10px] text-muted hover:text-text transition-colors duration-150 underline underline-offset-2"
-                          >
-                            reset to AI ({run.linearFeet})
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    <RunEditorRow
+                      key={`ai-${i}`}
+                      label={run.runLabel || `Run ${i + 1}`}
+                      aiOriginal={run}
+                      current={merged}
+                      deleted={deleted}
+                      wasEdited={!!override && Object.keys(override).length > 0}
+                      onPatch={(patch) => patchAiRun(i, patch)}
+                      onDelete={() => deleteAiRun(i)}
+                      onRestore={() => restoreAiRun(i)}
+                      onResetToAi={() =>
+                        setRunOverrides((prev) => {
+                          const next = { ...prev };
+                          delete next[i];
+                          return next;
+                        })
+                      }
+                    />
                   );
                 })}
-              </div>
-              <div className="px-4 py-3 bg-surface-3 border-t border-border flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-text">
-                    {result.runs.reduce((s, r, i) => s + (runLfOverrides[i] ?? r.linearFeet), 0)} LF total
-                    {Object.keys(runLfOverrides).length > 0 && (
-                      <span className="text-xs text-accent-light ml-2 font-normal">(edited)</span>
-                    )}
-                  </p>
-                  {result.runs.some(r => r.fenceType !== result.runs[0].fenceType) && (
-                    <p className="text-xs text-warning mt-0.5">Mixed fence types detected — dominant type will be set. Adjust fence type per run if needed.</p>
-                  )}
-                </div>
-                {applied ? (
-                  <span className="text-sm font-semibold text-accent-light">Applied to estimate</span>
-                ) : (
+                {addedRuns.map((run, i) => (
+                  <RunEditorRow
+                    key={`added-${i}`}
+                    label={`${run.runLabel || `Added run ${i + 1}`}`}
+                    aiOriginal={null}
+                    current={run}
+                    deleted={false}
+                    wasEdited={false}
+                    onPatch={(patch) => patchAddedRun(i, patch)}
+                    onDelete={() => deleteAddedRun(i)}
+                  />
+                ))}
+                {/* Add-run button — always visible so contractor can append
+                    a missing segment the AI didn't extract. */}
+                <div className="px-4 py-3">
                   <button
-                    onClick={handleApply}
-                    disabled={criticallyBlocked}
-                    title={criticallyBlocked ? "Resolve critical blockers before applying" : undefined}
-                    className="px-4 py-2 bg-accent hover:bg-accent-light accent-glow text-white text-sm font-bold rounded-lg transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent"
+                    type="button"
+                    onClick={addNewRun}
+                    className="w-full text-sm font-semibold text-accent-light hover:text-accent border border-dashed border-border hover:border-accent/40 rounded-lg py-2 transition-colors duration-150"
                   >
-                    {criticallyBlocked ? "Blocked" : "Apply to Estimate"}
+                    + Add run
                   </button>
-                )}
+                </div>
               </div>
+              {(() => {
+                // Total LF = non-deleted AI runs (with overrides) + added runs.
+                // Rendered inline so the contractor sees a live total as
+                // they edit.
+                const aiLf = result.runs.reduce((s, r, i) => {
+                  if (deletedRunIndices.has(i)) return s;
+                  const override = runOverrides[i];
+                  return s + ((override?.linearFeet ?? r.linearFeet) || 0);
+                }, 0);
+                const addedLf = addedRuns.reduce((s, r) => s + (r.linearFeet || 0), 0);
+                const totalLf = aiLf + addedLf;
+                const hasEdits =
+                  Object.keys(runOverrides).length > 0 ||
+                  deletedRunIndices.size > 0 ||
+                  addedRuns.length > 0;
+                const visibleRuns = result.runs.length - deletedRunIndices.size + addedRuns.length;
+                return (
+                  <div className="px-4 py-3 bg-surface-3 border-t border-border flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-text">
+                        {totalLf} LF total · {visibleRuns} {visibleRuns === 1 ? "run" : "runs"}
+                        {hasEdits && (
+                          <span className="text-xs text-accent-light ml-2 font-normal">(edited)</span>
+                        )}
+                      </p>
+                      {result.runs.some(r => r.fenceType !== result.runs[0].fenceType) && (
+                        <p className="text-xs text-warning mt-0.5">Mixed fence types — dominant type will be set.</p>
+                      )}
+                    </div>
+                    {applied ? (
+                      <span className="text-sm font-semibold text-accent-light">Applied to estimate</span>
+                    ) : (
+                      <button
+                        onClick={handleApply}
+                        disabled={criticallyBlocked || visibleRuns === 0}
+                        title={
+                          visibleRuns === 0
+                            ? "At least one run is required"
+                            : criticallyBlocked
+                            ? "Resolve critical blockers before applying"
+                            : undefined
+                        }
+                        className="px-4 py-2 bg-accent hover:bg-accent-light accent-glow text-white text-sm font-bold rounded-lg transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent"
+                      >
+                        {criticallyBlocked ? "Blocked" : "Apply to Estimate"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <div className="bg-surface-2 border border-border rounded-xl px-4 py-6 text-center">
@@ -798,6 +901,215 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── RunEditorRow ───────────────────────────────────────────────────
+// Single row in the AI-extracted runs list. Handles LF, fence type,
+// height, gates, and row delete/restore. Used for both AI-emitted
+// runs (with override tracking) and contractor-added runs (direct
+// state updates). The `aiOriginal` prop differs: for AI rows it holds
+// the untouched AI value so we can show "reset to AI (N)" affordances
+// and a strikethrough when deleted; for added rows it's null.
+//
+// This lives inside the same file to keep AiInputTab self-contained —
+// it's substantial enough to extract to its own file if we grow it
+// further, but today it reads linearly with the parent.
+interface RunEditorRowProps {
+  label: string;
+  aiOriginal: AiExtractedRun | null;
+  current: AiExtractedRun;
+  deleted: boolean;
+  wasEdited: boolean;
+  onPatch: (patch: Partial<AiExtractedRun>) => void;
+  onDelete: () => void;
+  onRestore?: () => void;
+  onResetToAi?: () => void;
+}
+
+function RunEditorRow({
+  label,
+  aiOriginal,
+  current,
+  deleted,
+  wasEdited,
+  onPatch,
+  onDelete,
+  onRestore,
+  onResetToAi,
+}: RunEditorRowProps) {
+  if (deleted) {
+    return (
+      <div className="px-4 py-3 flex items-center justify-between bg-danger/5">
+        <p className="text-sm text-muted line-through truncate">{label}</p>
+        <button
+          type="button"
+          onClick={onRestore}
+          className="text-xs font-medium text-accent-light hover:text-accent underline underline-offset-2 flex-shrink-0"
+        >
+          restore
+        </button>
+      </div>
+    );
+  }
+
+  function addGate() {
+    const nextGate: AiExtractedGate = { widthFt: 4, type: "walk" };
+    onPatch({ gates: [...current.gates, nextGate] });
+  }
+  function updateGate(i: number, patch: Partial<AiExtractedGate>) {
+    const next = current.gates.map((g, idx) => (idx === i ? { ...g, ...patch } : g));
+    onPatch({ gates: next });
+  }
+  function deleteGate(i: number) {
+    onPatch({ gates: current.gates.filter((_, idx) => idx !== i) });
+  }
+
+  return (
+    <div className="px-4 py-3 space-y-2">
+      {/* Header row: label + delete */}
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-semibold text-text truncate">{label}</p>
+        <button
+          type="button"
+          onClick={onDelete}
+          title="Delete this run"
+          aria-label={`Delete run ${label}`}
+          className="flex-shrink-0 text-muted hover:text-danger transition-colors duration-150 text-xs leading-none p-1"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* LF + fence type + height — three-field grid on desktop, stacked on mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">LF</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={current.linearFeet}
+            onChange={(e) => {
+              const v = e.target.valueAsNumber;
+              if (!Number.isFinite(v) || v < 0) return;
+              onPatch({ linearFeet: v });
+            }}
+            className={`font-display text-base font-bold bg-surface-3 border rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150 ${
+              wasEdited ? "border-accent/40 text-accent-light" : "border-border text-text"
+            }`}
+            aria-label={`Linear feet for ${label}`}
+          />
+        </label>
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">Fence type</span>
+          <select
+            value={current.fenceType}
+            onChange={(e) => {
+              const next = e.target.value as AiExtractedRun["fenceType"];
+              onPatch({
+                fenceType: next,
+                // Keep productLineId in sync — the engine requires a valid
+                // enum value, so we derive a sensible default from
+                // (type, height).
+                productLineId: defaultProductLineId(next, current.heightFt),
+              });
+            }}
+            className="bg-surface-3 border border-border text-text rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent capitalize"
+          >
+            {FENCE_TYPE_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {t.replace("_", " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">Height (ft)</span>
+          <input
+            type="number"
+            min="2"
+            max="12"
+            step="1"
+            value={current.heightFt}
+            onChange={(e) => {
+              const v = e.target.valueAsNumber;
+              if (!Number.isFinite(v) || v < 2 || v > 12) return;
+              onPatch({
+                heightFt: v,
+                productLineId: defaultProductLineId(current.fenceType, v),
+              });
+            }}
+            className="bg-surface-3 border border-border text-text rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+          />
+        </label>
+      </div>
+
+      {/* Gates */}
+      {current.gates.length > 0 && (
+        <div className="space-y-1.5">
+          {current.gates.map((gate, gi) => (
+            <div key={gi} className="flex items-center gap-2 pl-2 border-l-2 border-accent/30">
+              <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">Gate</span>
+              <input
+                type="number"
+                min="2"
+                max="24"
+                step="0.5"
+                value={gate.widthFt}
+                onChange={(e) => {
+                  const v = e.target.valueAsNumber;
+                  if (!Number.isFinite(v) || v < 2 || v > 24) return;
+                  updateGate(gi, { widthFt: v });
+                }}
+                className="w-16 bg-surface-3 border border-border text-text rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+                aria-label="Gate width in feet"
+              />
+              <span className="text-xs text-muted">ft</span>
+              <select
+                value={gate.type}
+                onChange={(e) => updateGate(gi, { type: e.target.value as AiExtractedGate["type"] })}
+                className="bg-surface-3 border border-border text-text rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+              >
+                <option value="walk">{gateTypeLabel("walk")}</option>
+                <option value="drive">{gateTypeLabel("drive")}</option>
+                <option value="double_drive">{gateTypeLabel("double_drive")}</option>
+                <option value="pool">{gateTypeLabel("pool")}</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => deleteGate(gi)}
+                title="Remove this gate"
+                aria-label="Remove gate"
+                className="text-muted hover:text-danger text-xs leading-none p-1"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add gate + reset-to-AI row */}
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={addGate}
+          className="text-xs text-accent-light hover:text-accent underline underline-offset-2"
+        >
+          + add gate
+        </button>
+        {aiOriginal && wasEdited && onResetToAi && (
+          <button
+            type="button"
+            onClick={onResetToAi}
+            className="text-[10px] text-muted hover:text-text underline underline-offset-2"
+          >
+            reset to AI ({aiOriginal.linearFeet} LF · {aiOriginal.fenceType} {aiOriginal.heightFt}ft)
+          </button>
+        )}
+      </div>
     </div>
   );
 }
