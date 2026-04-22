@@ -25,10 +25,19 @@ const RATE_LIMIT_PER_HOUR = 20;   // max extractions per org per hour
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 
 // ── OpenAI client ─────────────────────────────────────────────────
+// timeout: 90_000 = per-request wall-clock cap. A single GPT-4o vision
+// call on a high-detail plat typically finishes in 10-40 s. 90 s is
+// comfortable headroom without risking the whole server action getting
+// stuck for the full Vercel function timeout (300 s) when the model
+// doesn't respond. If we hit this, the SDK throws and we return a
+// clean error to the client instead of a hanging spinner.
+// maxRetries: 2 = automatic retry on 429/5xx with exponential backoff,
+// which covers the common "OpenAI had a blip" case without user-visible
+// failure. SDK default is also 2; explicit for clarity.
 function getOpenAI(): OpenAI {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new Error("AI_UNAVAILABLE: OPENAI_API_KEY not configured");
-  return new OpenAI({ apiKey: key });
+  return new OpenAI({ apiKey: key, timeout: 90_000, maxRetries: 2 });
 }
 
 // ── Anthropic client ──────────────────────────────────────────────
@@ -649,6 +658,16 @@ export async function extractFromSurvey(
 
   const inputHash = crypto.createHash("sha256").update(base64.slice(0, 1000)).digest("hex").slice(0, 16);
 
+  // Stage-timing logs. When the UI spinner hangs, we want runtime logs
+  // that pinpoint which step is slow or stuck (extraction vs critique
+  // vs persist). Vercel aggregates these under the request ID so each
+  // attempt shows a full timeline.
+  const startMs = Date.now();
+  const logStage = (stage: string) => {
+    console.log(`[survey-extract] ${stage} hash=${inputHash} elapsed=${Date.now() - startMs}ms size=${Math.round(sizeBytes / 1024)}KB model=${model}`);
+  };
+  logStage("begin");
+
   try {
     const client = getOpenAI();
 
@@ -664,19 +683,23 @@ export async function extractFromSurvey(
       // A/B shows Opus still beats GPT-4o on hard cases even at lower
       // DPI — the CoT reasoning matters more than pixel resolution.
       const anthropic = getAnthropic();
+      logStage("claude.resize.start");
       const resized = await resizeForAnthropic(base64);
+      logStage("claude.resize.done");
       const claudeResult = await runSurveyExtractionAnthropic(
         anthropic,
         resized.base64,
         resized.mimeType,
         additionalText,
       );
+      logStage("claude.extraction.done");
       result = claudeResult.result;
       inputTokens = claudeResult.inputTokens;
       outputTokens = claudeResult.outputTokens;
       usedHighDetail = true; // Claude Opus always gets the full image (post-resize)
     } else {
       // Default: GPT-4o via the existing quality ladder
+      logStage("gpt4o.extraction.start");
       const gptResult = await runImageExtraction(
         client,
         base64,
@@ -688,6 +711,7 @@ export async function extractFromSurvey(
         // unreadable at detail:"low", so skip the cheap first pass.
         /* skipLowDetailPass */ true,
       );
+      logStage("gpt4o.extraction.done");
       result = gptResult.result;
       inputTokens = gptResult.inputTokens;
       outputTokens = gptResult.outputTokens;
@@ -696,6 +720,7 @@ export async function extractFromSurvey(
 
     const validation = validateExtraction(result);
     if (validation.data) Object.assign(result, validation.data);
+    logStage("validation.done");
 
     if (model === "claude-opus-4-7") {
       result.flags = [`Extracted via Claude Opus 4.7 (higher-accuracy mode)`, ...(result.flags ?? [])];
@@ -703,8 +728,10 @@ export async function extractFromSurvey(
       result.flags = [`Used high-detail analysis (confidence was low on first pass)`, ...(result.flags ?? [])];
     }
 
+    logStage("critique.start");
     const critiqueInput = additionalText ?? "Marked survey upload (no additional contractor notes)";
     const critique = await runCritique(client, result, critiqueInput);
+    logStage("critique.done");
     if (critique?.questionsForContractor?.length) {
       result.flags = [...(result.flags ?? []), ...critique.questionsForContractor.slice(0, 3)];
     }
