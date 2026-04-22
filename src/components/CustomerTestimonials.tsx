@@ -64,10 +64,10 @@ export default function CustomerTestimonials() {
 
         <div className="text-center mt-10">
           <a
-            href="#waitlist"
+            href="/signup"
             className="inline-flex items-center gap-2 bg-[#16A34A] hover:bg-[#22C55E] text-white font-bold px-8 py-4 rounded-xl transition-colors"
           >
-            Join Them &rarr;
+            Start Free Trial &rarr;
           </a>
         </div>
       </div>

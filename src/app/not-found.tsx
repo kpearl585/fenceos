@@ -30,10 +30,10 @@ export default function NotFound() {
             Go to Dashboard
           </Link>
           <Link
-            href="/#waitlist"
+            href="/signup"
             className="border border-accent/30 text-accent-light px-6 py-2.5 rounded-lg font-semibold text-sm hover:border-accent/50 transition-colors duration-150"
           >
-            Join Waitlist
+            Start Free Trial
           </Link>
         </div>
         <p className="text-muted/60 text-xs mt-12">

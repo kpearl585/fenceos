@@ -11,12 +11,12 @@ export default function CTAFooter() {
             Every job you quote without FenceEstimatePro is a job where your profit is at risk. Fix that today.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="#waitlist"
+            <Link
+              href="/signup"
               className="inline-flex items-center justify-center gap-2 bg-[#16A34A] hover:bg-[#22C55E] text-white font-bold text-lg px-10 py-4 rounded-xl transition-colors"
             >
-              Request Early Access &rarr;
-            </a>
+              Start Free Trial &rarr;
+            </Link>
             <Link
               href="/login"
               className="inline-flex items-center justify-center border-2 border-[rgba(255,255,255,0.12)] text-[#6B7280] hover:border-[rgba(22,163,74,0.4)] hover:text-[#F2F2F2] font-semibold text-lg px-10 py-4 rounded-xl transition-colors"
@@ -24,7 +24,7 @@ export default function CTAFooter() {
               Login to Dashboard
             </Link>
           </div>
-          <p className="mt-4 text-[#6B7280] text-sm">Currently in private beta - limited spots available</p>
+          <p className="mt-4 text-[#6B7280] text-sm">14-day free trial • No credit card required • Cancel anytime</p>
           <div className="mt-5 inline-flex items-center gap-2 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] rounded-full px-4 py-1.5 text-xs font-semibold">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#c9a84c"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span style={{ color: "#c9a84c" }}>Veteran-Owned &amp; Operated</span>
@@ -47,7 +47,7 @@ export default function CTAFooter() {
             <a href="#how-it-works" className="hover:text-[#F2F2F2] transition-colors">How It Works</a>
             <a href="#pricing" className="hover:text-[#F2F2F2] transition-colors">Pricing</a>
             <Link href="/login" className="hover:text-[#F2F2F2] transition-colors">Login</Link>
-            <a href="#waitlist" className="hover:text-[#F2F2F2] transition-colors">Request Access</a>
+            <a href="#contact" className="hover:text-[#F2F2F2] transition-colors">Contact</a>
           </div>
           <div className="text-center">
             <p className="text-[#6B7280] text-xs mb-1">A Pearl Ventures Company</p>

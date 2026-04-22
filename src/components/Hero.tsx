@@ -36,10 +36,10 @@ export default function Hero() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <a
-                href="#waitlist"
+                href="/signup"
                 className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-light text-white font-bold text-lg px-8 py-4 rounded-xl transition-colors accent-glow"
               >
-                Request Early Access &rarr;
+                Start Free Trial &rarr;
               </a>
               <a
                 href="#demo"

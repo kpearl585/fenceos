@@ -177,7 +177,7 @@ export default function DemoPage() {
             Build estimates like this in minutes.
           </p>
           <Link
-            href="/#waitlist"
+            href="/signup"
             className="w-full sm:w-auto text-center bg-[#2D6A4F] hover:bg-[#245a42] text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
           >
             Start Your Free Trial — No credit card required

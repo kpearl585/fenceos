@@ -67,9 +67,9 @@ export default function SiteNav() {
                 <Link href="/login" className="text-sm font-medium text-muted hover:text-text transition-colors">
                   Login
                 </Link>
-                <a href="#waitlist" className="bg-accent text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-accent-light transition-colors">
-                  Request Access &rarr;
-                </a>
+                <Link href="/signup" className="bg-accent text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-accent-light transition-colors">
+                  Start Free Trial &rarr;
+                </Link>
               </>
             )
           )}
@@ -101,7 +101,7 @@ export default function SiteNav() {
             ) : (
               <>
                 <Link href="/login" className="block text-center border border-[rgba(255,255,255,0.12)] text-text text-sm font-semibold px-4 py-2.5 rounded-lg">Login</Link>
-                <a href="#waitlist" className="block text-center bg-accent text-white text-sm font-semibold px-4 py-2.5 rounded-lg">Request Access &rarr;</a>
+                <Link href="/signup" className="block text-center bg-accent text-white text-sm font-semibold px-4 py-2.5 rounded-lg">Start Free Trial &rarr;</Link>
               </>
             ))}
           </div>
