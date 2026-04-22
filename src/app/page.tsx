@@ -6,8 +6,11 @@ import HowItWorks from "@/components/HowItWorks";
 import SolutionSection from "@/components/SolutionSection";
 import EngineSection from "@/components/EngineSection";
 import EstimateDemo from "@/components/EstimateDemo";
-import TestimonialsSection from "@/components/TestimonialsSection";
-import CustomerTestimonials from "@/components/CustomerTestimonials";
+// TestimonialsSection + CustomerTestimonials intentionally NOT rendered
+// pre-launch — we have no real customers yet, so the placeholder
+// "47+ contractors" copy + fabricated quotes would hurt trust more
+// than help. Both component files still exist; re-add the imports
+// and section entries below once real testimonials come in.
 import DemoSection from "@/components/DemoSection";
 import ROISection from "@/components/ROISection";
 import PricingSection from "@/components/PricingSection";
@@ -46,8 +49,6 @@ export default function Home() {
         <SolutionSection />
         <EstimateDemo />
         <DemoSection />
-        <TestimonialsSection />
-        <CustomerTestimonials />
         <ROISection />
         <FounderStrip />
         <EngineSection />
