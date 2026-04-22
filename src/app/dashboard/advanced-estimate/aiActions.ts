@@ -636,11 +636,14 @@ export async function extractFromSurvey(
   }
 
   // 400 DPI client rasterization produces ~6-10 MB base64 for a
-  // letter-size plat. Allow 12 MB to give headroom for oversized
-  // sheets; above that the raw PDF is probably something we can't
-  // usefully extract anyway.
+  // letter-size plat, and larger or multi-page surveys can push
+  // ~15 MB. Next.js `serverActions.bodySizeLimit` is 20 MB (see
+  // next.config.js), so enforcing 16 MB here leaves headroom for
+  // request framing + gives the user a clear "too large" error
+  // instead of the generic 413 Next.js returns when the body limit
+  // is blown (Sentry FENCEOS-9).
   const sizeBytes = (base64.length * 3) / 4;
-  if (sizeBytes > 12_000_000) {
+  if (sizeBytes > 16_000_000) {
     return { success: false, error: "Rendered survey too large. Try a lower-resolution PDF or crop to a single page." };
   }
 
