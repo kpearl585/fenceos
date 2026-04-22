@@ -4,7 +4,13 @@ const { withSentryConfig } = require("@sentry/nextjs");
 const nextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb",
+      // 400 DPI rasterization of a letter-size PDF produces ~6-10 MB base64,
+      // and larger/multi-page surveys can push ~15 MB. 10 MB was hitting the
+      // limit with a generic 413 on real-world marked plats, surfacing to the
+      // client as "unexpected response" (Sentry FENCEOS-9). 20 MB gives the
+      // 400 DPI path comfortable headroom without opening the door to
+      // arbitrarily large uploads.
+      bodySizeLimit: "20mb",
     },
   },
   serverExternalPackages: ["@react-pdf/renderer"],
