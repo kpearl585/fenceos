@@ -13,11 +13,15 @@
     "test:ai-extraction": "tsx scripts/test-ai-extraction.ts",
     "test:ai-extraction:high": "tsx scripts/test-ai-extraction.ts high",
     "eval:survey": "tsx scripts/eval-survey-extraction.ts",
+    "eval:survey:claude": "tsx scripts/eval-survey-extraction.ts claude-opus-4-7",
+    "eval:survey:sonnet": "tsx scripts/eval-survey-extraction.ts claude-sonnet-4-6",
+    "eval:survey:ab": "tsx scripts/eval-survey-extraction.ts ab",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

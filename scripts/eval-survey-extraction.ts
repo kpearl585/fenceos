@@ -21,6 +21,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 
 config({ path: path.resolve(process.cwd(), ".env.local") });
 
@@ -28,8 +29,49 @@ import {
   SURVEY_SYSTEM_PROMPT,
   SURVEY_USER_PROMPT_IMAGE,
 } from "../src/lib/fence-graph/ai-extract/survey-prompt";
-import { SURVEY_EXTRACTION_JSON_SCHEMA } from "../src/lib/fence-graph/ai-extract/schema";
+import {
+  SURVEY_EXTRACTION_JSON_SCHEMA,
+  SurveyExtractionSchema,
+} from "../src/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResult } from "../src/lib/fence-graph/ai-extract/types";
+
+// ────────────────────────────────────────────────────────────────────
+// Backends
+//
+// Each backend is a provider + model tuple. We test the same prompt
+// across different vision models so Kelvin can see real numbers rather
+// than vibes on "which is more accurate."
+//
+// Costs are per 1M tokens (vendor list prices as of the skill-cached
+// catalog). OpenAI o-series etc. are intentionally absent — they don't
+// improve on GPT-4o for vision.
+// ────────────────────────────────────────────────────────────────────
+
+type Backend = "gpt-4o" | "claude-sonnet-4-6" | "claude-opus-4-7";
+
+const BACKENDS: Record<
+  Backend,
+  { label: string; provider: "openai" | "anthropic"; inputPer1M: number; outputPer1M: number }
+> = {
+  "gpt-4o": { label: "GPT-4o", provider: "openai", inputPer1M: 2.5, outputPer1M: 10 },
+  "claude-sonnet-4-6": { label: "Claude Sonnet 4.6", provider: "anthropic", inputPer1M: 3, outputPer1M: 15 },
+  "claude-opus-4-7": { label: "Claude Opus 4.7", provider: "anthropic", inputPer1M: 5, outputPer1M: 25 },
+};
+
+function resolveBackendsFromArgv(): Backend[] {
+  // CLI: `tsx eval-survey-extraction.ts [<backend> | ab | all]`
+  // Env override: MODEL=ab / MODEL=gpt-4o / MODEL=claude-opus-4-7
+  const arg = (process.argv[2] ?? process.env.MODEL ?? "gpt-4o").toLowerCase();
+  if (arg === "ab" || arg === "all") {
+    return ["gpt-4o", "claude-sonnet-4-6", "claude-opus-4-7"];
+  }
+  if (arg === "gpt-4o" || arg === "claude-sonnet-4-6" || arg === "claude-opus-4-7") {
+    return [arg];
+  }
+  throw new Error(
+    `Unknown backend '${arg}'. Pass one of: gpt-4o, claude-sonnet-4-6, claude-opus-4-7, ab`
+  );
+}
 
 // Survey extraction has two extra observation fields not in the shared
 // AiExtractionResult type. They're read from the response for reporting;
@@ -153,6 +195,7 @@ const RUBRICS: Record<string, Rubric> = {
 
 interface SampleResult {
   sampleId: string;
+  backend: Backend;
   imagePath: string;
   sizeBytes: number;
   passed: boolean;
@@ -163,6 +206,7 @@ interface SampleResult {
   inputTokens: number;
   outputTokens: number;
   durationMs: number;
+  error?: string;
 }
 
 function scoreResult(
@@ -268,6 +312,16 @@ function getOpenAI(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
+function getAnthropic(): Anthropic {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "ANTHROPIC_API_KEY environment variable is required. Add it to .env.local (get a key at console.anthropic.com — this is a separate budget from Claude Code)."
+    );
+  }
+  return new Anthropic({ apiKey });
+}
+
 function mimeFromPath(p: string): "image/png" | "image/jpeg" | null {
   const ext = path.extname(p).toLowerCase();
   if (ext === ".png") return "image/png";
@@ -275,15 +329,11 @@ function mimeFromPath(p: string): "image/png" | "image/jpeg" | null {
   return null;
 }
 
-async function runSample(
+async function runWithOpenAI(
   client: OpenAI,
-  sampleId: string,
-  imagePath: string
+  base64: string,
+  mime: "image/png" | "image/jpeg"
 ): Promise<{ result: SurveyExtractionResult; inputTokens: number; outputTokens: number; durationMs: number }> {
-  const mime = mimeFromPath(imagePath);
-  if (!mime) throw new Error(`Unsupported image type: ${imagePath}`);
-  const buffer = fs.readFileSync(imagePath);
-  const base64 = buffer.toString("base64");
   const userContent = SURVEY_USER_PROMPT_IMAGE(base64, mime);
   const started = Date.now();
   const response = await client.chat.completions.create({
@@ -313,6 +363,92 @@ async function runSample(
   };
 }
 
+async function runWithAnthropic(
+  client: Anthropic,
+  model: "claude-opus-4-7" | "claude-sonnet-4-6",
+  base64: string,
+  mime: "image/png" | "image/jpeg"
+): Promise<{ result: SurveyExtractionResult; inputTokens: number; outputTokens: number; durationMs: number }> {
+  // Mirrors SURVEY_USER_PROMPT_IMAGE but in Claude's content-block shape.
+  // We don't thread additionalText here — eval harness never passes it,
+  // keeps the harness apples-to-apples across backends.
+  const userContent: Anthropic.Messages.ContentBlockParam[] = [
+    {
+      type: "image",
+      source: { type: "base64", media_type: mime, data: base64 },
+    },
+    {
+      type: "text",
+      text: `This is a marked-up boundary survey. Extract fence runs from the contractor's colored markup. Use the handwritten legend to decide which color means "new install" vs "existing fence" vs other.`,
+    },
+  ];
+  const started = Date.now();
+  const response = await client.messages.create({
+    model,
+    // Sonnet 4.6 max output is 64K; Opus 4.7 supports 128K. Either way,
+    // survey extractions are ~500-800 output tokens — 16K is plenty and
+    // stays under the streaming-required threshold.
+    max_tokens: 16_000,
+    system: SURVEY_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userContent }],
+  });
+  const durationMs = Date.now() - started;
+
+  // Extract the text block from Claude's response. Claude doesn't
+  // ship json_schema-style strict mode the same way OpenAI does; we
+  // ask for JSON in the prompt and parse it. If the model adds a code
+  // fence or preamble, strip it.
+  const textBlock = response.content.find(
+    (b): b is Anthropic.Messages.TextBlock => b.type === "text"
+  );
+  if (!textBlock) {
+    throw new Error("Anthropic response had no text block");
+  }
+  const raw = textBlock.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const firstBrace = raw.indexOf("{");
+  const lastBrace = raw.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace < 0) {
+    throw new Error(`Could not find JSON object in Anthropic response: ${raw.slice(0, 200)}…`);
+  }
+  const jsonText = raw.slice(firstBrace, lastBrace + 1);
+  const parsedRaw = JSON.parse(jsonText);
+
+  // Zod validation — if the model emits a schema-violating response we
+  // want to know. Defaults fill missing optional fields.
+  const validation = SurveyExtractionSchema.safeParse(parsedRaw);
+  const parsed: SurveyExtractionResult = validation.success
+    ? (validation.data as SurveyExtractionResult)
+    : (parsedRaw as SurveyExtractionResult);
+
+  return {
+    result: parsed,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+    durationMs,
+  };
+}
+
+type ClientBundle = { openai?: OpenAI; anthropic?: Anthropic };
+
+async function runSample(
+  backend: Backend,
+  clients: ClientBundle,
+  sampleId: string,
+  imagePath: string
+): Promise<{ result: SurveyExtractionResult; inputTokens: number; outputTokens: number; durationMs: number }> {
+  const mime = mimeFromPath(imagePath);
+  if (!mime) throw new Error(`Unsupported image type: ${imagePath}`);
+  const buffer = fs.readFileSync(imagePath);
+  const base64 = buffer.toString("base64");
+
+  if (backend === "gpt-4o") {
+    if (!clients.openai) throw new Error("OpenAI client not initialized");
+    return runWithOpenAI(clients.openai, base64, mime);
+  }
+  if (!clients.anthropic) throw new Error("Anthropic client not initialized");
+  return runWithAnthropic(clients.anthropic, backend, base64, mime);
+}
+
 function resolveSamplesDir(): string {
   const fromEnv = process.env.SURVEY_SAMPLES_DIR;
   if (fromEnv) return fromEnv;
@@ -333,124 +469,157 @@ function discoverSamples(dir: string): string[] {
 function formatMarkdownReport(
   results: SampleResult[],
   samplesDir: string,
-  totalDurationMs: number
+  totalDurationMs: number,
+  backends: Backend[]
 ): string {
-  const passCount = results.filter((r) => r.passed).length;
-  const totalTokensIn = results.reduce((s, r) => s + r.inputTokens, 0);
-  const totalTokensOut = results.reduce((s, r) => s + r.outputTokens, 0);
-  // gpt-4o: $2.50 / 1M input, $10.00 / 1M output (as of model release).
-  // Keep this conservative — it's a floor for "is this worth it?".
-  const estCost =
-    (totalTokensIn / 1_000_000) * 2.5 + (totalTokensOut / 1_000_000) * 10.0;
-
   const lines: string[] = [];
   lines.push(`# Survey Extraction Eval — ${new Date().toISOString()}`);
   lines.push("");
   lines.push(`- Samples dir: \`${samplesDir}\``);
-  lines.push(`- Model: gpt-4o (temp 0.1, json_schema strict)`);
   lines.push(`- Prompt: SURVEY_SYSTEM_PROMPT @ commit ${shortCommit()}`);
+  lines.push(`- Backends tested: ${backends.map((b) => BACKENDS[b].label).join(", ")}`);
   lines.push(
-    `- Result: **${passCount}/${results.length}** passed rubric (${((passCount / results.length) * 100).toFixed(0)}%)`
-  );
-  lines.push(
-    `- Tokens: ${totalTokensIn.toLocaleString()} in / ${totalTokensOut.toLocaleString()} out ≈ **$${estCost.toFixed(3)}**`
-  );
-  lines.push(
-    `- Wall time: ${(totalDurationMs / 1000).toFixed(1)}s total, ${(totalDurationMs / results.length / 1000).toFixed(1)}s avg/sample`
+    `- Wall time: ${(totalDurationMs / 1000).toFixed(1)}s total across ${results.length} (sample, backend) pairs`
   );
   lines.push("");
-  lines.push("## Results");
+
+  // Per-backend summary table at the top — this is the headline number
+  // Kelvin will look at first.
+  lines.push("## Per-backend summary");
+  lines.push("");
+  lines.push("| Backend | Pass rate | Tokens in | Tokens out | Cost | Avg latency |");
+  lines.push("|---|---|---|---|---|---|");
+  for (const backend of backends) {
+    const rows = results.filter((r) => r.backend === backend);
+    const passed = rows.filter((r) => r.passed).length;
+    const tokIn = rows.reduce((s, r) => s + r.inputTokens, 0);
+    const tokOut = rows.reduce((s, r) => s + r.outputTokens, 0);
+    const cost =
+      (tokIn / 1_000_000) * BACKENDS[backend].inputPer1M +
+      (tokOut / 1_000_000) * BACKENDS[backend].outputPer1M;
+    const avgMs = rows.length > 0 ? rows.reduce((s, r) => s + r.durationMs, 0) / rows.length : 0;
+    lines.push(
+      `| ${BACKENDS[backend].label} | ${passed}/${rows.length} | ${tokIn.toLocaleString()} | ${tokOut.toLocaleString()} | $${cost.toFixed(3)} | ${(avgMs / 1000).toFixed(1)}s |`
+    );
+  }
   lines.push("");
 
-  for (const r of results) {
-    lines.push(`### ${r.passed ? "✅" : "❌"} \`${r.sampleId}\``);
+  // Per-sample side-by-side when multiple backends; otherwise flat list.
+  const sampleIds = [...new Set(results.map((r) => r.sampleId))];
+  const isAb = backends.length > 1;
+
+  lines.push(isAb ? "## Per-sample head-to-head" : "## Results");
+  lines.push("");
+
+  for (const sampleId of sampleIds) {
+    const sampleResults = results.filter((r) => r.sampleId === sampleId);
+    const firstResult = sampleResults[0];
+    if (!firstResult) continue;
+
+    lines.push(`### \`${sampleId}\``);
     lines.push("");
-    lines.push(`*${r.rubric.notes}*`);
+    lines.push(`*${firstResult.rubric.notes}*`);
     lines.push("");
 
-    const totalLf = r.actual.runs.reduce((s, run) => s + run.linearFeet, 0);
-    const gateCount = r.actual.runs.reduce((s, run) => s + run.gates.length, 0);
-    lines.push("**Output summary:**");
-    lines.push("");
-    lines.push(
-      `- ${r.actual.runs.length} runs, ${totalLf} LF total, ${gateCount} gates`
-    );
-    lines.push(`- Confidence: ${r.actual.confidence.toFixed(2)}`);
-    if (r.actual.runs.length > 0) {
-      const types = [...new Set(r.actual.runs.map((rn) => rn.fenceType))].join(
-        ", "
-      );
-      const heights = [...new Set(r.actual.runs.map((rn) => rn.heightFt))]
-        .sort()
-        .join("/");
-      lines.push(`- Types: ${types} @ ${heights} ft`);
-    }
-    if (r.actual.flags.length > 0) {
-      lines.push(`- Flags:`);
-      for (const f of r.actual.flags) {
-        lines.push(`  - ${f}`);
-      }
-    }
-    if (r.actual.rawSummary) {
-      lines.push(`- Raw summary: *${r.actual.rawSummary}*`);
-    }
-    lines.push("");
-
-    if (r.failures.length > 0) {
-      lines.push("**Failures:**");
-      lines.push("");
-      for (const f of r.failures) lines.push(`- ❌ ${f}`);
-      lines.push("");
-    }
-    if (r.notes.length > 0) {
-      lines.push("**Notes:** " + r.notes.join("; "));
-      lines.push("");
-    }
-
-    // Surface the model's structured-CoT observations — these are the
-    // "show your work" layer. If the extraction is wrong, this is
-    // where to look to understand why.
-    if (r.actual.observedDimensions && r.actual.observedDimensions.length > 0) {
-      lines.push("<details><summary>observedDimensions (" + r.actual.observedDimensions.length + ")</summary>");
-      lines.push("");
-      for (const d of r.actual.observedDimensions) {
-        lines.push(`- ${d}`);
+    if (isAb) {
+      // Compact comparison table — the crux of the A/B.
+      lines.push("| Backend | Runs | LF | Gates | Conf | Result | Latency | Cost |");
+      lines.push("|---|---|---|---|---|---|---|---|");
+      for (const backend of backends) {
+        const row = sampleResults.find((r) => r.backend === backend);
+        if (!row) {
+          lines.push(`| ${BACKENDS[backend].label} | — | — | — | — | (no result) | — | — |`);
+          continue;
+        }
+        if (row.error) {
+          lines.push(`| ${BACKENDS[backend].label} | — | — | — | — | 💥 error | ${(row.durationMs / 1000).toFixed(1)}s | — |`);
+          continue;
+        }
+        const lf = row.actual.runs.reduce((s, run) => s + run.linearFeet, 0);
+        const gates = row.actual.runs.reduce((s, run) => s + run.gates.length, 0);
+        const cost =
+          (row.inputTokens / 1_000_000) * BACKENDS[backend].inputPer1M +
+          (row.outputTokens / 1_000_000) * BACKENDS[backend].outputPer1M;
+        lines.push(
+          `| ${BACKENDS[backend].label} | ${row.actual.runs.length} | ${lf} | ${gates} | ${row.actual.confidence.toFixed(2)} | ${row.passed ? "✅ PASS" : "❌ FAIL"} | ${(row.durationMs / 1000).toFixed(1)}s | $${cost.toFixed(3)} |`
+        );
       }
       lines.push("");
-      lines.push("</details>");
-      lines.push("");
-    }
-    if (r.actual.observedAnnotations && r.actual.observedAnnotations.length > 0) {
-      lines.push("<details><summary>observedAnnotations (" + r.actual.observedAnnotations.length + ")</summary>");
-      lines.push("");
-      for (const a of r.actual.observedAnnotations) {
-        lines.push(`- ${a}`);
+
+      // Expand each backend's full extraction below the table
+      for (const backend of backends) {
+        const row = sampleResults.find((r) => r.backend === backend);
+        if (!row || row.error) continue;
+        lines.push(`<details><summary><strong>${BACKENDS[backend].label}</strong> — full output</summary>`);
+        lines.push("");
+        lines.push(...renderSampleDetail(row));
+        lines.push("");
+        lines.push("</details>");
+        lines.push("");
       }
-      lines.push("");
-      lines.push("</details>");
-      lines.push("");
+    } else {
+      // Single-backend: flat detail
+      const row = sampleResults[0];
+      lines.push(...renderSampleDetail(row));
     }
-
-    if (r.actual.runs.length > 0) {
-      lines.push("<details><summary>Full run list</summary>");
-      lines.push("");
-      lines.push("```json");
-      lines.push(JSON.stringify(r.actual.runs, null, 2));
-      lines.push("```");
-      lines.push("");
-      lines.push("</details>");
-      lines.push("");
-    }
-
-    lines.push(
-      `*(image: \`${path.basename(r.imagePath)}\`, ${(r.sizeBytes / 1024).toFixed(0)} KB; ${r.durationMs} ms; ${r.inputTokens}/${r.outputTokens} tok)*`
-    );
-    lines.push("");
     lines.push("---");
     lines.push("");
   }
 
   return lines.join("\n");
+}
+
+function renderSampleDetail(r: SampleResult): string[] {
+  const lines: string[] = [];
+  if (r.error) {
+    lines.push(`**Error:** ${r.error}`);
+    return lines;
+  }
+  const totalLf = r.actual.runs.reduce((s, run) => s + run.linearFeet, 0);
+  const gateCount = r.actual.runs.reduce((s, run) => s + run.gates.length, 0);
+  lines.push(
+    `- Result: ${r.passed ? "✅ PASS" : "❌ FAIL"} · ${r.actual.runs.length} runs · ${totalLf} LF · ${gateCount} gates · confidence ${r.actual.confidence.toFixed(2)}`
+  );
+  if (r.actual.runs.length > 0) {
+    const types = [...new Set(r.actual.runs.map((rn) => rn.fenceType))].join(", ");
+    const heights = [...new Set(r.actual.runs.map((rn) => rn.heightFt))].sort().join("/");
+    lines.push(`- Types: ${types} @ ${heights} ft`);
+  }
+  if (r.actual.flags.length > 0) {
+    lines.push(`- Flags:`);
+    for (const f of r.actual.flags) lines.push(`  - ${f}`);
+  }
+  if (r.actual.rawSummary) {
+    lines.push(`- Raw summary: *${r.actual.rawSummary}*`);
+  }
+  if (r.failures.length > 0) {
+    lines.push("");
+    lines.push("**Failures:**");
+    for (const f of r.failures) lines.push(`- ❌ ${f}`);
+  }
+  if (r.notes.length > 0) {
+    lines.push(`- Notes: ${r.notes.join("; ")}`);
+  }
+  if (r.actual.observedDimensions && r.actual.observedDimensions.length > 0) {
+    lines.push("");
+    lines.push(`**Observed dimensions (${r.actual.observedDimensions.length}):**`);
+    for (const d of r.actual.observedDimensions) lines.push(`- ${d}`);
+  }
+  if (r.actual.observedAnnotations && r.actual.observedAnnotations.length > 0) {
+    lines.push("");
+    lines.push(`**Observed annotations (${r.actual.observedAnnotations.length}):**`);
+    for (const a of r.actual.observedAnnotations) lines.push(`- ${a}`);
+  }
+  if (r.actual.runs.length > 0) {
+    lines.push("");
+    lines.push("```json");
+    lines.push(JSON.stringify(r.actual.runs, null, 2));
+    lines.push("```");
+  }
+  lines.push(
+    `\n*(${(r.sizeBytes / 1024).toFixed(0)} KB; ${r.durationMs}ms; ${r.inputTokens}/${r.outputTokens} tok)*`
+  );
+  return lines;
 }
 
 function shortCommit(): string {
@@ -465,10 +634,13 @@ function shortCommit(): string {
 
 async function main() {
   const samplesDir = resolveSamplesDir();
+  const backends = resolveBackendsFromArgv();
+
   console.log("═".repeat(70));
   console.log("Survey Extraction Eval");
   console.log("═".repeat(70));
   console.log(`Samples dir: ${samplesDir}`);
+  console.log(`Backends: ${backends.map((b) => BACKENDS[b].label).join(" · ")}`);
 
   const imagePaths = discoverSamples(samplesDir);
   if (imagePaths.length === 0) {
@@ -477,7 +649,10 @@ async function main() {
   }
   console.log(`Found ${imagePaths.length} samples\n`);
 
-  const client = getOpenAI();
+  const clients: ClientBundle = {};
+  if (backends.some((b) => BACKENDS[b].provider === "openai")) clients.openai = getOpenAI();
+  if (backends.some((b) => BACKENDS[b].provider === "anthropic")) clients.anthropic = getAnthropic();
+
   const results: SampleResult[] = [];
   const startTotal = Date.now();
 
@@ -488,52 +663,82 @@ async function main() {
       console.log(`[SKIP] ${sampleId} — no rubric (add to RUBRICS map)`);
       continue;
     }
-    process.stdout.write(`[${sampleId}] ... `);
-    try {
-      const { result, inputTokens, outputTokens, durationMs } = await runSample(
-        client,
-        sampleId,
-        imagePath
-      );
-      const { passed, failures, notes } = scoreResult(rubric, result);
-      results.push({
-        sampleId,
-        imagePath,
-        sizeBytes: fs.statSync(imagePath).size,
-        passed,
-        rubric,
-        actual: result,
-        failures,
-        notes,
-        inputTokens,
-        outputTokens,
-        durationMs,
-      });
-      console.log(
-        `${passed ? "✅ PASS" : "❌ FAIL"} (${durationMs}ms, ${inputTokens}/${outputTokens} tok)`
-      );
-      if (!passed) {
-        for (const f of failures) console.log(`     ${f}`);
+    for (const backend of backends) {
+      process.stdout.write(`[${sampleId} · ${BACKENDS[backend].label}] ... `);
+      try {
+        const { result, inputTokens, outputTokens, durationMs } = await runSample(
+          backend,
+          clients,
+          sampleId,
+          imagePath
+        );
+        const { passed, failures, notes } = scoreResult(rubric, result);
+        results.push({
+          sampleId,
+          backend,
+          imagePath,
+          sizeBytes: fs.statSync(imagePath).size,
+          passed,
+          rubric,
+          actual: result,
+          failures,
+          notes,
+          inputTokens,
+          outputTokens,
+          durationMs,
+        });
+        console.log(
+          `${passed ? "✅ PASS" : "❌ FAIL"} (${durationMs}ms, ${inputTokens}/${outputTokens} tok)`
+        );
+        if (!passed) {
+          for (const f of failures) console.log(`     ${f}`);
+        }
+      } catch (err) {
+        const msg = (err as Error).message;
+        console.log(`💥 ERROR: ${msg}`);
+        // Still push an error row so the side-by-side report shows what failed
+        results.push({
+          sampleId,
+          backend,
+          imagePath,
+          sizeBytes: fs.statSync(imagePath).size,
+          passed: false,
+          rubric,
+          actual: { runs: [], confidence: 0, flags: [], rawSummary: "" },
+          failures: [`Runtime error: ${msg}`],
+          notes: [],
+          inputTokens: 0,
+          outputTokens: 0,
+          durationMs: 0,
+          error: msg,
+        });
       }
-    } catch (err) {
-      console.log(`💥 ERROR: ${(err as Error).message}`);
     }
   }
 
   const totalDurationMs = Date.now() - startTotal;
-  const passCount = results.filter((r) => r.passed).length;
   console.log("");
-  console.log(
-    `SUMMARY: ${passCount}/${results.length} passed in ${(totalDurationMs / 1000).toFixed(1)}s`
-  );
+  for (const backend of backends) {
+    const rows = results.filter((r) => r.backend === backend);
+    const passed = rows.filter((r) => r.passed).length;
+    const tokIn = rows.reduce((s, r) => s + r.inputTokens, 0);
+    const tokOut = rows.reduce((s, r) => s + r.outputTokens, 0);
+    const cost =
+      (tokIn / 1_000_000) * BACKENDS[backend].inputPer1M +
+      (tokOut / 1_000_000) * BACKENDS[backend].outputPer1M;
+    console.log(
+      `${BACKENDS[backend].label.padEnd(22)}  ${passed}/${rows.length} passed · ${tokIn.toLocaleString()}/${tokOut.toLocaleString()} tok · $${cost.toFixed(3)}`
+    );
+  }
 
   // Write report
   const reportsDir = path.join(process.cwd(), "eval-runs");
   if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  const reportPath = path.join(reportsDir, `survey-${ts}.md`);
-  fs.writeFileSync(reportPath, formatMarkdownReport(results, samplesDir, totalDurationMs));
-  console.log(`Report: ${reportPath}`);
+  const suffix = backends.length > 1 ? "ab" : backends[0];
+  const reportPath = path.join(reportsDir, `survey-${suffix}-${ts}.md`);
+  fs.writeFileSync(reportPath, formatMarkdownReport(results, samplesDir, totalDurationMs, backends));
+  console.log(`\nReport: ${reportPath}`);
 }
 
 main().catch((err) => {
