@@ -24,6 +24,14 @@ export interface AiExtractionResult {
   flags: string[];          // assumptions, unknowns, questions
   hiddenCostFlags?: string[];  // potential additional costs detected
   rawSummary: string;
+  /** Survey-only: every numeric dimension the model claims to have seen
+   *  on the page, with location annotation. Surfaced in the review UI so
+   *  contractors can spot hallucinated numbers BEFORE applying. */
+  observedDimensions?: string[];
+  /** Survey-only: every non-numeric annotation the model claims to have
+   *  seen — legend entries, color meanings, gate marks, margin notes.
+   *  Same verification purpose as observedDimensions. */
+  observedAnnotations?: string[];
 }
 
 export interface CritiqueUncertainField {

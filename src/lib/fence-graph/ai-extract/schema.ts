@@ -37,6 +37,28 @@ export const ExtractionSchema = z.object({
   rawSummary: z.string(),
 });
 
+// ── Survey-specific extraction schema ─────────────────────────────
+// Marked surveys require structured-CoT reasoning because GPT-4o
+// reads handwriting unreliably. Forcing the model to enumerate every
+// dimension and annotation it sees BEFORE committing to runs pins it
+// to evidence rather than eyeballing geometry. These fields are not
+// consumed downstream — they're a grounding harness for the model.
+//
+// This schema is ONLY used by the survey extraction path. The photo
+// extraction path continues to use ExtractionSchema above unchanged.
+export const SurveyExtractionSchema = ExtractionSchema.extend({
+  observedDimensions: z
+    .array(z.string())
+    .describe(
+      "Every numeric dimension visible on the image — printed or handwritten. Each entry is a short plain-English note like '73 handwritten at top edge' or '130.00 printed along west property line'. Populate BEFORE extracting runs. Each run must trace back to one of these.",
+    ),
+  observedAnnotations: z
+    .array(z.string())
+    .describe(
+      "Every non-dimensional annotation visible — legend entries, gate marks, scope notes, color meanings, arrows, labels. Example: 'green highlighter along top + left (partial) = new install per legend', '5 WG handwritten near house return = 5 ft walk gate', 'blue along right = existing neighbor fence'. Populate BEFORE extracting runs.",
+    ),
+});
+
 export const CritiqueSchema = z.object({
   uncertainFields: z.array(z.object({
     field: z.string(),
@@ -163,6 +185,43 @@ export const EXTRACTION_JSON_SCHEMA = {
     rawSummary: { type: "string" },
   },
   required: ["runs", "confidence", "flags", "rawSummary"],
+  additionalProperties: false,
+};
+
+// ── Survey-specific JSON Schema (structured-CoT variant) ──────────
+// Used only by the survey extraction path. Extends EXTRACTION_JSON_SCHEMA
+// with two required enumeration fields that force the model to ground
+// every run in observed evidence before emitting it.
+export const SURVEY_EXTRACTION_JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    // Order matters: the model fills fields top-down, so observations
+    // are declared first to force enumeration before extraction.
+    observedDimensions: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Every numeric dimension visible on the image — printed or handwritten. Each entry must include location ('73 handwritten at top edge', '130.00 printed along west property line', '5 WG near house return'). Populate BEFORE extracting runs. No run may use a dimension not listed here.",
+    },
+    observedAnnotations: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Every non-dimensional annotation — legend entries, gate marks, color meanings, scope notes. Example: 'green highlighter = new install per legend', 'blue along right = existing neighbor fence', '5 WG annotation = 5 ft walk gate between left-side corner and house return'. Populate BEFORE extracting runs.",
+    },
+    runs: EXTRACTION_JSON_SCHEMA.properties.runs,
+    confidence: { type: "number" },
+    flags: { type: "array", items: { type: "string" } },
+    rawSummary: { type: "string" },
+  },
+  required: [
+    "observedDimensions",
+    "observedAnnotations",
+    "runs",
+    "confidence",
+    "flags",
+    "rawSummary",
+  ],
   additionalProperties: false,
 };
 
