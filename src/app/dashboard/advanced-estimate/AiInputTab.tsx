@@ -213,30 +213,52 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
     setAddedRuns([]);
     setExtractedWithModel(null);
 
-    const res = mode === "text"
-      ? await extractFromText(text)
-      : mode === "image"
-      ? await extractFromImage(imageBase64!, imageMime, additionalContext || undefined)
-      : await extractFromSurvey(surveyBase64!, "image/png", additionalContext || undefined, "gpt-4o");
+    // try/catch/finally is critical here: server actions can throw for
+    // many reasons (network blip, RSC serialization issue, Next.js
+    // runtime error). Without this, the spinner stayed stuck forever
+    // because setLoading(false) never ran. Now:
+    //  - catch surfaces the error to the UI so contractor sees *something*
+    //  - finally guarantees the spinner always unwinds
+    try {
+      if (typeof window !== "undefined") {
+        console.log("[ai-extract] sending", { mode, hasSurvey: !!surveyBase64, hasImage: !!imageBase64, textLen: text.length });
+      }
+      const res = mode === "text"
+        ? await extractFromText(text)
+        : mode === "image"
+        ? await extractFromImage(imageBase64!, imageMime, additionalContext || undefined)
+        : await extractFromSurvey(surveyBase64!, "image/png", additionalContext || undefined, "gpt-4o");
 
-    setLoading(false);
-    if (mode === "survey") setExtractedWithModel("gpt-4o");
+      if (typeof window !== "undefined") {
+        console.log("[ai-extract] response", { success: res?.success, hasResult: !!res?.result, error: res?.error, runs: res?.result?.runs?.length });
+      }
 
-    if (isPaywallBlock(res)) {
-      onPaywall?.(res);
-      return;
+      if (isPaywallBlock(res)) {
+        onPaywall?.(res);
+        return;
+      }
+
+      if (!res || !res.success || !res.result) {
+        setError(res?.error ?? "Extraction failed — no runs returned. Try uploading a different PDF or adding more detail to the description.");
+        return;
+      }
+
+      if (mode === "survey") setExtractedWithModel("gpt-4o");
+      setResult(res.result);
+      setCritique(res.critique ?? null);
+      setValidationWarnings(res.validationWarnings ?? []);
+      setValidationBlockers(res.validationBlockers ?? []);
+      setCriticallyBlocked(res.criticallyBlocked ?? res.blocked ?? false);
+      if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Extraction failed — please try again.";
+      if (typeof window !== "undefined") {
+        console.error("[ai-extract] error", err);
+      }
+      setError(`${msg} (check browser console for details)`);
+    } finally {
+      setLoading(false);
     }
-
-    if (!res.success || !res.result) {
-      setError(res.error ?? "Extraction failed");
-      return;
-    }
-    setResult(res.result);
-    setCritique(res.critique ?? null);
-    setValidationWarnings(res.validationWarnings ?? []);
-    setValidationBlockers(res.validationBlockers ?? []);
-    setCriticallyBlocked(res.criticallyBlocked ?? res.blocked ?? false);
-    if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
   }
 
   // Escalation path — contractor reviewed the GPT-4o result and asked
@@ -259,8 +281,8 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
         onPaywall?.(res);
         return;
       }
-      if (!res.success || !res.result) {
-        setError(res.error ?? "Re-run failed");
+      if (!res || !res.success || !res.result) {
+        setError(res?.error ?? "Re-run failed — Claude didn't return any runs.");
         return;
       }
       setResult(res.result);
@@ -274,34 +296,74 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       setApplied(false);
       setExtractedWithModel("claude-opus-4-7");
       if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Re-run failed — please try again.";
+      if (typeof window !== "undefined") {
+        console.error("[ai-extract-claude] error", err);
+      }
+      setError(msg);
     } finally {
       setReRunning(false);
     }
   }
 
   function handleApply() {
-    if (!result) return;
+    if (!result) {
+      setError("Nothing to apply — run extraction first.");
+      return;
+    }
     if (criticallyBlocked) return; // hard guard in addition to the disabled button
-    // Compose the final run list sent to the engine:
-    //   1. AI runs with overrides applied, filtered by deletedRunIndices
-    //   2. Contractor-added runs appended after
-    // The AI result itself stays pristine for audit logs; this is a
-    // layer on top so we can always trace what the model said vs. what
-    // the contractor actually bid.
-    const editedAiRuns = result.runs
-      .map((run, i) => {
-        if (deletedRunIndices.has(i)) return null;
-        const override = runOverrides[i];
-        return override ? { ...run, ...override } : run;
-      })
-      .filter((r): r is AiExtractedRun => r !== null);
-    const finalRuns = [...editedAiRuns, ...addedRuns];
-    if (finalRuns.length === 0) return;
-    const edited: AiExtractionResult = { ...result, runs: finalRuns };
-    const state = toEngineState(edited, newRunId, newGateId);
-    if (!state) return;
-    onApply(state);
-    setApplied(true);
+    try {
+      // Compose the final run list sent to the engine:
+      //   1. AI runs with overrides applied, filtered by deletedRunIndices
+      //   2. Contractor-added runs appended after
+      // The AI result itself stays pristine for audit logs; this is a
+      // layer on top so we can always trace what the model said vs. what
+      // the contractor actually bid.
+      const editedAiRuns = result.runs
+        .map((run, i) => {
+          if (deletedRunIndices.has(i)) return null;
+          const override = runOverrides[i];
+          return override ? { ...run, ...override } : run;
+        })
+        .filter((r): r is AiExtractedRun => r !== null);
+      const finalRuns = [...editedAiRuns, ...addedRuns];
+
+      // Strip runs with 0 LF so the engine doesn't get a zero-length run
+      // that would silently drop through downstream math. This tolerates
+      // a contractor who added an empty row but didn't fill in a number.
+      const validRuns = finalRuns.filter((r) => r.linearFeet > 0);
+
+      if (validRuns.length === 0) {
+        setError("No runs with linear feet > 0. Fill in a run length before applying.");
+        return;
+      }
+
+      const edited: AiExtractionResult = { ...result, runs: validRuns };
+      const state = toEngineState(edited, newRunId, newGateId);
+      if (!state) {
+        setError("Could not convert runs to estimator state. Try re-running the extraction.");
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        console.log("[ai-apply]", {
+          runs: state.runs.length,
+          gates: state.gates.length,
+          fenceType: state.fenceType,
+          productLineId: state.productLineId,
+        });
+      }
+
+      onApply(state);
+      setApplied(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to apply runs to estimator.";
+      if (typeof window !== "undefined") {
+        console.error("[ai-apply] error", err);
+      }
+      setError(msg);
+    }
   }
 
   // ── Row-level edit helpers ────────────────────────────────────────
