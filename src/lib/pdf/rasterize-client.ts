@@ -1,25 +1,32 @@
-// Client-side PDF → PNG rasterizer.
+// Client-side PDF → PNG rasterizer with adaptive DPI fallback.
 //
 // Uses pdfjs-dist (Mozilla's PDF.js) to render the first page of a PDF
-// to an HTML canvas at a target DPI, then exports as a base64 PNG. This
-// runs in the browser only — we dynamic-import pdfjs-dist to avoid
-// bundling its ~1MB worker into every SSR response.
+// to an HTML canvas, then exports as a base64 PNG. Runs in the browser
+// only — we dynamic-import pdfjs-dist to avoid bundling its ~1MB worker
+// into every SSR response.
 //
-// Why client-side: our AI extraction endpoint already accepts base64
-// images, so once the PDF is rendered to a PNG we can reuse the whole
-// server-side image flow (GPT-4o vision, rate limit, billing gate,
-// audit log) without any changes.
+// The resulting base64 PNG is sent to a Next.js server action with a
+// 20 MB body limit. To stay inside that budget even on large or
+// multi-page surveys, this rasterizer tries 400 DPI first (best for
+// GPT-4o handwriting reads) and falls back step-by-step to smaller
+// DPIs until the payload fits.
 
 "use client";
 
-const TARGET_DPI = 400; // Handwriting legibility matters more than payload size.
-// A/B eval (2026-04-22) showed GPT-4o's Calesa LF error dropped from 55%
-// to 18% when DPI went from 200 → 400. Handwriting resolution is the
-// single biggest accuracy knob short of switching models. At 400 DPI a
-// letter-size PDF renders ~3400x4400 px → ~8 MB base64 PNG, which sits
-// inside OpenAI's image limits. When escalating to Claude (5 MB cap)
-// the server-side survey path resizes before sending to the Anthropic
-// API. See extractFromSurvey in aiActions.ts.
+// Max base64 payload we'll ship over the wire. Next.js server-actions
+// body limit is 20 MB (see next.config.js). Base64 encoding adds ~33%
+// overhead, so we leave headroom and target ≤17 MB base64 to stay
+// comfortably inside. Above this we downscale automatically before
+// trying to send — a previous fixed 400 DPI produced 20+ MB PNGs on
+// oversized surveys and the platform-layer 413 blew up as a client-
+// side "unexpected response" error (Sentry FENCEOS-9).
+const TARGET_MAX_BASE64_BYTES = 17_000_000;
+
+// DPI ladder. First attempt = 400 (the A/B-eval accuracy sweet spot).
+// If the result exceeds the size target, fall back one step at a time.
+// 150 DPI is the floor — below that, handwriting is unreadable to
+// GPT-4o and the extraction is worse than useless.
+const DPI_LADDER = [400, 300, 240, 200, 150] as const;
 
 export interface RasterizedPdf {
   /** base64-encoded PNG (no data: prefix) */
@@ -34,10 +41,16 @@ export interface RasterizedPdf {
   sizeBytes: number;
   /** Pages in the original PDF — we currently only render page 1 */
   totalPages: number;
+  /** The DPI that was actually used (may be lower than 400 if higher
+   *  DPIs exceeded the payload budget). Surfaced so the UI can tell
+   *  the contractor "rendered at 300 DPI due to size" if needed. */
+  dpiUsed: number;
 }
 
 /**
- * Render the first page of a PDF to a PNG image in the browser.
+ * Render the first page of a PDF to a PNG image in the browser,
+ * adapting DPI downward if the result would exceed the server body
+ * limit.
  *
  * @param file - PDF File from an <input type="file"> element
  * @param signal - Optional AbortSignal to cancel mid-render
@@ -74,41 +87,65 @@ export async function rasterizePdfFirstPage(
     if (signal?.aborted) throw new Error("Cancelled");
     const page = await doc.getPage(1);
 
-    // PDF points → pixels. 1 point = 1/72 inch, so DPI/72 = scale factor.
-    const viewport = page.getViewport({ scale: TARGET_DPI / 72 });
+    let lastAttempt: { dataUrl: string; base64: string; width: number; height: number; sizeBytes: number; dpi: number } | null = null;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.ceil(viewport.width);
-    canvas.height = Math.ceil(viewport.height);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("2D canvas context unavailable");
+    for (const dpi of DPI_LADDER) {
+      if (signal?.aborted) throw new Error("Cancelled");
 
-    // White background — PDF.js renders transparent unless we fill first.
-    // A transparent PNG would hide pen-and-highlighter marks on dark
-    // viewers. Fill white so the rendering matches how the survey looks
-    // when printed.
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // PDF points → pixels. 1 point = 1/72 inch, so DPI/72 = scale factor.
+      const viewport = page.getViewport({ scale: dpi / 72 });
 
-    await page.render({
-      canvasContext: ctx,
-      viewport,
-      canvas,
-    } as Parameters<typeof page.render>[0]).promise;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("2D canvas context unavailable");
 
-    if (signal?.aborted) throw new Error("Cancelled");
+      // White background — PDF.js renders transparent unless we fill first.
+      // A transparent PNG would hide pen-and-highlighter marks on dark
+      // viewers. Fill white so the rendering matches how the survey looks
+      // when printed.
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const dataUrl = canvas.toDataURL("image/png");
-    const base64 = dataUrl.split(",")[1] ?? "";
-    const sizeBytes = Math.ceil((base64.length * 3) / 4);
+      await page.render({
+        canvasContext: ctx,
+        viewport,
+        canvas,
+      } as Parameters<typeof page.render>[0]).promise;
+
+      if (signal?.aborted) throw new Error("Cancelled");
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const base64 = dataUrl.split(",")[1] ?? "";
+      const sizeBytes = Math.ceil((base64.length * 3) / 4);
+
+      console.log(`[rasterize] dpi=${dpi} size=${(sizeBytes / 1_000_000).toFixed(1)}MB ${canvas.width}x${canvas.height}`);
+
+      lastAttempt = { dataUrl, base64, width: canvas.width, height: canvas.height, sizeBytes, dpi };
+
+      if (base64.length <= TARGET_MAX_BASE64_BYTES) break;
+      // Too big — fall to next DPI step. Canvas gets GC'd when out of scope.
+    }
+
+    if (!lastAttempt) throw new Error("Failed to render PDF at any DPI");
+
+    if (lastAttempt.base64.length > TARGET_MAX_BASE64_BYTES) {
+      // Even 150 DPI was too big. Unusual — means the PDF's first page
+      // is blueprint-size or poster-size. Contractor should crop before
+      // uploading. Throw a clear error the UI can surface.
+      const mb = (lastAttempt.sizeBytes / 1_000_000).toFixed(1);
+      throw new Error(`PDF page is too large to send (${mb}MB even at 150 DPI). Crop the PDF to a smaller region or save the first page as a separate file.`);
+    }
 
     return {
-      base64,
-      widthPx: canvas.width,
-      heightPx: canvas.height,
-      dataUrl,
-      sizeBytes,
+      base64: lastAttempt.base64,
+      widthPx: lastAttempt.width,
+      heightPx: lastAttempt.height,
+      dataUrl: lastAttempt.dataUrl,
+      sizeBytes: lastAttempt.sizeBytes,
       totalPages: doc.numPages,
+      dpiUsed: lastAttempt.dpi,
     };
   } finally {
     // Release the PDF document resources.
