@@ -12,10 +12,14 @@
 
 "use client";
 
-const TARGET_DPI = 200; // Balances handwriting legibility vs payload size.
-// At 200 DPI a letter-size (8.5x11") PDF renders at 1700x2200 px which
-// stays well under OpenAI's per-image size limits while keeping pen
-// strokes + boundary dimensions readable.
+const TARGET_DPI = 400; // Handwriting legibility matters more than payload size.
+// A/B eval (2026-04-22) showed GPT-4o's Calesa LF error dropped from 55%
+// to 18% when DPI went from 200 → 400. Handwriting resolution is the
+// single biggest accuracy knob short of switching models. At 400 DPI a
+// letter-size PDF renders ~3400x4400 px → ~8 MB base64 PNG, which sits
+// inside OpenAI's image limits. When escalating to Claude (5 MB cap)
+// the server-side survey path resizes before sending to the Anthropic
+// API. See extractFromSurvey in aiActions.ts.
 
 export interface RasterizedPdf {
   /** base64-encoded PNG (no data: prefix) */

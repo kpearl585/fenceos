@@ -23,7 +23,10 @@ import * as os from "os";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 
-config({ path: path.resolve(process.cwd(), ".env.local") });
+// override: true so .env.local wins over any shell-exported vars.
+// Without this, a pre-existing empty ANTHROPIC_API_KEY in the shell
+// environment silently blocks the real key from loading.
+config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
 
 import {
   SURVEY_SYSTEM_PROMPT,

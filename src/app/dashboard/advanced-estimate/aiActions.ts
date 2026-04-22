@@ -1,6 +1,7 @@
 "use server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import * as Sentry from "@sentry/nextjs";
 import { SYSTEM_PROMPT, USER_PROMPT_TEXT, USER_PROMPT_IMAGE } from "@/lib/fence-graph/ai-extract/prompt";
 import { SURVEY_SYSTEM_PROMPT } from "@/lib/fence-graph/ai-extract/survey-prompt";
@@ -8,6 +9,7 @@ import { CRITIQUE_SYSTEM_PROMPT, CRITIQUE_USER_PROMPT } from "@/lib/fence-graph/
 import {
   EXTRACTION_JSON_SCHEMA,
   SURVEY_EXTRACTION_JSON_SCHEMA,
+  SurveyExtractionSchema,
   CRITIQUE_JSON_SCHEMA,
   validateExtraction,
 } from "@/lib/fence-graph/ai-extract/schema";
@@ -28,6 +30,23 @@ function getOpenAI(): OpenAI {
   if (!key) throw new Error("AI_UNAVAILABLE: OPENAI_API_KEY not configured");
   return new OpenAI({ apiKey: key });
 }
+
+// ── Anthropic client ──────────────────────────────────────────────
+// Used only by the survey extraction path when the contractor opts in
+// to higher-accuracy re-run. A/B eval (2026-04-22) showed Claude Opus
+// 4.7 beat GPT-4o on the hardest survey case (Calesa: 2.7% LF error
+// vs 15%), at 5.3× the cost and 4× the latency. Worth the premium
+// as an opt-in escalation, not as the default path.
+function getAnthropic(): Anthropic {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    throw new Error("AI_UNAVAILABLE: ANTHROPIC_API_KEY not configured — high-accuracy escalation unavailable");
+  }
+  return new Anthropic({ apiKey: key });
+}
+
+// ── Supported extraction models ───────────────────────────────────
+export type SurveyExtractionModel = "gpt-4o" | "claude-opus-4-7";
 
 // ── AI health check ───────────────────────────────────────────────
 export async function checkAiReadiness(): Promise<{ available: boolean; reason?: string }> {
@@ -287,6 +306,85 @@ async function getAuthContext(): Promise<{ userId: string; orgId: string } | nul
   }
 }
 
+// ── Survey extraction via Claude Opus 4.7 (opt-in escalation) ─────
+// Claude doesn't expose OpenAI's strict json_schema mode, so we ask
+// for the JSON shape in the prompt, parse the text block, and
+// Zod-validate. Used only when the contractor explicitly clicks
+// "Re-run with higher accuracy" in the survey review UI.
+async function runSurveyExtractionAnthropic(
+  client: Anthropic,
+  base64: string,
+  mimeType: "image/png" | "image/jpeg",
+  additionalText?: string,
+): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number }> {
+  const text = additionalText
+    ? `Additional context from contractor: ${additionalText}\n\nThis is a marked-up boundary survey. Extract fence runs from the contractor's colored markup. Use the handwritten legend to decide which color means "new install" vs "existing fence" vs other.`
+    : `This is a marked-up boundary survey. Extract fence runs from the contractor's colored markup. Use the handwritten legend to decide which color means "new install" vs "existing fence" vs other.`;
+
+  const response = await client.messages.create({
+    model: "claude-opus-4-7",
+    // Survey extractions are ~500-2000 output tokens with CoT; 16K is
+    // comfortable headroom and stays under the streaming-required cap.
+    max_tokens: 16_000,
+    system: SURVEY_SYSTEM_PROMPT,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } },
+        { type: "text", text },
+      ],
+    }],
+  });
+
+  const textBlock = response.content.find(
+    (b): b is Anthropic.Messages.TextBlock => b.type === "text",
+  );
+  if (!textBlock) throw new Error("Claude response had no text block");
+
+  const raw = textBlock.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const firstBrace = raw.indexOf("{");
+  const lastBrace = raw.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace < 0) {
+    throw new Error("Claude response didn't contain a JSON object");
+  }
+  const parsedRaw = JSON.parse(raw.slice(firstBrace, lastBrace + 1));
+
+  const validation = SurveyExtractionSchema.safeParse(parsedRaw);
+  const result: AiExtractionResult = validation.success
+    ? (validation.data as AiExtractionResult)
+    : (parsedRaw as AiExtractionResult);
+
+  return {
+    result,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+  };
+}
+
+// ── Resize base64 PNG to fit Anthropic's 5 MB vision ceiling ──────
+// 400 DPI client rasterization produces ~8 MB PNGs which exceed
+// Claude's per-image input limit. Downscale to ~3 MB so payload
+// sits comfortably under the cap after base64 overhead (~33%).
+// Sharp is dynamically imported — only loads on the escalation path.
+async function resizeForAnthropic(base64Png: string): Promise<{ base64: string; mimeType: "image/png" }> {
+  const sizeBytes = (base64Png.length * 3) / 4;
+  if (sizeBytes <= 3_500_000) {
+    return { base64: base64Png, mimeType: "image/png" };
+  }
+  const sharp = (await import("sharp")).default;
+  const input = Buffer.from(base64Png, "base64");
+  const meta = await sharp(input).metadata();
+  const originalWidth = meta.width ?? 2400;
+  const targetBytes = 3_000_000;
+  const linearScale = Math.min(1, Math.sqrt(targetBytes / sizeBytes));
+  const newWidth = Math.round(originalWidth * linearScale);
+  const resized = await sharp(input)
+    .resize({ width: newWidth, withoutEnlargement: true })
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+  return { base64: resized.toString("base64"), mimeType: "image/png" };
+}
+
 // ── Public: Extract from text ─────────────────────────────────────
 export async function extractFromText(
   description: string
@@ -502,15 +600,20 @@ export async function extractFromImage(
 
 // ── Public: Extract from marked survey ────────────────────────────
 // Contractor uploads a marked-up boundary survey / plat / site plan
-// (rendered to PNG client-side from the uploaded PDF). We pass the
-// image through the same quality ladder as `extractFromImage` but
-// with a survey-specific system prompt that teaches GPT-4o how to
-// read colored highlighter markup + handwritten annotations on
-// formal surveyed property drawings.
+// (rendered to PNG client-side from the uploaded PDF at 400 DPI).
+// Default extraction uses GPT-4o; contractors can opt into a
+// higher-accuracy re-run with Claude Opus 4.7 from the review UI,
+// which trades ~$0.10 extra + ~30s latency for meaningfully better
+// reads on hard cases (complex markup, partial runs, mid-run gates).
+//
+// Model choice flows through `model` — caller is the review UI.
+// Critique still runs via GPT-4o regardless; model diversity on the
+// critique side is a feature, not a bug.
 export async function extractFromSurvey(
   base64: string,
   mimeType: string,
   additionalText?: string,
+  model: SurveyExtractionModel = "gpt-4o",
 ): Promise<AiExtractionResponse> {
   const readiness = await checkAiReadiness();
   if (!readiness.available) return { success: false, error: readiness.reason };
@@ -532,12 +635,12 @@ export async function extractFromSurvey(
     };
   }
 
-  // Survey renders (letter-size at 200 DPI) typically come out 1-3 MB
-  // base64. Give a slightly higher ceiling than photo path — raising
-  // DPI further would hurt payload without meaningfully improving
-  // handwriting legibility.
+  // 400 DPI client rasterization produces ~6-10 MB base64 for a
+  // letter-size plat. Allow 12 MB to give headroom for oversized
+  // sheets; above that the raw PDF is probably something we can't
+  // usefully extract anyway.
   const sizeBytes = (base64.length * 3) / 4;
-  if (sizeBytes > 6_000_000) {
+  if (sizeBytes > 12_000_000) {
     return { success: false, error: "Rendered survey too large. Try a lower-resolution PDF or crop to a single page." };
   }
 
@@ -546,22 +649,54 @@ export async function extractFromSurvey(
   try {
     const client = getOpenAI();
 
-    const { result, inputTokens, outputTokens, usedHighDetail } = await runImageExtraction(
-      client,
-      base64,
-      mimeType,
-      additionalText,
-      SURVEY_SYSTEM_PROMPT,
-      SURVEY_EXTRACTION_JSON_SCHEMA,
-      // Surveys need high detail — handwriting + small printed dims are
-      // unreadable at detail:"low", so skip the cheap first pass.
-      /* skipLowDetailPass */ true,
-    );
+    // Run primary extraction on the selected model
+    let result: AiExtractionResult;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let usedHighDetail = false;
+
+    if (model === "claude-opus-4-7") {
+      // Claude caps vision inputs at ~5 MB. Downscale if the 400 DPI
+      // render came in larger. Degrades image detail vs GPT-4o but
+      // A/B shows Opus still beats GPT-4o on hard cases even at lower
+      // DPI — the CoT reasoning matters more than pixel resolution.
+      const anthropic = getAnthropic();
+      const resized = await resizeForAnthropic(base64);
+      const claudeResult = await runSurveyExtractionAnthropic(
+        anthropic,
+        resized.base64,
+        resized.mimeType,
+        additionalText,
+      );
+      result = claudeResult.result;
+      inputTokens = claudeResult.inputTokens;
+      outputTokens = claudeResult.outputTokens;
+      usedHighDetail = true; // Claude Opus always gets the full image (post-resize)
+    } else {
+      // Default: GPT-4o via the existing quality ladder
+      const gptResult = await runImageExtraction(
+        client,
+        base64,
+        mimeType,
+        additionalText,
+        SURVEY_SYSTEM_PROMPT,
+        SURVEY_EXTRACTION_JSON_SCHEMA,
+        // Surveys need high detail — handwriting + small printed dims are
+        // unreadable at detail:"low", so skip the cheap first pass.
+        /* skipLowDetailPass */ true,
+      );
+      result = gptResult.result;
+      inputTokens = gptResult.inputTokens;
+      outputTokens = gptResult.outputTokens;
+      usedHighDetail = gptResult.usedHighDetail;
+    }
 
     const validation = validateExtraction(result);
     if (validation.data) Object.assign(result, validation.data);
 
-    if (usedHighDetail) {
+    if (model === "claude-opus-4-7") {
+      result.flags = [`Extracted via Claude Opus 4.7 (higher-accuracy mode)`, ...(result.flags ?? [])];
+    } else if (usedHighDetail) {
       result.flags = [`Used high-detail analysis (confidence was low on first pass)`, ...(result.flags ?? [])];
     }
 

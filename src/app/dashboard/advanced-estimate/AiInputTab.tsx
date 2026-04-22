@@ -137,6 +137,11 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   const [runLfOverrides, setRunLfOverrides] = useState<Record<number, number>>({});
   const [additionalContext, setAdditionalContext] = useState("");
   const [loading, setLoading] = useState(false);
+  // Separate loading state for Claude escalation — the main CTA stays
+  // enabled so the contractor can go back to text/image modes while
+  // the re-run is in flight.
+  const [reRunning, setReRunning] = useState(false);
+  const [extractedWithModel, setExtractedWithModel] = useState<"gpt-4o" | "claude-opus-4-7" | null>(null);
   const [result, setResult] = useState<AiExtractionResult | null>(null);
   const [critique, setCritique] = useState<CritiqueResult | null>(null);
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
@@ -161,14 +166,16 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
     setCriticallyBlocked(false);
     setApplied(false);
     setRunLfOverrides({});
+    setExtractedWithModel(null);
 
     const res = mode === "text"
       ? await extractFromText(text)
       : mode === "image"
       ? await extractFromImage(imageBase64!, imageMime, additionalContext || undefined)
-      : await extractFromSurvey(surveyBase64!, "image/png", additionalContext || undefined);
+      : await extractFromSurvey(surveyBase64!, "image/png", additionalContext || undefined, "gpt-4o");
 
     setLoading(false);
+    if (mode === "survey") setExtractedWithModel("gpt-4o");
 
     if (isPaywallBlock(res)) {
       onPaywall?.(res);
@@ -185,6 +192,44 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
     setValidationBlockers(res.validationBlockers ?? []);
     setCriticallyBlocked(res.criticallyBlocked ?? res.blocked ?? false);
     if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
+  }
+
+  // Escalation path — contractor reviewed the GPT-4o result and asked
+  // for a higher-accuracy re-run. Costs ~$0.10 more + ~30s latency,
+  // bounded to contractor-initiated action so cost stays predictable.
+  async function handleReRunWithClaude() {
+    if (!surveyBase64) return;
+    setReRunning(true);
+    setError(null);
+    // Keep existing result visible while Claude works — feels less
+    // disorienting than blanking the preview.
+    try {
+      const res = await extractFromSurvey(
+        surveyBase64,
+        "image/png",
+        additionalContext || undefined,
+        "claude-opus-4-7",
+      );
+      if (isPaywallBlock(res)) {
+        onPaywall?.(res);
+        return;
+      }
+      if (!res.success || !res.result) {
+        setError(res.error ?? "Re-run failed");
+        return;
+      }
+      setResult(res.result);
+      setCritique(res.critique ?? null);
+      setValidationWarnings(res.validationWarnings ?? []);
+      setValidationBlockers(res.validationBlockers ?? []);
+      setCriticallyBlocked(res.criticallyBlocked ?? res.blocked ?? false);
+      setRunLfOverrides({});
+      setApplied(false);
+      setExtractedWithModel("claude-opus-4-7");
+      if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
+    } finally {
+      setReRunning(false);
+    }
   }
 
   function handleApply() {
@@ -491,6 +536,50 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
             </div>
             <span className="font-display text-2xl font-bold flex-shrink-0">{Math.round(result.confidence * 100)}%</span>
           </div>
+
+          {/* Survey-only: higher-accuracy re-run with Claude Opus 4.7.
+              Only surface after a GPT-4o extraction; once Claude has
+              run, hide this to avoid back-and-forth thrash. Contractor
+              can always clear + re-upload to start over. */}
+          {mode === "survey" && extractedWithModel === "gpt-4o" && (
+            <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-text">Not quite right?</p>
+                  <p className="mt-0.5 text-xs text-muted leading-relaxed">
+                    Re-run with our higher-accuracy model (Claude Opus 4.7). Better at complex markup, partial runs, and mid-run gates. Takes ~30 seconds.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleReRunWithClaude}
+                  disabled={reRunning}
+                  className="flex-shrink-0 px-3 py-2 bg-accent hover:bg-accent-light accent-glow text-white text-xs font-bold rounded-lg transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent whitespace-nowrap"
+                >
+                  {reRunning ? (
+                    <span className="flex items-center gap-1.5">
+                      <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Re-running…
+                    </span>
+                  ) : "Re-run with higher accuracy"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Note when the result came from Claude so it's clear which
+              model produced the runs being reviewed. */}
+          {mode === "survey" && extractedWithModel === "claude-opus-4-7" && (
+            <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-2">
+              <p className="text-xs text-accent-light">
+                <span className="font-semibold">Extracted via Claude Opus 4.7</span>
+                <span className="text-muted"> · higher-accuracy mode</span>
+              </p>
+            </div>
+          )}
 
           {/* Critical blockers — unified from validation + critique.
               Reads the explicit blockers array instead of substring-matching
