@@ -59,28 +59,28 @@ export default function EmailCaptureModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm px-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8"
+        className="bg-surface-2 border border-accent/20 accent-glow rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h3 className="text-xl font-bold text-fence-900">
+            <h3 className="text-xl font-bold text-text">
               Download Your Estimate
             </h3>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-muted text-sm mt-1">
               Enter your email and we&apos;ll generate your PDF.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none p-1"
+            className="text-muted hover:text-text text-2xl leading-none p-1 transition-colors duration-150"
             aria-label="Close"
           >
-            &times;
+            ×
           </button>
         </div>
 
@@ -88,9 +88,9 @@ export default function EmailCaptureModal({
           <div>
             <label
               htmlFor="lead-name"
-              className="block text-sm font-semibold text-gray-700 mb-1"
+              className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider"
             >
-              Name <span className="text-gray-400 font-normal">(optional)</span>
+              Name <span className="text-muted font-normal normal-case tracking-normal">(optional)</span>
             </label>
             <input
               id="lead-name"
@@ -98,16 +98,16 @@ export default function EmailCaptureModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
-              className="w-full border border-gray-300 rounded-lg py-3 px-4 text-lg focus:ring-2 focus:ring-fence-500 focus:border-fence-500 outline-none"
+              className="w-full border border-border bg-surface-3 text-text rounded-lg py-3 px-4 text-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
             />
           </div>
 
           <div>
             <label
               htmlFor="lead-email"
-              className="block text-sm font-semibold text-gray-700 mb-1"
+              className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider"
             >
-              Email <span className="text-red-500">*</span>
+              Email <span className="text-danger">*</span>
             </label>
             <input
               ref={emailRef}
@@ -117,23 +117,23 @@ export default function EmailCaptureModal({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@company.com"
               required
-              className="w-full border border-gray-300 rounded-lg py-3 px-4 text-lg focus:ring-2 focus:ring-fence-500 focus:border-fence-500 outline-none"
+              className="w-full border border-border bg-surface-3 text-text rounded-lg py-3 px-4 text-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
             />
           </div>
 
           {error && (
-            <p className="text-red-600 text-sm font-medium">{error}</p>
+            <p className="text-danger text-sm font-medium">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-fence-500 hover:bg-fence-600 disabled:bg-fence-300 text-white font-semibold text-lg py-4 rounded-lg transition-colors"
+            className="w-full bg-accent hover:bg-accent-light accent-glow disabled:opacity-50 text-white font-semibold text-lg py-4 rounded-lg transition-colors duration-150"
           >
             {loading ? "Sending..." : "Get My Estimate PDF"}
           </button>
 
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-muted text-center">
             No spam. We just want to follow up when the full product launches.
           </p>
         </form>

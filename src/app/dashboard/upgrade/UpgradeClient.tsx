@@ -1,8 +1,15 @@
 "use client";
 import { useState } from "react";
 import { BILLABLE_PLAN_ORDER, BILLING_PLANS } from "@/lib/billing/plans";
+import type { PaywallTrigger } from "@/lib/paywall";
 
-export default function UpgradeClient() {
+export default function UpgradeClient({
+  trigger = null,
+  currentPlan: _currentPlan = null,
+}: {
+  trigger?: PaywallTrigger | null;
+  currentPlan?: string | null;
+} = {}) {
   const [loading, setLoading] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
   const plans = BILLABLE_PLAN_ORDER.map((key) => BILLING_PLANS[key]);
@@ -14,7 +21,7 @@ export default function UpgradeClient() {
       const res = await fetch("/api/stripe/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, billing_period: billingPeriod }),
+        body: JSON.stringify({ plan, billing_period: billingPeriod, trigger }),
       });
       const data = await res.json();
       if (data.url) {

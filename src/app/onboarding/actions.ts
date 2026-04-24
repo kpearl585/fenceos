@@ -14,7 +14,6 @@ export async function saveOnboarding(fd: FormData) {
   const companyName   = (fd.get("company_name") as string)?.trim();
   const fullName      = (fd.get("full_name") as string)?.trim();
   const phone         = (fd.get("phone") as string)?.trim();
-  const city          = (fd.get("city") as string)?.trim();
   const state         = (fd.get("state") as string)?.trim();
   const targetMargin  = parseFloat((fd.get("target_margin") as string) || "35") / 100;
   const laborRate     = parseFloat((fd.get("labor_rate") as string) || "65");
@@ -44,5 +43,29 @@ export async function saveOnboarding(fd: FormData) {
       default_labor_rate: laborRate,
     }, { onConflict: "org_id" });
 
-  redirect("/dashboard?welcome=1");
+  // Carry the onboarding form's phone input through to org_branding so it
+  // shows up on every customer-facing PDF right away. Users can still edit
+  // it in Settings → Company Contact Info. `state` is captured separately
+  // in profile.full_name/address logic later (no standalone column today).
+  if (phone) {
+    await admin
+      .from("org_branding")
+      .upsert({
+        org_id: profile.org_id,
+        phone,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "org_id" });
+  }
+
+  // Suppress unused-var warning for `state` — kept here intentionally so the
+  // onboarding form's state dropdown continues to submit without a crash,
+  // pending a schema decision on where to persist it (org_branding.address
+  // component, new org_contact table, or just stop collecting it).
+  void state;
+
+  // Hand the freshly-onboarded contractor to the estimator setup wizard
+  // before the dashboard. It's 3 questions of friendly-voice setup that
+  // tune the engine to their region + crew. Users who skip it still land
+  // in the dashboard from within the wizard.
+  redirect("/onboarding/estimator-setup");
 }

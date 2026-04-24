@@ -13,9 +13,9 @@ export type PostType =
 export type PanelStyle = "privacy" | "picket" | "semi_privacy" | "lattice_top";
 export type SlopeMethod = "racked" | "stepped" | "level";
 export type GateType = "single" | "double";
-export type PostSize = "4x4" | "5x5";
+export type PostSize = "4x4" | "5x5" | "2in";
 export type PanelHeight = 4 | 5 | 6 | 8;
-export type SoilType = "sandy" | "sandy_loam" | "clay" | "rocky" | "wet";
+export type SoilType = "sandy" | "sandy_loam" | "clay" | "rocky" | "wet" | "standard";
 
 export interface FenceNode {
   id: string;
@@ -54,15 +54,30 @@ export interface Section {
   scrap_in: number;     // nominal - actual (waste)
 }
 
+// Gate hardware enums (also used by GateInput below — defined here so
+// GateSpec can reference them without forward-declaration).
+export type GateHingeType = "standard" | "self_closing";
+export type GateLatchType = "standard" | "lokk_latch" | "magnetic" | "slide_bolt";
+export type GateHardwareColor = "black" | "bronze" | "white";
+export type GatePostInsert = "none" | "aluminum" | "steel";
+
 export interface GateSpec {
   gateType: GateType;
-  leftLeafWidth_in: number;
-  rightLeafWidth_in?: number;  // double gates only
-  totalOpening_in: number;
-  hingeGap_in: number;
-  latchGap_in: number;
+  openingWidth_in: number;        // Clear opening between posts (user input)
+  leftLeafWidth_in: number;       // Actual gate leaf to order (opening - gaps)
+  rightLeafWidth_in?: number;     // Double gates only
+  totalOpening_in: number;        // Total space including all gaps
+  hingeGap_in: number;            // Hinge-side gap
+  latchGap_in: number;            // Latch-side gap
+  centerGap_in?: number;          // Center gap for double gates
   dropRodRequired: boolean;
   isPoolGate: boolean;
+  // Contractor-selected hardware (all optional — undefined = engine default).
+  // Carried forward from GateInput so the pricing engine can look up SKUs.
+  hinges?: GateHingeType;
+  latch?: GateLatchType;
+  hardwareColor?: GateHardwareColor;  // Metadata only — doesn't affect price today.
+  postInsert?: GatePostInsert;
 }
 
 export interface FenceGraph {
@@ -138,6 +153,10 @@ export interface GateInput {
   gateType: GateType;
   widthFt: number;         // total opening width
   isPoolGate: boolean;
+  hinges?: GateHingeType;           // hinge style
+  latch?: GateLatchType;            // latch style
+  hardwareColor?: GateHardwareColor; // hinge/latch finish color
+  postInsert?: GatePostInsert;       // reinforcing insert inside hinge post
 }
 
 export interface FenceProjectInput {
@@ -149,6 +168,12 @@ export interface FenceProjectInput {
   windMode: boolean;
   runs: RunInput[];
   gates: GateInput[];
+  existingFenceRemoval?: boolean;
+  // Optional regulatory costs (manual entry by contractor)
+  permitCost?: number;
+  inspectionCost?: number;
+  engineeringCost?: number;
+  surveyCost?: number;
 }
 
 // ── BOM Output Types ──────────────────────────────────────────────
@@ -173,13 +198,84 @@ export interface LaborDriver {
   notes?: string;
 }
 
+export interface EdgeCaseFlag {
+  type: "long_run_economics" | "gate_dominant_short_run" | "ultra_high_gate_density";
+  severity: "info" | "warning";
+  message: string;
+  details: Record<string, any>;
+}
+
+export interface CommercialSummary {
+  // Cost breakdown by category
+  materialCostSubtotal: number;
+  laborCostSubtotal: number;
+  equipmentCostSubtotal: number;
+  logisticsCostSubtotal: number;
+  disposalCostSubtotal: number;
+  regulatoryCostSubtotal: number;
+  commercialAdjustmentsSubtotal: number; // minimum job charge adjustment
+
+  // Totals
+  rawEstimatedCost: number;    // actual calculated cost before min job charge
+  finalQuotedTotal: number;     // rawEstimatedCost + commercialAdjustments
+
+  // Markup scenarios (based on rawEstimatedCost)
+  quotedAt20Pct: number;
+  quotedAt30Pct: number;
+  quotedAt40Pct: number;
+
+  // Gross profit at each markup level
+  grossProfitAt20Pct: number;
+  grossProfitAt30Pct: number;
+  grossProfitAt40Pct: number;
+}
+
+export interface QuoteMetadata {
+  createdAt: string;           // ISO 8601 timestamp
+  quoteValidUntil: string;     // ISO 8601 date
+  quoteVersion: number;
+}
+
+export interface CustomerProposalSummary {
+  fenceTypeLabel: string;         // "Vinyl Privacy"
+  productLineLabel: string;       // "Vinyl Privacy 6ft"
+  totalLinearFeet: number;
+  gateCount: number;
+  estimatedInstallDays: number;
+  finalQuotedTotal: number;
+  quoteValidUntil: string;
+  shortScopeSummary: string;      // "Install 100 LF of 6 ft vinyl privacy fence with 1 gate."
+  exclusionsSummary: string[];    // What is NOT included
+}
+
+export interface ShoppingListGroup {
+  group: string;
+  items: BomItem[];
+  subtotal: number;
+}
+
 export interface FenceEstimateResult {
   projectId: string;
   projectName: string;
   graph: FenceGraph;
   bom: BomItem[];
   laborDrivers: LaborDriver[];
+  /**
+   * Sum of every non-labor BOM extCost including equipment, logistics,
+   * disposal, regulatory, plus regional material adjustment.
+   * Historically named "material" but actually represents "total non-labor".
+   * New code should prefer `materialOnlyCost` for a true materials figure.
+   */
   totalMaterialCost: number;
+  /**
+   * True materials subtotal — BOM line items in the categories
+   * posts / panels / pickets / rails / fabric / concrete / hardware /
+   * (type-specific hardware), with regional material adjustment applied.
+   * Excludes equipment rentals, delivery, disposal, regulatory.
+   * Optional for backward compatibility with saved estimates generated
+   * before this field existed.
+   */
+  materialOnlyCost?: number;
   totalLaborHrs: number;
   totalLaborCost: number;
   totalCost: number;
@@ -189,6 +285,15 @@ export interface FenceEstimateResult {
   // Confidence
   overallConfidence: number;
   redFlagItems: BomItem[];  // items with confidence < 0.8
+  // Edge case detection (v1.0.0 production guardrails)
+  edgeCaseFlags?: EdgeCaseFlag[];
+  // Profitability & commercial analysis
+  commercialSummary?: CommercialSummary;
+  // Quote package
+  quoteMetadata?: QuoteMetadata;
+  customerProposal?: CustomerProposalSummary;
+  termsAndConditions?: string[];
+  shoppingListGroups?: ShoppingListGroup[];
   // Audit
   auditTrail: string[];
 }
@@ -358,14 +463,26 @@ export const INSTALL_RULES: Record<PostSize, InstallRules> = {
     maxRackAngle_deg: 18,
     slopeThresholdForStepped_deg: 18,
   },
+  "2in": {
+    maxPostCenters_in: 120,          // Chain link: 10ft OC standard
+    preferredPostCenters_in: 120,
+    holeDiameter_in: 6,               // 2" post needs 6" hole
+    holeDepth_in: 24,                 // 24" depth for chain link (shallower than wood/vinyl)
+    gravelBase_in: 4,
+    groundClearance_in: 2,
+    thermalGap_in: 0,                 // Not applicable to chain link
+    maxRackAngle_deg: 0,              // Chain link doesn't rack
+    slopeThresholdForStepped_deg: 0,  // Chain link doesn't step
+  },
 };
 
 export const SOIL_CONCRETE_FACTORS: Record<SoilType, number> = {
+  standard: 1.0,      // Default/average soil conditions
   clay: 1.0,
   rocky: 1.0,
-  sandy_loam: 1.25,
-  sandy: 1.5,
-  wet: 1.75,
+  sandy_loam: 1.10,   // 10% more concrete (depth override already handles main adjustment)
+  sandy: 1.20,        // 20% more concrete (depth override already handles main adjustment)
+  wet: 1.25,          // 25% more concrete for drainage and stability
 };
 
 export const FLORIDA_DEPTH_OVERRIDE_IN = 42; // sandy Florida soil min depth

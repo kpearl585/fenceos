@@ -4,11 +4,12 @@
 // estimate workflow: BOM line items → estimate record → redirect to
 // estimate detail page where contractor can review, send, and get signed.
 
-import type { FenceProjectInput, FenceType, WoodStyle } from "@/lib/fence-graph/engine";
+import type { FenceEstimateResult, FenceProjectInput, FenceType, WoodStyle } from "@/lib/fence-graph/engine";
 import { recomputeEstimateForOrg, requireOrgEstimateContext } from "./serverEstimate";
 
 interface ConvertInput {
   input: FenceProjectInput;
+  result?: FenceEstimateResult;
   projectName: string;
   laborRate: number;
   markupPct: number;

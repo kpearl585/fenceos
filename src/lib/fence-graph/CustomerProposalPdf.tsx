@@ -96,6 +96,9 @@ export interface ProposalData {
   date: string;
   proposalNumber?: string;
   validDays?: number;
+  // Timeline
+  estimatedStartDate?: string;
+  estimatedDurationDays?: number;
 }
 
 const FENCE_TYPE_LABELS: Record<string, string> = {
@@ -107,10 +110,19 @@ const FENCE_TYPE_LABELS: Record<string, string> = {
 
 export function CustomerProposalPdf({ data }: { data: ProposalData }) {
   const { result, projectName, fenceType, bidPrice, totalLF, orgName, orgPhone, orgEmail, orgAddress,
-    customerName, customerAddress, customerCity, customerPhone, customerEmail, date, proposalNumber, validDays = 30 } = data;
+    customerName, customerAddress, customerCity, customerPhone, customerEmail, date, proposalNumber, validDays = 30,
+    estimatedStartDate, estimatedDurationDays } = data;
 
   const typeLabel = FENCE_TYPE_LABELS[fenceType] ?? fenceType;
-  const postCount = result.graph.nodes.length;
+  // Post count is derived from the BOM's true post SKUs (excluding post
+  // sleeves and caps, which also live in the "posts" category) rather
+  // than graph.nodes.length, so chain-link proposals don't leak the
+  // builder's phantom 96"-OC posts (BOM uses config 120"-OC).
+  const postCountFromBom = result.bom
+    .filter(b => b.category === "posts" && b.sku.includes("POST")
+      && !b.sku.includes("SLEEVE") && !b.sku.includes("CAP"))
+    .reduce((sum, b) => sum + (b.qty ?? 0), 0);
+  const postCount = postCountFromBom > 0 ? postCountFromBom : result.graph.nodes.length;
   const gateCount = result.graph.edges.filter(e => e.type === "gate").length;
   const runCount = result.graph.edges.filter(e => e.type === "segment").length;
   const perLF = totalLF > 0 ? Math.round(bidPrice / totalLF) : 0;
@@ -201,6 +213,40 @@ export function CustomerProposalPdf({ data }: { data: ProposalData }) {
           ))}
         </View>
 
+        {/* Timeline & Warranty */}
+        {(estimatedStartDate || estimatedDurationDays) && (
+          <View style={s.cols}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.sectionLabel}>Project Timeline</Text>
+              <View style={s.termsBox}>
+                {estimatedStartDate && (
+                  <View style={s.fieldRow}>
+                    <Text style={s.fieldLabel}>Est. Start:</Text>
+                    <Text style={s.fieldValue}>{estimatedStartDate}</Text>
+                  </View>
+                )}
+                {estimatedDurationDays && (
+                  <View style={s.fieldRow}>
+                    <Text style={s.fieldLabel}>Duration:</Text>
+                    <Text style={s.fieldValue}>{estimatedDurationDays} {estimatedDurationDays === 1 ? 'day' : 'days'}</Text>
+                  </View>
+                )}
+                <Text style={[s.termLine, { marginTop: 8 }]}>Timeline may vary due to weather conditions or permit delays.</Text>
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.sectionLabel}>Warranty Information</Text>
+              <View style={s.termsBox}>
+                {/* Must match quotePackage.DEFAULT_TERMS warranty clause */}
+                <Text style={s.termLine}>Workmanship: 1 year from completion</Text>
+                <Text style={s.termLine}>Materials: Manufacturer warranty per product terms</Text>
+                <Text style={s.termLine}>Excludes: Acts of nature, soil settling, unauthorized modifications</Text>
+                <Text style={[s.termLine, { marginTop: 8, fontSize: 7 }]}>Full warranty details provided upon project completion.</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Price */}
         <View style={s.cols}>
           <View style={{ flex: 1 }}>
@@ -223,6 +269,19 @@ export function CustomerProposalPdf({ data }: { data: ProposalData }) {
               <Text style={s.termLine}>Prices subject to change if material costs increase significantly.</Text>
             </View>
           </View>
+        </View>
+
+        {/* Next Steps */}
+        <View style={{ marginBottom: 24, backgroundColor: '#F0F9FF', borderRadius: 4, padding: 14, borderLeft: `3pt solid ${BRAND}` }}>
+          <Text style={[s.sectionLabel, { borderBottom: 'none', marginBottom: 8 }]}>Ready to Get Started?</Text>
+          <Text style={{ fontSize: 9, color: DARK, marginBottom: 6, fontFamily: 'Helvetica-Bold' }}>Here's what happens next:</Text>
+          <Text style={[s.termLine, { marginBottom: 4 }]}>✓  Review this proposal and sign below</Text>
+          <Text style={[s.termLine, { marginBottom: 4 }]}>✓  Submit 50% deposit to secure your installation date</Text>
+          <Text style={[s.termLine, { marginBottom: 4 }]}>✓  We'll schedule your installation and handle all materials</Text>
+          <Text style={[s.termLine, { marginBottom: 8 }]}>✓  Project completion with final walkthrough</Text>
+          <Text style={{ fontSize: 9, color: DARK, marginTop: 6 }}>
+            Questions? Call {orgPhone || 'us'} or email {orgEmail || 'support@fenceestimatepro.com'}
+          </Text>
         </View>
 
         {/* Signature */}
@@ -260,7 +319,12 @@ export function CustomerProposalPdf({ data }: { data: ProposalData }) {
         {/* Footer */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>{orgName} · Powered by FenceEstimatePro</Text>
-          <Text style={s.footerText}>Proposal generated {date} · Valid {validDays} days</Text>
+          <Text style={s.footerText}>Proposal generated {date} · Valid {validDays} days · fenceestimatepro.com/terms</Text>
+        </View>
+        <View style={{ position: 'absolute', bottom: 16, left: 48, right: 48 }}>
+          <Text style={{ fontSize: 6, color: GRAY, textAlign: 'center' }}>
+            Estimates are based on information provided and standard installation conditions. Final costs may vary due to site-specific conditions, unforeseen obstacles, or material price changes. Contractor is not liable for underground utilities not marked by 811 or property line discrepancies.
+          </Text>
         </View>
       </Page>
     </Document>

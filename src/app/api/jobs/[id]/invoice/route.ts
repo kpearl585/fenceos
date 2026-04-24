@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { ensureProfile } from "@/lib/bootstrap";
 import { generateInvoiceForJob } from "@/lib/jobs/invoice";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,7 +23,7 @@ export async function POST(
     return NextResponse.json({ error: "Only owners can send invoices." }, { status: 403 });
   }
 
-  const result = await generateInvoiceForJob(params.id, profile);
+  const result = await generateInvoiceForJob(id, profile);
   if (!result.success) {
     return NextResponse.json({ error: result.error ?? "Invoice generation failed." }, { status: 400 });
   }

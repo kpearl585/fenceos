@@ -5,7 +5,7 @@
 
 import type {
   FenceProjectInput, FenceGraph, FenceNode, FenceEdge,
-  RunInput, GateInput, PostType, SlopeMethod,
+  RunInput, GateInput, PostType, PostSize, SlopeMethod,
   GateSpec, Section, InstallRules,
 } from "./types";
 import {
@@ -14,6 +14,8 @@ import {
 } from "./types";
 import { segmentRun, countPanelsToBuy } from "./segmentation";
 import { calcConcretePerPost } from "./concrete";
+import type { OrgEstimatorConfig } from "./config/types";
+import { DEFAULT_ESTIMATOR_CONFIG } from "./config/defaults";
 
 let nodeCounter = 0;
 let edgeCounter = 0;
@@ -26,29 +28,52 @@ function chooseSlopeMethod(slopeDeg: number, maxRackAngle: number): SlopeMethod 
   return "stepped";
 }
 
-function buildGateSpec(gate: GateInput): GateSpec {
-  const totalWidth_in = gate.widthFt * 12;
+function buildGateSpec(gate: GateInput, gateGaps: OrgEstimatorConfig["gateGaps"]): GateSpec {
+  // widthFt is the CLEAR OPENING WIDTH (post-to-post clear span)
+  const openingWidth_in = gate.widthFt * 12;
+  const hingeGap = gateGaps.hinge;
+  const latchGap = gateGaps.latch;
+
+  // Contractor hardware selections — passed through as-is. The pricing
+  // engine reads these to swap SKUs / add line items. When undefined,
+  // the engine falls back to its existing defaults (HINGE_HD / GATE_LATCH
+  // / pool-code variants) so legacy estimates keep pricing the same.
+  const hardware = {
+    hinges: gate.hinges,
+    latch: gate.latch,
+    hardwareColor: gate.hardwareColor,
+    postInsert: gate.postInsert,
+  };
+
   if (gate.gateType === "single") {
+    const leafWidth = openingWidth_in - hingeGap - latchGap;
     return {
       gateType: "single",
-      leftLeafWidth_in: totalWidth_in,
-      totalOpening_in: totalWidth_in + 0.75 + 0.5, // hinge + latch gap
-      hingeGap_in: 0.75,
-      latchGap_in: 0.5,
+      openingWidth_in,
+      leftLeafWidth_in: leafWidth,
+      totalOpening_in: openingWidth_in,
+      hingeGap_in: hingeGap,
+      latchGap_in: latchGap,
       dropRodRequired: false,
       isPoolGate: gate.isPoolGate,
+      ...hardware,
     };
   } else {
-    const leafWidth = totalWidth_in / 2;
+    const centerGap = gateGaps.center;
+    const totalGaps = hingeGap + latchGap + centerGap;
+    const leafWidth = (openingWidth_in - totalGaps) / 2;
     return {
       gateType: "double",
+      openingWidth_in,
       leftLeafWidth_in: leafWidth,
       rightLeafWidth_in: leafWidth,
-      totalOpening_in: totalWidth_in + 0.75 + 0.5 + 1.0, // gaps
-      hingeGap_in: 0.75,
-      latchGap_in: 0.5,
+      totalOpening_in: openingWidth_in,
+      hingeGap_in: hingeGap,
+      latchGap_in: latchGap,
+      centerGap_in: centerGap,
       dropRodRequired: true,
       isPoolGate: gate.isPoolGate,
+      ...hardware,
     };
   }
 }
@@ -61,7 +86,7 @@ function makeNode(
   site: { soilConcreteFactor: number; soilType: string },
   windMode: boolean,
   reinforced: boolean,
-  postSize: "4x4" | "5x5"
+  postSize: PostSize
 ): FenceNode {
   const isGate = type === "gate_hinge" || type === "gate_latch";
   const isStructural = type === "corner" || type === "end" || isGate;
@@ -74,10 +99,12 @@ function makeNode(
   if (isGate) holeDepth = Math.max(holeDepth, holeDepth + 6);
   if (windMode) holeDepth = Math.max(holeDepth, 36);
 
+  // Pass isGatePost=false because we already adjusted holeDepth above;
+  // calcConcretePerPost would double-add the gate depth otherwise.
   const concreteCalc = calcConcretePerPost(
     { ...rules, holeDepth_in: holeDepth },
     { soilConcreteFactor: site.soilConcreteFactor, soilType: site.soilType as never, hurricaneZone: windMode, floodZone: false, existingFenceRemoval: false, surfaceType: "ground", obstacleCt: 0 },
-    isGate
+    false
   );
 
   return {
@@ -95,12 +122,33 @@ function makeNode(
   };
 }
 
-export function buildFenceGraph(input: FenceProjectInput): FenceGraph {
+export function buildFenceGraph(input: FenceProjectInput, config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG): FenceGraph {
   nodeCounter = 0;
   edgeCounter = 0;
 
   const productLine = PRODUCT_LINES[input.productLineId];
   if (!productLine) throw new Error(`Unknown product line: ${input.productLineId}`);
+
+  // ── Input validation ──────────────────────────────────────────
+  // Filter out zero-length runs (no-op) and validate gate configurations
+  input = {
+    ...input,
+    runs: input.runs.filter(r => r.linearFeet > 0),
+  };
+  if (input.runs.length === 0) {
+    throw new Error("No valid runs: all runs have zero or negative length");
+  }
+
+  // Validate gate widths do not exceed their associated run length
+  for (const gate of input.gates) {
+    const parentRun = input.runs.find(r => r.id === gate.afterRunId);
+    if (!parentRun) continue; // orphan gate — will be ignored
+    if (gate.widthFt >= parentRun.linearFeet) {
+      throw new Error(
+        `Gate "${gate.id}" width (${gate.widthFt}ft) must be less than its run length (${parentRun.linearFeet}ft)`
+      );
+    }
+  }
 
   const rules: InstallRules = { ...INSTALL_RULES[input.postSize] };
   const soilFactor = SOIL_CONCRETE_FACTORS[input.soilType];
@@ -109,7 +157,7 @@ export function buildFenceGraph(input: FenceProjectInput): FenceGraph {
     soilConcreteFactor: soilFactor,
     hurricaneZone: input.windMode,
     floodZone: false,
-    existingFenceRemoval: false,
+    existingFenceRemoval: input.existingFenceRemoval ?? false,
     surfaceType: "ground" as const,
     obstacleCt: 0,
   };
@@ -209,7 +257,7 @@ export function buildFenceGraph(input: FenceProjectInput): FenceGraph {
     // Handle gates at run boundaries
     const gatesAfterRun = input.gates.filter((g) => g.afterRunId === run.id);
     for (const gate of gatesAfterRun) {
-      const gateSpec = buildGateSpec(gate);
+      const gateSpec = buildGateSpec(gate, config.gateGaps);
       const gateLength_in = gate.widthFt * 12;
 
       // Gate hinge post (already endNode if run.endType === "gate")

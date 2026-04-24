@@ -211,3 +211,18 @@ export interface Invoice {
   created_at: string
   updated_at: string
 }
+
+export interface JobOutcome {
+  id: string
+  job_id: string
+  org_id: string
+  estimated_total: number
+  actual_material_cost: number | null
+  actual_labor_hours: number | null
+  actual_total_cost: number | null
+  complications: string[] | null
+  profit_margin: number | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}

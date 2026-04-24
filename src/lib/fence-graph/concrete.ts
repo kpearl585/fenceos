@@ -5,6 +5,8 @@
 
 import type { FenceNode, InstallRules, SiteConfig } from "./types";
 import { FLORIDA_DEPTH_OVERRIDE_IN } from "./types";
+import type { OrgEstimatorConfig } from "./config/types";
+import { DEFAULT_ESTIMATOR_CONFIG } from "./config/defaults";
 
 export interface ConcreteCalc {
   holeVolume_cu_in: number;
@@ -12,29 +14,43 @@ export interface ConcreteCalc {
   postDisplacement_cu_in: number;
   concreteVolume_cu_in: number;
   concreteVolume_cu_ft: number;
-  bagsNeeded: number;           // 60lb bags (0.45 cu ft yield each)
+  bagsNeeded: number;           // 80lb bags (0.60 cu ft yield each)
   gravelBagsNeeded: number;     // 40lb bags (0.5 cu ft each)
 }
 
-const BAG_60LB_YIELD_CU_FT = 0.45;  // 60lb concrete bag yield
-const GRAVEL_BAG_CU_FT = 0.5;       // 40lb gravel bag fill volume
+// Module-level fallbacks (used when no config provided)
+const BAG_80LB_YIELD_CU_FT = 0.60;
+const GRAVEL_BAG_CU_FT = 0.5;
 
 export function calcConcretePerPost(
   rules: InstallRules,
   site: SiteConfig,
-  isGatePost: boolean
+  isGatePost: boolean,
+  concreteConfig?: OrgEstimatorConfig["concrete"]
 ): ConcreteCalc {
+  const bagYield = concreteConfig?.bagYieldCuFt ?? BAG_80LB_YIELD_CU_FT;
+  const gravelBagYield = concreteConfig?.gravelBagCuFt ?? GRAVEL_BAG_CU_FT;
+  const floridaDepth = concreteConfig?.floridaDepthIn ?? FLORIDA_DEPTH_OVERRIDE_IN;
+
   const holeDia = rules.holeDiameter_in;
   const holeRadius = holeDia / 2;
 
   // Florida sandy soil: enforce minimum depth
   let holeDepth = rules.holeDepth_in;
   if (site.soilType === "sandy" || site.soilType === "wet") {
-    holeDepth = Math.max(holeDepth, FLORIDA_DEPTH_OVERRIDE_IN);
+    holeDepth = Math.max(holeDepth, floridaDepth);
+  }
+  // Wind / hurricane zone: all posts must be ≥36" deep for lateral wind loads.
+  // Keeps the calcTotalConcrete recompute-from-scratch path aligned with the
+  // per-node depth that builder.ts sets when iterating nodes directly.
+  if (site.hurricaneZone) {
+    holeDepth = Math.max(holeDepth, 36);
   }
   // Gate posts: extra 6 inches for leverage/weight
+  // NOTE: Only apply if the caller hasn't already adjusted depth (e.g. builder.ts
+  // pre-adjusts depth before calling). The flag isGatePost controls this.
   if (isGatePost) {
-    holeDepth = Math.max(holeDepth, holeDepth + 6);
+    holeDepth += 6;
   }
 
   const postSizeNum = holeDia === 10 ? 5 : 4; // 5x5 or 4x4 post nominal
@@ -55,13 +71,13 @@ export function calcConcretePerPost(
   const concreteVolume_cu_ft = concreteVolume_cu_in / 1728;
 
   // Bags needed — apply soil factor for sandy/wet soil (more concrete needed)
-  const baseBags = concreteVolume_cu_ft / BAG_60LB_YIELD_CU_FT;
+  const baseBags = concreteVolume_cu_ft / bagYield;
   const adjustedBags = baseBags * site.soilConcreteFactor;
   const bagsNeeded = Math.ceil(adjustedBags);
 
   // Gravel bags
   const gravelVolume_cu_ft = gravelVolume / 1728;
-  const gravelBagsNeeded = Math.ceil(gravelVolume_cu_ft / GRAVEL_BAG_CU_FT);
+  const gravelBagsNeeded = Math.ceil(gravelVolume_cu_ft / gravelBagYield);
 
   return {
     holeVolume_cu_in: Math.round(holeVolume * 10) / 10,
@@ -78,13 +94,14 @@ export function calcTotalConcrete(
   nodes: FenceNode[],
   rules: InstallRules,
   site: SiteConfig,
-  wastePct = 0.05
+  wastePct = 0.05,
+  concreteConfig?: OrgEstimatorConfig["concrete"]
 ): { totalBags: number; totalGravelBags: number; perPostCalc: ConcreteCalc } {
   const isGatePost = (type: string) =>
     type === "gate_hinge" || type === "gate_latch";
 
-  const perPost = calcConcretePerPost(rules, site, false);
-  const perGatePost = calcConcretePerPost(rules, site, true);
+  const perPost = calcConcretePerPost(rules, site, false, concreteConfig);
+  const perGatePost = calcConcretePerPost(rules, site, true, concreteConfig);
 
   let totalBags = 0;
   let totalGravelBags = 0;

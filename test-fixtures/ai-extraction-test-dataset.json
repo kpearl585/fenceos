@@ -1,0 +1,312 @@
+{
+  "version": "1.0",
+  "description": "Test dataset for AI extraction validation - real contractor scenarios",
+  "testCases": [
+    {
+      "id": "simple-vinyl-privacy",
+      "priority": "high",
+      "type": "text",
+      "input": "180 feet of 6ft vinyl privacy fence in the backyard. Sandy soil. Flat lot.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 180,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_privacy_6ft",
+            "heightFt": 6,
+            "gates": [],
+            "soilType": "sandy",
+            "slopePercent": 0,
+            "isWindExposed": false,
+            "poolCode": false
+          }
+        ],
+        "minConfidence": 0.85
+      }
+    },
+    {
+      "id": "multi-run-with-gates",
+      "priority": "high",
+      "type": "text",
+      "input": "Back yard: 120ft of 6ft vinyl privacy. Left side: 60ft of same fence. One 4ft walk gate on left side. One 12ft double drive gate on back. Flat property, sandy loam soil, Tampa FL.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 120,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "sandy_loam"
+          },
+          {
+            "linearFeet": 60,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "sandy_loam"
+          }
+        ],
+        "gateCount": 2,
+        "minConfidence": 0.75
+      }
+    },
+    {
+      "id": "wood-privacy-with-slope",
+      "priority": "high",
+      "type": "text",
+      "input": "200 linear feet of 6 foot wood privacy fence (dog ear style). Property has about 10% slope going down toward the back. Clay soil. Customer wants racked panels to follow grade.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 200,
+            "fenceType": "wood",
+            "productLineId": "wood_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "clay",
+            "slopePercent": 10
+          }
+        ],
+        "minConfidence": 0.80
+      }
+    },
+    {
+      "id": "chain-link-commercial",
+      "priority": "high",
+      "type": "text",
+      "input": "Commercial chain link 6ft height, 350 linear feet around parking lot perimeter. One 10ft double drive gate for trucks. Firm soil, level ground.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 350,
+            "fenceType": "chain_link",
+            "productLineId": "chain_link_6ft",
+            "heightFt": 6,
+            "soilType": "clay"
+          }
+        ],
+        "gateCount": 1,
+        "minConfidence": 0.85
+      }
+    },
+    {
+      "id": "pool-code-gate",
+      "priority": "high",
+      "type": "text",
+      "input": "Pool enclosure - 140 feet of 4ft vinyl picket. Must meet FL pool code. Need one self-closing walk gate. Sandy coastal soil. Wind exposure near beach.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 140,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_picket_4ft",
+            "heightFt": 4,
+            "soilType": "sandy",
+            "poolCode": true,
+            "isWindExposed": true
+          }
+        ],
+        "gateCount": 1,
+        "minConfidence": 0.80
+      }
+    },
+    {
+      "id": "aluminum-ornamental",
+      "priority": "medium",
+      "type": "text",
+      "input": "Front yard decorative aluminum fence 4 feet tall, 85 linear feet along the street. Level grade. One 4 foot walk gate at driveway. Standard soil.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 85,
+            "fenceType": "aluminum",
+            "productLineId": "aluminum_4ft",
+            "heightFt": 4,
+            "soilType": "standard"
+          }
+        ],
+        "gateCount": 1,
+        "minConfidence": 0.80
+      }
+    },
+    {
+      "id": "mixed-heights",
+      "priority": "medium",
+      "type": "text",
+      "input": "Backyard privacy project: 100ft of 8ft tall vinyl privacy on the back property line. Then 75ft of 6ft vinyl privacy down each side. Rocky soil, slight slope about 5%. One gate on left side.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 100,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_privacy_8ft",
+            "heightFt": 8,
+            "soilType": "rocky",
+            "slopePercent": 5
+          },
+          {
+            "linearFeet": 75,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "rocky",
+            "slopePercent": 5
+          },
+          {
+            "linearFeet": 75,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "rocky",
+            "slopePercent": 5
+          }
+        ],
+        "gateCount": 1,
+        "minConfidence": 0.70
+      }
+    },
+    {
+      "id": "vague-input",
+      "priority": "medium",
+      "type": "text",
+      "input": "Need a fence around the backyard, probably vinyl. Not sure on exact footage but it's a standard residential lot.",
+      "expected": {
+        "runs": [],
+        "minConfidence": 0.30,
+        "expectFlags": true,
+        "allowFailure": true
+      }
+    },
+    {
+      "id": "florida-sandy-soil-auto",
+      "priority": "high",
+      "type": "text",
+      "input": "150 feet vinyl privacy 6 foot, backyard in Orlando Florida. Didn't specify soil but it's Florida so should default sandy.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 150,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "sandy_loam"
+          }
+        ],
+        "minConfidence": 0.80
+      }
+    },
+    {
+      "id": "wet-soil-high-water",
+      "priority": "medium",
+      "type": "text",
+      "input": "200ft wood privacy 6ft tall. Property backs up to wetland area with high water table. Will need deeper holes and more concrete.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 200,
+            "fenceType": "wood",
+            "productLineId": "wood_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "wet"
+          }
+        ],
+        "minConfidence": 0.75
+      }
+    },
+    {
+      "id": "multiple-gates-complex",
+      "priority": "medium",
+      "type": "text",
+      "input": "Full perimeter fence 280 linear feet total. 6 foot vinyl privacy. Two walk gates 4ft wide on sides. One double drive gate 12ft wide on back for RV access. Pool area so needs self-closing on walk gates. Sandy soil, mostly flat.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 280,
+            "fenceType": "vinyl",
+            "productLineId": "vinyl_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "sandy",
+            "poolCode": true
+          }
+        ],
+        "gateCount": 3,
+        "minConfidence": 0.70
+      }
+    },
+    {
+      "id": "steep-slope-stepped",
+      "priority": "low",
+      "type": "text",
+      "input": "Hillside property, about 25% grade slope downhill. 150 feet of 6ft wood privacy. Will need stepped panels, can't rack that steep. Rocky mountain soil with caliche.",
+      "expected": {
+        "runs": [
+          {
+            "linearFeet": 150,
+            "fenceType": "wood",
+            "productLineId": "wood_privacy_6ft",
+            "heightFt": 6,
+            "soilType": "rocky",
+            "slopePercent": 25
+          }
+        ],
+        "minConfidence": 0.75
+      }
+    },
+    {
+      "id": "photo-clear-yard-daylight",
+      "priority": "high",
+      "type": "image",
+      "input": "Backyard wood privacy fence, 6ft tall.",
+      "photoPath": "test-fixtures/photos/clear-yard-daylight.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "minConfidence": 0.7
+      }
+    },
+    {
+      "id": "photo-aerial-property-view",
+      "priority": "high",
+      "type": "image",
+      "input": "Aerial view of a residential property in Tampa, FL. Needs perimeter fence.",
+      "photoPath": "test-fixtures/photos/aerial-property-view.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "minConfidence": 0.6
+      }
+    },
+    {
+      "id": "photo-hand-drawn-sketch",
+      "priority": "medium",
+      "type": "image",
+      "input": "Customer sketch with dimensions marked in feet.",
+      "photoPath": "test-fixtures/photos/hand-drawn-sketch.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "minConfidence": 0.7
+      }
+    },
+    {
+      "id": "photo-ambiguous-no-fence",
+      "priority": "medium",
+      "type": "image",
+      "input": "",
+      "photoPath": "test-fixtures/photos/ambiguous-no-fence.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "allowFailure": true,
+        "expectFlags": true,
+        "minConfidence": 0.0
+      }
+    },
+    {
+      "id": "photo-existing-fence-replacement",
+      "priority": "medium",
+      "type": "image",
+      "input": "Existing chain-link fence — quote replacement with 6ft wood privacy.",
+      "photoPath": "test-fixtures/photos/existing-fence-replacement.jpg",
+      "photoMime": "image/jpeg",
+      "expected": {
+        "minConfidence": 0.6
+      }
+    }
+  ]
+}

@@ -1,5 +1,10 @@
 import { getStripe } from "@/lib/stripe/client";
-import { getStripePriceId, type BillablePlanKey, type BillingPeriod } from "@/lib/billing/plans";
+import {
+  getStripePriceId,
+  type BillablePlanKey,
+  type BillingPeriod,
+} from "@/lib/billing/plans";
+import type { PaywallTrigger } from "@/lib/paywall";
 
 export async function createSubscriptionCheckout({
   orgId,
@@ -9,6 +14,7 @@ export async function createSubscriptionCheckout({
   successUrl,
   cancelUrl,
   billingPeriod = "monthly",
+  paywallTrigger,
 }: {
   orgId: string;
   userId: string;
@@ -17,10 +23,19 @@ export async function createSubscriptionCheckout({
   successUrl: string;
   cancelUrl: string;
   billingPeriod?: BillingPeriod;
+  paywallTrigger?: PaywallTrigger | null;
 }) {
   const stripe = getStripe();
   const priceId = getStripePriceId(plan, billingPeriod);
   if (!priceId) throw new Error(`Unknown plan: ${plan}`);
+
+  const meta: Record<string, string> = {
+    org_id: orgId,
+    user_id: userId,
+    plan,
+    billing_period: billingPeriod,
+  };
+  if (paywallTrigger) meta.paywall_trigger = paywallTrigger;
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -29,15 +44,18 @@ export async function createSubscriptionCheckout({
     customer_email: email,
     success_url: successUrl,
     cancel_url: cancelUrl,
-    metadata: { org_id: orgId, user_id: userId, plan, billing_period: billingPeriod },
-    subscription_data: { metadata: { org_id: orgId, user_id: userId, plan, billing_period: billingPeriod } },
+    metadata: meta,
+    subscription_data: { metadata: meta },
     allow_promotion_codes: true,
   });
 
   return session;
 }
 
-export async function createBillingPortalSession(stripeCustomerId: string, returnUrl: string) {
+export async function createBillingPortalSession(
+  stripeCustomerId: string,
+  returnUrl: string
+) {
   const stripe = getStripe();
   const session = await stripe.billingPortal.sessions.create({
     customer: stripeCustomerId,

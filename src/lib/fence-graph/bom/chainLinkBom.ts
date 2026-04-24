@@ -10,22 +10,32 @@
 import type { FenceGraph, BomItem, LaborDriver } from "../types";
 import { calcTotalConcrete } from "../concrete";
 import { makeBomItem, cuttingStockOptimizer } from "./shared";
+import { mergePrices } from "../pricing/defaultPrices";
+import { calculateAllGateCosts } from "../gatePricing";
+import { hingeDescription, latchDescription, postInsertDescription } from "./gateHardwareLabels";
+import type { OrgEstimatorConfig } from "../config/types";
+import { DEFAULT_ESTIMATOR_CONFIG } from "../config/defaults";
 
-const LINE_POST_OC_FT = 10; // line posts every 10ft (standard residential)
-const TOP_RAIL_STOCK_FT = 21; // standard top rail length sold in 21ft sections
 const TENSION_WIRE_SPOOL_FT = 150; // 1 spool covers 150 LF
 const TIE_WIRE_BOX_USES = 200; // 1 box ≈ 200 tie points
 
 export function generateChainLinkBom(
   graph: FenceGraph,
   wastePct: number,
-  priceMap: Record<string, number> = {}
+  priceMap: Record<string, number> = {},
+  config: OrgEstimatorConfig = DEFAULT_ESTIMATOR_CONFIG
 ): { bom: BomItem[]; laborDrivers: LaborDriver[]; auditTrail: string[] } {
   const bom: BomItem[] = [];
   const audit: string[] = [];
   const { nodes, edges, productLine, installRules, siteConfig, windMode } = graph;
 
-  const p = (sku: string) => priceMap[sku];
+  // Chain link constants from config
+  const LINE_POST_OC_FT = config.material.chainLinkPostOcFt;
+  const TOP_RAIL_STOCK_FT = config.material.chainLinkTopRailStockFt;
+
+  // Merge user prices with defaults (user prices override defaults, region applied)
+  const prices = mergePrices(priceMap, (config.region.key as import("../pricing/defaultPrices").Region) || "base");
+  const p = (sku: string) => prices[sku];
   const heightFt = productLine.panelHeight_in / 12;
   const fabricSku = heightFt > 4 ? "CL_FABRIC_6FT" : "CL_FABRIC_4FT";
   const fabricName = heightFt > 4 ? "Chain Link Fabric 6ft" : "Chain Link Fabric 4ft";
@@ -43,9 +53,11 @@ export function generateChainLinkBom(
   );
   // Line posts: independently calculated from run LF (not from FenceGraph line nodes)
   // because chain link uses 10ft OC, not panel-width OC
+  // Formula: total posts in run = ceil(runLF / OC) + 1, minus 2 terminal posts = interior
   const linePostCount = segEdges.reduce((count, edge) => {
     const runLF = edge.length_in / 12;
-    const interior = Math.max(0, Math.floor(runLF / LINE_POST_OC_FT) - 1);
+    const totalPostsInRun = Math.ceil(runLF / LINE_POST_OC_FT) + 1;
+    const interior = Math.max(0, totalPostsInRun - 2);
     return count + interior;
   }, 0);
 
@@ -54,9 +66,11 @@ export function generateChainLinkBom(
 
   bom.push(makeBomItem("CL_POST_TERM", "Chain Link Terminal Post 2.5\" × 8ft", "posts", "ea", terminalPosts.length, 0.95,
     `${terminalPosts.length} terminal posts (end/corner/gate)`, p("CL_POST_TERM")));
-  bom.push(makeBomItem("CL_POST_2IN", "Chain Link Line Post 2\" × 8ft", "posts", "ea",
-    Math.ceil(linePostCount * (1 + wastePct)), 0.92,
-    `${linePostCount} line posts at ${LINE_POST_OC_FT}ft OC + waste`, p("CL_POST_2IN")));
+  if (linePostCount > 0) {
+    bom.push(makeBomItem("CL_POST_2IN", "Chain Link Line Post 2\" × 8ft", "posts", "ea",
+      Math.ceil(linePostCount * (1 + wastePct)), 0.92,
+      `${linePostCount} line posts at ${LINE_POST_OC_FT}ft OC + waste`, p("CL_POST_2IN")));
+  }
 
   // Fabric — sold by the linear foot
   const fabricLF = Math.ceil(totalLF * (1 + wastePct));
@@ -81,7 +95,7 @@ export function generateChainLinkBom(
   const tiePoints = totalPostCount + Math.ceil(totalLF / TOP_RAIL_STOCK_FT * 5); // ~5 tie points per rail section
   bom.push(makeBomItem("STAPLES_1LB", "Tie Wire Box", "hardware", "ea",
     Math.max(1, Math.ceil(tiePoints / TIE_WIRE_BOX_USES)), 0.85,
-    `~${tiePoints} tie points ÷ ${TIE_WIRE_BOX_USES} per box`));
+    `~${tiePoints} tie points ÷ ${TIE_WIRE_BOX_USES} per box`, p("STAPLES_1LB")));
 
   // ── Terminal post hardware (tension bars, tension bands, brace bands, rail ends) ──
   // Each terminal post needs:
@@ -104,9 +118,11 @@ export function generateChainLinkBom(
     `1 per terminal post × ${terminalPosts.length}`, p("CL_RAIL_END")));
 
   // ── Line post hardware (loop caps hold top rail on each line post) ──
-  bom.push(makeBomItem("CL_LOOP_CAP", "Chain Link Loop Cap", "cl_hardware", "ea",
-    linePostCount, 0.98,
-    `1 per line post × ${linePostCount} line posts`, p("CL_LOOP_CAP")));
+  if (linePostCount > 0) {
+    bom.push(makeBomItem("CL_LOOP_CAP", "Chain Link Loop Cap", "cl_hardware", "ea",
+      linePostCount, 0.98,
+      `1 per line post × ${linePostCount} line posts`, p("CL_LOOP_CAP")));
+  }
   audit.push(`CL terminal hardware: ${terminalPosts.length} tension bars, ${terminalPosts.length * tensionBandsPerPost} tension bands, ${terminalPosts.length * 2} brace bands, ${terminalPosts.length} rail ends`);
 
   // Concrete + gravel — uses adjusted install rules for terminal vs line posts
@@ -115,43 +131,137 @@ export function generateChainLinkBom(
     ...Array(linePostCount).fill({ type: "line", reinforced: false }),
   ] as typeof nodes;
   const { totalBags, totalGravelBags, perPostCalc } = calcTotalConcrete(
-    allNodes, installRules, siteConfig, wastePct
+    allNodes, installRules, siteConfig, wastePct, config.concrete
   );
   bom.push(makeBomItem("CONCRETE_80LB", "Concrete Bag 80lb", "concrete", "bag", totalBags, 0.95,
     `${totalPostCount} posts × ~${perPostCalc.bagsNeeded} bags (soil ×${siteConfig.soilConcreteFactor})`, p("CONCRETE_80LB")));
   bom.push(makeBomItem("GRAVEL_40LB", "Gravel Drainage 40lb", "concrete", "bag", totalGravelBags, 0.90,
-    `4" gravel base × ${totalPostCount} posts`));
+    `4" gravel base × ${totalPostCount} posts`, p("GRAVEL_40LB")));
 
-  // Gates
-  let singles = 0, doubles = 0;
-  for (const g of gateEdges) {
-    if (!g.gateSpec) continue;
-    if (g.gateSpec.gateType === "single") singles++;
-    else doubles++;
-  }
-  if (singles > 0) {
-    bom.push(makeBomItem("GATE_CL_4FT", "Chain Link Walk Gate", "gates", "ea", singles, 0.92, `${singles} single gates`, p("GATE_CL_4FT")));
-    bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", singles * 2, 0.95, `2 pairs × ${singles}`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", singles, 0.95, `1 × ${singles}`, p("GATE_LATCH")));
-  }
-  if (doubles > 0) {
-    bom.push(makeBomItem("GATE_CL_DBL", "Chain Link Double Drive Gate", "gates", "ea", doubles, 0.90, `${doubles} double gates`, p("GATE_CL_DBL")));
-    bom.push(makeBomItem("HINGE_HD", "Heavy Duty Hinge (pair)", "hardware", "ea", doubles * 4, 0.95, `2 pairs/leaf × ${doubles}`, p("HINGE_HD")));
-    bom.push(makeBomItem("GATE_LATCH", "Gate Latch", "hardware", "ea", doubles * 2, 0.95, `1/leaf × ${doubles}`, p("GATE_LATCH")));
+  // Gates (deterministic pricing engine)
+  const gateSpecs = gateEdges.map(e => e.gateSpec).filter(spec => spec !== undefined);
+  let totalGateLaborHours = 0;
+  let gateMissingSkus: string[] = [];
+
+  if (gateSpecs.length > 0) {
+    const gateCosts = calculateAllGateCosts(gateSpecs, "chain_link", prices, undefined, config);
+    gateMissingSkus = Array.from(new Set(gateCosts.gates.flatMap(g => g.missingPriceSkus)));
+
+    // Aggregate by SKU using Map
+    const gateSkuMap = new Map<string, { qty: number; desc: string; unitCost: number }>();
+
+    for (const gateCost of gateCosts.gates) {
+      const hw = gateCost.hardware;
+
+      // Gate (single walk or double drive kit — distinct SKU per type)
+      const gateKey = hw.gateSku;
+      if (!gateSkuMap.has(gateKey)) {
+        const gateDesc = hw.gateSku.endsWith("_DBL") ? "Chain Link Double Drive Gate" : "Chain Link Walk Gate";
+        gateSkuMap.set(gateKey, { qty: 0, desc: gateDesc, unitCost: hw.gateUnitPrice });
+      }
+      gateSkuMap.get(gateKey)!.qty += hw.gateQty;
+
+      // Hinges
+      const hingeKey = hw.hingeSku;
+      if (!gateSkuMap.has(hingeKey)) {
+        gateSkuMap.set(hingeKey, {
+          qty: 0,
+          desc: hingeDescription(hw.hingeSku, "Heavy Duty Hinge (pair)"),
+          unitCost: hw.hingeUnitPrice,
+        });
+      }
+      gateSkuMap.get(hingeKey)!.qty += hw.hingeQty;
+
+      // Latch
+      const latchKey = hw.latchSku;
+      if (!gateSkuMap.has(latchKey)) {
+        gateSkuMap.set(latchKey, {
+          qty: 0,
+          desc: latchDescription(hw.latchSku, "Gate Latch"),
+          unitCost: hw.latchUnitPrice,
+        });
+      }
+      gateSkuMap.get(latchKey)!.qty += hw.latchQty;
+
+      // Gate stop
+      if (hw.stopSku && hw.stopQty) {
+        const stopKey = hw.stopSku;
+        if (!gateSkuMap.has(stopKey)) {
+          gateSkuMap.set(stopKey, { qty: 0, desc: "Gate Stop (pair)", unitCost: hw.stopUnitPrice! });
+        }
+        gateSkuMap.get(stopKey)!.qty += hw.stopQty;
+      }
+
+      // Drop rod (for double gates)
+      if (hw.dropRodSku && hw.dropRodQty) {
+        const dropKey = hw.dropRodSku;
+        if (!gateSkuMap.has(dropKey)) {
+          gateSkuMap.set(dropKey, { qty: 0, desc: "Drop Rod (cane bolt)", unitCost: hw.dropRodUnitPrice! });
+        }
+        gateSkuMap.get(dropKey)!.qty += hw.dropRodQty;
+      }
+
+      // Spring closer
+      if (hw.springCloserSku && hw.springCloserQty) {
+        const springKey = hw.springCloserSku;
+        if (!gateSkuMap.has(springKey)) {
+          gateSkuMap.set(springKey, { qty: 0, desc: "Spring Closer (pool code)", unitCost: hw.springCloserUnitPrice! });
+        }
+        gateSkuMap.get(springKey)!.qty += hw.springCloserQty;
+      }
+
+      // Post insert (contractor-selected hinge-post reinforcement)
+      if (hw.postInsertSku && hw.postInsertQty) {
+        const insertKey = hw.postInsertSku;
+        if (!gateSkuMap.has(insertKey)) {
+          gateSkuMap.set(insertKey, {
+            qty: 0,
+            desc: postInsertDescription(hw.postInsertSku),
+            unitCost: hw.postInsertUnitPrice!,
+          });
+        }
+        gateSkuMap.get(insertKey)!.qty += hw.postInsertQty;
+      }
+
+      totalGateLaborHours += gateCost.laborHours;
+    }
+
+    // Confidence dropped below 0.80 redFlag threshold on lines whose SKU
+    // was missing from the price map, surfacing silent $0 substitution.
+    for (const [sku, data] of Array.from(gateSkuMap)) {
+      const isMissing = gateMissingSkus.includes(sku);
+      bom.push(makeBomItem(
+        sku,
+        data.desc,
+        "gates",
+        "ea",
+        data.qty,
+        isMissing ? 0.60 : 0.95,
+        isMissing ? `${gateSpecs.length} gates — price missing, review` : `${gateSpecs.length} gates`,
+        data.unitCost,
+      ));
+    }
+
+    if (gateMissingSkus.length > 0) {
+      audit.push(`⚠ Gate pricing: missing SKUs ${gateMissingSkus.join(", ")} — review before sending quote`);
+    }
+    audit.push(`Gates: ${gateSpecs.length} total (deterministic pricing: $${gateCosts.totalMaterial.toFixed(2)} material, ${totalGateLaborHours}hrs labor)`);
   }
 
   if (windMode) {
-    bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", terminalPosts.length, 0.90, `Wind mode: terminal posts only`));
+    bom.push(makeBomItem("REBAR_4_3FT", "Rebar #4 3ft", "hardware", "ea", terminalPosts.length, 0.90, `Wind mode: terminal posts only`, p("REBAR_4_3FT")));
   }
 
+  // Labor — rates from org config
+  const cl = config.labor.chain_link;
   const laborDrivers: LaborDriver[] = [
-    { activity: "Hole Digging", count: totalPostCount, rateHrs: 0.75, totalHrs: totalPostCount * 0.75 },
-    { activity: "Post Setting", count: totalPostCount, rateHrs: 0.50, totalHrs: totalPostCount * 0.50 },
-    { activity: "Top Rail Installation", count: railCutPlan.stockPiecesNeeded, rateHrs: 0.40, totalHrs: railCutPlan.stockPiecesNeeded * 0.40 },
-    { activity: "Fabric Unrolling & Stretching", count: segEdges.length, rateHrs: 2.00, totalHrs: segEdges.length * 2.00, notes: "Per run" },
-    { activity: "Gate Installation", count: gateEdges.length, rateHrs: 2.00, totalHrs: gateEdges.length * 2.00 },
-    { activity: "Tie Wire / Fastening", count: totalPostCount, rateHrs: 0.20, totalHrs: totalPostCount * 0.20 },
-    { activity: "Concrete Pour", count: totalPostCount, rateHrs: 0.10, totalHrs: totalPostCount * 0.10 },
+    { activity: "Hole Digging", count: totalPostCount, rateHrs: cl.holeDig, totalHrs: totalPostCount * cl.holeDig },
+    { activity: "Post Setting", count: totalPostCount, rateHrs: cl.postSet, totalHrs: totalPostCount * cl.postSet },
+    { activity: "Top Rail Installation", count: railCutPlan.stockPiecesNeeded, rateHrs: cl.topRail, totalHrs: railCutPlan.stockPiecesNeeded * cl.topRail },
+    { activity: "Fabric Unrolling & Stretching", count: segEdges.length, rateHrs: cl.fabricStretch, totalHrs: segEdges.length * cl.fabricStretch, notes: "Per run" },
+    { activity: "Gate Installation", count: gateSpecs.length, rateHrs: 0, totalHrs: totalGateLaborHours },
+    { activity: "Tie Wire / Fastening", count: totalPostCount, rateHrs: cl.tieWire, totalHrs: totalPostCount * cl.tieWire },
+    { activity: "Concrete Pour", count: totalPostCount, rateHrs: cl.concretePour, totalHrs: totalPostCount * cl.concretePour },
   ];
 
   return { bom, laborDrivers, auditTrail: audit };

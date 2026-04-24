@@ -5,8 +5,13 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { AdvancedEstimatePdf } from "@/lib/fence-graph/AdvancedEstimatePdf";
 import type { FenceProjectInput, FenceEstimateResult, FenceType, WoodStyle } from "@/lib/fence-graph/engine";
+import { inferFenceTypeFromProductLineId, totalLinearFeet } from "@/lib/fence-graph/estimateInput";
 import { updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "@/lib/fence-graph/bom/shared";
 import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
+import type { AccuracyMetrics, CloseoutData } from "@/lib/fence-graph/accuracy-types";
+import type { OrgEstimatorConfig, DeepPartial } from "@/lib/fence-graph/config/types";
+import { mergeEstimatorConfig } from "@/lib/fence-graph/config/resolveEstimatorConfig";
+import type { PaywallBlock } from "@/lib/paywall";
 import {
   getOrgMaterialPricesByOrgId,
   recomputeEstimateForOrg,
@@ -29,35 +34,76 @@ export async function getOrgMaterialPrices(): Promise<Record<string, number>> {
 // ── Save estimate to DB ───────────────────────────────────────────
 export async function saveAdvancedEstimate(
   input: FenceProjectInput,
+  result: FenceEstimateResult,
+  name: string,
+  laborRate: number,
+  wastePct: number,
+  markupPct?: number
+): Promise<{ success: boolean; id?: string; error?: string } | PaywallBlock>;
+export async function saveAdvancedEstimate(
+  input: FenceProjectInput,
   name: string,
   laborRate: number,
   wastePctPercent: number,
   fenceType: FenceType,
   woodStyle?: WoodStyle
-): Promise<{ success: boolean; id?: string; error?: string }> {
+): Promise<{ success: boolean; id?: string; error?: string } | PaywallBlock>;
+export async function saveAdvancedEstimate(
+  input: FenceProjectInput,
+  resultOrName: FenceEstimateResult | string,
+  nameOrLaborRate: string | number,
+  laborRateOrWastePct: number,
+  wastePctOrFenceType: number | FenceType,
+  markupPctOrWoodStyle?: number | WoodStyle
+): Promise<{ success: boolean; id?: string; error?: string } | PaywallBlock> {
   try {
     const context = await requireOrgEstimateContext();
     if (!context) return { success: false, error: "Not authenticated" };
-    const { result, totalLF } = await recomputeEstimateForOrg(context, {
-      input,
-      laborRate,
-      wastePctPercent,
-      fenceType,
-      woodStyle,
-    });
-    const persistedResult: FenceEstimateResult = { ...result, projectName: name };
+
+    let name: string;
+    let laborRate: number;
+    let totalLF: number;
+    let persistedResult: FenceEstimateResult;
+    let persistedInput: FenceProjectInput & { fenceType?: FenceType };
+
+    if (typeof resultOrName === "string") {
+      const fenceType = wastePctOrFenceType as FenceType;
+      const woodStyle =
+        typeof markupPctOrWoodStyle === "string" ? markupPctOrWoodStyle : undefined;
+      name = resultOrName;
+      laborRate = nameOrLaborRate as number;
+
+      const recomputed = await recomputeEstimateForOrg(context, {
+        input,
+        laborRate,
+        wastePctPercent: laborRateOrWastePct,
+        fenceType,
+        woodStyle,
+      });
+      totalLF = recomputed.totalLF;
+      persistedResult = { ...recomputed.result, projectName: name };
+      persistedInput = { ...input, fenceType };
+    } else {
+      name = nameOrLaborRate as string;
+      laborRate = laborRateOrWastePct;
+      totalLF = totalLinearFeet(input);
+      const fenceType = inferFenceTypeFromProductLineId(input.productLineId) ?? "vinyl";
+      persistedResult = { ...resultOrName, projectName: name };
+      persistedInput = { ...input, fenceType };
+    }
 
     const { data, error } = await context.admin
       .from("fence_graphs")
       .insert({
         org_id: context.orgId,
         name,
-        input_json: { ...input, fenceType } as unknown as Record<string, unknown>,
+        input_json: persistedInput as unknown as Record<string, unknown>,
         result_json: persistedResult as unknown as Record<string, unknown>,
         labor_rate: laborRate,
-        waste_pct: wastePctPercent / 100,
+        waste_pct:
+          typeof resultOrName === "string" ? laborRateOrWastePct / 100 : laborRateOrWastePct,
         total_lf: totalLF,
-        total_cost: result.totalCost,
+        total_cost: persistedResult.totalCost,
         status: "draft",
       })
       .select("id")
@@ -122,19 +168,20 @@ export async function generateAdvancedEstimatePdf(
   laborRate: number,
   wastePct: number,
   projectName: string,
-  fenceType: FenceType,
+  fenceType?: FenceType,
   woodStyle?: WoodStyle
-): Promise<{ success: boolean; pdf?: string; error?: string }> {
+): Promise<{ success: boolean; pdf?: string; error?: string } | PaywallBlock> {
   try {
     const context = await requireOrgEstimateContext();
     if (!context) return { success: false, error: "Not authenticated" };
 
     const { orgName } = await getOrgInfo(context.userId);
+    const resolvedFenceType = fenceType ?? inferFenceTypeFromProductLineId(input.productLineId) ?? "vinyl";
     const { result } = await recomputeEstimateForOrg(context, {
       input,
       laborRate,
       wastePctPercent: wastePct,
-      fenceType,
+      fenceType: resolvedFenceType,
       woodStyle,
     });
 
@@ -150,6 +197,20 @@ export async function generateAdvancedEstimatePdf(
 }
 
 // ── Generate Customer Proposal PDF ──────────────────────────────
+type ProposalCustomer = {
+  name?: string; address?: string; city?: string; phone?: string; email?: string;
+};
+
+export async function generateCustomerProposalPdf(
+  input: FenceProjectInput,
+  laborRate: number,
+  wastePct: number,
+  markupPct: number,
+  projectName: string,
+  fenceType: FenceType,
+  customer: ProposalCustomer,
+  woodStyle?: WoodStyle
+): Promise<{ success: boolean; pdf?: string; error?: string } | PaywallBlock>;
 export async function generateCustomerProposalPdf(
   input: FenceProjectInput,
   laborRate: number,
@@ -158,15 +219,31 @@ export async function generateCustomerProposalPdf(
   projectName: string,
   fenceType: FenceType,
   woodStyle: WoodStyle | undefined,
-  customer: {
-    name?: string; address?: string; city?: string; phone?: string; email?: string;
-  }
-): Promise<{ success: boolean; pdf?: string; error?: string }> {
+  customer: ProposalCustomer
+): Promise<{ success: boolean; pdf?: string; error?: string } | PaywallBlock>;
+export async function generateCustomerProposalPdf(
+  input: FenceProjectInput,
+  laborRate: number,
+  wastePct: number,
+  markupPct: number,
+  projectName: string,
+  fenceType: FenceType,
+  customerOrWoodStyle: ProposalCustomer | WoodStyle | undefined,
+  maybeWoodStyleOrCustomer?: ProposalCustomer | WoodStyle
+): Promise<{ success: boolean; pdf?: string; error?: string } | PaywallBlock> {
   try {
     const context = await requireOrgEstimateContext();
     if (!context) return { success: false, error: "Not authenticated" };
 
     const { orgName, orgPhone, orgEmail, orgAddress } = await getOrgInfo(context.userId);
+    const customer =
+      typeof customerOrWoodStyle === "object" && customerOrWoodStyle !== null
+        ? customerOrWoodStyle
+        : ((maybeWoodStyleOrCustomer as ProposalCustomer | undefined) ?? {});
+    const woodStyle =
+      typeof customerOrWoodStyle === "string" || customerOrWoodStyle === undefined
+        ? (customerOrWoodStyle as WoodStyle | undefined)
+        : (maybeWoodStyleOrCustomer as WoodStyle | undefined);
     const { result, totalLF } = await recomputeEstimateForOrg(context, {
       input,
       laborRate,
@@ -293,5 +370,75 @@ export async function closeoutEstimate(
     return { success: true, newCalibration: newCal };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Closeout failed" };
+  }
+}
+
+// Compatibility wrapper for the enhanced closeout form introduced on main.
+// The persisted feedback-loop fields on this branch still center on waste +
+// notes, so we accept the richer payload and pass through the stable subset.
+export async function closeoutEstimateEnhanced(
+  estimateId: string,
+  closeoutData: CloseoutData
+): Promise<{ success: boolean; newCalibration?: WasteCalibration; error?: string }> {
+  return closeoutEstimate(
+    estimateId,
+    closeoutData.actualWastePct,
+    closeoutData.notes ?? ""
+  );
+}
+
+// ── Get accuracy metrics ──────────────────────────────────────────
+export async function getAccuracyMetrics(days: number = 30): Promise<AccuracyMetrics | null> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const profile = await ensureProfile(supabase, user);
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc("get_accuracy_summary", {
+      p_org_id: profile.org_id,
+      p_days: days,
+    });
+
+    if (error) {
+      console.error("Error fetching accuracy metrics:", error);
+      return null;
+    }
+
+    return data as AccuracyMetrics;
+  } catch (err) {
+    console.error("Unexpected error fetching accuracy metrics:", err);
+    return null;
+  }
+}
+
+// ── Fetch org estimator config ───────────────────────────────────
+export async function getOrgEstimatorConfig(): Promise<{
+  config: OrgEstimatorConfig;
+  hasCustomConfig: boolean;
+}> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { config: mergeEstimatorConfig(null), hasCustomConfig: false };
+
+    const profile = await ensureProfile(supabase, user);
+    const admin = createAdminClient();
+    const { data: orgSettings } = await admin
+      .from("org_settings")
+      .select("estimator_config_json")
+      .eq("org_id", profile.org_id)
+      .single();
+
+    const raw = (orgSettings as Record<string, unknown> | null)?.estimator_config_json;
+    const hasCustomConfig = raw !== null && raw !== undefined && typeof raw === "object";
+    const config = mergeEstimatorConfig(
+      hasCustomConfig ? (raw as DeepPartial<OrgEstimatorConfig>) : null
+    );
+
+    return { config, hasCustomConfig };
+  } catch {
+    return { config: mergeEstimatorConfig(null), hasCustomConfig: false };
   }
 }

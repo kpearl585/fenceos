@@ -8,7 +8,7 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' js.stripe.com maps.googleapis.com va.vercel-scripts.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com maps.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: blob: *.supabase.co maps.gstatic.com maps.googleapis.com; connect-src 'self' *.supabase.co api.stripe.com hooks.stripe.com *.stripe.network va.vercel-scripts.com *.googleapis.com maps.gstatic.com; frame-src js.stripe.com *.stripe.com hooks.stripe.com;" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' js.stripe.com maps.googleapis.com va.vercel-scripts.com us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com maps.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: blob: *.supabase.co maps.gstatic.com maps.googleapis.com; connect-src 'self' *.supabase.co api.stripe.com hooks.stripe.com *.stripe.network va.vercel-scripts.com *.googleapis.com maps.gstatic.com *.sentry.io us.i.posthog.com us-assets.i.posthog.com; frame-src js.stripe.com *.stripe.com hooks.stripe.com;" }
       ]
     }
   ],
@@ -18,6 +18,10 @@
   "crons": [
     { "path": "/api/cron/expire-estimates", "schedule": "0 2 * * *" },
     { "path": "/api/cron/trial-emails", "schedule": "0 10 * * *" },
-    { "path": "/api/cron/waitlist-sequence", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/waitlist-sequence", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/stale-estimate-nudges", "schedule": "0 14 * * *" },
+    { "path": "/api/cron/stripe-reconcile", "schedule": "17 * * * *" },
+    { "path": "/api/cron/ai-cost-rollup", "schedule": "30 15 * * *" },
+    { "path": "/api/cron/photo-estimate-cleanup", "schedule": "0 3 * * *" }
   ]
 }

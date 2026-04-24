@@ -48,47 +48,47 @@ export default function MarkPaidModal({
       {/* Trigger button */}
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors"
+        className="inline-flex items-center gap-2 bg-accent hover:bg-accent-light accent-glow text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
       >
         Mark as Paid
       </button>
 
       {/* Modal overlay */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm px-4">
+          <div className="bg-surface-2 border border-border rounded-xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-bold text-text mb-1">
               Mark Job as Paid
             </h2>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-muted mb-6">
               This will generate a PDF invoice and send it to the customer.
               The job will be moved to Completed.
             </p>
 
             {/* Summary */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
+            <div className="bg-surface-3 border border-border rounded-lg p-4 mb-6 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Job</span>
-                <span className="font-medium text-gray-900 text-right max-w-[60%]">
+                <span className="text-muted">Job</span>
+                <span className="font-medium text-text text-right max-w-[60%]">
                   {jobTitle}
                 </span>
               </div>
               {customerEmail && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Invoice sent to</span>
-                  <span className="text-gray-700">{customerEmail}</span>
+                  <span className="text-muted">Invoice sent to</span>
+                  <span className="text-text">{customerEmail}</span>
                 </div>
               )}
-              <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between">
-                <span className="font-semibold text-gray-900">Total Due</span>
-                <span className="font-bold text-fence-600 text-lg">
+              <div className="border-t border-border pt-2 mt-2 flex justify-between">
+                <span className="font-semibold text-text">Total Due</span>
+                <span className="font-bold text-accent-light text-lg">
                   {fmt(totalDue)}
                 </span>
               </div>
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 mb-4 bg-red-50 rounded-lg px-3 py-2">
+              <p className="text-sm text-danger mb-4 bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
                 {error}
               </p>
             )}
@@ -97,14 +97,14 @@ export default function MarkPaidModal({
               <button
                 onClick={() => setOpen(false)}
                 disabled={loading}
-                className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="flex-1 border border-border bg-surface-3 text-text py-2.5 rounded-lg text-sm font-semibold hover:bg-surface-2 transition-colors duration-150 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={loading}
-                className="flex-1 bg-fence-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors disabled:opacity-60"
+                className="flex-1 bg-accent hover:bg-accent-light accent-glow text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:opacity-50"
               >
                 {loading ? "Generating Invoice..." : "Confirm & Send Invoice"}
               </button>

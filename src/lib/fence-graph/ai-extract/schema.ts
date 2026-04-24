@@ -13,12 +13,13 @@ export const GateSchema = z.object({
 export const RunSchema = z.object({
   linearFeet: z.number().min(0).max(10000),
   fenceType: z.enum(["vinyl", "wood", "chain_link", "aluminum"]),
+  // Must stay in sync with EXTRACTION_JSON_SCHEMA below — anything Zod accepts
+  // that the JSON Schema rejects is dead drift since the model can never emit it.
   productLineId: z.enum([
     "vinyl_privacy_6ft", "vinyl_privacy_8ft", "vinyl_picket_4ft", "vinyl_picket_6ft",
     "wood_privacy_6ft", "wood_privacy_8ft", "wood_picket_4ft",
     "chain_link_4ft", "chain_link_6ft",
     "aluminum_4ft", "aluminum_6ft",
-    "classic_privacy_6ft",
   ]),
   heightFt: z.number().min(2).max(12),
   gates: z.array(GateSchema).default([]),
@@ -36,6 +37,28 @@ export const ExtractionSchema = z.object({
   rawSummary: z.string(),
 });
 
+// ── Survey-specific extraction schema ─────────────────────────────
+// Marked surveys require structured-CoT reasoning because GPT-4o
+// reads handwriting unreliably. Forcing the model to enumerate every
+// dimension and annotation it sees BEFORE committing to runs pins it
+// to evidence rather than eyeballing geometry. These fields are not
+// consumed downstream — they're a grounding harness for the model.
+//
+// This schema is ONLY used by the survey extraction path. The photo
+// extraction path continues to use ExtractionSchema above unchanged.
+export const SurveyExtractionSchema = ExtractionSchema.extend({
+  observedDimensions: z
+    .array(z.string())
+    .describe(
+      "Every numeric dimension visible on the image — printed or handwritten. Each entry is a short plain-English note like '73 handwritten at top edge' or '130.00 printed along west property line'. Populate BEFORE extracting runs. Each run must trace back to one of these.",
+    ),
+  observedAnnotations: z
+    .array(z.string())
+    .describe(
+      "Every non-dimensional annotation visible — legend entries, gate marks, scope notes, color meanings, arrows, labels. Example: 'green highlighter along top + left (partial) = new install per legend', '5 WG handwritten near house return = 5 ft walk gate', 'blue along right = existing neighbor fence'. Populate BEFORE extracting runs.",
+    ),
+});
+
 export const CritiqueSchema = z.object({
   uncertainFields: z.array(z.object({
     field: z.string(),
@@ -50,49 +73,71 @@ export const CritiqueSchema = z.object({
 });
 
 // ── Validate & sanitize extraction result ─────────────────────────
+// Returns three classifications:
+//   blockers: must be resolved before the extraction can be applied
+//   warnings: informational only; safe to apply but worth surfacing
+//   errors:   union of blockers + warnings (legacy field, kept for
+//             backward-compat with consumers that haven't migrated)
+//
+// UI consumers should prefer the explicit `blockers` array over
+// substring-matching the legacy `errors` array. The `blocked` boolean
+// stays as a fast-path summary equal to `blockers.length > 0`.
 export function validateExtraction(raw: unknown): {
   valid: boolean;
   data?: z.infer<typeof ExtractionSchema>;
   errors: string[];
+  warnings: string[];
+  blockers: string[];
   blocked: boolean;
 } {
   const result = ExtractionSchema.safeParse(raw);
   if (!result.success) {
-    const errors = result.error.issues.map(i => `${i.path.join(".")}: ${i.message}`);
-    return { valid: false, errors, blocked: true };
+    const messages = result.error.issues.map(i => `${i.path.join(".")}: ${i.message}`);
+    return {
+      valid: false,
+      errors: messages,
+      warnings: [],
+      blockers: messages,
+      blocked: true,
+    };
   }
 
   const data = result.data;
-  const errors: string[] = [];
-  let blocked = false;
+  const blockers: string[] = [];
+  const warnings: string[] = [];
 
   // Business rules on top of schema
   for (let i = 0; i < data.runs.length; i++) {
     const run = data.runs[i];
     if (run.linearFeet === 0) {
-      errors.push(`Run ${i + 1} (${run.runLabel || "unlabeled"}): linearFeet is 0 — blocked`);
-      blocked = true;
+      blockers.push(`Run ${i + 1} (${run.runLabel || "unlabeled"}): linearFeet is 0`);
     }
     if (run.linearFeet > 5000) {
-      errors.push(`Run ${i + 1}: ${run.linearFeet} LF seems unusually long — verify`);
+      warnings.push(`Run ${i + 1}: ${run.linearFeet} LF seems unusually long — verify`);
     }
     for (const gate of run.gates) {
       if (gate.type === "double_drive" && gate.widthFt < 8) {
-        errors.push(`Run ${i + 1}: double drive gate is only ${gate.widthFt}ft — typical minimum is 10ft`);
+        warnings.push(`Run ${i + 1}: double drive gate is only ${gate.widthFt}ft — typical minimum is 10ft`);
       }
       if (gate.type === "pool" && !run.poolCode) {
         run.poolCode = true; // auto-correct
-        errors.push(`Run ${i + 1}: pool gate detected — poolCode auto-set to true`);
+        warnings.push(`Run ${i + 1}: pool gate detected — poolCode auto-set to true`);
       }
     }
   }
 
   if (data.runs.length === 0) {
-    errors.push("No runs extracted — cannot apply");
-    blocked = true;
+    blockers.push("No runs extracted — cannot apply");
   }
 
-  return { valid: true, data, errors, blocked };
+  return {
+    valid: true,
+    data,
+    errors: [...blockers, ...warnings], // legacy combined field
+    warnings,
+    blockers,
+    blocked: blockers.length > 0,
+  };
 }
 
 // ── OpenAI JSON Schema (for response_format) ──────────────────────
@@ -140,6 +185,43 @@ export const EXTRACTION_JSON_SCHEMA = {
     rawSummary: { type: "string" },
   },
   required: ["runs", "confidence", "flags", "rawSummary"],
+  additionalProperties: false,
+};
+
+// ── Survey-specific JSON Schema (structured-CoT variant) ──────────
+// Used only by the survey extraction path. Extends EXTRACTION_JSON_SCHEMA
+// with two required enumeration fields that force the model to ground
+// every run in observed evidence before emitting it.
+export const SURVEY_EXTRACTION_JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    // Order matters: the model fills fields top-down, so observations
+    // are declared first to force enumeration before extraction.
+    observedDimensions: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Every numeric dimension visible on the image — printed or handwritten. Each entry must include location ('73 handwritten at top edge', '130.00 printed along west property line', '5 WG near house return'). Populate BEFORE extracting runs. No run may use a dimension not listed here.",
+    },
+    observedAnnotations: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Every non-dimensional annotation — legend entries, gate marks, color meanings, scope notes. Example: 'green highlighter = new install per legend', 'blue along right = existing neighbor fence', '5 WG annotation = 5 ft walk gate between left-side corner and house return'. Populate BEFORE extracting runs.",
+    },
+    runs: EXTRACTION_JSON_SCHEMA.properties.runs,
+    confidence: { type: "number" },
+    flags: { type: "array", items: { type: "string" } },
+    rawSummary: { type: "string" },
+  },
+  required: [
+    "observedDimensions",
+    "observedAnnotations",
+    "runs",
+    "confidence",
+    "flags",
+    "rawSummary",
+  ],
   additionalProperties: false,
 };
 

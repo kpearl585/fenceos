@@ -1,33 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html {
   scroll-behavior: smooth;
+  /*
+   * Lock to the dark color scheme for native form controls. All surfaces
+   * (landing, dashboard, quote portal) now share the dark brand palette,
+   * so `dark` keeps native controls (scrollbars, date pickers, select
+   * chevrons) rendering consistently with our tokens instead of the
+   * browser default light scheme.
+   */
+  color-scheme: dark;
 }
-
 body {
+  background: #080808;
+  color: #F2F2F2;
+  font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+.font-display { font-family: 'Space Grotesk', sans-serif; }
+.gradient-text {
+  background: linear-gradient(135deg, #F2F2F2 0%, #22C55E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.accent-glow {
+  box-shadow: 0 0 60px rgba(22,163,74,0.2), 0 0 20px rgba(22,163,74,0.1);
+}
+.grid-pattern {
+  background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
 
-/* PWA / Mobile safe area support */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Smooth momentum scrolling on iOS */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-/* Prevent overscroll bounce on PWA standalone */
-@media (display-mode: standalone) {
-  body {
-    overscroll-behavior: none;
+/*
+ * Form control defaults — dark brand palette.
+ *
+ * <input>, <textarea>, and <select> inherit body color by default. Body
+ * uses our dark palette (text #F2F2F2 on background #080808), but inputs
+ * need their own surface + text treatment so they read as distinct
+ * controls instead of blending into the page background. We use
+ * `surface` (#0F0F0F) for the input fill and `text` (#F2F2F2) for
+ * typed values — matching the tokens used everywhere else.
+ *
+ * Lives in @layer base so Tailwind utilities like `bg-white` /
+ * `text-gray-900` / `bg-surface-2` on a specific element win via
+ * normal cascade.
+ */
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  textarea,
+  select {
+    color: #F2F2F2;            /* text token */
+    background-color: #0F0F0F;  /* surface token */
   }
+
+  /* Native autofill (Chrome/Safari) forces its own yellow fill +
+   * dark text via an internal box-shadow. Invert the trick to keep
+   * our dark surface + light text visible. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: #F2F2F2;
+    -webkit-box-shadow: 0 0 0px 1000px #0F0F0F inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1C1C1C; border-radius: 2px; }
+* { -webkit-tap-highlight-color: transparent; }
+
+@media (display-mode: standalone) {
+  body { overscroll-behavior: none; }
 }

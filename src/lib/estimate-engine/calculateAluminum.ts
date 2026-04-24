@@ -16,8 +16,10 @@ export function calculateAluminum(
     ? "Aluminum Picket Panel 6ft"
     : "Aluminum Picket Panel 4ft";
 
+  // Deduct gate openings (4ft each) from panel LF
+  const panelLF = Math.max(0, linearFeet - gateCount * 4);
   // Panels span between posts at 6ft spacing
-  const rawPanels = Math.ceil(linearFeet / cfg.defaultPostSpacing);
+  const rawPanels = Math.ceil(panelLF / cfg.defaultPostSpacing);
   const panels = Math.ceil(rawPanels * (1 + wasteFactorPct));
   items.push({
     sku: panelSku,

@@ -61,7 +61,7 @@ export default async function MetricsDashboard() {
   const adminForPlan = createAdminClient();
   const { data: orgForPlan } = await adminForPlan.from("organizations").select("plan").eq("id", profile.org_id).single();
   if (!getPlanLimits(orgForPlan?.plan).advancedReporting) {
-    return <UpgradeGate feature="Advanced Reporting" requiredPlan="Business" description="Full KPI dashboard with margin analysis, revenue trends, close rate tracking, and business health scoring. Available on Business." />;
+    return <UpgradeGate feature="Advanced Reporting" requiredPlan="Business" trigger="feature_advanced_reporting" description="Full KPI dashboard with margin analysis, revenue trends, close rate tracking, and business health scoring. Available on Business." />;
   }
 
   const admin = createAdminClient();

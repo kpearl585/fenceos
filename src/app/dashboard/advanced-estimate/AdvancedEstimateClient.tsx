@@ -9,6 +9,8 @@ import {
   type FenceEstimateResult,
   type FenceType,
   type WoodStyle,
+  type DeepPartial,
+  type OrgEstimatorConfig,
 } from "@/lib/fence-graph/engine";
 import { saveAdvancedEstimate, generateAdvancedEstimatePdf, generateCustomerProposalPdf } from "./actions";
 import { createEstimateFromFenceGraph } from "./convertActions";
@@ -39,6 +41,7 @@ const PRODUCT_LINE_BY_TYPE: Record<FenceType, string[]> = {
 };
 
 const SOIL_LABELS: Record<SoilType, string> = {
+  standard: "Standard",
   clay: "Clay (firm)",
   rocky: "Rocky / Caliche",
   sandy_loam: "Sandy Loam (FL inland)",
@@ -68,7 +71,19 @@ function defaultRun(): RunInput {
   };
 }
 
-export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct = 5, aiAvailable = true }: { priceMap?: Record<string, number>; defaultWastePct?: number; aiAvailable?: boolean }) {
+export default function AdvancedEstimateClient({
+  priceMap = {},
+  defaultWastePct = 5,
+  aiAvailable = true,
+  estimatorConfig,
+  hasCustomConfig: _hasCustomConfig = false,
+}: {
+  priceMap?: Record<string, number>;
+  defaultWastePct?: number;
+  aiAvailable?: boolean;
+  estimatorConfig?: OrgEstimatorConfig | DeepPartial<OrgEstimatorConfig>;
+  hasCustomConfig?: boolean;
+}) {
   const [fenceType, setFenceType] = useState<FenceType>("vinyl");
   const [woodStyle, setWoodStyle] = useState<WoodStyle>("dog_ear_privacy");
   const [productLineId, setProductLineId] = useState("vinyl_privacy_6ft");
@@ -111,11 +126,18 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
   const result: FenceEstimateResult | null = useMemo(() => {
     if (input.runs.length === 0) return null;
     try {
-      return estimateFence(input, { fenceType, woodStyle, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
+      return estimateFence(input, {
+        fenceType,
+        woodStyle,
+        laborRatePerHr: laborRate,
+        wastePct: wastePct / 100,
+        priceMap,
+        estimatorConfig,
+      });
     } catch {
       return null;
     }
-  }, [input, fenceType, woodStyle, laborRate, wastePct, priceMap]);
+  }, [input, fenceType, woodStyle, laborRate, wastePct, priceMap, estimatorConfig]);
 
   function updateRun(id: string, patch: Partial<RunInput>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));

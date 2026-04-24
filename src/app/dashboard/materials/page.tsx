@@ -7,6 +7,8 @@ import MaterialsImportBar from "./MaterialsClient";
 import EditablePrice from "@/components/materials/EditablePrice";
 import EditableText from "@/components/materials/EditableText";
 
+const INPUT_CLASS = "border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+
 export default async function MaterialsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -28,38 +30,36 @@ export default async function MaterialsPage() {
     <>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fence-900">Materials</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage your material catalog. These drive estimate line items.</p>
+          <h1 className="font-display text-2xl font-bold text-text">Materials</h1>
+          <p className="text-sm text-muted mt-0.5">Manage your material catalog. These drive estimate line items.</p>
         </div>
         <a href="/dashboard/materials/price-sync"
-          className="flex-shrink-0 bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors">
+          className="flex-shrink-0 bg-accent hover:bg-accent-light accent-glow text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150">
           Sync Supplier Prices
         </a>
       </div>
 
-      {/* Add Material Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between mb-4"><h2 className="font-semibold text-fence-900">Add Material</h2><MaterialsImportBar materials={materials ?? []} /></div>
+      <div className="bg-surface-2 rounded-xl border border-border p-6 mb-6">
+        <div className="flex items-center justify-between mb-4"><h2 className="font-semibold text-text">Add Material</h2><MaterialsImportBar materials={materials ?? []} /></div>
         <form action={addMaterial} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <input name="name" placeholder="Name *" required className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input name="sku" placeholder="SKU" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input name="unit" placeholder="Unit (ea, lf, bag)" required className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input name="unit_cost" type="number" step="0.01" min="0" placeholder="Unit Cost *" required className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input name="unit_price" type="number" step="0.01" min="0" placeholder="Unit Price *" required className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input name="category" placeholder="Category" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input name="supplier" placeholder="Supplier" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input name="notes" placeholder="Notes" className="border border-gray-300 rounded-lg px-3 py-2 text-sm sm:col-span-2" />
+          <input name="name" placeholder="Name *" required className={INPUT_CLASS} />
+          <input name="sku" placeholder="SKU" className={INPUT_CLASS} />
+          <input name="unit" placeholder="Unit (ea, lf, bag)" required className={INPUT_CLASS} />
+          <input name="unit_cost" type="number" step="0.01" min="0" placeholder="Unit Cost *" required className={INPUT_CLASS} />
+          <input name="unit_price" type="number" step="0.01" min="0" placeholder="Unit Price *" required className={INPUT_CLASS} />
+          <input name="category" placeholder="Category" className={INPUT_CLASS} />
+          <input name="supplier" placeholder="Supplier" className={INPUT_CLASS} />
+          <input name="notes" placeholder="Notes" className={`${INPUT_CLASS} sm:col-span-2`} />
           <div className="flex items-end">
-            <button type="submit" className="bg-fence-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors">
+            <button type="submit" className="bg-accent hover:bg-accent-light accent-glow text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors duration-150">
               Add Material
             </button>
           </div>
         </form>
       </div>
 
-      {/* Materials grouped by category */}
       {!materials || materials.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
+        <div className="bg-surface-2 rounded-xl border border-border p-12 text-center text-muted">
           No materials yet. Add one above.
         </div>
       ) : (() => {
@@ -78,35 +78,35 @@ export default async function MaterialsPage() {
         });
         return (
           <div className="space-y-6">
-            <p className="text-xs text-gray-400 italic"> Click any Name, SKU, Supplier, Cost, or Price to edit. Changes save automatically.</p>
+            <p className="text-xs text-muted italic">Click any Name, SKU, Supplier, Cost, or Price to edit. Changes save automatically.</p>
             {sortedCats.map((cat) => (
-              <div key={cat} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                  <h3 className="font-bold text-sm text-gray-600 uppercase tracking-wide">{cat}</h3>
+              <div key={cat} className="bg-surface-2 rounded-xl border border-border overflow-hidden">
+                <div className="px-4 py-2 bg-surface-3 border-b border-border">
+                  <h3 className="font-bold text-sm text-muted uppercase tracking-wider">{cat}</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-200">
+                    <thead className="bg-surface-3 border-b border-border">
                       <tr>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Name</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-600">SKU</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Unit</th>
-                        <th className="text-right px-4 py-3 font-semibold text-gray-600">Cost</th>
-                        <th className="text-right px-4 py-3 font-semibold text-gray-600">Price</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Supplier</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted uppercase tracking-wider text-xs">Name</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted uppercase tracking-wider text-xs">SKU</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted uppercase tracking-wider text-xs">Unit</th>
+                        <th className="text-right px-4 py-3 font-semibold text-muted uppercase tracking-wider text-xs">Cost</th>
+                        <th className="text-right px-4 py-3 font-semibold text-muted uppercase tracking-wider text-xs">Price</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted uppercase tracking-wider text-xs">Supplier</th>
                         <th className="px-4 py-3"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                       {grouped[cat].map((m) => (
-                        <tr key={m.id} className="hover:bg-gray-50">
+                        <tr key={m.id} className="hover:bg-surface-3 transition-colors duration-150">
                           <td className="px-4 py-3">
                             <EditableText materialId={m.id} orgId={orgId} field="name" value={m.name} placeholder="Name" />
                           </td>
-                          <td className="px-4 py-3 text-gray-500 font-mono text-xs">
+                          <td className="px-4 py-3 text-muted font-mono text-xs">
                             <EditableText materialId={m.id} orgId={orgId} field="sku" value={m.sku || ''} placeholder="SKU" />
                           </td>
-                          <td className="px-4 py-3 text-gray-600">{m.unit}</td>
+                          <td className="px-4 py-3 text-muted">{m.unit}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end">
                               <EditablePrice materialId={m.id} orgId={orgId} field="unit_cost" value={m.unit_cost} />
@@ -114,7 +114,7 @@ export default async function MaterialsPage() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end">
-                              <EditablePrice materialId={m.id} orgId={orgId} field="unit_price" value={m.unit_price} color="#2D6A4F" />
+                              <EditablePrice materialId={m.id} orgId={orgId} field="unit_price" value={m.unit_price} color="#22C55E" />
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -123,7 +123,7 @@ export default async function MaterialsPage() {
                           <td className="px-4 py-3">
                             <form action={deleteMaterial}>
                               <input type="hidden" name="id" value={m.id} />
-                              <button type="submit" className="text-red-500 hover:text-red-700 text-xs font-medium">
+                              <button type="submit" className="text-danger hover:text-danger/80 text-xs font-medium transition-colors duration-150">
                                 Delete
                               </button>
                             </form>

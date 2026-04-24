@@ -56,7 +56,9 @@ export default function AcceptForm({
     const { x, y } = getPos(e);
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
-    ctx.strokeStyle = "#1e3a5f";
+    // Light stroke on dark surface — matches the text token color so the
+    // signature is legible against the dark signing canvas.
+    ctx.strokeStyle = "#F2F2F2";
     ctx.lineTo(x, y);
     ctx.stroke();
     setHasSigned(true);
@@ -123,69 +125,71 @@ export default function AcceptForm({
 
   if (success) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+      <div className="bg-surface-2 border border-accent/20 accent-glow rounded-2xl p-8 text-center">
+        <div className="w-16 h-16 bg-accent/15 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-accent-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
         </div>
-        <h2 className="text-xl font-bold text-green-900 mb-2">
-          Estimate Accepted!
+        <h2 className="font-display text-xl font-bold text-text mb-2">
+          Estimate Accepted
         </h2>
-        <p className="text-green-700">
-          Thank you! Your signed contract will be available shortly. You will
+        <p className="text-muted">
+          Thank you. Your signed contract will be available shortly. You will
           receive a confirmation email.
         </p>
       </div>
     );
   }
 
+  const inputClass = "w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2.5 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
+      className="bg-surface-2 rounded-2xl border border-border p-6"
     >
-      <h2 className="font-semibold text-gray-900 mb-4">Accept Estimate</h2>
+      <h2 className="font-semibold text-text mb-4">Accept Estimate</h2>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-danger/10 border border-danger/30 rounded-lg p-3 mb-4">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
             Full Name *
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
+            className={inputClass}
             placeholder="John Smith"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
             Email *
           </label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
+            className={inputClass}
             placeholder="john@example.com"
             required
           />
         </div>
 
-        {/* Signature Canvas */}
+        {/* Signature Canvas — dark surface, light stroke for legibility */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
             Signature *
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-white">
+          <div className="border-2 border-dashed border-border rounded-lg overflow-hidden bg-surface-3 hover:border-accent/60 transition-colors duration-150">
             <canvas
               ref={canvasRef}
               width={500}
@@ -203,7 +207,7 @@ export default function AcceptForm({
           <button
             type="button"
             onClick={clearCanvas}
-            className="mt-1 text-xs text-gray-500 hover:text-gray-700"
+            className="mt-1 text-xs text-muted hover:text-text transition-colors duration-150"
           >
             Clear signature
           </button>
@@ -215,9 +219,9 @@ export default function AcceptForm({
             type="checkbox"
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-0.5 w-4 h-4 rounded border-gray-300"
+            className="mt-0.5 w-4 h-4 rounded border-border accent-accent"
           />
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-muted">
             I have read and agree to the terms and conditions, payment terms, and
             scope of work described in this estimate. I understand that my
             electronic signature is legally binding.
@@ -227,7 +231,7 @@ export default function AcceptForm({
         <button
           type="submit"
           disabled={submitting || !agreed || !hasSigned || !name || !email}
-          className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-accent hover:bg-accent-light accent-glow text-white py-3 rounded-lg font-semibold text-sm transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent"
         >
           {submitting ? "Processing..." : "Accept & Sign Estimate"}
         </button>

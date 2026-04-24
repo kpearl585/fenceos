@@ -14,16 +14,16 @@ export default function ArticlePage() {
   return (
     <main>
       {/* Dark article header */}
-      <section className="bg-gradient-to-br from-fence-950 via-fence-900 to-fence-800 text-white px-6 py-16">
+      <section className="bg-background text-text relative overflow-hidden border-b border-border px-6 py-16">
         <div className="max-w-3xl mx-auto">
-          <Link href="/blog" className="inline-flex items-center gap-2 text-fence-300 hover:text-white text-sm mb-8 transition-colors">
+          <Link href="/blog" className="inline-flex items-center gap-2 text-muted hover:text-text text-sm mb-8 transition-colors duration-150">
             Back to Blog
           </Link>
-          <span className="inline-block bg-orange-500/20 text-orange-300 text-xs font-bold px-3 py-1 rounded-full mb-4">Business</span>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+          <span className="inline-block bg-accent/10 text-accent-light border border-accent/20 text-xs font-bold px-3 py-1 rounded-full mb-4">Business</span>
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight text-text">
             7 Systems Every Fence Contractor Needs to Run a Profitable Business
           </h1>
-          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-fence-300">
+          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted">
             <span>March 1, 2026</span>
             <span>·</span>
             <span>9 min read</span>
@@ -120,7 +120,7 @@ export default function ArticlePage() {
 
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">Systems Create Options</h2>
           <p className="text-gray-700">
-            Running a fence business on instinct and experience works — until it does not. The day your best estimator leaves, or you try to take a week off, or you want to bring on a second crew, everything that lived in someone&apos;s head becomes a liability.
+            Running a fence business on instinct and experience works — until it does not. The day your best estimator leaves, or you try to take a week off, or you want to bring on a second crew, everything that lived in someone's head becomes a liability.
           </p>
           <p className="text-gray-700">
             Systems are how you build something that can grow beyond its founder. They are also the best fence contractor business tips you will ever get — not because they sound impressive, but because they are the actual mechanism behind every profitable fence operation.
@@ -132,15 +132,15 @@ export default function ArticlePage() {
       </article>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-br from-fence-950 to-fence-800 text-white px-6 py-20">
+      <section className="bg-background text-text relative border-t border-border px-6 py-20">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Start with your estimating system.</h2>
-          <p className="text-fence-200 text-lg mb-8">
+          <p className="text-muted text-lg mb-8">
             FenceEstimatePro gives fence contractors a professional estimating process out of the box — accurate takeoffs, margin tracking, and clean quotes. Build the foundation that everything else runs on.
           </p>
           <Link
             href="https://fenceestimatepro.com/signup"
-            className="inline-flex items-center gap-2 bg-fence-500 hover:bg-fence-400 text-white font-bold text-lg px-8 py-4 rounded-xl transition-colors shadow-lg"
+            className="inline-flex items-center gap-2 bg-accent hover:bg-accent-light text-background font-bold accent-glow text-lg px-8 py-4 rounded-xl transition-colors shadow-lg"
           >
             Get Started at FenceEstimatePro.com
           </Link>

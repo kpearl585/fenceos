@@ -7,11 +7,15 @@ export function makeBomItem(
   unitCost?: number
 ): BomItem {
   const rounded = Math.ceil(qty);
+  // Use `!= null` instead of truthy check so a legitimate $0 unitCost
+  // (comp'd / sample / zero-priced line item) still produces extCost === 0
+  // instead of undefined, which would fail the validation layer.
+  const hasPrice = unitCost != null && Number.isFinite(unitCost);
   return {
     sku, name, category, unit,
     qty: rounded,
     unitCost,
-    extCost: unitCost ? rounded * unitCost : undefined,
+    extCost: hasPrice ? rounded * unitCost : undefined,
     confidence,
     traceability,
   };
@@ -90,7 +94,14 @@ export function updateWasteCalibration(
   cal: WasteCalibration,
   actualWastePct: number
 ): WasteCalibration {
-  const raw = cal.currentFactor * (1 - cal.alpha) + actualWastePct * cal.alpha;
+  // Cold-start damping: the first few samples carry less weight than the
+  // configured alpha so a brand-new org's calibration can't swing from
+  // 0.05 to 0.14 (+180%) on a single anomalous job. Effective alpha grows
+  // from ~50% of configured on sample 0 toward full alpha as sampleCount
+  // climbs. Formula: alpha * (n+1) / (n+2). At n=0 → 0.5α, n=1 → 0.67α,
+  // n=5 → 0.86α, n=20 → 0.95α, n→∞ → α.
+  const effectiveAlpha = cal.alpha * (cal.sampleCount + 1) / (cal.sampleCount + 2);
+  const raw = cal.currentFactor * (1 - effectiveAlpha) + actualWastePct * effectiveAlpha;
   const clamped = Math.max(cal.minFactor, Math.min(cal.maxFactor, raw));
   return {
     ...cal,

@@ -1,0 +1,3 @@
+# Keep this directory tracked in git.
+# Optimized AR model assets (GLB, USDZ, thumbnail JPG) land here after
+# running `bash scripts/ar-asset-optimize.sh`.

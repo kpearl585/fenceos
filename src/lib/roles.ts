@@ -10,17 +10,19 @@ export interface UserProfile {
 }
 
 const ACCESS_MATRIX: Record<string, Role[]> = {
-  "":          ["owner", "sales", "foreman"],
-  customers:   ["owner", "sales", "foreman"],
-  estimates:   ["owner", "sales", "foreman"],
-  jobs:        ["owner", "sales", "foreman"],
-  materials:   ["owner", "foreman"],
-  margin:      ["owner"],
-  owner:       ["owner"],
-  settings:    ["owner"],
+  "":                 ["owner", "sales", "foreman"],
+  customers:          ["owner", "sales", "foreman"],
+  estimates:          ["owner", "sales", "foreman"],
+  "advanced-estimate": ["owner", "sales", "foreman"],
+  jobs:               ["owner", "sales", "foreman"],
+  materials:          ["owner", "foreman"],
+  leads:              ["owner"],
+  margin:             ["owner"],
+  owner:              ["owner"],
+  settings:           ["owner"],
 };
 
-export type NavIcon = "home" | "users" | "calculator" | "briefcase" | "package" | "trending-up" | "settings" | "bar-chart";
+export type NavIcon = "home" | "users" | "calculator" | "briefcase" | "package" | "trending-up" | "settings" | "bar-chart" | "mail" | "folder";
 
 export interface NavItem {
   label: string;
@@ -32,9 +34,11 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: "Overview",   href: "/dashboard",           segment: "",          icon: "home" },
   { label: "Customers",  href: "/dashboard/customers",  segment: "customers", icon: "users" },
-  { label: "Estimates",  href: "/dashboard/estimates",  segment: "estimates", icon: "calculator" },
-  { label: "Adv. Estimate", href: "/dashboard/advanced-estimate", segment: "advanced-estimate", icon: "calculator" },
+  { label: "Estimator",  href: "/dashboard/advanced-estimate", segment: "advanced-estimate", icon: "calculator" },
+  { label: "Saved Drafts", href: "/dashboard/advanced-estimate/saved", segment: "advanced-estimate", icon: "folder" },
+  { label: "Quotes",     href: "/dashboard/estimates",  segment: "estimates", icon: "calculator" },
   { label: "Jobs",       href: "/dashboard/jobs",       segment: "jobs",      icon: "briefcase" },
+  { label: "Leads",      href: "/dashboard/leads",      segment: "leads",     icon: "mail" },
   { label: "Materials",  href: "/dashboard/materials",  segment: "materials", icon: "package" },
   { label: "P&L",        href: "/dashboard/owner",      segment: "owner",     icon: "bar-chart" },
   { label: "Settings",   href: "/dashboard/settings",   segment: "settings",  icon: "settings" },

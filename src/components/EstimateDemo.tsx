@@ -48,12 +48,12 @@ function NumberInput({
 }: NumberInputProps) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-semibold text-gray-700 mb-2">
+      <label htmlFor={id} className="block text-sm font-semibold text-[#F2F2F2] mb-2">
         {label}
       </label>
       <div className="relative">
         {prefix && (
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280] font-medium">
             {prefix}
           </span>
         )}
@@ -66,12 +66,12 @@ function NumberInput({
           min={min}
           max={max}
           step={step}
-          className={`w-full border border-gray-300 rounded-lg py-4 text-lg font-medium focus:ring-2 focus:ring-fence-500 focus:border-fence-500 outline-none transition-shadow ${
+          className={`w-full bg-[#1C1C1C] border border-[rgba(255,255,255,0.07)] rounded-lg py-4 text-lg font-medium text-[#F2F2F2] focus:ring-2 focus:ring-[#16A34A] focus:border-[#16A34A] outline-none transition-shadow ${
             prefix ? "pl-9 pr-4" : suffix ? "pl-4 pr-10" : "px-4"
           }`}
         />
         {suffix && (
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] font-medium">
             {suffix}
           </span>
         )}
@@ -88,11 +88,11 @@ interface ResultRowProps {
 
 function ResultRow({ label, value, bold = false }: ResultRowProps) {
   return (
-    <div className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
-      <span className={`text-gray-600 ${bold ? "font-bold text-gray-900" : ""}`}>
+    <div className="flex justify-between items-center py-3 border-b border-[rgba(255,255,255,0.07)] last:border-b-0">
+      <span className={`text-[#6B7280] ${bold ? "font-bold text-[#F2F2F2]" : ""}`}>
         {label}
       </span>
-      <span className={`text-lg ${bold ? "font-bold text-fence-900 text-xl" : "font-medium"}`}>
+      <span className={`text-lg ${bold ? "font-bold text-[#22C55E] text-xl font-display" : "font-medium text-[#F2F2F2]"}`}>
         {value}
       </span>
     </div>
@@ -126,7 +126,6 @@ export default function EstimateDemo() {
 
     const totalCost = totalMaterialCost + totalLaborCost;
 
-    // Sale price = totalCost / (1 - targetMargin/100)
     const marginDecimal = targetMargin / 100;
     const suggestedSalePrice =
       marginDecimal < 1 ? totalCost / (1 - marginDecimal) : totalCost;
@@ -147,21 +146,21 @@ export default function EstimateDemo() {
   }, [inputs]);
 
   return (
-    <section id="demo" className="bg-fence-950 px-6 py-20 md:py-28">
+    <section id="demo" className="bg-[#080808] px-6 py-20 md:py-28">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#F2F2F2] font-display">
             Try it yourself
           </h2>
-          <p className="mt-4 text-lg text-fence-300">
+          <p className="mt-4 text-lg text-[#6B7280]">
             Plug in your numbers. See your margin in real time.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-[#0F0F0F] border border-[rgba(255,255,255,0.07)] rounded-2xl shadow-2xl overflow-hidden">
           {/* Inputs */}
           <div className="p-6 md:p-10">
-            <h3 className="text-xl font-bold mb-6 text-fence-800">
+            <h3 className="text-xl font-bold mb-6 text-[#F2F2F2] font-display">
               Job Inputs
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -216,11 +215,11 @@ export default function EstimateDemo() {
           </div>
 
           {/* Divider */}
-          <div className="border-t border-gray-200" />
+          <div className="border-t border-[rgba(255,255,255,0.07)]" />
 
           {/* Results */}
-          <div className="p-6 md:p-10 bg-gray-50">
-            <h3 className="text-xl font-bold mb-6 text-fence-800">
+          <div className="p-6 md:p-10 bg-[#161616]">
+            <h3 className="text-xl font-bold mb-6 text-[#F2F2F2] font-display">
               Estimate Breakdown
             </h3>
 

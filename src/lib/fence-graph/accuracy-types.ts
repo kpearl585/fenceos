@@ -1,0 +1,138 @@
+// ── Accuracy Tracking Types ──────────────────────────────────────────
+// Phase 1: Feedback loop for estimate accuracy improvement
+// Created: April 9, 2026
+
+export interface SiteComplexity {
+  access_difficulty: number;      // 1-5: 1=easy truck access, 5=tight backyard
+  obstacles: number;               // 1-5: 1=clear, 5=dense trees/rocks/utilities
+  ground_hardness: number;         // 1-5: 1=soft soil, 5=rocky/concrete
+  demo_required: boolean | "partial"; // true/false/"partial"
+  permit_complexity: number;       // 1-5: 1=none, 5=multiple permits/HOA
+  overall_score?: number;          // weighted average (auto-calculated)
+}
+
+export interface CloseoutData {
+  // Existing (already in system)
+  actualWastePct: number;          // 0-100
+  notes: string;
+
+  // Phase 1 additions
+  actualLaborHours: number;        // total hours logged by crew
+  crewSize: number;                // 2-person, 3-person, etc.
+  weatherConditions: "clear" | "rain" | "heat" | "cold" | "mixed";
+
+  actualMaterialCost: number;      // from invoices/receipts
+  actualLaborCost: number;         // actual hours × labor rate
+  actualTotalCost: number;         // materials + labor + misc
+}
+
+export interface EstimateWithAccuracy {
+  id: string;
+  name: string;
+  org_id: string;
+
+  // Estimate data
+  input_json: unknown;
+  result_json: unknown;
+  labor_rate: number;
+  waste_pct: number;
+  total_lf: number;
+  total_cost: number;
+  estimated_labor_hours: number | null;
+
+  // Status
+  status: "draft" | "closed";
+  created_at: string;
+  closed_at: string | null;
+
+  // Site complexity (captured at estimate creation)
+  site_complexity_json: SiteComplexity | null;
+
+  // Closeout actuals (captured at job completion)
+  closeout_actual_waste_pct: number | null;
+  closeout_actual_labor_hours: number | null;
+  closeout_crew_size: number | null;
+  closeout_weather_conditions: string | null;
+  closeout_actual_material_cost: number | null;
+  closeout_actual_labor_cost: number | null;
+  closeout_actual_total_cost: number | null;
+  closeout_notes: string | null;
+}
+
+export interface AccuracyMetrics {
+  period_days: number;
+  total_closed_jobs: number;
+
+  // Variance percentages (positive = over estimate, negative = under)
+  avg_material_variance_pct: number | null;
+  avg_labor_hours_variance_pct: number | null;
+  avg_labor_cost_variance_pct: number | null;
+  avg_total_cost_variance_pct: number | null;
+  avg_waste_variance_pct: number | null;
+
+  // Breakdown by fence type
+  accuracy_by_fence_type: Record<string, {
+    count: number;
+    avg_variance_pct: number;
+  }> | null;
+}
+
+// ── Complexity Scoring Helpers ───────────────────────────────────────
+
+export function calculateOverallComplexity(complexity: Omit<SiteComplexity, "overall_score">): number {
+  // Weighted formula:
+  // - Access: 30% (getting materials to site is critical)
+  // - Obstacles: 25% (trees/rocks slow down work significantly)
+  // - Ground: 20% (affects post hole digging time)
+  // - Demo: 15% (old fence removal)
+  // - Permits: 10% (delays, but doesn't affect install difficulty)
+
+  const demoScore = complexity.demo_required === "partial" ? 2.5 :
+                    complexity.demo_required === true ? 5 : 1;
+
+  const score = (
+    complexity.access_difficulty * 0.30 +
+    complexity.obstacles * 0.25 +
+    complexity.ground_hardness * 0.20 +
+    demoScore * 0.15 +
+    complexity.permit_complexity * 0.10
+  );
+
+  return Math.round(score * 10) / 10; // round to 1 decimal
+}
+
+export function getSiteComplexityLabel(score: number): string {
+  if (score <= 1.5) return "Easy";
+  if (score <= 2.5) return "Standard";
+  if (score <= 3.5) return "Moderate";
+  if (score <= 4.5) return "Difficult";
+  return "Very Difficult";
+}
+
+export function getSiteComplexityColor(score: number): string {
+  if (score <= 1.5) return "green";
+  if (score <= 2.5) return "blue";
+  if (score <= 3.5) return "yellow";
+  if (score <= 4.5) return "orange";
+  return "red";
+}
+
+// ── Variance Helpers ──────────────────────────────────────────────────
+
+export function getVarianceLabel(variancePct: number): string {
+  const abs = Math.abs(variancePct);
+  if (abs <= 5) return "Excellent";
+  if (abs <= 10) return "Good";
+  if (abs <= 15) return "Acceptable";
+  if (abs <= 25) return "Needs Attention";
+  return "Poor";
+}
+
+export function getVarianceColor(variancePct: number): string {
+  const abs = Math.abs(variancePct);
+  if (abs <= 5) return "green";
+  if (abs <= 10) return "blue";
+  if (abs <= 15) return "yellow";
+  if (abs <= 25) return "orange";
+  return "red";
+}

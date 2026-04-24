@@ -19,17 +19,33 @@ export default async function OnboardingChecklist({ userId, orgId, userCreatedAt
     { count: customerCount },
     { count: estimateCount },
     { count: quotedCount },
+    { data: orgSettings },
   ] = await Promise.all([
     supabase.from("customers").select("id", { count: "exact", head: true }).eq("org_id", orgId),
     supabase.from("estimates").select("id", { count: "exact", head: true }).eq("org_id", orgId),
     supabase.from("estimates").select("id", { count: "exact", head: true }).eq("org_id", orgId).in("status", ["quoted", "approved"]),
+    supabase.from("org_settings").select("org_id, target_margin_pct, payment_terms").eq("org_id", orgId).single(),
   ]);
+
+  // Company profile is "done" if they've set at least a target margin (non-default)
+  // or explicit payment terms. target_margin_pct has a DEFAULT of 0.35, so a value
+  // of exactly 0.35 means "user didn't touch it"; anything else means they ran
+  // through onboarding and kept/changed the default.
+  const hasCustomMargin =
+    orgSettings?.target_margin_pct != null &&
+    Number(orgSettings.target_margin_pct) !== 0.35;
+  const profileDone = !!(hasCustomMargin || orgSettings?.payment_terms);
 
   const steps = [
     {
       label: "Account created",
       done: true,
       href: null,
+    },
+    {
+      label: "Set up company profile",
+      done: profileDone,
+      href: "/dashboard/settings",
     },
     {
       label: "Add your first customer",
@@ -39,17 +55,12 @@ export default async function OnboardingChecklist({ userId, orgId, userCreatedAt
     {
       label: "Build your first estimate",
       done: (estimateCount ?? 0) > 0,
-      href: "/dashboard/estimates/new",
+      href: "/dashboard/advanced-estimate",
     },
     {
       label: "Send estimate to customer",
       done: (quotedCount ?? 0) > 0,
       href: "/dashboard/estimates",
-    },
-    {
-      label: "Set up company profile",
-      done: false,
-      href: "/dashboard/settings",
     },
   ];
 

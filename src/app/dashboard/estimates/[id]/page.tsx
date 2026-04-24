@@ -20,6 +20,17 @@ function fmtPct(v: number | string | null) {
   return `${(Number(v || 0) * 100).toFixed(1)}%`;
 }
 
+const STATUS_STYLES: Record<string, string> = {
+  draft: "bg-surface-3 text-muted",
+  quoted: "bg-accent/15 text-accent-light",
+  sent: "bg-accent/15 text-accent-light",
+  accepted: "bg-warning/15 text-warning",
+  deposit_paid: "bg-accent/15 text-accent-light",
+  converted: "bg-accent text-white",
+  rejected: "bg-danger/15 text-danger",
+  expired: "bg-surface-3 text-muted",
+};
+
 export default async function EstimateDetailPage({
   params,
 }: {
@@ -85,64 +96,56 @@ export default async function EstimateDetailPage({
       <div className="mb-4">
         <Link
           href="/dashboard/estimates"
-          className="text-sm text-fence-600 hover:text-fence-800 font-medium"
+          className="text-sm text-accent-light hover:text-accent font-medium transition-colors duration-150"
         >
-          ← Back to Estimates
+          &larr; Back to Estimates
         </Link>
       </div>
 
       {/* Title + Status */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fence-900">{est.title}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="font-display text-2xl font-bold text-text">{est.title}</h1>
+          <p className="text-sm text-muted mt-0.5">
             {(() => {
               const cust = (est.customers as unknown as { id: string; name: string }[] | null)?.[0];
               return cust ? (
-                <Link href={`/dashboard/customers/${cust.id}`} className="text-fence-600 hover:text-fence-800 hover:underline">
+                <Link href={`/dashboard/customers/${cust.id}`} className="text-accent-light hover:text-accent hover:underline transition-colors duration-150">
                   {cust.name}
                 </Link>
               ) : (
-                <span className="text-orange-600 font-medium">No customer</span>
+                <span className="text-warning font-medium">No customer</span>
               );
             })()}{" "}
-            · {est.fence_type?.replace("_", " ")} · {est.linear_feet} ft
+            &middot; {est.fence_type?.replace("_", " ")} &middot; {est.linear_feet} ft
             {est.gate_count > 0 && ` · ${est.gate_count} gate(s)`}
           </p>
         </div>
         <span
-          className={`self-start text-xs px-3 py-1 rounded-full font-semibold ${
-            isConverted
-              ? "bg-purple-100 text-purple-700"
-              : est.status === "accepted"
-                ? "bg-yellow-100 text-yellow-700"
-                : isQuoted
-                  ? "bg-blue-100 text-blue-700"
-                  : "bg-gray-100 text-gray-700"
-          }`}
+          className={`self-start text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider ${STATUS_STYLES[est.status] || "bg-surface-3 text-muted"}`}
         >
-          {est.status.toUpperCase()}
+          {est.status}
           {isQuoted &&
             est.quoted_at &&
-            ` · ${new Date(est.quoted_at).toLocaleDateString()}`}
+            ` \u00b7 ${new Date(est.quoted_at).toLocaleDateString()}`}
         </span>
       </div>
 
       {/* ── Missing Customer Warning (prominent, near top) ── */}
       {missingCustomer && !isConverted && (
-        <div id="customer-warning" className="rounded-xl border-2 border-orange-400 bg-orange-50 p-4 sm:p-5 mb-6">
+        <div id="customer-warning" className="rounded-xl border border-warning/30 bg-warning/10 p-4 sm:p-5 mb-6">
           <div className="flex items-start gap-3">
-            <span className="text-orange-500 text-xl flex-shrink-0">&#9888;</span>
+            <span className="text-warning text-xl flex-shrink-0">&#9888;</span>
             <div>
-              <h2 className="font-bold text-orange-800">No Customer Assigned</h2>
-              <p className="text-sm text-orange-700 mt-1">
+              <h2 className="font-bold text-warning">No Customer Assigned</h2>
+              <p className="text-sm text-muted mt-1">
                 This estimate has no customer. You must assign a customer before
                 you can send a quote or convert to a job.
               </p>
               {est.status === "draft" && (
                 <Link
                   href={`/dashboard/estimates/new?edit=${est.id}`}
-                  className="inline-block mt-3 bg-orange-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-orange-700 transition-colors"
+                  className="inline-block mt-3 bg-warning hover:bg-warning/90 text-background px-5 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
                 >
                   Edit Estimate to Add Customer
                 </Link>
@@ -156,15 +159,15 @@ export default async function EstimateDetailPage({
       {!missingCustomer && (() => {
         const cust = (est.customers as unknown as { id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; state: string | null }[] | null)?.[0];
         return cust ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+          <div className="bg-surface-2 rounded-xl border border-border p-4 mb-6">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-semibold text-fence-900 text-sm">Customer</h2>
-              <Link href={`/dashboard/customers/${cust.id}`} className="text-xs text-fence-600 hover:text-fence-800 font-medium">
-                View Details →
+              <h2 className="font-semibold text-text text-sm">Customer</h2>
+              <Link href={`/dashboard/customers/${cust.id}`} className="text-xs text-accent-light hover:text-accent font-medium transition-colors duration-150">
+                View Details &rarr;
               </Link>
             </div>
-            <p className="text-sm font-medium">{cust.name}</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-gray-500">
+            <p className="text-sm font-medium text-text">{cust.name}</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-muted">
               {cust.phone && <span>{cust.phone}</span>}
               {cust.email && <span>{cust.email}</span>}
               {cust.address && (
@@ -175,19 +178,19 @@ export default async function EstimateDetailPage({
         ) : null;
       })()}
 
-      {/* ── Margin Preview Card ── */}
+      {/* ── Margin Preview Card — the signature hero; estimate total is THE moment ── */}
       <div
-        className={`rounded-xl border-2 p-5 sm:p-6 mb-6 ${
+        className={`rounded-xl p-5 sm:p-6 mb-6 ${
           marginOk
-            ? "border-green-200 bg-green-50"
-            : "border-red-200 bg-red-50"
+            ? "bg-background border border-accent/20 accent-glow"
+            : "bg-surface-2 border border-danger/30"
         }`}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-lg text-fence-900">Margin Preview</h2>
+          <h2 className="font-display font-bold text-lg text-text">Margin Preview</h2>
           <span
-            className={`text-2xl font-bold ${
-              marginOk ? "text-green-700" : "text-red-600"
+            className={`font-display text-2xl font-bold ${
+              marginOk ? "text-accent-light" : "text-danger"
             }`}
           >
             {fmtPct(est.gross_margin_pct)}
@@ -196,25 +199,25 @@ export default async function EstimateDetailPage({
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-gray-500">Total Price</p>
-            <p className="font-bold text-lg">{fmt(est.total)}</p>
+            <p className="text-muted uppercase tracking-wider text-xs">Total Price</p>
+            <p className="font-display font-bold text-lg text-text">{fmt(est.total)}</p>
           </div>
           <div>
-            <p className="text-gray-500">Est. Cost</p>
-            <p className="font-bold text-lg">{fmt(est.estimated_cost)}</p>
+            <p className="text-muted uppercase tracking-wider text-xs">Est. Cost</p>
+            <p className="font-display font-bold text-lg text-text">{fmt(est.estimated_cost)}</p>
           </div>
           <div>
-            <p className="text-gray-500">Gross Profit</p>
-            <p className="font-bold text-lg">{fmt(est.gross_profit)}</p>
+            <p className="text-muted uppercase tracking-wider text-xs">Gross Profit</p>
+            <p className="font-display font-bold text-lg text-text">{fmt(est.gross_profit)}</p>
           </div>
           <div>
-            <p className="text-gray-500">Target Margin</p>
-            <p className="font-bold text-lg">{fmtPct(targetPct)}</p>
+            <p className="text-muted uppercase tracking-wider text-xs">Target Margin</p>
+            <p className="font-display font-bold text-lg text-text">{fmtPct(targetPct)}</p>
           </div>
         </div>
 
         {!marginOk && (
-          <div className="mt-4 bg-red-100 border border-red-300 rounded-lg p-3 text-sm text-red-800">
+          <div className="mt-4 bg-danger/10 border border-danger/30 rounded-lg p-3 text-sm text-danger">
             <strong>Margin Guard:</strong> Gross margin is below your{" "}
             {fmtPct(targetPct)} target. Quote sending is blocked until margin
             meets the target.
@@ -250,41 +253,41 @@ export default async function EstimateDetailPage({
 
       {/* ── Subtotals ── */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Materials</p>
-          <p className="text-xl font-bold">{fmt(est.materials_subtotal)}</p>
+        <div className="bg-surface-2 rounded-xl border border-border p-4">
+          <p className="text-sm text-muted uppercase tracking-wider text-xs">Materials</p>
+          <p className="font-display text-xl font-bold text-text">{fmt(est.materials_subtotal)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Labor</p>
-          <p className="text-xl font-bold">{fmt(est.labor_subtotal)}</p>
+        <div className="bg-surface-2 rounded-xl border border-border p-4">
+          <p className="text-sm text-muted uppercase tracking-wider text-xs">Labor</p>
+          <p className="font-display text-xl font-bold text-text">{fmt(est.labor_subtotal)}</p>
         </div>
       </div>
 
       {/* ── Line Items Table ── */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-        <div className="px-5 py-3 border-b border-gray-100">
-          <h2 className="font-semibold text-fence-900">
+      <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+        <div className="px-5 py-3 border-b border-border">
+          <h2 className="font-semibold text-text">
             Material Line Items ({materialItems.length})
           </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500 text-left">
+            <thead className="bg-surface-3 text-muted text-left">
               <tr>
-                <th className="px-4 py-2 font-medium">Item</th>
-                <th className="px-4 py-2 font-medium text-right">Qty</th>
-                <th className="px-4 py-2 font-medium text-right">
+                <th className="px-4 py-2 font-semibold uppercase tracking-wider text-xs">Item</th>
+                <th className="px-4 py-2 font-semibold text-right uppercase tracking-wider text-xs">Qty</th>
+                <th className="px-4 py-2 font-semibold text-right uppercase tracking-wider text-xs">
                   Unit Cost
                 </th>
-                <th className="px-4 py-2 font-medium text-right">
+                <th className="px-4 py-2 font-semibold text-right uppercase tracking-wider text-xs">
                   Unit Price
                 </th>
-                <th className="px-4 py-2 font-medium text-right">
+                <th className="px-4 py-2 font-semibold text-right uppercase tracking-wider text-xs">
                   Ext. Price
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {materialItems.map(
                 (li: {
                   id: string;
@@ -295,18 +298,18 @@ export default async function EstimateDetailPage({
                   unit_price: number;
                   extended_price: number;
                 }) => (
-                  <tr key={li.id}>
-                    <td className="px-4 py-2.5">{li.description}</td>
-                    <td className="px-4 py-2.5 text-right">
+                  <tr key={li.id} className="hover:bg-surface-3 transition-colors duration-150">
+                    <td className="px-4 py-2.5 text-text">{li.description}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-text">
                       {li.quantity} {li.unit}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-gray-500">
+                    <td className="px-4 py-2.5 text-right text-muted font-mono">
                       {fmt(li.unit_cost)}
                     </td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="px-4 py-2.5 text-right text-text font-mono">
                       {fmt(li.unit_price)}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-medium">
+                    <td className="px-4 py-2.5 text-right font-display font-semibold text-text">
                       {fmt(li.extended_price)}
                     </td>
                   </tr>
@@ -318,12 +321,12 @@ export default async function EstimateDetailPage({
 
         {laborItems.length > 0 && (
           <>
-            <div className="px-5 py-3 border-t border-b border-gray-100 bg-gray-50">
-              <h3 className="font-semibold text-fence-900 text-sm">Labor</h3>
+            <div className="px-5 py-3 border-t border-b border-border bg-surface-3">
+              <h3 className="font-semibold text-text text-sm">Labor</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {laborItems.map(
                     (li: {
                       id: string;
@@ -331,9 +334,9 @@ export default async function EstimateDetailPage({
                       quantity: number;
                       extended_price: number;
                     }) => (
-                      <tr key={li.id}>
-                        <td className="px-4 py-2.5">{li.description}</td>
-                        <td className="px-4 py-2.5 text-right font-medium">
+                      <tr key={li.id} className="hover:bg-surface-3 transition-colors duration-150">
+                        <td className="px-4 py-2.5 text-text">{li.description}</td>
+                        <td className="px-4 py-2.5 text-right font-display font-semibold text-text">
                           {fmt(li.extended_price)}
                         </td>
                       </tr>
@@ -348,14 +351,14 @@ export default async function EstimateDetailPage({
 
       {/* Converted banner */}
       {isConverted && (
-        <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 mb-6">
-          <p className="text-sm font-semibold text-purple-800">
+        <div className="bg-surface-2 border border-accent/30 rounded-xl p-4 mb-6">
+          <p className="text-sm font-semibold text-accent-light">
             This estimate has been converted to a job and is locked.
           </p>
           {linkedJobId && (
             <Link
               href={`/dashboard/jobs/${linkedJobId}`}
-              className="inline-block mt-2 bg-purple-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors"
+              className="inline-block mt-2 bg-accent hover:bg-accent-light accent-glow text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
             >
               View Job
             </Link>
@@ -371,7 +374,7 @@ export default async function EstimateDetailPage({
             <input type="hidden" name="estimateId" value={est.id} />
             <button
               type="submit"
-              className="px-6 py-3 rounded-xl font-semibold bg-fence-600 text-white hover:bg-fence-700 transition-colors"
+              className="px-6 py-3 rounded-xl font-semibold bg-accent hover:bg-accent-light accent-glow text-white transition-colors duration-150"
             >
               Re-quote
             </button>
@@ -382,7 +385,7 @@ export default async function EstimateDetailPage({
         {est.status === "draft" && (
           <Link
             href={`/dashboard/estimates/new?edit=${est.id}`}
-            className="flex-1 text-center bg-fence-600 text-white py-3 rounded-xl font-semibold hover:bg-fence-700 transition-colors"
+            className="flex-1 text-center bg-accent hover:bg-accent-light accent-glow text-white py-3 rounded-xl font-semibold transition-colors duration-150"
           >
             Edit Estimate
           </Link>
@@ -399,8 +402,8 @@ export default async function EstimateDetailPage({
               }
             />
             {est.last_sent_at && (
-              <p className="text-xs text-gray-400 mt-2 px-1">
-                Last sent to: <span className="text-gray-600">{est.last_sent_to || "—"}</span> on{" "}
+              <p className="text-xs text-muted mt-2 px-1">
+                Last sent to: <span className="text-text">{est.last_sent_to || "\u2014"}</span> on{" "}
                 {new Date(est.last_sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </p>
             )}
@@ -414,17 +417,17 @@ export default async function EstimateDetailPage({
             <button
               type="submit"
               disabled={!marginOk || missingCustomer}
-              className={`w-full py-3 rounded-xl font-semibold transition-colors ${
+              className={`w-full py-3 rounded-xl font-semibold transition-colors duration-150 ${
                 marginOk && !missingCustomer
-                  ? "bg-green-600 text-white hover:bg-green-700"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  ? "bg-accent hover:bg-accent-light accent-glow text-white"
+                  : "bg-surface-3 text-muted cursor-not-allowed"
               }`}
             >
               {missingCustomer
                 ? "Assign Customer to Quote"
                 : marginOk
                   ? "Send Quote"
-                  : "Margin Too Low — Cannot Quote"}
+                  : "Margin Too Low \u2014 Cannot Quote"}
             </button>
           </form>
         )}
@@ -436,7 +439,7 @@ export default async function EstimateDetailPage({
               <input type="hidden" name="estimateId" value={est.id} />
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl font-semibold bg-fence-600 text-white hover:bg-fence-700 transition-colors"
+                className="w-full py-3 rounded-xl font-semibold bg-accent hover:bg-accent-light accent-glow text-white transition-colors duration-150"
               >
                 Convert to Job
               </button>
@@ -444,7 +447,7 @@ export default async function EstimateDetailPage({
           ) : (
             <a
               href="#customer-warning"
-              className="flex-1 block w-full py-3 rounded-xl font-semibold bg-gray-200 text-gray-400 cursor-not-allowed text-center text-sm"
+              className="flex-1 block w-full py-3 rounded-xl font-semibold bg-surface-3 text-muted cursor-not-allowed text-center text-sm"
             >
               Assign Customer to Convert
             </a>
@@ -457,9 +460,9 @@ export default async function EstimateDetailPage({
             href={`/api/pdf/estimate/${est.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-6 py-3 rounded-xl font-semibold text-fence-600 border border-fence-200 hover:bg-fence-50 transition-colors text-center text-sm"
+            className="px-6 py-3 rounded-xl font-semibold text-accent-light border border-accent/30 hover:bg-accent/10 hover:text-accent transition-colors duration-150 text-center text-sm"
           >
-            ↓ PDF
+            &darr; PDF
           </a>
         )}
 
@@ -468,7 +471,7 @@ export default async function EstimateDetailPage({
           <form action={duplicateEstimate.bind(null, est.id)}>
             <button
               type="submit"
-              className="px-6 py-3 rounded-xl font-semibold text-fence-700 border border-fence-200 hover:bg-fence-50 transition-colors"
+              className="px-6 py-3 rounded-xl font-semibold text-accent-light border border-accent/30 hover:bg-accent/10 hover:text-accent transition-colors duration-150"
             >
               Duplicate
             </button>
@@ -481,7 +484,7 @@ export default async function EstimateDetailPage({
             <input type="hidden" name="estimateId" value={est.id} />
             <button
               type="submit"
-              className="px-6 py-3 rounded-xl font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition-colors"
+              className="px-6 py-3 rounded-xl font-semibold text-danger border border-danger/30 hover:bg-danger/10 transition-colors duration-150"
             >
               Delete
             </button>

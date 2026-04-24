@@ -408,3 +408,15 @@ export async function extractFromImage(
     return { success: false, error: msg };
   }
 }
+
+// Survey uploads are client-rasterized to image data before they hit the
+// server action, so the image extraction path is a safe baseline when the
+// richer survey-specific pipeline is not present on this branch.
+export async function extractFromSurvey(
+  base64: string,
+  mimeType: string,
+  additionalText?: string,
+  _model: "gpt-4o" | "claude-opus-4-7" = "gpt-4o"
+): Promise<AiExtractionResponse> {
+  return extractFromImage(base64, mimeType, additionalText);
+}

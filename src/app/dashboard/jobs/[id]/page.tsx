@@ -6,6 +6,7 @@ import { planHasJobs } from "@/lib/planLimits";
 import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import ChangeOrderForm from "@/components/jobs/ChangeOrderForm";
+import GenerateDocsPanel from "@/components/jobs/GenerateDocsPanel";
 import MarkPaidModal from "@/components/jobs/MarkPaidModal";
 import ActivityTimeline from "@/components/jobs/ActivityTimeline";
 import {
@@ -29,6 +30,8 @@ import {
   requestMaterialVerification,
   approveMaterialVerification,
 } from "./verifyActions";
+import { getJobOutcome } from "../outcomeActions";
+import JobOutcomeForm from "@/components/jobs/JobOutcomeForm";
 
 function fmt(v: number | string | null) {
   return new Intl.NumberFormat("en-US", {
@@ -42,16 +45,19 @@ function fmtPct(v: number | string | null) {
   return `${(Number(v || 0) * 100).toFixed(1)}%`;
 }
 
+const INPUT_CLASS =
+  "w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2.5 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
+
 const STATUS_STYLES: Record<string, string> = {
-  scheduled: "bg-yellow-100 text-yellow-700",
-  active: "bg-blue-100 text-blue-700",
-  complete: "bg-green-100 text-green-700",
-  cancelled: "bg-gray-100 text-gray-500",
+  scheduled: "bg-warning/15 text-warning",
+  active: "bg-accent/15 text-accent-light",
+  complete: "bg-accent text-white",
+  cancelled: "bg-surface-3 text-muted",
 };
 const CO_STATUS_STYLES: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+  pending: "bg-warning/15 text-warning",
+  approved: "bg-accent/15 text-accent-light",
+  rejected: "bg-danger/15 text-danger",
 };
 
 export default async function JobDetailPage({
@@ -151,6 +157,9 @@ export default async function JobDetailPage({
     .order("created_at", { ascending: false });
   const changeOrders = changeOrderItems ?? [];
 
+  // Fetch job outcome if job is complete
+  const jobOutcome = job.status === "complete" ? await getJobOutcome(id) : null;
+
   let materialsCatalog: {
     sku: string;
     name: string;
@@ -228,12 +237,12 @@ export default async function JobDetailPage({
     <>
       {/* Breadcrumb + PDF */}
       <div className="mb-4 flex items-center justify-between">
-        <Link href="/dashboard/jobs" className="text-sm text-fence-600 hover:text-fence-800 font-medium">
+        <Link href="/dashboard/jobs" className="text-sm text-accent-light hover:text-accent font-medium transition-colors duration-150">
           &larr; Back to Jobs
         </Link>
         {canManage && job.estimate_id && (
           <a href={`/api/pdf/estimate/${job.estimate_id}`} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-sm text-fence-600 hover:text-fence-800 font-medium border border-fence-200 px-3 py-1.5 rounded-lg hover:bg-fence-50 transition-colors">
+            className="flex items-center gap-1.5 text-sm text-accent-light hover:text-accent font-medium border border-accent/30 px-3 py-1.5 rounded-lg hover:bg-accent/10 transition-colors duration-150">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             Download PDF
           </a>
@@ -242,7 +251,7 @@ export default async function JobDetailPage({
 
       {/* Error message */}
       {errorMsg && (
-        <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-medium">
+        <div className="mb-5 p-3.5 bg-danger/10 border border-danger/30 text-danger rounded-lg text-sm font-medium">
            {decodeURIComponent(errorMsg)}
         </div>
       )}
@@ -250,27 +259,27 @@ export default async function JobDetailPage({
       {/* Title + Status */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fence-900">{customer?.name || "Job"}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {est?.fence_type?.replace("_", " ") || "—"} &middot; {est?.linear_feet || 0} ft
+          <h1 className="font-display text-2xl font-bold text-text">{customer?.name || "Job"}</h1>
+          <p className="text-sm text-muted mt-0.5">
+            {est?.fence_type?.replace("_", " ") || "\u2014"} &middot; {est?.linear_feet || 0} ft
             {(est?.gate_count ?? 0) > 0 && ` · ${est.gate_count} gate(s)`}
             {job.estimate_id && (
-              <Link href={`/dashboard/estimates/${job.estimate_id}`} className="ml-2 text-fence-500 hover:text-fence-700 underline">
+              <Link href={`/dashboard/estimates/${job.estimate_id}`} className="ml-2 text-accent-light hover:text-accent underline transition-colors duration-150">
                 View Estimate
               </Link>
             )}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <span className={`text-xs px-3 py-1 rounded-full font-semibold ${STATUS_STYLES[job.status] || "bg-gray-100 text-gray-600"}`}>
-            {job.status.toUpperCase()}
+          <span className={`text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider ${STATUS_STYLES[job.status] || "bg-surface-3 text-muted"}`}>
+            {job.status}
           </span>
           {job.status === "complete" && invoiceUrl && (
             <a
               href={invoiceUrl!}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-fence-600 text-white rounded-lg font-semibold hover:bg-fence-700 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-accent hover:bg-accent-light accent-glow text-white rounded-lg font-semibold transition-colors duration-150"
             >
               View Invoice PDF
             </a>
@@ -280,10 +289,10 @@ export default async function JobDetailPage({
 
       {/* Invoice Banner — shown when job is complete and invoice exists */}
       {job.status === "complete" && invoiceUrl && (
-        <div className="mb-6 flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-5 py-4">
+        <div className="mb-6 flex items-center justify-between bg-accent/10 border border-accent/30 rounded-xl px-5 py-4">
           <div>
-            <p className="text-sm font-semibold text-green-800">Job Complete — Invoice Sent</p>
-            <p className="text-xs text-green-600 mt-0.5">
+            <p className="text-sm font-semibold text-accent-light">Job Complete &mdash; Invoice Sent</p>
+            <p className="text-xs text-muted mt-0.5">
               Invoice was emailed to the customer.
               {paidAt && ` Marked paid ${new Date(paidAt!).toLocaleDateString()}.`}
             </p>
@@ -292,47 +301,57 @@ export default async function JobDetailPage({
             href={invoiceUrl!}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-shrink-0 text-sm px-4 py-2 bg-green-700 text-white rounded-lg font-semibold hover:bg-green-800 transition-colors"
+            className="flex-shrink-0 text-sm px-4 py-2 bg-accent hover:bg-accent-light accent-glow text-white rounded-lg font-semibold transition-colors duration-150"
           >
             View Invoice PDF
           </a>
         </div>
       )}
 
-      {/* Financial Summary — OWNER ONLY */}
+      {/* Financial Summary — OWNER ONLY. The Total Price card gets the signature accent-glow treatment. */}
       {isOwner && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Price</p>
-            <p className="text-xl font-bold text-fence-900">{fmt(job.total_price)}</p>
+          <div className="bg-background border border-accent/20 accent-glow rounded-xl p-4">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Total Price</p>
+            <p className="font-display text-xl font-bold text-text">{fmt(job.total_price)}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Cost</p>
-            <p className="text-xl font-bold text-fence-900">{fmt(job.total_cost)}</p>
+          <div className="bg-surface-2 rounded-xl border border-border p-4">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Total Cost</p>
+            <p className="font-display text-xl font-bold text-text">{fmt(job.total_cost)}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Gross Profit</p>
-            <p className="text-xl font-bold text-fence-900">{fmt(job.gross_profit)}</p>
+          <div className="bg-surface-2 rounded-xl border border-border p-4">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Gross Profit</p>
+            <p className="font-display text-xl font-bold text-text">{fmt(job.gross_profit)}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Margin</p>
-            <p className={`text-xl font-bold ${Number(job.gross_margin_pct) >= targetMarginPct ? "text-green-600" : "text-red-600"}`}>
+          <div className="bg-surface-2 rounded-xl border border-border p-4">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Margin</p>
+            <p className={`font-display text-xl font-bold ${Number(job.gross_margin_pct) >= targetMarginPct ? "text-accent-light" : "text-danger"}`}>
               {fmtPct(job.gross_margin_pct)}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">Target: {fmtPct(targetMarginPct)}</p>
+            <p className="text-xs text-muted mt-0.5">Target: {fmtPct(targetMarginPct)}</p>
           </div>
         </div>
       )}
-      {/* Price + schedule for non-owners */}
+
+      {/* Job Outcome Tracker — OWNER ONLY, COMPLETE JOBS */}
+      {isOwner && job.status === "complete" && (
+        <JobOutcomeForm
+          jobId={job.id}
+          estimatedTotal={job.total_price || 0}
+          existingOutcome={jobOutcome}
+        />
+      )}
+
+      {/* Price + schedule for non-owners — Job Value gets accent-glow */}
       {!isOwner && (
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Job Value</p>
-            <p className="text-xl font-bold text-fence-900">{fmt(job.total_price)}</p>
+          <div className="bg-background border border-accent/20 accent-glow rounded-xl p-4">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Job Value</p>
+            <p className="font-display text-xl font-bold text-text">{fmt(job.total_price)}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Scheduled</p>
-            <p className="text-xl font-bold text-fence-900">
+          <div className="bg-surface-2 rounded-xl border border-border p-4">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Scheduled</p>
+            <p className="font-display text-xl font-bold text-text">
               {job.scheduled_date ? new Date(job.scheduled_date + "T00:00:00").toLocaleDateString() : "TBD"}
             </p>
           </div>
@@ -341,14 +360,14 @@ export default async function JobDetailPage({
 
       {/* Customer Info */}
       {customer && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <h2 className="font-semibold text-fence-900 mb-2">Customer</h2>
-          <p className="text-sm">{customer.name}</p>
+        <div className="bg-surface-2 rounded-xl border border-border p-4 mb-6">
+          <h2 className="font-semibold text-text mb-2">Customer</h2>
+          <p className="text-sm text-text">{customer.name}</p>
           {customer.phone && (
-            <p className="text-sm text-gray-500">{customer.phone}</p>
+            <p className="text-sm text-muted">{customer.phone}</p>
           )}
           {customer.address && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted">
               {customer.address}
               {customer.city && `, ${customer.city}`}
               {customer.state && ` ${customer.state}`}
@@ -359,8 +378,8 @@ export default async function JobDetailPage({
       {/* Foreman + Schedule (owner/sales) */}
       {canManage && job.status !== "complete" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="font-semibold text-fence-900 mb-2 text-sm">
+          <div className="bg-surface-2 rounded-xl border border-border p-4">
+            <h3 className="font-semibold text-text mb-2 text-sm">
               Assigned Foreman
             </h3>
             <form action={assignForeman}>
@@ -368,7 +387,7 @@ export default async function JobDetailPage({
               <select
                 name="foremanId"
                 defaultValue={job.assigned_foreman_id || ""}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-2"
+                className={`${INPUT_CLASS} mb-2`}
               >
                 <option value="">Unassigned</option>
                 {foremen.map((f) => (
@@ -379,14 +398,14 @@ export default async function JobDetailPage({
               </select>
               <button
                 type="submit"
-                className="w-full bg-fence-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors"
+                className="w-full bg-accent hover:bg-accent-light accent-glow text-white py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
               >
                 Update Foreman
               </button>
             </form>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="font-semibold text-fence-900 mb-2 text-sm">
+          <div className="bg-surface-2 rounded-xl border border-border p-4">
+            <h3 className="font-semibold text-text mb-2 text-sm">
               Scheduled Date
             </h3>
             <form action={updateScheduledDate}>
@@ -395,11 +414,11 @@ export default async function JobDetailPage({
                 type="date"
                 name="scheduledDate"
                 defaultValue={job.scheduled_date || ""}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-2"
+                className={`${INPUT_CLASS} mb-2`}
               />
               <button
                 type="submit"
-                className="w-full bg-fence-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors"
+                className="w-full bg-accent hover:bg-accent-light accent-glow text-white py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
               >
                 Update Date
               </button>
@@ -411,13 +430,13 @@ export default async function JobDetailPage({
       {/* Foreman read-only info */}
       {isForeman && (
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Foreman</p>
-            <p className="font-semibold">{foremanName}</p>
+          <div className="bg-surface-2 rounded-xl border border-border p-4">
+            <p className="text-xs text-muted uppercase tracking-wider">Foreman</p>
+            <p className="font-semibold text-text">{foremanName}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Scheduled</p>
-            <p className="font-semibold">
+          <div className="bg-surface-2 rounded-xl border border-border p-4">
+            <p className="text-xs text-muted uppercase tracking-wider">Scheduled</p>
+            <p className="font-semibold text-text">
               {job.scheduled_date
                 ? new Date(
                     job.scheduled_date + "T00:00:00"
@@ -433,15 +452,15 @@ export default async function JobDetailPage({
         !hasChecklist &&
         !hasVerifications &&
         job.status !== "complete" && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-            <p className="text-sm text-amber-800 mb-3">
+          <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 mb-6">
+            <p className="text-sm text-warning mb-3">
               Checklist and material verifications have not been generated yet.
             </p>
             <form action={initForemanData}>
               <input type="hidden" name="jobId" value={job.id} />
               <button
                 type="submit"
-                className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors"
+                className="bg-warning hover:bg-warning/90 text-background px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
               >
                 Generate Checklist &amp; Verifications
               </button>
@@ -451,9 +470,9 @@ export default async function JobDetailPage({
 
       {/* Material Verification */}
       {hasVerifications && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-fence-900">
+        <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+          <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+            <h2 className="font-semibold text-text">
               Material Verification (
               {
                 verifications.filter(
@@ -463,12 +482,12 @@ export default async function JobDetailPage({
               /{verifications.length})
             </h2>
             {allMaterialsVerified && (
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-accent/15 text-accent-light px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
                 All Verified
               </span>
             )}
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             {verifications.map(
               (v: {
                 id: string;
@@ -481,16 +500,16 @@ export default async function JobDetailPage({
                 <div key={v.id} className="px-5 py-3 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-sm font-medium ${v.verified ? "text-green-700" : "text-gray-900"}`}
+                      className={`text-sm font-medium ${v.verified ? "text-accent-light" : "text-text"}`}
                     >
                       {v.name}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      SKU: {v.sku} · Required: {v.required_qty}
+                    <p className="text-xs text-muted">
+                      SKU: <span className="font-mono">{v.sku}</span> &middot; Required: {v.required_qty}
                     </p>
                   </div>
                   {v.verified ? (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium whitespace-nowrap">
+                    <span className="text-xs bg-accent/15 text-accent-light px-2 py-1 rounded-full font-semibold whitespace-nowrap uppercase tracking-wider">
                        {v.verified_qty} verified
                     </span>
                   ) : canExecute && job.status !== "complete" ? (
@@ -510,17 +529,17 @@ export default async function JobDetailPage({
                         defaultValue={v.required_qty}
                         min={0}
                         step="any"
-                        className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right"
+                        className="w-20 border border-border bg-surface-3 text-text rounded-lg px-2 py-1.5 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
                       />
                       <button
                         type="submit"
-                        className="bg-fence-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-fence-700 transition-colors whitespace-nowrap"
+                        className="bg-accent hover:bg-accent-light accent-glow text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors duration-150"
                       >
                         Verify
                       </button>
                     </form>
                   ) : (
-                    <span className="text-xs text-gray-400">Not verified</span>
+                    <span className="text-xs text-muted">Not verified</span>
                   )}
                 </div>
               )
@@ -531,9 +550,9 @@ export default async function JobDetailPage({
 
       {/* Checklist */}
       {hasChecklist && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-fence-900">
+        <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+          <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+            <h2 className="font-semibold text-text">
               Checklist (
               {
                 checklist.filter(
@@ -543,12 +562,12 @@ export default async function JobDetailPage({
               /{checklist.length})
             </h2>
             {allRequiredDone && (
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-accent/15 text-accent-light px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
                 All Required Done
               </span>
             )}
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             {checklist.map(
               (c: {
                 id: string;
@@ -569,26 +588,26 @@ export default async function JobDetailPage({
                       />
                       <button
                         type="submit"
-                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${c.completed ? "bg-green-500 border-green-500 text-white" : "border-gray-300 hover:border-fence-500"}`}
+                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors duration-150 ${c.completed ? "bg-accent border-accent text-white" : "border-border-strong hover:border-accent"}`}
                       >
                         {c.completed && <span className="text-xs"></span>}
                       </button>
                     </form>
                   ) : (
                     <div
-                      className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${c.completed ? "bg-green-500 border-green-500 text-white" : "border-gray-300"}`}
+                      className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${c.completed ? "bg-accent border-accent text-white" : "border-border-strong"}`}
                     >
                       {c.completed && <span className="text-xs"></span>}
                     </div>
                   )}
                   <div className="flex-1">
                     <span
-                      className={`text-sm ${c.completed ? "line-through text-gray-400" : "text-gray-900"}`}
+                      className={`text-sm ${c.completed ? "line-through text-muted" : "text-text"}`}
                     >
                       {c.label}
                     </span>
                     {c.is_required && !c.completed && (
-                      <span className="ml-2 text-xs text-red-500 font-medium">
+                      <span className="ml-2 text-xs text-danger font-semibold uppercase tracking-wider">
                         Required
                       </span>
                     )}
@@ -601,14 +620,14 @@ export default async function JobDetailPage({
       )}
 
       {/* Photos */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-        <div className="px-5 py-3 border-b border-gray-100">
-          <h2 className="font-semibold text-fence-900">
+      <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+        <div className="px-5 py-3 border-b border-border">
+          <h2 className="font-semibold text-text">
             Photos ({photos.length})
           </h2>
         </div>
         {canExecute && job.status !== "complete" && (
-          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
+          <div className="px-5 py-4 border-b border-border bg-surface-3">
             <form
               action={addJobPhoto}
               encType="multipart/form-data"
@@ -620,17 +639,17 @@ export default async function JobDetailPage({
                 name="photo"
                 accept="image/jpeg,image/png,image/webp,image/heic"
                 required
-                className="flex-1 text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-fence-50 file:text-fence-700 hover:file:bg-fence-100"
+                className="flex-1 text-sm text-text file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent/10 file:text-accent-light hover:file:bg-accent/15 file:transition-colors file:duration-150"
               />
               <input
                 type="text"
                 name="caption"
                 placeholder="Caption (optional)"
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm sm:w-48"
+                className="border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm sm:w-48 placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
               />
               <button
                 type="submit"
-                className="bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors whitespace-nowrap"
+                className="bg-accent hover:bg-accent-light accent-glow text-white px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors duration-150"
               >
                 Upload
               </button>
@@ -651,14 +670,14 @@ export default async function JobDetailPage({
                   <img
                     src={photoUrls[p.id]}
                     alt={p.caption || "Job photo"}
-                    className="w-full h-32 object-cover rounded-lg"
+                    className="w-full h-32 object-cover rounded-lg border border-border"
                   />
                   {p.caption && (
-                    <p className="text-xs text-gray-600 mt-1 truncate">
+                    <p className="text-xs text-text mt-1 truncate">
                       {p.caption}
                     </p>
                   )}
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted">
                     {new Date(p.created_at).toLocaleDateString()}
                   </p>
                   {profile.role === "owner" && (
@@ -670,10 +689,10 @@ export default async function JobDetailPage({
                       <input type="hidden" name="photoId" value={p.id} />
                       <button
                         type="submit"
-                        className="bg-red-600 text-white w-6 h-6 rounded-full text-xs hover:bg-red-700"
+                        className="bg-danger hover:bg-danger/90 text-white w-6 h-6 rounded-full text-xs transition-colors duration-150"
                         title="Delete photo"
                       >
-                        
+
                       </button>
                     </form>
                   )}
@@ -682,18 +701,21 @@ export default async function JobDetailPage({
             )}
           </div>
         ) : (
-          <p className="px-5 py-4 text-sm text-gray-400">
+          <p className="px-5 py-4 text-sm text-muted">
             No photos uploaded yet.
           </p>
         )}
       </div>
+      {/* Documents — pre-filled contracts, lien waivers, change orders */}
+      <GenerateDocsPanel jobId={job.id} />
+
       {/*  CHANGE ORDERS  */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-        <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-fence-900">
+      <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+          <h2 className="font-semibold text-text">
             Change Orders ({changeOrders.length})
             {pendingCOs.length > 0 && (
-              <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">
+              <span className="ml-2 text-xs bg-warning/15 text-warning px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
                 {pendingCOs.length} pending
               </span>
             )}
@@ -702,7 +724,7 @@ export default async function JobDetailPage({
 
         {/* Existing Change Orders */}
         {changeOrders.length > 0 && (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             {changeOrders.map(
               (co: {
                 id: string;
@@ -727,18 +749,18 @@ export default async function JobDetailPage({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-semibold ${CO_STATUS_STYLES[co.status] || "bg-gray-100"}`}
+                        className={`text-xs px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${CO_STATUS_STYLES[co.status] || "bg-surface-3 text-muted"}`}
                       >
-                        {co.status.toUpperCase()}
+                        {co.status}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-muted">
                         {new Date(co.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold">{fmt(co.subtotal)}</p>
-                      <p className="text-xs text-gray-500">
-                        Cost: {fmt(co.cost_total)} · Margin:{" "}
+                      <p className="font-display text-sm font-bold text-text">{fmt(co.subtotal)}</p>
+                      <p className="text-xs text-muted">
+                        Cost: {fmt(co.cost_total)} &middot; Margin:{" "}
                         {fmtPct(co.gross_margin_pct)}
                       </p>
                     </div>
@@ -748,24 +770,24 @@ export default async function JobDetailPage({
                   {(co.change_order_line_items ?? []).length > 0 && (
                     <table className="w-full text-xs mb-2">
                       <thead>
-                        <tr className="text-gray-400 border-b border-gray-100">
-                          <th className="text-left py-1 font-medium">Item</th>
-                          <th className="text-left py-1 font-medium">Type</th>
-                          <th className="text-right py-1 font-medium">Qty</th>
-                          <th className="text-right py-1 font-medium">Price</th>
-                          <th className="text-right py-1 font-medium">Ext.</th>
+                        <tr className="text-muted border-b border-border uppercase tracking-wider">
+                          <th className="text-left py-1 font-semibold">Item</th>
+                          <th className="text-left py-1 font-semibold">Type</th>
+                          <th className="text-right py-1 font-semibold">Qty</th>
+                          <th className="text-right py-1 font-semibold">Price</th>
+                          <th className="text-right py-1 font-semibold">Ext.</th>
                         </tr>
                       </thead>
                       <tbody>
                         {(co.change_order_line_items ?? []).map((li) => (
-                          <tr key={li.id} className="border-b border-gray-50">
-                            <td className="py-1">{li.name}</td>
-                            <td className="py-1 text-gray-500">{li.type}</td>
-                            <td className="py-1 text-right">{li.qty}</td>
-                            <td className="py-1 text-right">
+                          <tr key={li.id} className="border-b border-border">
+                            <td className="py-1 text-text">{li.name}</td>
+                            <td className="py-1 text-muted">{li.type}</td>
+                            <td className="py-1 text-right text-text font-mono">{li.qty}</td>
+                            <td className="py-1 text-right text-text font-mono">
                               {fmt(li.unit_price)}
                             </td>
-                            <td className="py-1 text-right">
+                            <td className="py-1 text-right text-text font-mono">
                               {fmt(li.extended_price)}
                             </td>
                           </tr>
@@ -775,7 +797,7 @@ export default async function JobDetailPage({
                   )}
 
                   {co.reason && (
-                    <p className="text-xs text-gray-500 italic mb-2">
+                    <p className="text-xs text-muted italic mb-2">
                       {co.reason}
                     </p>
                   )}
@@ -792,7 +814,7 @@ export default async function JobDetailPage({
                         <input type="hidden" name="jobId" value={job.id} />
                         <button
                           type="submit"
-                          className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-700 transition-colors"
+                          className="bg-accent hover:bg-accent-light accent-glow text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
                         >
                           Approve
                         </button>
@@ -806,7 +828,7 @@ export default async function JobDetailPage({
                         <input type="hidden" name="jobId" value={job.id} />
                         <button
                           type="submit"
-                          className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-700 transition-colors"
+                          className="bg-danger hover:bg-danger/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
                         >
                           Reject
                         </button>
@@ -823,8 +845,8 @@ export default async function JobDetailPage({
         {canExecute &&
           job.status !== "complete" &&
           job.status !== "cancelled" && (
-            <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
-              <h3 className="text-sm font-semibold text-fence-900 mb-3">
+            <div className="px-5 py-4 border-t border-border bg-surface-3">
+              <h3 className="text-sm font-semibold text-text mb-3">
                 Add Change Order
               </h3>
               <ChangeOrderForm
@@ -845,34 +867,34 @@ export default async function JobDetailPage({
             job.status !== "complete" &&
             job.status !== "cancelled"
           ) && (
-            <p className="px-5 py-4 text-sm text-gray-400">
+            <p className="px-5 py-4 text-sm text-muted">
               No change orders.
             </p>
           )}
       </div>
       {/* Materials Snapshot */}
       {materialItems.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h2 className="font-semibold text-fence-900">
+        <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="font-semibold text-text">
               Materials ({materialItems.length})
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="text-gray-500 border-b border-gray-100 text-xs">
-                  <th className="text-left px-5 py-2 font-medium">Item</th>
-                  <th className="text-right px-5 py-2 font-medium">Qty</th>
-                  <th className="text-right px-5 py-2 font-medium">
+              <thead className="bg-surface-3">
+                <tr className="text-muted border-b border-border text-xs uppercase tracking-wider">
+                  <th className="text-left px-5 py-2 font-semibold">Item</th>
+                  <th className="text-right px-5 py-2 font-semibold">Qty</th>
+                  <th className="text-right px-5 py-2 font-semibold">
                     Unit Price
                   </th>
-                  <th className="text-right px-5 py-2 font-medium">
+                  <th className="text-right px-5 py-2 font-semibold">
                     Ext. Price
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {materialItems.map(
                   (li: {
                     id: string;
@@ -882,20 +904,20 @@ export default async function JobDetailPage({
                     extended_price: number;
                     sku: string | null;
                   }) => (
-                    <tr key={li.id}>
-                      <td className="px-5 py-2">
+                    <tr key={li.id} className="hover:bg-surface-3 transition-colors duration-150">
+                      <td className="px-5 py-2 text-text">
                         {li.name}
                         {li.sku && (
-                          <span className="ml-1 text-xs text-gray-400">
+                          <span className="ml-1 text-xs text-muted font-mono">
                             ({li.sku})
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-2 text-right">{li.qty}</td>
-                      <td className="px-5 py-2 text-right">
+                      <td className="px-5 py-2 text-right text-text font-mono">{li.qty}</td>
+                      <td className="px-5 py-2 text-right text-text font-mono">
                         {fmt(li.unit_price)}
                       </td>
-                      <td className="px-5 py-2 text-right font-medium">
+                      <td className="px-5 py-2 text-right font-display font-semibold text-text">
                         {fmt(li.extended_price)}
                       </td>
                     </tr>
@@ -909,27 +931,27 @@ export default async function JobDetailPage({
 
       {/* Labor Snapshot */}
       {laborItems.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h2 className="font-semibold text-fence-900">
+        <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="font-semibold text-text">
               Labor ({laborItems.length})
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="text-gray-500 border-b border-gray-100 text-xs">
-                  <th className="text-left px-5 py-2 font-medium">
+              <thead className="bg-surface-3">
+                <tr className="text-muted border-b border-border text-xs uppercase tracking-wider">
+                  <th className="text-left px-5 py-2 font-semibold">
                     Description
                   </th>
-                  <th className="text-right px-5 py-2 font-medium">Qty</th>
-                  <th className="text-right px-5 py-2 font-medium">Rate</th>
-                  <th className="text-right px-5 py-2 font-medium">
+                  <th className="text-right px-5 py-2 font-semibold">Qty</th>
+                  <th className="text-right px-5 py-2 font-semibold">Rate</th>
+                  <th className="text-right px-5 py-2 font-semibold">
                     Ext. Price
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {laborItems.map(
                   (li: {
                     id: string;
@@ -938,13 +960,13 @@ export default async function JobDetailPage({
                     unit_price: number;
                     extended_price: number;
                   }) => (
-                    <tr key={li.id}>
-                      <td className="px-5 py-2">{li.name}</td>
-                      <td className="px-5 py-2 text-right">{li.qty}</td>
-                      <td className="px-5 py-2 text-right">
+                    <tr key={li.id} className="hover:bg-surface-3 transition-colors duration-150">
+                      <td className="px-5 py-2 text-text">{li.name}</td>
+                      <td className="px-5 py-2 text-right text-text font-mono">{li.qty}</td>
+                      <td className="px-5 py-2 text-right text-text font-mono">
                         {fmt(li.unit_price)}
                       </td>
-                      <td className="px-5 py-2 text-right font-medium">
+                      <td className="px-5 py-2 text-right font-display font-semibold text-text">
                         {fmt(li.extended_price)}
                       </td>
                     </tr>
@@ -977,22 +999,22 @@ export default async function JobDetailPage({
         }
 
         return (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-            <h2 className="font-semibold text-fence-900 mb-3">Materials Verification</h2>
+          <div className="bg-surface-2 rounded-xl border border-border p-5 mb-6">
+            <h2 className="font-semibold text-text mb-3">Materials Verification</h2>
             {mvStatus === "foreman_approved" && (
-              <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg p-3 text-sm font-medium">
-                <span></span><span>Materials verified — job cleared to start</span>
+              <div className="flex items-center gap-2 text-accent-light bg-accent/10 border border-accent/30 rounded-lg p-3 text-sm font-medium">
+                <span></span><span>Materials verified &mdash; job cleared to start</span>
               </div>
             )}
             {mvStatus === "employee_confirmed" && (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm font-medium">
+                <div className="flex items-center gap-2 text-muted bg-surface-3 border border-border rounded-lg p-3 text-sm font-medium">
                   <span></span><span>Employee has confirmed materials loaded</span>
                 </div>
                 {canExecute && (
                   <form action={handleApprove}>
                     <input type="hidden" name="jobId" value={job.id} />
-                    <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
+                    <button type="submit" className="bg-accent hover:bg-accent-light accent-glow text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150">
                       Approve &amp; Clear to Start
                     </button>
                   </form>
@@ -1001,7 +1023,7 @@ export default async function JobDetailPage({
             )}
             {mvStatus === "rejected" && (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 text-sm font-medium">
+                <div className="flex items-center gap-2 text-danger bg-danger/10 border border-danger/30 rounded-lg p-3 text-sm font-medium">
                   <span></span><span>Material verification was rejected</span>
                 </div>
                 {canExecute && (
@@ -1010,7 +1032,7 @@ export default async function JobDetailPage({
                     <input type="hidden" name="jobName" value={jobNameStr} />
                     <input type="hidden" name="jobAddr" value={jobAddr} />
                     <input type="hidden" name="foremanEmail" value={foremanEmail} />
-                    <button type="submit" className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">
+                    <button type="submit" className="bg-warning hover:bg-warning/90 text-background px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150">
                       Re-request Verification
                     </button>
                   </form>
@@ -1019,16 +1041,16 @@ export default async function JobDetailPage({
             )}
             {(mvStatus === "pending" || !mvStatus) && (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
-                  <span>⏳</span><span>Awaiting material verification before job can start</span>
+                <div className="flex items-center gap-2 text-warning bg-warning/10 border border-warning/30 rounded-lg p-3 text-sm">
+                  <span>&#x231B;</span><span>Awaiting material verification before job can start</span>
                 </div>
                 {canExecute && (
                   <div className="flex gap-2 flex-wrap">
                     <a
                       href={`/dashboard/jobs/${job.id}/verify-materials`}
-                      className="bg-fence-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fence-700 transition-colors"
+                      className="bg-accent hover:bg-accent-light accent-glow text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
                     >
-                      Verify Materials Now →
+                      Verify Materials Now &rarr;
                     </a>
                     {foremanEmail && (
                       <form action={handleRequestVerification}>
@@ -1036,7 +1058,7 @@ export default async function JobDetailPage({
                         <input type="hidden" name="jobName" value={jobNameStr} />
                         <input type="hidden" name="jobAddr" value={jobAddr} />
                         <input type="hidden" name="foremanEmail" value={foremanEmail} />
-                        <button type="submit" className="border border-fence-600 text-fence-600 hover:bg-fence-50 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                        <button type="submit" className="border border-accent/30 text-accent-light hover:bg-accent/10 hover:text-accent px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150">
                           Send Verification Request Email
                         </button>
                       </form>
@@ -1051,32 +1073,32 @@ export default async function JobDetailPage({
 
       {/* Final Invoice Section */}
       {(job.status === "active" || job.status === "complete") && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-          <h2 className="font-semibold text-fence-900 mb-4 text-base">Final Invoice</h2>
+        <div className="bg-surface-2 rounded-xl border border-border p-5 mb-6">
+          <h2 className="font-semibold text-text mb-4 text-base">Final Invoice</h2>
 
           {/* Original Estimate Line Items */}
           <div className="mb-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Original Estimate</p>
-            <div className="rounded-lg border border-gray-100 overflow-hidden">
+            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Original Estimate</p>
+            <div className="rounded-lg border border-border overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-surface-3">
                   <tr>
-                    <th className="text-left px-3 py-2 text-xs text-gray-500 font-semibold">Item</th>
-                    <th className="text-right px-3 py-2 text-xs text-gray-500 font-semibold">Qty</th>
-                    <th className="text-right px-3 py-2 text-xs text-gray-500 font-semibold">Unit Price</th>
-                    <th className="text-right px-3 py-2 text-xs text-gray-500 font-semibold">Total</th>
+                    <th className="text-left px-3 py-2 text-xs text-muted font-semibold uppercase tracking-wider">Item</th>
+                    <th className="text-right px-3 py-2 text-xs text-muted font-semibold uppercase tracking-wider">Qty</th>
+                    <th className="text-right px-3 py-2 text-xs text-muted font-semibold uppercase tracking-wider">Unit Price</th>
+                    <th className="text-right px-3 py-2 text-xs text-muted font-semibold uppercase tracking-wider">Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border">
                   {materialItems.length === 0 ? (
-                    <tr><td colSpan={4} className="px-3 py-3 text-gray-400 text-xs text-center">No line items</td></tr>
+                    <tr><td colSpan={4} className="px-3 py-3 text-muted text-xs text-center">No line items</td></tr>
                   ) : (
                     materialItems.map((item: { id: string; name: string; qty: number; unit: string; unit_price: number; extended_price: number }) => (
                       <tr key={item.id}>
-                        <td className="px-3 py-2 text-gray-800">{item.name}</td>
-                        <td className="px-3 py-2 text-right text-gray-600">{item.qty} {item.unit}</td>
-                        <td className="px-3 py-2 text-right text-gray-600">{fmt(item.unit_price)}</td>
-                        <td className="px-3 py-2 text-right font-medium text-gray-800">{fmt(item.extended_price)}</td>
+                        <td className="px-3 py-2 text-text">{item.name}</td>
+                        <td className="px-3 py-2 text-right text-muted font-mono">{item.qty} {item.unit}</td>
+                        <td className="px-3 py-2 text-right text-muted font-mono">{fmt(item.unit_price)}</td>
+                        <td className="px-3 py-2 text-right font-display font-semibold text-text">{fmt(item.extended_price)}</td>
                       </tr>
                     ))
                   )}
@@ -1088,26 +1110,26 @@ export default async function JobDetailPage({
           {/* Approved Change Orders */}
           {approvedCOs.length > 0 && (
             <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Approved Change Orders</p>
+              <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Approved Change Orders</p>
               {approvedCOs.map((co: { id: string; reason?: string; description?: string; subtotal: number; change_order_line_items?: { id?: string; name: string; qty: number; unit_price: number; extended_price: number }[] }) => (
-                <div key={co.id} className="rounded-lg border border-amber-100 bg-amber-50 overflow-hidden mb-2">
-                  <div className="px-3 py-2 border-b border-amber-100">
-                    <p className="text-xs font-semibold text-amber-800">{co.reason || co.description || "Change Order"}</p>
+                <div key={co.id} className="rounded-lg border border-warning/30 bg-warning/10 overflow-hidden mb-2">
+                  <div className="px-3 py-2 border-b border-warning/30">
+                    <p className="text-xs font-semibold text-warning">{co.reason || co.description || "Change Order"}</p>
                   </div>
                   <table className="w-full text-sm">
-                    <tbody className="divide-y divide-amber-100">
+                    <tbody className="divide-y divide-warning/20">
                       {(Array.isArray(co.change_order_line_items) ? co.change_order_line_items : []).map((li, idx) => (
                         <tr key={li.id ?? idx}>
-                          <td className="px-3 py-2 text-gray-800">{li.name}</td>
-                          <td className="px-3 py-2 text-right text-gray-600">{li.qty}</td>
-                          <td className="px-3 py-2 text-right text-gray-600">{fmt(li.unit_price)}</td>
-                          <td className="px-3 py-2 text-right font-medium text-gray-800">{fmt(li.extended_price)}</td>
+                          <td className="px-3 py-2 text-text">{li.name}</td>
+                          <td className="px-3 py-2 text-right text-muted font-mono">{li.qty}</td>
+                          <td className="px-3 py-2 text-right text-muted font-mono">{fmt(li.unit_price)}</td>
+                          <td className="px-3 py-2 text-right font-display font-semibold text-text">{fmt(li.extended_price)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  <div className="px-3 py-2 text-right text-xs font-semibold text-amber-800 border-t border-amber-100">
-                    CO Subtotal: {fmt(co.subtotal)}
+                  <div className="px-3 py-2 text-right text-xs font-semibold text-warning border-t border-warning/30">
+                    CO Subtotal: <span className="font-display font-bold">{fmt(co.subtotal)}</span>
                   </div>
                 </div>
               ))}
@@ -1115,10 +1137,10 @@ export default async function JobDetailPage({
           )}
 
           {/* Invoice Total */}
-          <div className="flex justify-end border-t border-gray-200 pt-3 mb-4">
+          <div className="flex justify-end border-t border-border pt-3 mb-4">
             <div className="text-right">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Total Due</p>
-              <p className="text-2xl font-bold text-fence-900">{fmt(job.total_price)}</p>
+              <p className="text-xs text-muted uppercase tracking-wider">Total Due</p>
+              <p className="font-display text-2xl font-bold text-text">{fmt(job.total_price)}</p>
             </div>
           </div>
 
@@ -1131,7 +1153,7 @@ export default async function JobDetailPage({
                 totalDue={Number(job.total_price ?? 0)}
                 customerEmail={customer?.email ?? undefined}
               />
-              <p className="text-xs text-gray-400 mt-2">Marks job complete, generates PDF invoice, and emails the customer.</p>
+              <p className="text-xs text-muted mt-2">Marks job complete, generates PDF invoice, and emails the customer.</p>
             </div>
           )}
           {job.status === "complete" && invoiceUrl && (
@@ -1139,7 +1161,7 @@ export default async function JobDetailPage({
               href={invoiceUrl!}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-sm px-4 py-2 bg-fence-600 text-white rounded-lg font-semibold hover:bg-fence-700 transition-colors"
+              className="inline-block text-sm px-4 py-2 bg-accent hover:bg-accent-light accent-glow text-white rounded-lg font-semibold transition-colors duration-150"
             >
               Download Invoice PDF
             </a>
@@ -1149,8 +1171,8 @@ export default async function JobDetailPage({
 
       {/* Status Transitions */}
       {job.status !== "complete" && job.status !== "cancelled" && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <h2 className="font-semibold text-fence-900 mb-3">Job Actions</h2>
+        <div className="bg-surface-2 rounded-xl border border-border p-4 mb-6">
+          <h2 className="font-semibold text-text mb-3">Job Actions</h2>
           <div className="flex flex-wrap gap-2">
             {job.status === "scheduled" && canExecute && (
               <form action={transitionJobStatus}>
@@ -1158,7 +1180,7 @@ export default async function JobDetailPage({
                 <input type="hidden" name="newStatus" value="active" />
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                  className="bg-accent hover:bg-accent-light accent-glow text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
                 >
                   Start Job
                 </button>
@@ -1170,7 +1192,7 @@ export default async function JobDetailPage({
                 <input type="hidden" name="newStatus" value="cancelled" />
                 <button
                   type="submit"
-                  className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-500 transition-colors"
+                  className="bg-surface-3 hover:bg-surface-3/80 text-muted border border-border-strong hover:text-text px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
                 >
                   Cancel Job
                 </button>
@@ -1178,7 +1200,7 @@ export default async function JobDetailPage({
             )}
           </div>
           {!allMaterialsVerified && job.status === "scheduled" && (
-            <p className="text-xs text-amber-600 mt-2">
+            <p className="text-xs text-warning mt-2">
               All materials must be verified before starting.
             </p>
           )}

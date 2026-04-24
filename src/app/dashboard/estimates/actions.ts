@@ -246,6 +246,7 @@ export async function updateEstimate(fd: FormData) {
     .from("estimates")
     .select("status")
     .eq("id", estimateId)
+    .eq("org_id", profile.org_id)
     .single();
   if (check?.status === "converted" || check?.status === "accepted" || check?.status === "deposit_paid") {
     throw new Error("This estimate has been accepted or converted and is locked.");
@@ -268,7 +269,9 @@ export async function updateEstimate(fd: FormData) {
   const result = runEstimateEngine(inputs, materialsMap);
 
   if (result.missingSkus.length > 0) {
-    throw new Error(`Missing material SKUs: ${result.missingSkus.join(", ")}`);
+    redirect(
+      `/dashboard/estimates/${estimateId}/edit?error=Missing+materials:+${encodeURIComponent(result.missingSkus.join(", "))}+—+add+them+in+Materials+first.`
+    );
   }
 
   const { error: estErr } = await supabase
@@ -308,11 +311,12 @@ export async function sendQuote(fd: FormData) {
   const { supabase, profile } = await getAuthContext();
   const estimateId = fd.get("estimateId") as string;
 
-  // Server-side lock check
+  // Server-side lock check — scoped to org
   const { data: lockCheck } = await supabase
     .from("estimates")
     .select("status")
     .eq("id", estimateId)
+    .eq("org_id", profile.org_id)
     .single();
   if (lockCheck?.status === "converted" || lockCheck?.status === "accepted" || lockCheck?.status === "deposit_paid") {
     throw new Error("This estimate has been accepted or converted and is locked.");
@@ -350,9 +354,10 @@ export async function sendQuote(fd: FormData) {
   if (result.totals.grossMarginPct < inputs.targetMarginPct) {
     const actual = (result.totals.grossMarginPct * 100).toFixed(1);
     const target = (inputs.targetMarginPct * 100).toFixed(1);
-    throw new Error(
-      `MARGIN GUARD: Gross margin is ${actual}%, below the ${target}% target. ` +
-      `Adjust material prices or reduce costs before sending this quote.`
+    redirect(
+      `/dashboard/estimates/${estimateId}?error=${encodeURIComponent(
+        `Margin guard: Gross margin is ${actual}%, below the ${target}% target. Adjust material prices or reduce costs before sending this quote.`
+      )}`
     );
   }
 
@@ -376,7 +381,8 @@ export async function sendQuote(fd: FormData) {
       margin_status: result.marginStatus,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", estimateId);
+    .eq("id", estimateId)
+    .eq("org_id", profile.org_id);
   if (quoteUpdateErr) throw new Error(`Failed to mark estimate as quoted: ${quoteUpdateErr.message}`);
 
   // ── PHASE 7: Snapshot legal terms + generate customer-facing PDF ──
@@ -454,14 +460,23 @@ export async function convertToJob(fd: FormData) {
 
 export async function duplicateEstimate(estimateId: string) {
   "use server";
-  const { createAdminClient } = await import("@/lib/supabase/server");
+  const { createAdminClient, createClient } = await import("@/lib/supabase/server");
+  const { ensureProfile: ep } = await import("@/lib/bootstrap");
+
+  // Verify authentication and org ownership before using admin client
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const profile = await ep(authClient, user);
+
   const supabase = createAdminClient();
 
-  // Load original estimate
+  // Load original estimate — scoped to user's org
   const { data: original, error } = await supabase
     .from("estimates")
     .select("*")
     .eq("id", estimateId)
+    .eq("org_id", profile.org_id)
     .single();
 
   if (error || !original) throw new Error("Estimate not found");

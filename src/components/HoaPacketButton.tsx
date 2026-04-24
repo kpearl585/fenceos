@@ -1,0 +1,222 @@
+"use client";
+import { useState } from "react";
+import { generateHoaPacket } from "@/lib/hoa/packetActions";
+import { captureEvent } from "@/lib/analytics/posthog-client";
+
+interface HoaPacketButtonProps {
+  estimateId: string;
+  estimateName: string;
+}
+
+// Decode base64 to Blob without blowing up on large PDFs (atob +
+// Uint8Array). Browsers decode 5-10MB reliably this way.
+function base64ToBlob(base64: string, mime: string): Blob {
+  const bytes = atob(base64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+export default function HoaPacketButton({ estimateId, estimateName }: HoaPacketButtonProps) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [customerCity, setCustomerCity] = useState("");
+  const [customerState, setCustomerState] = useState("");
+  const [customerZip, setCustomerZip] = useState("");
+  const [hoaName, setHoaName] = useState("");
+
+  async function handleGenerate() {
+    if (!customerName.trim()) { setError("Customer name is required."); return; }
+    if (!customerAddress.trim()) { setError("Customer address is required."); return; }
+
+    setBusy(true);
+    setError("");
+    try {
+      const result = await generateHoaPacket({
+        estimateId,
+        customerName: customerName.trim(),
+        customerAddress: customerAddress.trim(),
+        customerCity: customerCity.trim() || undefined,
+        customerState: customerState.trim() || undefined,
+        customerZip: customerZip.trim() || undefined,
+        hoaName: hoaName.trim() || undefined,
+      });
+
+      if (!result.success || !result.pdf) {
+        setError(result.error ?? "Failed to generate packet.");
+        setBusy(false);
+        return;
+      }
+
+      const blob = base64ToBlob(result.pdf, "application/pdf");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.filename ?? "hoa-packet.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Fire funnel event. No PII — no customer name/address. Only
+      // dimensions that help us see which contractors are using the
+      // feature and whether HOA-name is being filled in (signal of
+      // mature vs ad-hoc usage).
+      captureEvent("hoa_packet_generated", {
+        estimate_id: estimateId,
+        has_hoa_name: !!hoaName.trim(),
+      });
+
+      setOpen(false);
+    } catch (err) {
+      console.error("HOA packet download error:", err);
+      setError("Something went wrong. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => { setOpen(true); setError(""); }}
+        className="w-full bg-accent/10 border border-accent/30 text-accent-light hover:bg-accent/15 hover:border-accent/50 font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors duration-150 flex items-center justify-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Generate HOA Packet
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50"
+          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
+          <div className="bg-surface-2 border border-border rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-text">HOA Packet</h3>
+                <p className="text-xs text-muted mt-0.5">For &ldquo;{estimateName}&rdquo;</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-muted hover:text-text text-xl leading-none transition-colors duration-150"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-3">
+              <p className="text-xs text-muted">
+                Packet includes your insurance certificate plus a cover page with these details.
+              </p>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                  Customer name <span className="text-danger normal-case tracking-normal">*</span>
+                </label>
+                <input
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  disabled={busy}
+                  placeholder="Jane & John Homeowner"
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                  Property address <span className="text-danger normal-case tracking-normal">*</span>
+                </label>
+                <input
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  disabled={busy}
+                  placeholder="123 Oak Street"
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">City</label>
+                  <input
+                    value={customerCity}
+                    onChange={(e) => setCustomerCity(e.target.value)}
+                    disabled={busy}
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">State</label>
+                  <input
+                    value={customerState}
+                    onChange={(e) => setCustomerState(e.target.value)}
+                    disabled={busy}
+                    maxLength={2}
+                    placeholder="FL"
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150 uppercase"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">ZIP</label>
+                <input
+                  value={customerZip}
+                  onChange={(e) => setCustomerZip(e.target.value)}
+                  disabled={busy}
+                  maxLength={10}
+                  className="w-full max-w-[140px] border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                  HOA name <span className="text-muted normal-case tracking-normal font-normal">(optional)</span>
+                </label>
+                <input
+                  value={hoaName}
+                  onChange={(e) => setHoaName(e.target.value)}
+                  disabled={busy}
+                  placeholder="Roan Hills Homeowners Association"
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
+                />
+              </div>
+
+              {error && (
+                <p className="text-xs text-danger bg-danger/10 border border-danger/30 rounded-md px-3 py-2">{error}</p>
+              )}
+            </div>
+
+            <div className="px-5 py-3 bg-surface-3 border-t border-border flex items-center justify-end gap-2 rounded-b-xl">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                disabled={busy}
+                className="text-sm text-muted hover:text-text font-medium px-3 py-2 disabled:opacity-50 transition-colors duration-150"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={busy}
+                className="bg-accent hover:bg-accent-light accent-glow transition-colors duration-150 text-white font-semibold text-sm px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {busy ? "Generating…" : "Download packet"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

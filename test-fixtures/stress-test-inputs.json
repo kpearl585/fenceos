@@ -1,0 +1,86 @@
+{
+  "version": "1.0",
+  "description": "Stress test dataset - messy real-world contractor inputs",
+  "inputs": [
+    {
+      "id": "stress-01",
+      "description": "need about 200ft maybe more of vinyl fence around backyard, 6ft tall probably, got a gate somewhere need double for the driveway, yard slopes a bit in the back not sure how much"
+    },
+    {
+      "id": "stress-02",
+      "description": "Looking for chain link for my commercial property parking lot. Roughly 400 feet give or take. Need it 6 or 8 feet high whatever code requires. Ground is pretty level. One big gate for trucks."
+    },
+    {
+      "id": "stress-03",
+      "description": "wood privacy fence, backyard is like 180-200ft not totally sure, some of it is 6ft but want the sides lower like 5ft cause of the neighbors, sandy soil we're in orlando, need a walk gate"
+    },
+    {
+      "id": "stress-04",
+      "description": "Pool fence!! 4ft vinyl picket. Around 120-140 feet. Need the self closing gate for pool code. We're right on the beach so lots of sand and wind. How much extra is the wind rated stuff?"
+    },
+    {
+      "id": "stress-05",
+      "description": "Entire property maybe 500ft of wood fence 6ft, ground is uneven in spots, got some rocks in the soil, need couple gates not sure what size yet can we figure that out later"
+    },
+    {
+      "id": "stress-06",
+      "description": "vinyl privacy back and sides total around 250-300ft, flat yard, normal soil I think, definitely need 2 walk gates and 1 double drive gate in the back, 6ft high"
+    },
+    {
+      "id": "stress-07",
+      "description": "just the back 100ft or so, want vinyl but nice looking kind, 6 foot, no gate, yard is pretty flat, idk about soil"
+    },
+    {
+      "id": "stress-08",
+      "description": "Big commercial job - chain link 8ft around warehouse. Probably 600-700 feet. Need 3 double gates for loading docks. Soil is hard clay. Level ground mostly."
+    },
+    {
+      "id": "stress-09",
+      "description": "Back yard 150, left side 80, right side 80, all 6ft wood privacy. Sloped property maybe 15 degrees or so. Clay soil. 1 walk gate on left side."
+    },
+    {
+      "id": "stress-10",
+      "description": "need fence asap, about 180 feet vinyl 6ft, got 1 gate for walking, yard isn't totally level but not super steep either, florida so sandy"
+    },
+    {
+      "id": "stress-11",
+      "description": "Pool area needs 4ft picket fence white vinyl. Maybe 160ft total? Pool code gate required. Coastal property sandy soil windy. Also might want 6ft privacy on one side of pool like 40ft more."
+    },
+    {
+      "id": "stress-12",
+      "description": "Looking for estimate on backyard fence, thinking vinyl privacy, 6 or 8ft not decided yet, around 200-250ft, need gate for mower like 4-5ft wide, soil is mix of sand and dirt, pretty flat"
+    },
+    {
+      "id": "stress-13",
+      "description": "Small job just 60ft chain link 4ft around AC units, commercial property, 1 walk gate, flat, standard soil"
+    },
+    {
+      "id": "stress-14",
+      "description": "backyard and both sides total maybe 350-400ft, want wood or vinyl whatever is cheaper, 6ft tall, yard slopes down to creek in back pretty steep, rocky soil, 2 gates one walk one double"
+    },
+    {
+      "id": "stress-15",
+      "description": "HOA says we can only do 6ft vinyl privacy in back 120ft and 5ft vinyl picket on sides 60ft each side. Need 1 walk gate in back. Flat sandy soil Orlando area."
+    },
+    {
+      "id": "stress-16",
+      "description": "Just want quick quote for about 100-150 feet wood fence 6ft tall, backyard, normal conditions, 1 gate"
+    },
+    {
+      "id": "stress-17",
+      "description": "Got a weird shaped lot. Back is 140ft needs 6ft vinyl privacy. Left side 90ft needs 4ft picket cause of HOA. Right side 100ft can be 6ft privacy. All vinyl. Gates: 1 double drive in back, 1 walk on left. Sandy loam soil, mostly flat except left side slopes maybe 5%."
+    },
+    {
+      "id": "stress-18",
+      "description": "Pool enclosure fence 4ft, vinyl, self closing gate, probably 100-120 feet, we are in coastal florida so sandy and windy, also need pool code compliance obviously"
+    },
+    {
+      "id": "stress-19",
+      "description": "Big privacy fence all around property. Back 180ft, left 150ft, right 150ft. All 6ft wood. Very sloped property probably 20-25 degree slope going down left to right. Heavy clay soil. Need 2 walk gates and 1 double drive gate. Can the fence step down or does it have to rack?"
+    },
+    {
+      "id": "stress-20",
+      "description": "commercial parking lot, chain link 6 or 8ft whatever code says, maybe 450 feet total perimeter, need 2 double gates for entry/exit, ground is paved already but underneath is regular dirt, flat"
+    }
+  ]
+}
