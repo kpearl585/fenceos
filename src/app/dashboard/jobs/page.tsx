@@ -123,7 +123,7 @@ export default async function JobsPage({
             <svg className="w-6 h-6 text-fence-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
           </div>
           <h2 className="font-semibold text-fence-900 mb-1">{q || status ? "No jobs match your filter" : "No jobs yet"}</h2>
-          <p className="text-sm text-gray-400 mb-6">{q || status ? "Try clearing your search or filter." : "Convert an accepted estimate to create your first job."}</p>
+          <p className="text-sm text-gray-400 mb-6">{q || status ? "Try clearing your search or filter." : "Collect a deposit on an accepted estimate, then convert it to create your first job."}</p>
           {(q || status) ? (
             <Link href="/dashboard/jobs" className="bg-fence-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-fence-700 transition-colors inline-block text-sm">Clear Filters</Link>
           ) : (

@@ -1,41 +1,26 @@
 "use server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { ensureProfile, getProfileByAuthId } from "@/lib/bootstrap";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { AdvancedEstimatePdf } from "@/lib/fence-graph/AdvancedEstimatePdf";
-import { estimateFence } from "@/lib/fence-graph/engine";
-import type { FenceProjectInput, FenceEstimateResult } from "@/lib/fence-graph/types";
+import type { FenceProjectInput, FenceEstimateResult, FenceType, WoodStyle } from "@/lib/fence-graph/engine";
 import { updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "@/lib/fence-graph/bom/shared";
 import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
+import {
+  getOrgMaterialPricesByOrgId,
+  recomputeEstimateForOrg,
+  requireOrgEstimateContext,
+} from "./serverEstimate";
 
 // ── Fetch org material prices ─────────────────────────────────────
 // Returns { [sku]: unit_cost } for the current org's materials.
 // Used to populate dollar amounts in the BOM engine.
 export async function getOrgMaterialPrices(): Promise<Record<string, number>> {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return {};
-
-    const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("org_id")
-      .eq("auth_id", user.id)
-      .single();
-    if (!profile) return {};
-
-    const { data: materials } = await admin
-      .from("materials")
-      .select("sku, unit_cost")
-      .eq("org_id", profile.org_id);
-
-    if (!materials) return {};
-    return Object.fromEntries(
-      materials
-        .filter(m => m.unit_cost != null)
-        .map(m => [m.sku, Number(m.unit_cost)])
-    );
+    const context = await requireOrgEstimateContext();
+    if (!context) return {};
+    return await getOrgMaterialPricesByOrgId(context.admin, context.orgId);
   } catch {
     return {};
   }
@@ -44,35 +29,33 @@ export async function getOrgMaterialPrices(): Promise<Record<string, number>> {
 // ── Save estimate to DB ───────────────────────────────────────────
 export async function saveAdvancedEstimate(
   input: FenceProjectInput,
-  result: FenceEstimateResult,
   name: string,
   laborRate: number,
-  wastePct: number
+  wastePctPercent: number,
+  fenceType: FenceType,
+  woodStyle?: WoodStyle
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: "Not authenticated" };
+    const context = await requireOrgEstimateContext();
+    if (!context) return { success: false, error: "Not authenticated" };
+    const { result, totalLF } = await recomputeEstimateForOrg(context, {
+      input,
+      laborRate,
+      wastePctPercent,
+      fenceType,
+      woodStyle,
+    });
+    const persistedResult: FenceEstimateResult = { ...result, projectName: name };
 
-    const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("org_id")
-      .eq("auth_id", user.id)
-      .single();
-    if (!profile) return { success: false, error: "Profile not found" };
-
-    const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
-
-    const { data, error } = await admin
+    const { data, error } = await context.admin
       .from("fence_graphs")
       .insert({
-        org_id: profile.org_id,
+        org_id: context.orgId,
         name,
-        input_json: input as unknown as Record<string, unknown>,
-        result_json: result as unknown as Record<string, unknown>,
+        input_json: { ...input, fenceType } as unknown as Record<string, unknown>,
+        result_json: persistedResult as unknown as Record<string, unknown>,
         labor_rate: laborRate,
-        waste_pct: wastePct,
+        waste_pct: wastePctPercent / 100,
         total_lf: totalLF,
         total_cost: result.totalCost,
         status: "draft",
@@ -95,14 +78,8 @@ export async function listAdvancedEstimates(): Promise<{
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
-
+    const profile = await ensureProfile(supabase, user);
     const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("org_id")
-      .eq("auth_id", user.id)
-      .single();
-    if (!profile) return [];
 
     const { data } = await admin
       .from("fence_graphs")
@@ -122,8 +99,7 @@ async function getOrgInfo(userId: string): Promise<{
   orgId: string; orgName: string; orgPhone: string; orgEmail: string; orgAddress: string;
 }> {
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles").select("org_id").eq("auth_id", userId).single();
+  const profile = await getProfileByAuthId(userId);
   if (!profile) return { orgId: "", orgName: "Your Company", orgPhone: "", orgEmail: "", orgAddress: "" };
 
   const { data: org } = await admin
@@ -145,23 +121,28 @@ export async function generateAdvancedEstimatePdf(
   input: FenceProjectInput,
   laborRate: number,
   wastePct: number,
-  projectName: string
+  projectName: string,
+  fenceType: FenceType,
+  woodStyle?: WoodStyle
 ): Promise<{ success: boolean; pdf?: string; error?: string }> {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: "Not authenticated" };
+    const context = await requireOrgEstimateContext();
+    if (!context) return { success: false, error: "Not authenticated" };
 
-    const { orgName } = await getOrgInfo(user.id);
-    const priceMap = await getOrgMaterialPrices();
-    const result = estimateFence(input, { laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
+    const { orgName } = await getOrgInfo(context.userId);
+    const { result } = await recomputeEstimateForOrg(context, {
+      input,
+      laborRate,
+      wastePctPercent: wastePct,
+      fenceType,
+      woodStyle,
+    });
 
     const pdfElement = React.createElement(AdvancedEstimatePdf, {
       result, projectName, orgName,
       date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = await renderToBuffer(pdfElement as React.ReactElement<any>);
+    const buffer = await renderToBuffer(pdfElement as React.ReactElement);
     return { success: true, pdf: Buffer.from(buffer).toString("base64") };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "PDF generation failed" };
@@ -175,21 +156,25 @@ export async function generateCustomerProposalPdf(
   wastePct: number,
   markupPct: number,
   projectName: string,
-  fenceType: string,
+  fenceType: FenceType,
+  woodStyle: WoodStyle | undefined,
   customer: {
     name?: string; address?: string; city?: string; phone?: string; email?: string;
   }
 ): Promise<{ success: boolean; pdf?: string; error?: string }> {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: "Not authenticated" };
+    const context = await requireOrgEstimateContext();
+    if (!context) return { success: false, error: "Not authenticated" };
 
-    const { orgName, orgPhone, orgEmail, orgAddress } = await getOrgInfo(user.id);
-    const priceMap = await getOrgMaterialPrices();
-    const result = estimateFence(input, { fenceType: fenceType as import("@/lib/fence-graph/bom/index").FenceType, laborRatePerHr: laborRate, wastePct: wastePct / 100, priceMap });
+    const { orgName, orgPhone, orgEmail, orgAddress } = await getOrgInfo(context.userId);
+    const { result, totalLF } = await recomputeEstimateForOrg(context, {
+      input,
+      laborRate,
+      wastePctPercent: wastePct,
+      fenceType,
+      woodStyle,
+    });
     const bidPrice = Math.round(result.totalCost * (1 + markupPct / 100));
-    const totalLF = input.runs.reduce((s, r) => s + r.linearFeet, 0);
 
     const { CustomerProposalPdf } = await import("@/lib/fence-graph/CustomerProposalPdf");
     const proposalElement = React.createElement(CustomerProposalPdf, {
@@ -203,8 +188,7 @@ export async function generateCustomerProposalPdf(
         validDays: 30,
       },
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = await renderToBuffer(proposalElement as React.ReactElement<any>);
+    const buffer = await renderToBuffer(proposalElement as React.ReactElement);
     return { success: true, pdf: Buffer.from(buffer).toString("base64") };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Proposal generation failed" };
@@ -217,11 +201,8 @@ export async function getOrgCalibration(): Promise<WasteCalibration> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return DEFAULT_WASTE_CALIBRATION;
-
+    const profile = await ensureProfile(supabase, user);
     const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
-    if (!profile) return DEFAULT_WASTE_CALIBRATION;
 
     const { data: org } = await admin
       .from("organizations").select("waste_calibration_json").eq("id", profile.org_id).single();
@@ -243,11 +224,8 @@ export async function getSavedEstimate(id: string): Promise<{
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
-
+    const profile = await ensureProfile(supabase, user);
     const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
-    if (!profile) return null;
 
     const { data } = await admin
       .from("fence_graphs")
@@ -274,11 +252,8 @@ export async function closeoutEstimate(
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
-
+    const profile = await ensureProfile(supabase, user);
     const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
-    if (!profile) return { success: false, error: "Profile not found" };
 
     // Validate estimate belongs to this org
     const { data: est } = await admin

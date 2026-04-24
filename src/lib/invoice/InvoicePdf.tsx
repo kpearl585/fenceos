@@ -248,6 +248,7 @@ export function InvoicePdf({ data }: { data: InvoiceData }) {
         <View style={styles.header}>
           <View>
             {data.org.logoUrl ? (
+              // eslint-disable-next-line jsx-a11y/alt-text
               <Image src={data.org.logoUrl} style={styles.logo} />
             ) : (
               <Text style={styles.orgName}>{data.org.name}</Text>

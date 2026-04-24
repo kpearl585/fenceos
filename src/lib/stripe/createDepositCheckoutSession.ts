@@ -65,9 +65,8 @@ export async function createDepositCheckoutSession(
 
   const stripe = getStripe();
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+  const origin = process.env.NEXT_PUBLIC_APP_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",

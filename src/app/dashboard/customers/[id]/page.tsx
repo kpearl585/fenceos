@@ -65,7 +65,7 @@ export default async function CustomerDetailPage({
   // Load related jobs
   const { data: jobs } = await supabase
     .from("jobs")
-    .select("id, title, status, total_price, scheduled_date")
+    .select("id, title, status, total_price, scheduled_date, created_at")
     .eq("customer_id", id)
     .order("created_at", { ascending: false });
 
@@ -76,8 +76,7 @@ export default async function CustomerDetailPage({
   const allJobs = jobs ?? [];
   const acceptedEstimates = allEstimates.filter((e: {status: string}) => ["approved", "accepted", "deposit_paid", "converted"].includes(e.status));
   const totalRevenue = allJobs.filter((j: {status: string; total_price: number | null}) => j.status === "complete").reduce((s: number, j: {status: string; total_price: number | null}) => s + (Number(j.total_price) || 0), 0);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allActivity: any[] = [...allEstimates, ...allJobs];
+  const allActivity: Array<{ created_at?: string | null }> = [...allEstimates, ...allJobs];
   const lastActivity = allActivity.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
   const hasLinkedRecords =
     (estimates?.length ?? 0) > 0 || (jobs?.length ?? 0) > 0;
@@ -129,7 +128,7 @@ export default async function CustomerDetailPage({
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Last Activity</p>
           <p className="text-sm font-semibold text-fence-900 mt-1">
-            {lastActivity ? new Date(lastActivity.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+            {lastActivity?.created_at ? new Date(lastActivity.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
           </p>
         </div>
       </div>

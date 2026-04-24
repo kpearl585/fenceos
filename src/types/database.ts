@@ -141,6 +141,10 @@ export interface Job {
   notes: string | null
   created_at: string
   updated_at: string
+  completed_at: string | null
+  paid_at: string | null
+  invoice_url: string | null
+  material_verification_status: string | null
   total_price: number | null
   total_cost: number | null
   gross_profit: number | null
@@ -188,6 +192,22 @@ export interface ChangeOrder {
   org_id: string
   description: string | null
   status: ChangeOrderStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface Invoice {
+  id: string
+  org_id: string
+  job_id: string
+  customer_id: string | null
+  invoice_number: string
+  status: string
+  subtotal: number
+  total: number
+  pdf_url: string | null
+  sent_at: string | null
+  paid_at: string | null
   created_at: string
   updated_at: string
 }

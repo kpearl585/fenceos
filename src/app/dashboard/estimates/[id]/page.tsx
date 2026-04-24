@@ -5,7 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { sendQuote, deleteEstimate, convertToJob, duplicateEstimate, reQuoteEstimate } from "../actions";
 import { ShareEstimatePanel } from "@/components/estimates/ShareEstimatePanel";
-// deposit flow removed — V2
+import { payDeposit } from "@/lib/stripe/depositAction";
 
 function fmt(v: number | string | null) {
   return new Intl.NumberFormat("en-US", {
@@ -65,10 +65,8 @@ export default async function EstimateDetailPage({
   const marginOk = est.margin_status === "ok";
   const targetPct = Number(est.target_margin_pct) || 0.35;
   const missingCustomer = !est.customer_id;
-  // V1: No deposit required — convert from quoted or accepted
-  const canConvert =
-    !missingCustomer &&
-    (est.status === "quoted" || est.status === "accepted");
+  const depositAmount = Number(est.deposit_required_amount) || (Number(est.total) * 0.5);
+  const canConvert = !missingCustomer && est.status === "deposit_paid";
 
   // Check if job exists for converted estimate
   let linkedJobId: string | null = null;
@@ -224,7 +222,31 @@ export default async function EstimateDetailPage({
         )}
       </div>
 
-      {/* Deposit section removed — V2 feature */}
+      {/* Deposit section */}
+      {est.status === "accepted" && !est.deposit_paid && (
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="font-bold text-amber-900">Deposit Required Before Scheduling</h2>
+              <p className="text-sm text-amber-800 mt-1">
+                Collect the deposit before converting this estimate into a job.
+              </p>
+              <p className="text-sm font-semibold text-amber-900 mt-2">
+                Deposit due: {fmt(depositAmount)}
+              </p>
+            </div>
+            <form action={payDeposit}>
+              <input type="hidden" name="estimateId" value={est.id} />
+              <button
+                type="submit"
+                className="px-6 py-3 rounded-xl font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+              >
+                Collect Deposit
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── Subtotals ── */}
       <div className="grid grid-cols-2 gap-4 mb-6">
@@ -408,7 +430,7 @@ export default async function EstimateDetailPage({
         )}
 
         {/* Convert to Job — visible when status allows, disabled without customer */}
-        {(est.status === "deposit_paid" || (est.status === "quoted" && !est.deposit_required_amount)) && (
+        {est.status === "deposit_paid" && (
           canConvert ? (
             <form action={convertToJob} className="flex-1">
               <input type="hidden" name="estimateId" value={est.id} />
@@ -429,7 +451,7 @@ export default async function EstimateDetailPage({
           )
         )}
 
-        {/* Download PDF — always available for quoted/accepted estimates */}
+      {/* Download PDF — always available once quoted */}
         {(est.status !== "draft") && (
           <a
             href={`/api/pdf/estimate/${est.id}`}

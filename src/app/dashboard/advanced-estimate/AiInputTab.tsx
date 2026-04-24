@@ -227,6 +227,17 @@ export default function AiInputTab({ onApply }: Props) {
             )}
             <input ref={fileRef} type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageFile(f); }} className="hidden" />
           </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox"
+                checked={additionalContext.includes("aerial")}
+                onChange={e => setAdditionalContext(e.target.checked ? "aerial satellite overhead view" : "")}
+                className="rounded"
+              />
+              <span className="text-xs font-semibold text-gray-600">Aerial / Satellite photo</span>
+            </label>
+            <span className="text-xs text-gray-400">(enables scale detection from reference objects)</span>
+          </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Additional context (optional)</label>
             <input type="text"

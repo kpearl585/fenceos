@@ -182,7 +182,7 @@ export default async function SettingsPage() {
           <TeamMembersSection
             members={(orgUsers ?? []) as Array<{id: string; full_name: string | null; email: string; role: string; created_at: string}>}
             orgId={org?.id || profile.org_id}
-            currentUserId={user.id}
+            currentUserId={profile.id}
           />
         </div>
       </div>

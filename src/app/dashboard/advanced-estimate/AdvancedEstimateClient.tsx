@@ -15,6 +15,7 @@ import { createEstimateFromFenceGraph } from "./convertActions";
 import { downloadInternalBom, downloadSupplierPO } from "@/lib/fence-graph/exportBomExcel";
 import type { SoilType, PanelHeight, PostSize, GateType } from "@/lib/fence-graph/types";
 import AiInputTab, { type AiAppliedState } from "./AiInputTab";
+import { sanitizeGatesForEstimator } from "@/lib/fence-graph/estimateInput";
 
 const FENCE_TYPES: { value: FenceType; label: string }[] = [
   { value: "vinyl", label: "Vinyl" },
@@ -93,16 +94,19 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
   const postSize = productLine?.postSize ?? "5x5";
   const fenceHeight = Math.round(productLine?.panelHeight_in / 12) as PanelHeight;
 
-  const input: FenceProjectInput = {
-    projectName: "Advanced Estimate",
-    productLineId,
-    fenceHeight,
-    postSize,
-    soilType,
-    windMode,
-    runs: runs.filter((r) => r.linearFeet > 0),
-    gates,
-  };
+  const input: FenceProjectInput = useMemo(
+    () => ({
+      projectName,
+      productLineId,
+      fenceHeight,
+      postSize,
+      soilType,
+      windMode,
+      runs: runs.filter((r) => r.linearFeet > 0),
+      gates: sanitizeGatesForEstimator(gates),
+    }),
+    [projectName, productLineId, fenceHeight, postSize, soilType, windMode, runs, gates]
+  );
 
   const result: FenceEstimateResult | null = useMemo(() => {
     if (input.runs.length === 0) return null;
@@ -111,7 +115,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
     } catch {
       return null;
     }
-  }, [productLineId, fenceType, woodStyle, soilType, windMode, laborRate, wastePct, runs, gates, priceMap]);
+  }, [input, fenceType, woodStyle, laborRate, wastePct, priceMap]);
 
   function updateRun(id: string, patch: Partial<RunInput>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -123,13 +127,16 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
   }
 
   function addGate(afterRunId: string) {
-    setGates((prev) => [...prev, {
-      id: newGateId(),
-      afterRunId,
-      gateType: "single",
-      widthFt: 4,
-      isPoolGate: false,
-    }]);
+    setGates((prev) => {
+      if (prev.some((gate) => gate.afterRunId === afterRunId)) return prev;
+      return [...prev, {
+        id: newGateId(),
+        afterRunId,
+        gateType: "single",
+        widthFt: 4,
+        isPoolGate: false,
+      }];
+    });
   }
 
   function updateGate(id: string, patch: Partial<GateInput>) {
@@ -148,21 +155,37 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
   async function handleProposalDownload() {
     if (!result) return;
     setProposalStatus("generating");
-    const res = await generateCustomerProposalPdf(
-      input, laborRate, wastePct, markupPct, projectName, fenceType, customer
-    );
-    if (res.success && res.pdf) {
-      const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${projectName.replace(/\s+/g, "-")}-proposal.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setProposalStatus("idle");
-    } else {
+    let shouldResetStatus = false;
+    try {
+      const res = await generateCustomerProposalPdf(
+        input,
+        laborRate,
+        wastePct,
+        markupPct,
+        projectName,
+        fenceType,
+        woodStyle,
+        customer
+      );
+      if (res.success && res.pdf) {
+        const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${projectName.replace(/\s+/g, "-")}-proposal.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setProposalStatus("idle");
+        return;
+      }
       setProposalStatus("error");
+      shouldResetStatus = true;
+    } catch {
+      setProposalStatus("error");
+      shouldResetStatus = true;
+    }
+    if (shouldResetStatus) {
       setTimeout(() => setProposalStatus("idle"), 3000);
     }
   }
@@ -175,21 +198,32 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
     }
     setConvertStatus("converting");
     setConvertError(null);
-    const res = await createEstimateFromFenceGraph({
-      result,
-      projectName,
-      laborRate,
-      markupPct,
-      totalLF,
-      fenceType,
-      customer,
-    });
-    if (res.success && res.estimateId) {
-      setConvertStatus("done");
-      window.location.href = `/dashboard/estimates/${res.estimateId}`;
-    } else {
+    let shouldResetStatus = false;
+    try {
+      const res = await createEstimateFromFenceGraph({
+        input,
+        projectName,
+        laborRate,
+        markupPct,
+        wastePct,
+        fenceType,
+        woodStyle,
+        customer,
+      });
+      if (res.success && res.estimateId) {
+        setConvertStatus("done");
+        window.location.href = `/dashboard/estimates/${res.estimateId}`;
+        return;
+      }
       setConvertStatus("error");
       setConvertError(res.error ?? "Conversion failed");
+      shouldResetStatus = true;
+    } catch {
+      setConvertStatus("error");
+      setConvertError("Conversion failed");
+      shouldResetStatus = true;
+    }
+    if (shouldResetStatus) {
       setTimeout(() => setConvertStatus("idle"), 4000);
     }
   }
@@ -197,27 +231,40 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
   async function handleSave() {
     if (!result) return;
     setSaveStatus("saving");
-    const res = await saveAdvancedEstimate(input, { ...result, projectName, bidPrice } as typeof result & { bidPrice: number }, projectName, laborRate, wastePct / 100);
-    setSaveStatus(res.success ? "saved" : "error");
+    try {
+      const res = await saveAdvancedEstimate(input, projectName, laborRate, wastePct, fenceType, woodStyle);
+      setSaveStatus(res.success ? "saved" : "error");
+    } catch {
+      setSaveStatus("error");
+    }
     setTimeout(() => setSaveStatus("idle"), 3000);
   }
 
   async function handlePdfDownload() {
     if (!result) return;
     setPdfStatus("generating");
-    const res = await generateAdvancedEstimatePdf(input, laborRate, wastePct, projectName);
-    if (res.success && res.pdf) {
-      const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${projectName.replace(/\s+/g, "-")}-estimate.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setPdfStatus("idle");
-    } else {
+    let shouldResetStatus = false;
+    try {
+      const res = await generateAdvancedEstimatePdf(input, laborRate, wastePct, projectName, fenceType, woodStyle);
+      if (res.success && res.pdf) {
+        const bytes = Uint8Array.from(atob(res.pdf), c => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${projectName.replace(/\s+/g, "-")}-estimate.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setPdfStatus("idle");
+        return;
+      }
       setPdfStatus("error");
+      shouldResetStatus = true;
+    } catch {
+      setPdfStatus("error");
+      shouldResetStatus = true;
+    }
+    if (shouldResetStatus) {
       setTimeout(() => setPdfStatus("idle"), 3000);
     }
   }
@@ -254,7 +301,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
             setSoilType(state.soilType);
             setWindMode(state.windMode);
             setRuns(state.runs.length > 0 ? state.runs : [defaultRun()]);
-            setGates(state.gates);
+            setGates(sanitizeGatesForEstimator(state.gates));
             setInputMode("manual"); // Switch to manual so they can review/edit
           }} />
         )}
@@ -381,6 +428,7 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
           <div className="space-y-3">
             {runs.map((run, idx) => {
               const gatesForRun = gates.filter((g) => g.afterRunId === run.id);
+              const hasGateForRun = gatesForRun.length > 0;
               return (
                 <div key={run.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50">
                   <div className="flex items-center justify-between mb-3">
@@ -475,9 +523,10 @@ export default function AdvancedEstimateClient({ priceMap = {}, defaultWastePct 
 
                   <button
                     onClick={() => addGate(run.id)}
-                    className="mt-3 text-xs text-fence-600 hover:text-fence-800 font-medium"
+                    disabled={hasGateForRun}
+                    className="mt-3 text-xs text-fence-600 hover:text-fence-800 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
-                    + Add gate after this run
+                    {hasGateForRun ? "One gate per run currently supported" : "+ Add gate after this run"}
                   </button>
                 </div>
               );

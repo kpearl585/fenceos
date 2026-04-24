@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/bootstrap";
+import { inferFenceTypeFromProductLineId } from "@/lib/fence-graph/estimateInput";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -13,11 +15,8 @@ export default async function SavedAdvancedEstimatesPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-
+  const profile = await ensureProfile(supabase, user);
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles").select("org_id").eq("auth_id", user.id).single();
-  if (!profile) redirect("/dashboard");
 
   const { data: estimates } = await admin
     .from("fence_graphs")
@@ -84,7 +83,7 @@ export default async function SavedAdvancedEstimatesPage() {
             <div className="space-y-2">
               {openEstimates.map((est) => {
                 const input = est.input_json as { fenceType?: string; productLineId?: string } | null;
-                const fenceType = input?.fenceType ?? "vinyl";
+                const fenceType = input?.fenceType ?? inferFenceTypeFromProductLineId(input?.productLineId) ?? "unknown";
                 return (
                   <Link key={est.id} href={`/dashboard/advanced-estimate/${est.id}`}
                     className="block bg-white rounded-xl border border-gray-200 hover:border-fence-400 hover:shadow-sm transition-all px-5 py-4">

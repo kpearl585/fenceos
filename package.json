@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:smoke": "node ./scripts/smoke/basic-smoke.mjs",
+    "test:smoke:auth": "node ./scripts/smoke/authenticated-smoke.mjs",
+    "test:smoke:owner-flow": "node ./scripts/smoke/owner-flow.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

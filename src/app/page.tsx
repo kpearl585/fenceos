@@ -1,3 +1,4 @@
+import Image from "next/image";
 import SiteNav from "@/components/SiteNav";
 import Hero from "@/components/Hero";
 import ProblemSection from "@/components/ProblemSection";
@@ -29,7 +30,13 @@ export default function Home() {
       {/* Founder Strip */}
       <section style={{ background: '#0f172a', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '4rem 2rem' }}>
         <div style={{ maxWidth: '760px', margin: '0 auto', display: 'flex', gap: '2.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <img src="/keegan-pearl.jpg" alt="Keegan Pearl — Founder" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', objectPosition: 'center top', border: '2px solid rgba(45,106,79,0.6)', flexShrink: 0 }} />
+          <Image
+            src="/keegan-pearl.jpg"
+            alt="Keegan Pearl — Founder"
+            width={100}
+            height={100}
+            style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', objectPosition: 'center top', border: '2px solid rgba(45,106,79,0.6)', flexShrink: 0 }}
+          />
           <div style={{ flex: 1, minWidth: '260px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.875rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '100px', padding: '0.25rem 0.65rem' }}>

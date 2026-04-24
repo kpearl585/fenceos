@@ -1,7 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
+import { canAccess } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 
 export async function addMaterial(fd: FormData) {
@@ -66,14 +67,18 @@ export async function bulkAddMaterials(rows: { name: string; sku: string; unit: 
   return { imported: data?.length || 0, errors: [] };
 }
 
-import { createAdminClient } from "@/lib/supabase/server";
-
 export async function updateMaterialPrice(
   materialId: string,
   orgId: string,
   field: 'unit_cost' | 'unit_price',
   value: number
 ) {
+  const supabaseAuth = await createClient()
+  const { data: { user } } = await supabaseAuth.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  const profile = await ensureProfile(supabaseAuth, user)
+  if (!canAccess(profile.role, "materials")) return { error: 'Access denied' }
+  if (orgId !== profile.org_id) return { error: 'Invalid organization' }
   if (value < 0) return { error: 'Price cannot be negative' }
   const supabase = createAdminClient()
   const { error } = await supabase
@@ -92,6 +97,12 @@ export async function updateMaterialField(
   field: 'name' | 'supplier' | 'sku',
   value: string
 ) {
+  const supabaseAuth = await createClient()
+  const { data: { user } } = await supabaseAuth.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  const profile = await ensureProfile(supabaseAuth, user)
+  if (!canAccess(profile.role, "materials")) return { error: 'Access denied' }
+  if (orgId !== profile.org_id) return { error: 'Invalid organization' }
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('materials')

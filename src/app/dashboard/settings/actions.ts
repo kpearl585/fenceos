@@ -12,8 +12,16 @@ async function getAuthContext() {
   return { supabase, profile };
 }
 
+async function getOwnerAuthContext() {
+  const ctx = await getAuthContext();
+  if (ctx.profile.role !== "owner") {
+    throw new Error("Only owners can manage organization settings");
+  }
+  return ctx;
+}
+
 export async function saveOrgSettings(fd: FormData) {
-  const { supabase, profile } = await getAuthContext();
+  const { supabase, profile } = await getOwnerAuthContext();
 
   const base = {
     org_id: profile.org_id,
@@ -36,7 +44,7 @@ export async function saveOrgSettings(fd: FormData) {
 }
 
 export async function saveBranding(fd: FormData) {
-  const { supabase, profile } = await getAuthContext();
+  const { supabase, profile } = await getOwnerAuthContext();
 
   await supabase.from("org_branding").upsert({
     org_id: profile.org_id,
@@ -51,6 +59,8 @@ export async function saveBranding(fd: FormData) {
 }
 
 export async function updateOrgName(orgId: string, name: string) {
+  const { profile } = await getOwnerAuthContext();
+  if (orgId !== profile.org_id) return { error: "Invalid organization" };
   if (!name?.trim()) return { error: "Name is required" };
   const supabase = createAdminClient();
   const { error } = await supabase
@@ -63,6 +73,8 @@ export async function updateOrgName(orgId: string, name: string) {
 }
 
 export async function inviteTeamMember(orgId: string, email: string, role: 'sales' | 'foreman') {
+  const { profile } = await getOwnerAuthContext();
+  if (orgId !== profile.org_id) return { error: 'Invalid organization' }
   if (!email?.trim() || !email.includes('@')) return { error: 'Valid email required' }
   if (!['sales', 'foreman'].includes(role)) return { error: 'Invalid role' }
 
@@ -87,6 +99,8 @@ export async function inviteTeamMember(orgId: string, email: string, role: 'sale
 }
 
 export async function removeTeamMember(profileId: string, orgId: string) {
+  const { profile } = await getOwnerAuthContext()
+  if (orgId !== profile.org_id) return { error: 'Invalid organization' }
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('users')
@@ -100,6 +114,8 @@ export async function removeTeamMember(profileId: string, orgId: string) {
 }
 
 export async function updateMemberRole(profileId: string, orgId: string, role: 'sales' | 'foreman') {
+  const { profile } = await getOwnerAuthContext()
+  if (orgId !== profile.org_id) return { error: 'Invalid organization' }
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('users')

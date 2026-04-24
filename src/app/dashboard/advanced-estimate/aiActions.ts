@@ -1,7 +1,8 @@
 "use server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/bootstrap";
 import OpenAI from "openai";
-import { SYSTEM_PROMPT, USER_PROMPT_TEXT, USER_PROMPT_IMAGE } from "@/lib/fence-graph/ai-extract/prompt";
+import { SYSTEM_PROMPT, USER_PROMPT_TEXT, USER_PROMPT_IMAGE, AERIAL_SYSTEM_ADDENDUM } from "@/lib/fence-graph/ai-extract/prompt";
 import { CRITIQUE_SYSTEM_PROMPT, CRITIQUE_USER_PROMPT } from "@/lib/fence-graph/ai-extract/critique-prompt";
 import { EXTRACTION_JSON_SCHEMA, CRITIQUE_JSON_SCHEMA, validateExtraction } from "@/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph/ai-extract/types";
@@ -151,6 +152,12 @@ async function runImageExtraction(
   mimeType: string,
   additionalText?: string
 ): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number; usedHighDetail: boolean }> {
+  // Determine if this looks like an aerial/satellite image based on context clues
+  const isLikelyAerial = additionalText?.toLowerCase().match(/aerial|satellite|google maps|overhead|bird.?s? eye|drone|top.?down/) != null;
+  const systemPrompt = isLikelyAerial
+    ? SYSTEM_PROMPT + "\n" + AERIAL_SYSTEM_ADDENDUM
+    : SYSTEM_PROMPT;
+
   // Pass 1: low detail
   const lowDetailContent = [
     {
@@ -173,7 +180,7 @@ async function runImageExtraction(
       json_schema: { name: "fence_extraction", strict: true, schema: EXTRACTION_JSON_SCHEMA },
     },
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: lowDetailContent },
     ],
   });
@@ -216,7 +223,7 @@ async function runImageExtraction(
       json_schema: { name: "fence_extraction", strict: true, schema: EXTRACTION_JSON_SCHEMA },
     },
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: highDetailContent },
     ],
   });
@@ -238,11 +245,7 @@ async function getAuthContext(): Promise<{ userId: string; orgId: string } | nul
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
-
-    const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
-    if (!profile) return null;
+    const profile = await ensureProfile(supabase, user);
 
     return { userId: user.id, orgId: profile.org_id };
   } catch {

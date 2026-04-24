@@ -11,6 +11,81 @@ function getServiceClient() {
   return createClient(url, key);
 }
 
+async function beginWebhookProcessing(
+  supabase: ReturnType<typeof getServiceClient>,
+  event: { id: string; type: string }
+) {
+  const { data: existing, error: fetchErr } = await supabase
+    .from("stripe_webhook_events")
+    .select("event_id, status")
+    .eq("event_id", event.id)
+    .maybeSingle();
+
+  if (fetchErr) {
+    throw new Error(`Failed to load webhook event state: ${fetchErr.message}`);
+  }
+
+  if (existing?.status === "processed") {
+    return { shouldProcess: false, duplicate: true };
+  }
+
+  if (existing?.status === "processing") {
+    return { shouldProcess: false, duplicate: true };
+  }
+
+  if (existing?.status === "failed") {
+    const { error: retryErr } = await supabase
+      .from("stripe_webhook_events")
+      .update({
+        status: "processing",
+        last_error: null,
+        received_at: new Date().toISOString(),
+        processed_at: null,
+      })
+      .eq("event_id", event.id);
+
+    if (retryErr) {
+      throw new Error(`Failed to reset webhook event state: ${retryErr.message}`);
+    }
+
+    return { shouldProcess: true, duplicate: false };
+  }
+
+  const { error: insertErr } = await supabase
+    .from("stripe_webhook_events")
+    .insert({
+      event_id: event.id,
+      event_type: event.type,
+      status: "processing",
+    });
+
+  if (insertErr) {
+    throw new Error(`Failed to record webhook event: ${insertErr.message}`);
+  }
+
+  return { shouldProcess: true, duplicate: false };
+}
+
+async function finishWebhookProcessing(
+  supabase: ReturnType<typeof getServiceClient>,
+  eventId: string,
+  status: "processed" | "failed",
+  lastError?: string
+) {
+  const { error } = await supabase
+    .from("stripe_webhook_events")
+    .update({
+      status,
+      processed_at: status === "processed" ? new Date().toISOString() : null,
+      last_error: lastError ?? null,
+    })
+    .eq("event_id", eventId);
+
+  if (error) {
+    console.error(`[webhook] Failed to update event ${eventId} status:`, error.message);
+  }
+}
+
 export async function POST(request: NextRequest) {
   const stripe = getStripe();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -40,93 +115,109 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
   }
 
+  try {
+    const state = await beginWebhookProcessing(supabase, event);
+    if (!state.shouldProcess) {
+      return NextResponse.json({ received: true, duplicate: state.duplicate });
+    }
+  } catch (err) {
+    console.error("[webhook] Failed to initialize idempotency state:", err);
+    return NextResponse.json({ error: "Webhook bookkeeping failed" }, { status: 500 });
+  }
+
   // ── Subscription checkout completed ──────────────────────────────────────
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
+  try {
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
 
-    if (session.mode === "subscription") {
-      const orgId = session.metadata?.org_id;
-      const plan  = session.metadata?.plan;
-      const customerId = typeof session.customer === "string"
-        ? session.customer : session.customer?.id;
+      if (session.mode === "subscription") {
+        const orgId = session.metadata?.org_id;
+        const plan  = session.metadata?.plan;
+        const customerId = typeof session.customer === "string"
+          ? session.customer : session.customer?.id;
 
-      if (orgId && plan && customerId) {
-        const { error: updateErr } = await supabase.from("organizations").update({
-          stripe_customer_id: customerId,
-          stripe_subscription_id: typeof session.subscription === "string"
-            ? session.subscription : null,
-          plan,
-          plan_status: "active",
-          trial_ends_at: null,
+        if (orgId && plan && customerId) {
+          const { error: updateErr } = await supabase.from("organizations").update({
+            stripe_customer_id: customerId,
+            stripe_subscription_id: typeof session.subscription === "string"
+              ? session.subscription : null,
+            plan,
+            plan_status: "active",
+            trial_ends_at: null,
+          }).eq("id", orgId);
+
+          if (updateErr) {
+            console.error(`[webhook] Failed to update org ${orgId} after checkout:`, updateErr.message);
+            throw new Error("DB update failed");
+          }
+        }
+      }
+
+      // Deposit payment
+      if (session.mode === "payment") {
+        const estimateId = session.metadata?.estimate_id;
+        const orgId      = session.metadata?.org_id;
+        if (estimateId && orgId) {
+          const piId = typeof session.payment_intent === "string"
+            ? session.payment_intent : null;
+          const { error: depositErr } = await supabase.from("estimates").update({
+            deposit_paid: true,
+            deposit_paid_at: new Date().toISOString(),
+            stripe_payment_intent_id: piId,
+            stripe_payment_status: "paid",
+            status: "deposit_paid",
+            updated_at: new Date().toISOString(),
+          }).eq("id", estimateId).eq("org_id", orgId);
+
+          if (depositErr) {
+            console.error(`[webhook] Failed to update deposit for estimate ${estimateId}:`, depositErr.message);
+            throw new Error("DB update failed");
+          }
+        }
+      }
+    }
+
+    // ── Subscription updated ──────────────────────────────────────────────────
+    if (event.type === "customer.subscription.updated") {
+      const sub = event.data.object;
+      const orgId = sub.metadata?.org_id;
+      if (orgId) {
+        const plan = sub.metadata?.plan || sub.items.data[0]?.price?.metadata?.plan;
+        const { error: subUpdateErr } = await supabase.from("organizations").update({
+          plan: plan || null,
+          plan_status: sub.status,
         }).eq("id", orgId);
 
-        if (updateErr) {
-          console.error(`[webhook] Failed to update org ${orgId} after checkout:`, updateErr.message);
-          // Return 500 so Stripe retries the webhook
-          return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+        if (subUpdateErr) {
+          console.error(`[webhook] Failed to update subscription for org ${orgId}:`, subUpdateErr.message);
+          throw new Error("DB update failed");
         }
       }
     }
 
-    // Deposit payment
-    if (session.mode === "payment") {
-      const estimateId = session.metadata?.estimate_id;
-      const orgId      = session.metadata?.org_id;
-      if (estimateId && orgId) {
-        const piId = typeof session.payment_intent === "string"
-          ? session.payment_intent : null;
-        const { error: depositErr } = await supabase.from("estimates").update({
-          deposit_paid: true,
-          deposit_paid_at: new Date().toISOString(),
-          stripe_payment_intent_id: piId,
-          stripe_payment_status: "paid",
-          status: "deposit_paid",
-          updated_at: new Date().toISOString(),
-        }).eq("id", estimateId).eq("org_id", orgId);
+    // ── Subscription cancelled / deleted ─────────────────────────────────────
+    if (event.type === "customer.subscription.deleted") {
+      const sub = event.data.object;
+      const orgId = sub.metadata?.org_id;
+      if (orgId) {
+        const { error: cancelErr } = await supabase.from("organizations").update({
+          plan: "free",
+          plan_status: "cancelled",
+          stripe_subscription_id: null,
+        }).eq("id", orgId);
 
-        if (depositErr) {
-          console.error(`[webhook] Failed to update deposit for estimate ${estimateId}:`, depositErr.message);
-          return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+        if (cancelErr) {
+          console.error(`[webhook] Failed to cancel subscription for org ${orgId}:`, cancelErr.message);
+          throw new Error("DB update failed");
         }
       }
     }
+
+    await finishWebhookProcessing(supabase, event.id, "processed");
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown webhook error";
+    await finishWebhookProcessing(supabase, event.id, "failed", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  // ── Subscription updated ──────────────────────────────────────────────────
-  if (event.type === "customer.subscription.updated") {
-    const sub = event.data.object;
-    const orgId = sub.metadata?.org_id;
-    if (orgId) {
-      const plan = sub.metadata?.plan || sub.items.data[0]?.price?.metadata?.plan;
-      const { error: subUpdateErr } = await supabase.from("organizations").update({
-        plan: plan || null,
-        plan_status: sub.status,
-      }).eq("id", orgId);
-
-      if (subUpdateErr) {
-        console.error(`[webhook] Failed to update subscription for org ${orgId}:`, subUpdateErr.message);
-        return NextResponse.json({ error: "DB update failed" }, { status: 500 });
-      }
-    }
-  }
-
-  // ── Subscription cancelled / deleted ─────────────────────────────────────
-  if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object;
-    const orgId = sub.metadata?.org_id;
-    if (orgId) {
-      const { error: cancelErr } = await supabase.from("organizations").update({
-        plan: "free",
-        plan_status: "cancelled",
-        stripe_subscription_id: null,
-      }).eq("id", orgId);
-
-      if (cancelErr) {
-        console.error(`[webhook] Failed to cancel subscription for org ${orgId}:`, cancelErr.message);
-        return NextResponse.json({ error: "DB update failed" }, { status: 500 });
-      }
-    }
-  }
-
-  return NextResponse.json({ received: true });
 }

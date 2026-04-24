@@ -1,28 +1,5 @@
 import { getStripe } from "@/lib/stripe/client";
-
-export const PLAN_PRICE_IDS: Record<string, string> = {
-  starter:  "price_1T6t9h38qXAGqAtugJvPNdxg",
-  pro:      "price_1T6t9h38qXAGqAtu6Hx3Co36",
-  business: "price_1T6t9i38qXAGqAtulhchhs7O",
-};
-
-export const PLAN_PRICE_IDS_ANNUAL: Record<string, string> = {
-  starter:  "price_1T6t9h38qXAGqAtu4bWIT6NI",
-  pro:      "price_1T6t9i38qXAGqAtuUrw39fcc",
-  business: "price_1T6t9i38qXAGqAtuW5GiL25Z",
-};
-
-export const PLAN_ANNUAL_SAVINGS: Record<string, number> = {
-  starter:  98,
-  pro:      178,
-  business: 358,
-};
-
-export const PLAN_LIMITS = {
-  starter:  { users: 1, estimates_per_month: 20 },
-  pro:      { users: 5, estimates_per_month: null },
-  business: { users: null, estimates_per_month: null },
-};
+import { getStripePriceId, type BillablePlanKey, type BillingPeriod } from "@/lib/billing/plans";
 
 export async function createSubscriptionCheckout({
   orgId,
@@ -35,16 +12,14 @@ export async function createSubscriptionCheckout({
 }: {
   orgId: string;
   userId: string;
-  plan: "starter" | "pro" | "business";
+  plan: BillablePlanKey;
   email: string;
   successUrl: string;
   cancelUrl: string;
-  billingPeriod?: "monthly" | "annual";
+  billingPeriod?: BillingPeriod;
 }) {
   const stripe = getStripe();
-  const priceId = billingPeriod === "annual"
-    ? PLAN_PRICE_IDS_ANNUAL[plan]
-    : PLAN_PRICE_IDS[plan];
+  const priceId = getStripePriceId(plan, billingPeriod);
   if (!priceId) throw new Error(`Unknown plan: ${plan}`);
 
   const session = await stripe.checkout.sessions.create({

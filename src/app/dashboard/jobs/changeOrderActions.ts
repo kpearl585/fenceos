@@ -65,7 +65,7 @@ export async function submitChangeOrder(fd: FormData) {
   // Foreman can only create COs for assigned jobs
   if (
     profile.role === "foreman" &&
-    job.assigned_foreman_id !== user.id
+    job.assigned_foreman_id !== profile.id
   ) {
     return { success: false, error: "You can only create change orders for jobs assigned to you" };
   }
@@ -145,7 +145,7 @@ export async function submitChangeOrder(fd: FormData) {
 /* ------------------------------------------------------------------ */
 
 export async function approveChangeOrderAction(fd: FormData) {
-  const { user, profile } = await getChangeOrderAuthContext();
+  const { profile } = await getChangeOrderAuthContext();
   const changeOrderId = fd.get("changeOrderId") as string;
   const jobId = fd.get("jobId") as string;
 

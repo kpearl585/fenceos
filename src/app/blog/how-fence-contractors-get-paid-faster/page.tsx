@@ -57,7 +57,7 @@ export default function ArticlePage() {
           <h2 className="text-2xl font-bold text-gray-900 mt-10 mb-4">2. Collect Deposits at the Point of Approval</h2>
           <p className="text-gray-700">The biggest cash flow improvement isn&apos;t faster approval — it&apos;s tying deposit collection directly to the approval. When a customer approves your estimate, they can pay the deposit in the same flow, on the same screen, without a separate conversation.</p>
 
-          <p className="text-gray-700">This matters for several reasons. First, the customer is already in a &quot;yes&quot; mindset — they just said yes to your estimate. Converting that momentum into a payment is natural. Second, you eliminate the awkward "okay I&apos;ll send you a Venmo" conversation and the 48-hour wait that follows.</p>
+          <p className="text-gray-700">This matters for several reasons. First, the customer is already in a &quot;yes&quot; mindset — they just said yes to your estimate. Converting that momentum into a payment is natural. Second, you eliminate the awkward &quot;okay I&apos;ll send you a Venmo&quot; conversation and the 48-hour wait that follows.</p>
 
           <p className="text-gray-700">Most fence contractors set deposits at 30–50% of the total job value. On a $12,000 fence install, that&apos;s $3,600–$6,000 hitting your account the day the job is sold, not the day it starts. That money covers materials, and you&apos;re no longer financing the job out of your own pocket.</p>
 

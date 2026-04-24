@@ -19,6 +19,7 @@ export {
 import { buildFenceGraph } from "./builder";
 import { generateBom, type FenceType, type WoodStyle } from "./bom/index";
 import type { FenceProjectInput, FenceEstimateResult } from "./types";
+import { assertValidEstimateOptions, assertValidFenceProjectInput } from "./estimateInput";
 
 export interface EstimateOptions {
   fenceType?: FenceType;
@@ -39,6 +40,14 @@ export function estimateFence(
   const opts: EstimateOptions = typeof laborRateOrOptions === "number"
     ? { laborRatePerHr: laborRateOrOptions, wastePct }
     : laborRateOrOptions;
+
+  assertValidFenceProjectInput(input);
+  assertValidEstimateOptions({
+    laborRatePerHr: opts.laborRatePerHr ?? 65,
+    wastePct: opts.wastePct ?? wastePct,
+    fenceType: opts.fenceType ?? "vinyl",
+    woodStyle: opts.woodStyle,
+  });
 
   const graph = buildFenceGraph(input);
   return generateBom(graph, {

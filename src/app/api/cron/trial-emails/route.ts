@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, trialDay7Email, trialDay12Email, trialExpiredEmail } from "@/lib/email";
+import { isEmailSuppressed } from "@/lib/email/suppressions";
 
 function admin() {
   return createClient(
@@ -44,6 +45,7 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (!owner?.email) continue;
+    if (await isEmailSuppressed(owner.email)) continue;
 
     // Day 7 email (7 days remaining, not yet sent)
     if (daysLeft === 7 && !org.trial_day7_sent) {

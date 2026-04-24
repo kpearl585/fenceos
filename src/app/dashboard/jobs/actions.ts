@@ -51,6 +51,23 @@ export async function assignForeman(fd: FormData) {
   }
 
   const admin = createAdminClient();
+  if (foremanId) {
+    const { data: assignee, error: assigneeErr } = await admin
+      .from("users")
+      .select("id, role")
+      .eq("id", foremanId)
+      .eq("org_id", profile.org_id)
+      .single();
+
+    if (
+      assigneeErr ||
+      !assignee ||
+      (assignee.role !== "foreman" && assignee.role !== "owner")
+    ) {
+      throw new Error("Selected foreman is invalid for this organization");
+    }
+  }
+
   const { error } = await admin
     .from("jobs")
     .update({ assigned_foreman_id: foremanId || null })
@@ -103,8 +120,9 @@ export async function transitionJobStatus(fd: FormData) {
   // Load current job
   const { data: job, error: loadErr } = await supabase
     .from("jobs")
-    .select("status, org_id")
+    .select("status, org_id, assigned_foreman_id, material_verification_status")
     .eq("id", jobId)
+    .eq("org_id", profile.org_id)
     .single();
 
   if (loadErr || !job) throw new Error("Job not found");
@@ -122,16 +140,18 @@ export async function transitionJobStatus(fd: FormData) {
     redirect(`/dashboard/jobs/${jobId}?error=Foremen+can+only+start+scheduled+jobs`);
   }
 
+  if (
+    profile.role === "foreman" &&
+    job.assigned_foreman_id !== profile.id
+  ) {
+    redirect(`/dashboard/jobs/${jobId}?error=You+can+only+update+jobs+assigned+to+you`);
+  }
+
   // Enforce: material_verification_status must be 'foreman_approved' before starting
   // Requires migration: ALTER TABLE jobs ADD COLUMN IF NOT EXISTS material_verification_status text DEFAULT 'pending'
   //   CHECK (material_verification_status IN ('pending', 'employee_confirmed', 'foreman_approved', 'rejected'));
   if (newStatus === "active") {
-    const { data: jobForVerify } = await supabase
-      .from("jobs")
-      .select("material_verification_status")
-      .eq("id", jobId)
-      .single();
-    const mvStatus = jobForVerify?.material_verification_status;
+    const mvStatus = job.material_verification_status;
     if (mvStatus && mvStatus !== "foreman_approved") {
       redirect(`/dashboard/jobs/${jobId}?error=Materials+must+be+verified+before+starting+this+job`);
     }
@@ -163,7 +183,7 @@ export async function transitionJobStatus(fd: FormData) {
 
   const updateData: Record<string, unknown> = { status: newStatus };
   if (newStatus === "complete") {
-    updateData.completed_date = new Date().toISOString().split("T")[0];
+    updateData.completed_at = new Date().toISOString();
   }
 
   const admin = createAdminClient();
@@ -196,7 +216,7 @@ export async function updateJobStatus(fd: FormData) {
   // Fetch current status to validate transition
   const { data: job, error: fetchError } = await supabase
     .from("jobs")
-    .select("status")
+    .select("status, assigned_foreman_id, material_verification_status")
     .eq("id", jobId)
     .eq("org_id", profile.org_id)
     .single();
@@ -206,13 +226,54 @@ export async function updateJobStatus(fd: FormData) {
   const currentIdx = STATUS_ORDER.indexOf(job.status);
   const newIdx = STATUS_ORDER.indexOf(newStatus);
 
+  if (profile.role === "foreman") {
+    if (job.assigned_foreman_id !== profile.id) {
+      throw new Error("You can only update jobs assigned to you");
+    }
+    if (!(job.status === "scheduled" && newStatus === "active")) {
+      throw new Error("Foremen can only start scheduled jobs");
+    }
+  }
+
   // Enforce forward-only transitions (one step at a time)
   if (newIdx !== currentIdx + 1) {
     throw new Error(`Invalid transition: ${job.status} → ${newStatus}`);
   }
 
+  if (newStatus === "active") {
+    const mvStatus = job.material_verification_status;
+    if (mvStatus && mvStatus !== "foreman_approved") {
+      throw new Error("Materials must be verified before starting this job");
+    }
+
+    if (!mvStatus) {
+      const { data: unverified } = await supabase
+        .from("job_material_verifications")
+        .select("id")
+        .eq("job_id", jobId)
+        .eq("verified", false);
+
+      if (unverified && unverified.length > 0) {
+        throw new Error(`Verify all ${unverified.length} material(s) before starting the job`);
+      }
+    }
+  }
+
+  if (newStatus === "complete") {
+    const { data: incomplete } = await supabase
+      .from("job_checklists")
+      .select("id")
+      .eq("job_id", jobId)
+      .eq("is_required", true)
+      .eq("completed", false);
+
+    if (incomplete && incomplete.length > 0) {
+      throw new Error(`Complete all ${incomplete.length} required checklist item(s) first`);
+    }
+  }
+
   const updates: Record<string, unknown> = { status: newStatus };
-  if (newStatus === "complete") updates.completed_date = new Date().toISOString();
+  if (newStatus === "complete") updates.completed_at = new Date().toISOString();
 
   const adminClient = createAdminClient();
   const { error } = await adminClient

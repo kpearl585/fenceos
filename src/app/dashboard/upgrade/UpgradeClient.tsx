@@ -1,44 +1,12 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-const PLANS = [
-  {
-    key: "starter",
-    name: "Starter",
-    monthlyPrice: 29,
-    annualPrice: 290,
-    annualSavings: 58,
-    description: "Perfect for solo operators who need fast, accurate estimates.",
-    features: ["Unlimited estimates", "Auto material calculations", "Margin protection", "PDF quote generation", "1 user", "Email support"],
-    highlighted: false,
-  },
-  {
-    key: "pro",
-    name: "Pro",
-    monthlyPrice: 79,
-    annualPrice: 790,
-    annualSavings: 158,
-    description: "For contractors running a crew. Everything in Starter, plus job management.",
-    features: ["Everything in Starter", "Jobs & foreman board", "Foreman mobile access", "Change order tracking", "Custom branding on PDFs", "3 users", "Priority support"],
-    highlighted: true,
-  },
-  {
-    key: "business",
-    name: "Business",
-    monthlyPrice: 149,
-    annualPrice: 1490,
-    annualSavings: 298,
-    description: "For growing operations running multiple crews and high job volume.",
-    features: ["Everything in Pro", "Unlimited users", "Advanced reporting", "Dedicated onboarding", "Phone support"],
-    highlighted: false,
-  },
-];
+import { BILLABLE_PLAN_ORDER, BILLING_PLANS } from "@/lib/billing/plans";
 
 export default function UpgradeClient() {
-  const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+  const plans = BILLABLE_PLAN_ORDER.map((key) => BILLING_PLANS[key]);
+  const maxAnnualSavings = Math.max(...plans.map((plan) => plan.annualSavings));
 
   async function handleSelect(plan: string) {
     setLoading(plan);
@@ -80,12 +48,12 @@ export default function UpgradeClient() {
           </button>
           <span className={`text-sm font-semibold ${billingPeriod === "annual" ? "text-fence-900" : "text-gray-400"}`}>
             Annual
-            <span className="ml-2 bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">Save up to $358</span>
+            <span className="ml-2 bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">Save up to ${maxAnnualSavings}</span>
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PLANS.map((plan) => {
+          {plans.map((plan) => {
             const price = billingPeriod === "annual" ? Math.round(plan.annualPrice / 12) : plan.monthlyPrice;
             return (
               <div

@@ -91,7 +91,9 @@ export default async function MetricsDashboard() {
   ]);
 
   const estimates  = allEstimates  ?? [];
+  const jobs       = allJobs       ?? [];
   const customers  = allCustomers  ?? [];
+  const team       = teamMembers   ?? [];
 
   //  Revenue 
   const closed     = estimates.filter(e => ["accepted","deposit_paid"].includes(e.status));
@@ -120,21 +122,21 @@ export default async function MetricsDashboard() {
   const closeRate     = sent.length  > 0 ? (closed.length  / sent.length)  * 100 : 0;
   const closeRateWeek = sentWeek.length > 0 ? (closedWeek.length / sentWeek.length) * 100 : 0;
 
-  //  CAC / LTV / LTV:CAC 
-  // CAC = estimated (no ad spend yet — using $0 paid, time-cost proxy)
-  // Once Stripe live: CAC = total acquisition spend / new customers
   const newCust90  = customers.filter(c => c.created_at >= start90).length;
-  const cac        = newCust90 > 0 ? 0 : 0; // $0 when all organic — update when paid traffic starts
-  const avgMonthlyRev = avgDeal > 0 ? avgDeal : 0;
-  const estimatedLTV  = avgDeal * 3; // conservative: avg contractor stays 3+ jobs
-  const ltvcac         = cac > 0 ? estimatedLTV / cac : null;
+  const activeJobs = jobs.filter(j => j.status === "active").length;
+  const scheduledJobs = jobs.filter(j => j.status === "scheduled").length;
+  const closeCycleSamples = closed
+    .filter(e => e.accepted_at && e.last_sent_at)
+    .map((e) => {
+      const acceptedAt = new Date(e.accepted_at!).getTime();
+      const sentAt = new Date(e.last_sent_at!).getTime();
+      return acceptedAt > sentAt ? (acceptedAt - sentAt) / 86400000 : null;
+    })
+    .filter((days): days is number => days != null);
+  const avgDaysToClose = closeCycleSamples.length > 0
+    ? closeCycleSamples.reduce((sum, days) => sum + days, 0) / closeCycleSamples.length
+    : null;
 
-  //  Retention proxies 
-  const custWithJobs   = new Set((allJobs ?? []).map(j => j.id)).size;
-  const onboardingRate = customers.length > 0 ? Math.min(100, (custWithJobs / customers.length) * 100) : 0;
-
-  //  Efficiency 
-  const grossMarginPct = 75; // SaaS target — update when cost data available
   const plan = org?.plan ?? "trial";
   const daysLeft = org?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(org.trial_ends_at).getTime() - now.getTime()) / 86400000))
@@ -149,9 +151,9 @@ export default async function MetricsDashboard() {
   } else if (sent.length > 0 && closeRate < 15) {
     bottleneck = "Low close rate — offer or pricing issue.";
     bottleneckAction = "Review your last 3 rejected estimates. Adjust price or scope.";
-  } else if (closeRate >= 15 && customers.length > 5 && onboardingRate < 50) {
-    bottleneck = "Low onboarding completion — retention risk.";
-    bottleneckAction = "Call your last 5 customers. Ask what's confusing about the process.";
+  } else if (avgDaysToClose != null && avgDaysToClose > 14) {
+    bottleneck = "Deals are taking too long to close.";
+    bottleneckAction = "Tighten follow-up after quotes go out and review quote speed-to-send.";
   } else if (closeRate >= 25 && revMonth > 0) {
     bottleneck = "Engine running. Bottleneck: volume.";
     bottleneckAction = "Increase outreach volume — more quotes = more revenue.";
@@ -195,7 +197,7 @@ export default async function MetricsDashboard() {
       {/* Acquisition Row */}
       <div>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Acquisition</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard icon="" label="Quotes Sent (Week)"  value={String(sentWeek.length)}
             deltaText={leadsDeltaObj.text} deltaColor={leadsDeltaObj.color} sub="vs prior 7 days" />
           <StatCard icon="" label="Close Rate (All Time)" value={pct(closeRate)}
@@ -204,23 +206,17 @@ export default async function MetricsDashboard() {
           <StatCard icon="" label="Close Rate (Week)"     value={pct(closeRateWeek)}
             accent={closeRateWeek >= 30 ? "text-green-600" : "text-amber-600"}
             sub={`${closedWeek.length} of ${sentWeek.length} this week`} />
-          <StatCard icon="" label="CAC"  value={cac > 0 ? currency(cac) : "$0 (organic)"}
-            sub="cost per acquired customer" />
         </div>
       </div>
 
-      {/* Retention + LTV Row */}
+      {/* Operations Row */}
       <div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Retention & LTV</h2>
+        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Operations</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon=""  label="Est. Customer LTV"    value={currency(estimatedLTV)} sub="avg deal × 3 jobs" />
-          <StatCard icon=""  label="LTV:CAC Ratio"        value={ltvcac !== null ? `${ltvcac.toFixed(1)}:1` : "N/A (organic)"}
-            accent="text-green-600" sub="Target: >3:1" />
-          <StatCard icon=""  label="Onboarding Rate"      value={pct(onboardingRate)}
-            accent={onboardingRate >= 60 ? "text-green-600" : "text-amber-600"}
-            sub="customers with active jobs" />
-          <StatCard icon=""  label="Total Customers"      value={String(customers.length)}
-            sub={`${customers.filter(c => c.created_at >= startThisMonth).length} new this month`} />
+          <StatCard icon="" label="Active Jobs" value={String(activeJobs)} sub={`${scheduledJobs} scheduled`} />
+          <StatCard icon="" label="Avg Days To Close" value={avgDaysToClose != null ? `${avgDaysToClose.toFixed(1)}d` : "N/A"} sub="quote sent → accepted" />
+          <StatCard icon="" label="Customers (90d)" value={String(newCust90)} sub="new customer records created" />
+          <StatCard icon="" label="Team Size" value={String(team.length)} sub="users in this org" />
         </div>
       </div>
 
@@ -229,7 +225,7 @@ export default async function MetricsDashboard() {
         <h2 className="font-bold text-fence-950 mb-5">Performance Health</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <HealthBar label="Close Rate"       value={closeRate}     max={50}  target={30} />
-          <HealthBar label="Onboarding Rate"  value={onboardingRate} max={100} target={60} />
+          <HealthBar label="Quotes Sent This Week" value={sentWeek.length} max={10} target={5} format="raw" />
           <HealthBar label="Avg Deal Size"    value={avgDeal}       max={10000} target={3000} format="currency" />
         </div>
       </div>
@@ -239,15 +235,10 @@ export default async function MetricsDashboard() {
         bottleneck.includes("No data") || bottleneck.includes("No quotes")
           ? "bg-gray-50 border-gray-200"
           : bottleneck.includes("Low close") ? "bg-amber-50 border-amber-200"
-          : bottleneck.includes("onboarding") ? "bg-red-50 border-red-200"
+          : bottleneck.includes("taking too long") ? "bg-red-50 border-red-200"
           : "bg-green-50 border-green-200"
       }`}>
         <div className="flex items-start gap-3">
-          <span className="text-xl">
-            {bottleneck.includes("volume") ? "" :
-             bottleneck.includes("onboarding") ? "" :
-             bottleneck.includes("close rate") ? "" : ""}
-          </span>
           <div>
             <h3 className="font-bold text-fence-950 mb-1">Current Bottleneck</h3>
             <p className="text-sm text-gray-700 mb-2">{bottleneck}</p>
@@ -263,8 +254,8 @@ export default async function MetricsDashboard() {
           {[
             { cond: "Leads low",              fix: "Acquisition problem → increase outreach",   active: sentWeek.length < 3 },
             { cond: "Leads high, closes low", fix: "Offer problem → review pricing + messaging", active: sentWeek.length >= 3 && closeRate < 15 },
-            { cond: "Sales high, churn high", fix: "Onboarding problem → improve activation",   active: closed.length > 10 && onboardingRate < 50 },
-            { cond: "Revenue high, margin low",fix: "Pricing problem → raise prices",           active: revMonth > 10000 && grossMarginPct < 60 },
+            { cond: "Quotes slow to close",   fix: "Follow-up problem → tighten quote follow-up cadence", active: avgDaysToClose != null && avgDaysToClose > 14 },
+            { cond: "Revenue high, deal size low",fix: "Packaging problem → raise minimum job size", active: revMonth > 10000 && avgDeal < 2500 },
           ].map(({ cond, fix, active }) => (
             <div key={cond} className={`flex gap-3 p-3 rounded-lg ${active ? "bg-amber-500/20 border border-amber-500/40" : "bg-white/5"}`}>
               <span>{active ? "" : ""}</span>

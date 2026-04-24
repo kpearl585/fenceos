@@ -1,5 +1,6 @@
 "use server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/bootstrap";
 import { matchSupplierRow, parseSupplierCsv } from "@/lib/price-sync/matcher";
 import type { MatchResult } from "@/lib/price-sync/matcher";
 
@@ -19,11 +20,8 @@ export async function parsePriceSyncCsv(
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
-
+    const profile = await ensureProfile(supabase, user);
     const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
-    if (!profile) return { success: false, error: "Profile not found" };
 
     // Parse CSV
     const { rows, format } = parseSupplierCsv(csvText);
@@ -73,11 +71,8 @@ export async function applyPriceUpdates(
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, updatedCount: 0, error: "Not authenticated" };
-
+    const profile = await ensureProfile(supabase, user);
     const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
-    if (!profile) return { success: false, updatedCount: 0, error: "Profile not found" };
 
     const now = new Date().toISOString();
     let updatedCount = 0;
@@ -115,11 +110,8 @@ export async function getPriceFreshness(): Promise<{
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { totalMaterials: 0, pricedMaterials: 0, staleCount: 0, neverUpdated: 0, lastSyncDate: null };
-
+    const profile = await ensureProfile(supabase, user);
     const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles").select("org_id").eq("auth_id", user.id).single();
-    if (!profile) return { totalMaterials: 0, pricedMaterials: 0, staleCount: 0, neverUpdated: 0, lastSyncDate: null };
 
     const { data: materials } = await admin
       .from("materials")
