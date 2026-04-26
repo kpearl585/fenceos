@@ -14,6 +14,8 @@ export { DEFAULT_ESTIMATOR_CONFIG } from "./defaults";
 
 export {
   mergeEstimatorConfig,
+  mergeResolvedEstimatorConfig,
+  extractEstimatorOverrides,
   resolveEstimatorConfigFromOrgSettings,
   validateEstimatorConfig,
 } from "./resolveEstimatorConfig";

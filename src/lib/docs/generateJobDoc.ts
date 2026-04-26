@@ -1,23 +1,12 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { DOC_SKUS, type DocSku } from "./data";
 
 // Bridge to ContractorDocuments.com's /api/generate-from-job endpoint.
 // Given a job id + a doc sku, pulls the job's customer + estimate, builds a
 // variables map, asks contractordocs to render a branded PDF, uploads it to
 // this org's 'contracts' storage bucket, and returns a signed URL.
-
-// Must match DOC_REGISTRY in contractordocs.
-export const DOC_SKUS = [
-  { sku: "contractor-agreement", label: "Service Agreement / Contract" },
-  { sku: "change-order", label: "Change Order Form" },
-  { sku: "lien-waiver-conditional", label: "Conditional Lien Waiver" },
-  { sku: "lien-waiver-final", label: "Final Lien Waiver" },
-  { sku: "scope-of-work", label: "Scope of Work" },
-  { sku: "warranty-certificate", label: "Warranty Certificate" },
-] as const;
-
-export type DocSku = (typeof DOC_SKUS)[number]["sku"];
 
 const CONTRACTORDOCS_URL =
   process.env.CONTRACTORDOCS_URL ?? "https://contractordocuments.com";

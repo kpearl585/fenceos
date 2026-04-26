@@ -4,6 +4,16 @@
 
 import type { OrgEstimatorConfig } from "./types";
 
+function makeAdaptiveBuckets() {
+  return {
+    easy: { multiplier: 1, sampleCount: 0 },
+    standard: { multiplier: 1, sampleCount: 0 },
+    moderate: { multiplier: 1, sampleCount: 0 },
+    difficult: { multiplier: 1, sampleCount: 0 },
+    very_difficult: { multiplier: 1, sampleCount: 0 },
+  };
+}
+
 export const DEFAULT_ESTIMATOR_CONFIG: Readonly<OrgEstimatorConfig> = {
   configVersion: 1,
 
@@ -11,22 +21,22 @@ export const DEFAULT_ESTIMATOR_CONFIG: Readonly<OrgEstimatorConfig> = {
   // Sourced from current BOM generators as of April 2026.
   labor: {
     vinyl: {
-      holeDig: 0.25,
-      postSet: 0.20,
-      sectionInstall: 0.50,
-      cutting: 0.15,
-      racking: 0.30,
-      concretePour: 0.08,
+      holeDig: 0.21,
+      postSet: 0.17,
+      sectionInstall: 0.43,
+      cutting: 0.13,
+      racking: 0.26,
+      concretePour: 0.07,
     },
     wood: {
-      holeDig: 0.25,
-      postSet: 0.20,
-      railInstall: 0.10,
-      boardNailing: 0.40,
-      bobInstall: 0.06,
-      cutting: 0.15,
-      racking: 0.30,
-      concretePour: 0.08,
+      holeDig: 0.18,
+      postSet: 0.14,
+      railInstall: 0.07,
+      boardNailing: 0.28,
+      bobInstall: 0.04,
+      cutting: 0.11,
+      racking: 0.21,
+      concretePour: 0.06,
     },
     chain_link: {
       holeDig: 0.25,
@@ -91,26 +101,26 @@ export const DEFAULT_ESTIMATOR_CONFIG: Readonly<OrgEstimatorConfig> = {
   // ── Overhead (per job) ─────────────────────────────────────────
   overhead: {
     fixed: {
-      setupHrs: 1.5,     // unload truck, stage tools, prep site
-      layoutHrs: 0.75,   // measure, stake, string lines
+      setupHrs: 1.0,     // unload truck, stage tools, prep site
+      layoutHrs: 0.5,    // measure, stake, string lines
     },
     perDay: {
-      cleanupHrs: 0.5,   // end-of-day sweep, load scraps
+      cleanupHrs: 0.35,  // end-of-day sweep, load scraps
     },
   },
 
   // ── Delivery / logistics ───────────────────────────────────────
   logistics: {
-    deliveryFee: 95.00,            // flat delivery charge
+    deliveryFee: 50.00,            // flat delivery charge
     freeDeliveryThreshold: 500,    // waived above this material total
   },
 
   // ── Equipment rental ($/day) ───────────────────────────────────
   equipment: {
-    augerPerDay: 95,
-    mixerPerDay: 55,
-    stretcherPerDay: 45,   // chain link fence stretcher
-    sawPerDay: 50,          // chop saw for aluminum/metal
+    augerPerDay: 0,
+    mixerPerDay: 0,
+    stretcherPerDay: 0,    // chain link fence stretcher
+    sawPerDay: 0,          // chop saw for aluminum/metal
   },
 
   // ── Old fence removal ──────────────────────────────────────────
@@ -140,5 +150,14 @@ export const DEFAULT_ESTIMATOR_CONFIG: Readonly<OrgEstimatorConfig> = {
     key: "base",
     laborMultiplier: 1.0,
     materialMultiplier: 1.0,
+  },
+
+  adaptiveLabor: {
+    byFenceType: {
+      vinyl: makeAdaptiveBuckets(),
+      wood: makeAdaptiveBuckets(),
+      chain_link: makeAdaptiveBuckets(),
+      aluminum: makeAdaptiveBuckets(),
+    },
   },
 };

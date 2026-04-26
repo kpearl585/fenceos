@@ -70,7 +70,6 @@ export default function AddressAutocomplete({
       s.dataset.gp = "1";
       document.head.appendChild(s);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

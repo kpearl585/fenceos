@@ -195,6 +195,12 @@ function fmt(n: number) {
   return `$${n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 }
 
+function safeText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return "";
+}
+
 export interface InvoiceData {
   invoiceNumber: string;
   invoiceDate: string;
@@ -236,10 +242,28 @@ export interface InvoiceData {
   notes?: string;
 }
 
-export function InvoicePdf({ data }: { data: InvoiceData }) {
+export default function InvoicePdf({ data }: { data: InvoiceData }) {
   const grandTotal =
     data.estimateTotal +
     data.changeOrders.reduce((s, co) => s + co.subtotal, 0);
+  const orgName = safeText(data.org.name);
+  const orgAddress = safeText(data.org.address);
+  const orgPhone = safeText(data.org.phone);
+  const orgEmail = safeText(data.org.email);
+  const orgLogoUrl = safeText(data.org.logoUrl);
+  const customerName = safeText(data.customer.name);
+  const customerAddress = safeText(data.customer.address);
+  const customerCityStateZip = [data.customer.city, data.customer.state, data.customer.zip]
+    .map(safeText)
+    .filter(Boolean)
+    .join(", ");
+  const customerEmail = safeText(data.customer.email);
+  const customerPhone = safeText(data.customer.phone);
+  const jobTitle = safeText(data.job.title);
+  const fenceTypeLabel = safeText(data.job.fenceType)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const notes = safeText(data.notes);
 
   return (
     <Document>
@@ -247,25 +271,25 @@ export function InvoicePdf({ data }: { data: InvoiceData }) {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            {data.org.logoUrl ? (
+            {orgLogoUrl ? (
               // eslint-disable-next-line jsx-a11y/alt-text
-              <Image src={data.org.logoUrl} style={styles.logo} />
+              <Image src={orgLogoUrl} style={styles.logo} />
             ) : (
-              <Text style={styles.orgName}>{data.org.name}</Text>
+              <Text style={styles.orgName}>{orgName}</Text>
             )}
-            {data.org.logoUrl && (
+            {orgLogoUrl && (
               <Text style={[styles.orgName, { marginTop: 6 }]}>
-                {data.org.name}
+                {orgName}
               </Text>
             )}
-            {data.org.address && (
-              <Text style={styles.orgContact}>{data.org.address}</Text>
+            {orgAddress && (
+              <Text style={styles.orgContact}>{orgAddress}</Text>
             )}
-            {data.org.phone && (
-              <Text style={styles.orgContact}>{data.org.phone}</Text>
+            {orgPhone && (
+              <Text style={styles.orgContact}>{orgPhone}</Text>
             )}
-            {data.org.email && (
-              <Text style={styles.orgContact}>{data.org.email}</Text>
+            {orgEmail && (
+              <Text style={styles.orgContact}>{orgEmail}</Text>
             )}
           </View>
           <View>
@@ -283,29 +307,27 @@ export function InvoicePdf({ data }: { data: InvoiceData }) {
         <View style={styles.billSection}>
           <View style={styles.billBox}>
             <Text style={styles.billLabel}>Bill To</Text>
-            <Text style={styles.billName}>{data.customer.name}</Text>
-            {data.customer.address && (
-              <Text style={styles.billDetail}>{data.customer.address}</Text>
+            <Text style={styles.billName}>{customerName}</Text>
+            {customerAddress && (
+              <Text style={styles.billDetail}>{customerAddress}</Text>
             )}
-            {(data.customer.city || data.customer.state) && (
+            {customerCityStateZip && (
               <Text style={styles.billDetail}>
-                {[data.customer.city, data.customer.state, data.customer.zip]
-                  .filter(Boolean)
-                  .join(", ")}
+                {customerCityStateZip}
               </Text>
             )}
-            {data.customer.email && (
-              <Text style={styles.billDetail}>{data.customer.email}</Text>
+            {customerEmail && (
+              <Text style={styles.billDetail}>{customerEmail}</Text>
             )}
-            {data.customer.phone && (
-              <Text style={styles.billDetail}>{data.customer.phone}</Text>
+            {customerPhone && (
+              <Text style={styles.billDetail}>{customerPhone}</Text>
             )}
           </View>
           <View style={styles.billBox}>
             <Text style={styles.billLabel}>Job Details</Text>
-            <Text style={styles.billName}>{data.job.title}</Text>
+            <Text style={styles.billName}>{jobTitle}</Text>
             <Text style={styles.billDetail}>
-              {data.job.fenceType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+              {fenceTypeLabel}
               {" — "}
               {data.job.linearFeet} linear ft
               {data.job.gateCount > 0 ? `, ${data.job.gateCount} gate${data.job.gateCount > 1 ? "s" : ""}` : ""}
@@ -331,9 +353,9 @@ export function InvoicePdf({ data }: { data: InvoiceData }) {
           </View>
           <View style={styles.tableRow}>
             <View style={styles.colDesc}>
-              <Text style={styles.rowText}>{data.job.title}</Text>
+              <Text style={styles.rowText}>{jobTitle}</Text>
               <Text style={styles.rowSubtext}>
-                {data.job.fenceType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                {fenceTypeLabel}
                 {" · "}{data.job.linearFeet} LF
                 {data.job.gateCount > 0 ? ` · ${data.job.gateCount} gate${data.job.gateCount > 1 ? "s" : ""}` : ""}
               </Text>
@@ -348,7 +370,7 @@ export function InvoicePdf({ data }: { data: InvoiceData }) {
             <View key={co.id}>
               <Text style={styles.sectionLabel}>
                 Change Order {i + 1}
-                {co.description ? ` — ${co.description}` : ""}
+                {co.description ? ` — ${safeText(co.description)}` : ""}
               </Text>
               <View style={styles.tableHeader}>
                 <Text style={[styles.tableHeaderText, styles.colDesc]}>
@@ -367,7 +389,7 @@ export function InvoicePdf({ data }: { data: InvoiceData }) {
               {co.lines.map((line, li) => (
                 <View key={li} style={styles.tableRow}>
                   <Text style={[styles.rowText, styles.colDesc]}>
-                    {line.name}
+                    {safeText(line.name)}
                   </Text>
                   <Text style={[styles.rowText, styles.colQty]}>
                     {line.qty}
@@ -408,16 +430,16 @@ export function InvoicePdf({ data }: { data: InvoiceData }) {
         </View>
 
         {/* Notes */}
-        {data.notes && (
+        {notes && (
           <View style={styles.notesBox}>
             <Text style={styles.notesLabel}>Notes</Text>
-            <Text style={styles.notesText}>{data.notes}</Text>
+            <Text style={styles.notesText}>{notes}</Text>
           </View>
         )}
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>{data.org.name}</Text>
+          <Text style={styles.footerText}>{orgName}</Text>
           <Text style={styles.footerText}>
             Invoice #{data.invoiceNumber} · {data.invoiceDate}
           </Text>

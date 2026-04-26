@@ -86,10 +86,10 @@ export default async function JobsPage({
     <>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fence-900">Jobs</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{total} job{total !== 1 ? "s" : ""}{status ? ` · ${status}` : ""}</p>
+          <h1 className="text-2xl font-bold text-text">Jobs</h1>
+          <p className="text-sm text-muted mt-0.5">{total} job{total !== 1 ? "s" : ""}{status ? ` · ${status}` : ""}</p>
         </div>
-        <Link href="/dashboard/estimates" className="text-sm bg-fence-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-fence-700 transition-colors">
+        <Link href="/dashboard/estimates" className="text-sm bg-accent text-white px-4 py-2 rounded-lg font-semibold hover:bg-accent-light transition-colors">
           + New Estimate
         </Link>
       </div>
@@ -97,37 +97,37 @@ export default async function JobsPage({
       {/* Search + Filter */}
       <form method="GET" className="flex gap-3 mb-6 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input name="q" defaultValue={q} placeholder="Search by customer, type, or foreman..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-fence-500 bg-white" />
+            className="w-full pl-9 pr-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent bg-surface text-text placeholder:text-muted" />
         </div>
-        <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1">
+        <div className="flex gap-1 bg-surface border border-border rounded-lg p-1">
           {STATUS_FILTERS.map(f => (
             <Link key={f.value} href={`/dashboard/jobs?${f.value ? `status=${f.value}` : ""}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${status === f.value ? "bg-fence-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${status === f.value ? "bg-accent text-white" : "text-muted hover:bg-surface-3 hover:text-text"}`}>
               {f.label}
             </Link>
           ))}
         </div>
         {q && (
           <Link href={`/dashboard/jobs${status ? `?status=${status}` : ""}`}
-            className="px-3 py-2.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg bg-white">
+            className="px-3 py-2.5 text-sm text-muted hover:text-text border border-border rounded-lg bg-surface">
             x Clear
           </Link>
         )}
       </form>
 
       {kanbanJobs.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-fence-100 flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-fence-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-12 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center mb-4">
+            <svg className="w-6 h-6 text-accent-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
           </div>
-          <h2 className="font-semibold text-fence-900 mb-1">{q || status ? "No jobs match your filter" : "No jobs yet"}</h2>
-          <p className="text-sm text-gray-400 mb-6">{q || status ? "Try clearing your search or filter." : "Collect a deposit on an accepted estimate, then convert it to create your first job."}</p>
+          <h2 className="font-semibold text-text mb-1">{q || status ? "No jobs match your filter" : "No jobs yet"}</h2>
+          <p className="text-sm text-muted mb-6">{q || status ? "Try clearing your search or filter." : "Collect a deposit on an accepted estimate, then convert it to create your first job."}</p>
           {(q || status) ? (
-            <Link href="/dashboard/jobs" className="bg-fence-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-fence-700 transition-colors inline-block text-sm">Clear Filters</Link>
+            <Link href="/dashboard/jobs" className="bg-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-accent-light transition-colors inline-block text-sm">Clear Filters</Link>
           ) : (
-            <Link href="/dashboard/estimates" className="bg-fence-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-fence-700 transition-colors inline-block text-sm">View Estimates</Link>
+            <Link href="/dashboard/estimates" className="bg-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-accent-light transition-colors inline-block text-sm">View Estimates</Link>
           )}
         </div>
       ) : (

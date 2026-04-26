@@ -1,20 +1,100 @@
 "use client";
 import { useState, useRef, useCallback } from "react";
 import { extractFromText, extractFromImage, extractFromSurvey } from "./aiActions";
-import type { AiExtractionResult, AiExtractedRun, AiExtractedGate, CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
+import type { AiExtractionResult, AiExtractedRun, AiExtractedGate, CritiqueResult, ScopeRiskAssessment } from "@/lib/fence-graph/ai-extract/types";
 import type { RunInput, GateInput, FenceType } from "@/lib/fence-graph/engine";
 import type { SoilType, GateType } from "@/lib/fence-graph/types";
 import { QUICK_TEMPLATES } from "@/lib/fence-graph/ai-extract/templates";
 import { isPaywallBlock, type PaywallBlock } from "@/lib/paywall";
 import { rasterizePdfFirstPage } from "@/lib/pdf/rasterize-client";
+import type { SiteComplexity } from "@/lib/fence-graph/accuracy-types";
 
 export interface AiAppliedState {
   fenceType: FenceType;
   productLineId: string;
   soilType: SoilType;
   windMode: boolean;
+  existingFenceRemoval: boolean;
+  siteComplexity?: Omit<SiteComplexity, "overall_score">;
   runs: RunInput[];
   gates: GateInput[];
+}
+
+type ScopeRiskAnswers = {
+  soilType?: SoilType;
+  demoRequired?: false | "partial" | true;
+  accessDifficulty?: number;
+  obstacles?: number;
+  permitComplexity?: number;
+};
+
+function soilTypeToGroundHardness(soilType: SoilType): number {
+  switch (soilType) {
+    case "rocky":
+      return 5;
+    case "clay":
+      return 3;
+    case "wet":
+      return 3;
+    case "sandy":
+    case "sandy_loam":
+      return 2;
+    case "standard":
+    default:
+      return 2;
+  }
+}
+
+function buildInitialScopeRiskAnswers(
+  assessment: ScopeRiskAssessment | null | undefined,
+  result: AiExtractionResult | null
+): ScopeRiskAnswers {
+  const answers: ScopeRiskAnswers = {};
+  for (const question of assessment?.questions ?? []) {
+    switch (question.field) {
+      case "soilType":
+        if (typeof question.suggestedValue === "string") answers.soilType = question.suggestedValue as SoilType;
+        break;
+      case "demoRequired":
+        if (question.suggestedValue === false || question.suggestedValue === true || question.suggestedValue === "partial") {
+          answers.demoRequired = question.suggestedValue;
+        }
+        break;
+      case "accessDifficulty":
+        if (typeof question.suggestedValue === "number") answers.accessDifficulty = question.suggestedValue;
+        break;
+      case "obstacles":
+        if (typeof question.suggestedValue === "number") answers.obstacles = question.suggestedValue;
+        break;
+      case "permitComplexity":
+        if (typeof question.suggestedValue === "number") answers.permitComplexity = question.suggestedValue;
+        break;
+    }
+  }
+  if (!answers.soilType && result?.runs[0]?.soilType) {
+    answers.soilType = result.runs[0].soilType as SoilType;
+  }
+  return answers;
+}
+
+function buildSiteComplexityFromAnswers(answers: ScopeRiskAnswers): Omit<SiteComplexity, "overall_score"> | undefined {
+  const hasAny =
+    answers.demoRequired !== undefined ||
+    answers.accessDifficulty !== undefined ||
+    answers.obstacles !== undefined ||
+    answers.permitComplexity !== undefined ||
+    answers.soilType !== undefined;
+
+  if (!hasAny) return undefined;
+
+  const soilType = answers.soilType ?? "standard";
+  return {
+    access_difficulty: answers.accessDifficulty ?? 2,
+    obstacles: answers.obstacles ?? 2,
+    ground_hardness: soilTypeToGroundHardness(soilType),
+    demo_required: answers.demoRequired ?? false,
+    permit_complexity: answers.permitComplexity ?? 1,
+  };
 }
 
 interface Props {
@@ -89,6 +169,7 @@ export function toEngineState(
     productLineId: primaryRun.productLineId,
     soilType,
     windMode,
+    existingFenceRemoval: false,
     runs: engineRuns,
     gates: engineGates,
   };
@@ -189,6 +270,8 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   const [critique, setCritique] = useState<CritiqueResult | null>(null);
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
   const [validationBlockers, setValidationBlockers] = useState<string[]>([]);
+  const [scopeRiskAssessment, setScopeRiskAssessment] = useState<ScopeRiskAssessment | null>(null);
+  const [scopeRiskAnswers, setScopeRiskAnswers] = useState<ScopeRiskAnswers>({});
   // criticallyBlocked is the unified gate the Apply button respects; it's
   // true if Zod/business rules blocked, OR critique returned criticalBlockers,
   // OR critique LLM said overallReadyToApply=false.
@@ -206,6 +289,8 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
     setCritique(null);
     setValidationWarnings([]);
     setValidationBlockers([]);
+    setScopeRiskAssessment(null);
+    setScopeRiskAnswers({});
     setCriticallyBlocked(false);
     setApplied(false);
     setRunOverrides({});
@@ -248,6 +333,8 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       setCritique(res.critique ?? null);
       setValidationWarnings(res.validationWarnings ?? []);
       setValidationBlockers(res.validationBlockers ?? []);
+      setScopeRiskAssessment(res.scopeRiskAssessment ?? null);
+      setScopeRiskAnswers(buildInitialScopeRiskAnswers(res.scopeRiskAssessment, res.result));
       setCriticallyBlocked(res.criticallyBlocked ?? res.blocked ?? false);
       if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
     } catch (err) {
@@ -289,6 +376,8 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       setCritique(res.critique ?? null);
       setValidationWarnings(res.validationWarnings ?? []);
       setValidationBlockers(res.validationBlockers ?? []);
+      setScopeRiskAssessment(res.scopeRiskAssessment ?? null);
+      setScopeRiskAnswers(buildInitialScopeRiskAnswers(res.scopeRiskAssessment, res.result));
       setCriticallyBlocked(res.criticallyBlocked ?? res.blocked ?? false);
       setRunOverrides({});
       setDeletedRunIndices(new Set());
@@ -346,16 +435,30 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
         return;
       }
 
+      const soilType = scopeRiskAnswers.soilType ?? state.soilType;
+      const siteComplexity = buildSiteComplexityFromAnswers({
+        ...scopeRiskAnswers,
+        soilType,
+      });
+      const appliedState: AiAppliedState = {
+        ...state,
+        soilType,
+        existingFenceRemoval:
+          scopeRiskAnswers.demoRequired === true || scopeRiskAnswers.demoRequired === "partial",
+        siteComplexity,
+      };
+
       if (typeof window !== "undefined") {
         console.log("[ai-apply]", {
-          runs: state.runs.length,
-          gates: state.gates.length,
-          fenceType: state.fenceType,
-          productLineId: state.productLineId,
+          runs: appliedState.runs.length,
+          gates: appliedState.gates.length,
+          fenceType: appliedState.fenceType,
+          productLineId: appliedState.productLineId,
+          siteComplexity: appliedState.siteComplexity,
         });
       }
 
-      onApply(state);
+      onApply(appliedState);
       setApplied(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to apply runs to estimator.";
@@ -559,9 +662,9 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
                 onChange={e => setAdditionalContext(e.target.checked ? "aerial satellite overhead view" : "")}
                 className="rounded"
               />
-              <span className="text-xs font-semibold text-gray-600">Aerial / Satellite photo</span>
+              <span className="text-xs font-semibold text-text">Aerial / Satellite photo</span>
             </label>
-            <span className="text-xs text-gray-400">(enables scale detection from reference objects)</span>
+            <span className="text-xs text-muted">(enables scale detection from reference objects)</span>
           </div>
           <div>
             <label className={LABEL_CLASS}>Additional context (optional)</label>
@@ -589,7 +692,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
             {surveyPreview ? (
               <div className="relative bg-surface-3 border border-border rounded-xl overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={surveyPreview} alt="Rendered survey" className="w-full max-h-[500px] object-contain bg-white" />
+                <img src={surveyPreview} alt="Rendered survey" className="w-full max-h-[500px] object-contain bg-surface-2" />
                 <div className="absolute top-2 right-2 flex gap-2">
                   <span className="bg-surface-2 border border-border rounded-lg px-2 py-1 text-xs text-muted">
                     {surveyFilename}
@@ -856,6 +959,120 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {scopeRiskAssessment && scopeRiskAssessment.questions.length > 0 && (
+            <div className="bg-surface-2 border border-border rounded-xl px-4 py-4 space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-accent-light uppercase tracking-wider mb-1">Scope Risk Check</p>
+                <p className="text-sm text-text">{scopeRiskAssessment.summary}</p>
+              </div>
+
+              <div className="space-y-3">
+                {scopeRiskAssessment.questions.map((question) => (
+                  <div key={question.id} className="rounded-lg border border-border bg-surface-3 px-3 py-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                          question.priority === "high"
+                            ? "bg-warning/15 text-warning border-warning/30"
+                            : "bg-accent/10 text-accent-light border-accent/30"
+                        }`}
+                      >
+                        {question.priority}
+                      </span>
+                      <p className="text-sm font-semibold text-text">{question.question}</p>
+                    </div>
+                    <p className="text-xs text-muted mb-3">{question.reason}</p>
+
+                    {question.field === "soilType" && (
+                      <select
+                        value={scopeRiskAnswers.soilType ?? "standard"}
+                        onChange={(e) => setScopeRiskAnswers((prev) => ({ ...prev, soilType: e.target.value as SoilType }))}
+                        className={INPUT_CLASS}
+                      >
+                        <option value="standard">Standard</option>
+                        <option value="clay">Clay</option>
+                        <option value="rocky">Rocky</option>
+                        <option value="sandy_loam">Sandy Loam</option>
+                        <option value="sandy">Sandy</option>
+                        <option value="wet">Wet / High Water Table</option>
+                      </select>
+                    )}
+
+                    {question.field === "demoRequired" && (
+                      <select
+                        value={
+                          scopeRiskAnswers.demoRequired === true
+                            ? "full"
+                            : scopeRiskAnswers.demoRequired === "partial"
+                              ? "partial"
+                              : "none"
+                        }
+                        onChange={(e) =>
+                          setScopeRiskAnswers((prev) => ({
+                            ...prev,
+                            demoRequired:
+                              e.target.value === "full"
+                                ? true
+                                : e.target.value === "partial"
+                                  ? "partial"
+                                  : false,
+                          }))
+                        }
+                        className={INPUT_CLASS}
+                      >
+                        <option value="none">No tear-out</option>
+                        <option value="partial">Partial tear-out</option>
+                        <option value="full">Full tear-out</option>
+                      </select>
+                    )}
+
+                    {question.field === "accessDifficulty" && (
+                      <select
+                        value={scopeRiskAnswers.accessDifficulty ?? 2}
+                        onChange={(e) => setScopeRiskAnswers((prev) => ({ ...prev, accessDifficulty: Number(e.target.value) }))}
+                        className={INPUT_CLASS}
+                      >
+                        <option value={1}>1 - Easy truck access</option>
+                        <option value={2}>2 - Normal residential access</option>
+                        <option value={3}>3 - Backyard / moderate carry</option>
+                        <option value={4}>4 - Tight access / hand-carry</option>
+                        <option value={5}>5 - Very difficult access</option>
+                      </select>
+                    )}
+
+                    {question.field === "obstacles" && (
+                      <select
+                        value={scopeRiskAnswers.obstacles ?? 2}
+                        onChange={(e) => setScopeRiskAnswers((prev) => ({ ...prev, obstacles: Number(e.target.value) }))}
+                        className={INPUT_CLASS}
+                      >
+                        <option value={1}>1 - Clear fence line</option>
+                        <option value={2}>2 - Minor obstructions</option>
+                        <option value={3}>3 - Some roots / utilities / rock</option>
+                        <option value={4}>4 - Frequent obstacles</option>
+                        <option value={5}>5 - Heavy obstacle density</option>
+                      </select>
+                    )}
+
+                    {question.field === "permitComplexity" && (
+                      <select
+                        value={scopeRiskAnswers.permitComplexity ?? 1}
+                        onChange={(e) => setScopeRiskAnswers((prev) => ({ ...prev, permitComplexity: Number(e.target.value) }))}
+                        className={INPUT_CLASS}
+                      >
+                        <option value={1}>1 - None</option>
+                        <option value={2}>2 - Basic permit only</option>
+                        <option value={3}>3 - HOA or pool-code review</option>
+                        <option value={4}>4 - Multiple approvals</option>
+                        <option value={5}>5 - Heavy compliance overhead</option>
+                      </select>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

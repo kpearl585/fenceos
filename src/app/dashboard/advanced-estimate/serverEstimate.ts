@@ -5,6 +5,7 @@ import {
   type FenceEstimateResult,
   type FenceProjectInput,
   type FenceType,
+  type MaterialPriceMeta,
   type WoodStyle,
 } from "@/lib/fence-graph/engine";
 import {
@@ -18,6 +19,11 @@ export interface OrgEstimateContext {
   orgId: string;
   profileId: string;
   userId: string;
+}
+
+export interface OrgMaterialPricing {
+  priceMap: Record<string, number>;
+  priceMeta: Record<string, MaterialPriceMeta>;
 }
 
 export async function requireOrgEstimateContext(): Promise<OrgEstimateContext | null> {
@@ -40,17 +46,34 @@ export async function getOrgMaterialPricesByOrgId(
   admin: ReturnType<typeof createAdminClient>,
   orgId: string
 ): Promise<Record<string, number>> {
+  const pricing = await getOrgMaterialPricingByOrgId(admin, orgId);
+  return pricing.priceMap;
+}
+
+export async function getOrgMaterialPricingByOrgId(
+  admin: ReturnType<typeof createAdminClient>,
+  orgId: string
+): Promise<OrgMaterialPricing> {
   const { data: materials } = await admin
     .from("materials")
-    .select("sku, unit_cost")
+    .select("sku, unit_cost, price_updated_at")
     .eq("org_id", orgId);
 
-  if (!materials) return {};
-  return Object.fromEntries(
-    materials
-      .filter((material) => material.unit_cost != null)
-      .map((material) => [material.sku, Number(material.unit_cost)])
-  );
+  if (!materials) return { priceMap: {}, priceMeta: {} };
+
+  return {
+    priceMap: Object.fromEntries(
+      materials
+        .filter((material) => material.unit_cost != null)
+        .map((material) => [material.sku, Number(material.unit_cost)])
+    ),
+    priceMeta: Object.fromEntries(
+      materials.map((material) => [
+        material.sku,
+        { updatedAt: material.price_updated_at },
+      ])
+    ),
+  };
 }
 
 export async function recomputeEstimateForOrg(
@@ -78,13 +101,17 @@ export async function recomputeEstimateForOrg(
     woodStyle,
   });
 
-  const priceMap = await getOrgMaterialPricesByOrgId(context.admin, context.orgId);
+  const { priceMap, priceMeta } = await getOrgMaterialPricingByOrgId(
+    context.admin,
+    context.orgId
+  );
   const result = estimateFence(input, {
     fenceType,
     woodStyle,
     laborRatePerHr: laborRate,
     wastePct,
     priceMap,
+    priceMeta,
   });
 
   return {

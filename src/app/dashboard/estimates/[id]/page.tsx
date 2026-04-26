@@ -73,11 +73,17 @@ export default async function EstimateDetailPage({
 
   const isQuoted = est.status === "quoted";
   const isConverted = est.status === "converted";
-  const marginOk = est.margin_status === "ok";
-  const targetPct = Number(est.target_margin_pct) || 0.35;
+  const marginOk = est.margin_status === "good" || est.margin_status === "ok";
+  const rawTargetPct = Number(est.target_margin_pct);
+  const targetPct = rawTargetPct > 1 ? rawTargetPct / 100 : rawTargetPct || 0.35;
+  const rawGrossMarginPct = Number(est.gross_margin_pct);
+  const grossMarginPct = rawGrossMarginPct > 1 ? rawGrossMarginPct / 100 : rawGrossMarginPct;
   const missingCustomer = !est.customer_id;
   const depositAmount = Number(est.deposit_required_amount) || (Number(est.total) * 0.5);
   const canConvert = !missingCustomer && est.status === "deposit_paid";
+  const customerRecord = Array.isArray(est.customers)
+    ? est.customers[0]
+    : est.customers;
 
   // Check if job exists for converted estimate
   let linkedJobId: string | null = null;
@@ -108,7 +114,7 @@ export default async function EstimateDetailPage({
           <h1 className="font-display text-2xl font-bold text-text">{est.title}</h1>
           <p className="text-sm text-muted mt-0.5">
             {(() => {
-              const cust = (est.customers as unknown as { id: string; name: string }[] | null)?.[0];
+              const cust = customerRecord as { id: string; name: string } | null;
               return cust ? (
                 <Link href={`/dashboard/customers/${cust.id}`} className="text-accent-light hover:text-accent hover:underline transition-colors duration-150">
                   {cust.name}
@@ -157,7 +163,15 @@ export default async function EstimateDetailPage({
 
       {/* ── Customer Info Card ── */}
       {!missingCustomer && (() => {
-        const cust = (est.customers as unknown as { id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; state: string | null }[] | null)?.[0];
+        const cust = customerRecord as {
+          id: string;
+          name: string;
+          phone: string | null;
+          email: string | null;
+          address: string | null;
+          city: string | null;
+          state: string | null;
+        } | null;
         return cust ? (
           <div className="bg-surface-2 rounded-xl border border-border p-4 mb-6">
             <div className="flex items-center justify-between mb-1">
@@ -193,7 +207,7 @@ export default async function EstimateDetailPage({
               marginOk ? "text-accent-light" : "text-danger"
             }`}
           >
-            {fmtPct(est.gross_margin_pct)}
+            {fmtPct(grossMarginPct)}
           </span>
         </div>
 
@@ -398,7 +412,7 @@ export default async function EstimateDetailPage({
               estimateId={est.id}
               acceptToken={est.accept_token}
               customerEmail={
-                (est.customers as unknown as { email?: string }[] | null)?.[0]?.email
+                (customerRecord as { email?: string } | null)?.email
               }
             />
             {est.last_sent_at && (

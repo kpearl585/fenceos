@@ -15,10 +15,10 @@ function pct(n: number) {
 
 function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${color ?? "text-fence-900"}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    <div className="bg-surface rounded-xl border border-border p-5">
+      <p className="text-xs text-muted uppercase tracking-wide mb-1">{label}</p>
+      <p className={`text-2xl font-bold ${color ?? "text-text"}`}>{value}</p>
+      {sub && <p className="text-xs text-muted mt-1">{sub}</p>}
     </div>
   );
 }
@@ -97,21 +97,21 @@ export default async function AnalyticsPage() {
   const monthKeys = Object.keys(monthlyRevenue).sort().slice(-6);
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-background text-text">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-fence-950">Analytics</h1>
-            <p className="text-gray-500 text-sm mt-1">Business performance · All time unless noted</p>
+            <h1 className="text-2xl font-bold text-text">Analytics</h1>
+            <p className="text-muted text-sm mt-1">Business performance · All time unless noted</p>
           </div>
-          <Link href="/dashboard" className="text-sm text-fence-600 hover:underline">Back to Dashboard</Link>
+          <Link href="/dashboard" className="text-sm text-accent-light hover:text-accent hover:underline">Back to Dashboard</Link>
         </div>
 
         {/* Top KPIs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <StatCard label="Win Rate" value={`${winRate}%`} sub={`${acceptedEstimates.length} of ${sentEstimates.length} sent`} color={winRate >= 40 ? "text-green-700" : winRate >= 25 ? "text-amber-600" : "text-red-600"} />
+          <StatCard label="Win Rate" value={`${winRate}%`} sub={`${acceptedEstimates.length} of ${sentEstimates.length} sent`} color={winRate >= 40 ? "text-accent-light" : winRate >= 25 ? "text-warning" : "text-danger"} />
           <StatCard label="Avg Estimate" value={fmt(avgEstimateValue)} sub={`${totalEstimates} total estimates`} />
-          <StatCard label="Avg Margin" value={pct(avgMargin)} sub="Across all estimates" color={avgMargin >= 30 ? "text-green-700" : "text-amber-600"} />
+          <StatCard label="Avg Margin" value={pct(avgMargin)} sub="Across all estimates" color={avgMargin >= 30 ? "text-accent-light" : "text-warning"} />
           <StatCard label="Total Revenue" value={fmt(totalRevenue)} sub={`${completedJobs.length} completed jobs`} />
         </div>
 
@@ -124,8 +124,8 @@ export default async function AnalyticsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* By fence type */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="font-semibold text-fence-900 mb-4">Estimates by Fence Type</h2>
+          <div className="bg-surface rounded-xl border border-border p-5">
+            <h2 className="font-semibold text-text mb-4">Estimates by Fence Type</h2>
             <div className="space-y-3">
               {Object.entries(byType)
                 .sort(([,a], [,b]) => b.value - a.value)
@@ -134,25 +134,25 @@ export default async function AnalyticsPage() {
                   return (
                     <div key={type} className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-gray-800 capitalize">{type.replace("_", " ")}</p>
-                        <p className="text-xs text-gray-400">{data.count} estimates · {typeWinRate}% win rate</p>
+                        <p className="text-sm font-semibold text-text capitalize">{type.replace("_", " ")}</p>
+                        <p className="text-xs text-muted">{data.count} estimates · {typeWinRate}% win rate</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-fence-900">{fmt(data.value)}</p>
-                        <p className="text-xs text-gray-400">{fmt(data.value / (data.count || 1))} avg</p>
+                        <p className="text-sm font-bold text-text">{fmt(data.value)}</p>
+                        <p className="text-xs text-muted">{fmt(data.value / (data.count || 1))} avg</p>
                       </div>
                     </div>
                   );
                 })}
               {Object.keys(byType).length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">No estimates yet</p>
+                <p className="text-sm text-muted text-center py-4">No estimates yet</p>
               )}
             </div>
           </div>
 
           {/* Revenue trend */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="font-semibold text-fence-900 mb-4">Monthly Revenue (Last 6 Months)</h2>
+          <div className="bg-surface rounded-xl border border-border p-5">
+            <h2 className="font-semibold text-text mb-4">Monthly Revenue (Last 6 Months)</h2>
             {monthKeys.length > 0 ? (
               <div className="space-y-3">
                 {monthKeys.map(key => {
@@ -163,33 +163,33 @@ export default async function AnalyticsPage() {
                   const label = new Date(Number(year), Number(month) - 1).toLocaleDateString("en-US", { month: "short", year: "numeric" });
                   return (
                     <div key={key} className="flex items-center gap-3">
-                      <span className="text-xs text-gray-500 w-16 flex-shrink-0">{label}</span>
-                      <div className="flex-1 bg-gray-100 rounded-full h-2">
-                        <div className="bg-fence-600 h-2 rounded-full transition-all" style={{ width: `${barWidth}%` }} />
+                      <span className="text-xs text-muted w-16 flex-shrink-0">{label}</span>
+                      <div className="flex-1 bg-surface-3 rounded-full h-2">
+                        <div className="bg-accent h-2 rounded-full transition-all" style={{ width: `${barWidth}%` }} />
                       </div>
-                      <span className="text-xs font-semibold text-gray-700 w-20 text-right">{fmt(val)}</span>
+                      <span className="text-xs font-semibold text-text w-20 text-right">{fmt(val)}</span>
                     </div>
                   );
                 })}
               </div>
             ) : (
               <div className="flex items-center justify-center h-24">
-                <p className="text-sm text-gray-400">Complete jobs to see revenue trend</p>
+                <p className="text-sm text-muted">Complete jobs to see revenue trend</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Estimate pipeline */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-          <h2 className="font-semibold text-fence-900 mb-4">Estimate Pipeline</h2>
+        <div className="bg-surface rounded-xl border border-border p-5 mb-6">
+          <h2 className="font-semibold text-text mb-4">Estimate Pipeline</h2>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             {[
-              { label: "Draft", statuses: ["draft"], color: "bg-gray-200 text-gray-700" },
-              { label: "Sent", statuses: ["quoted", "rejected", "expired"], color: "bg-blue-100 text-blue-700" },
-              { label: "Accepted", statuses: ["accepted", "deposit_paid", "converted"], color: "bg-green-100 text-green-700" },
-              { label: "Jobs", statuses: [], jobCount: jobs.length, color: "bg-fence-100 text-fence-700" },
-              { label: "Completed", statuses: [], jobCount: completedJobs.length, color: "bg-fence-900 text-white" },
+              { label: "Draft", statuses: ["draft"], color: "bg-surface-3 text-muted" },
+              { label: "Sent", statuses: ["quoted", "rejected", "expired"], color: "bg-info/15 text-info" },
+              { label: "Accepted", statuses: ["accepted", "deposit_paid", "converted"], color: "bg-accent/15 text-accent-light" },
+              { label: "Jobs", statuses: [], jobCount: jobs.length, color: "bg-surface-2 text-text" },
+              { label: "Completed", statuses: [], jobCount: completedJobs.length, color: "bg-accent text-white" },
             ].map(stage => {
               const count = stage.jobCount ?? estimates.filter(e => stage.statuses.includes(e.status)).length;
               return (
@@ -202,38 +202,38 @@ export default async function AnalyticsPage() {
           </div>
           {totalEstimates > 0 && (
             <div className="mt-4 flex items-center gap-2">
-              <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden flex">
+              <div className="flex-1 bg-surface-3 rounded-full h-3 overflow-hidden flex">
                 {[
-                  { pct: Math.round((estimates.filter(e => e.status === "draft").length / totalEstimates) * 100), color: "bg-gray-400" },
-                  { pct: Math.round((sentEstimates.length / totalEstimates) * 100), color: "bg-blue-400" },
-                  { pct: Math.round((acceptedEstimates.length / totalEstimates) * 100), color: "bg-green-500" },
+                  { pct: Math.round((estimates.filter(e => e.status === "draft").length / totalEstimates) * 100), color: "bg-muted/70" },
+                  { pct: Math.round((sentEstimates.length / totalEstimates) * 100), color: "bg-info" },
+                  { pct: Math.round((acceptedEstimates.length / totalEstimates) * 100), color: "bg-accent" },
                 ].map((seg, i) => (
                   <div key={i} className={`h-full ${seg.color}`} style={{ width: `${seg.pct}%` }} />
                 ))}
               </div>
-              <span className="text-xs text-gray-500">{winRate}% close rate</span>
+              <span className="text-xs text-muted">{winRate}% close rate</span>
             </div>
           )}
         </div>
 
         {/* Recent AI extractions */}
         {fenceGraphs.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-surface rounded-xl border border-border p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-fence-900">FenceGraph Advanced Estimates</h2>
-              <Link href="/dashboard/advanced-estimate/saved" className="text-xs text-fence-600 font-semibold hover:underline">View all →</Link>
+              <h2 className="font-semibold text-text">FenceGraph Advanced Estimates</h2>
+              <Link href="/dashboard/advanced-estimate/saved" className="text-xs text-accent-light font-semibold hover:underline">View all →</Link>
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-border">
               {fenceGraphs.slice(0, 5).map(g => {
                 const input = g.input_json as { fenceType?: string } | null;
                 const fenceType = input?.fenceType ?? inferFenceTypeFromProductLineId((g.input_json as { productLineId?: string } | null)?.productLineId) ?? "Unknown";
                 return (
                   <div key={g.id} className="py-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-gray-800 capitalize">{fenceType.replace("_", " ")} · {g.total_lf ?? "—"} LF</p>
-                      <p className="text-xs text-gray-400">{new Date(g.created_at).toLocaleDateString()} · {g.status}</p>
+                      <p className="text-sm font-semibold text-text capitalize">{fenceType.replace("_", " ")} · {g.total_lf ?? "—"} LF</p>
+                      <p className="text-xs text-muted">{new Date(g.created_at).toLocaleDateString()} · {g.status}</p>
                     </div>
-                    <p className="text-sm font-bold text-fence-900">{g.total_cost ? fmt(g.total_cost) : "—"}</p>
+                    <p className="text-sm font-bold text-text">{g.total_cost ? fmt(g.total_cost) : "—"}</p>
                   </div>
                 );
               })}

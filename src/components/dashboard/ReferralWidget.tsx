@@ -25,23 +25,23 @@ export default function ReferralWidget() {
   if (loading) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+    <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="text-2xl"></div>
         <div className="flex-1">
-          <h3 className="font-semibold text-fence-900 text-sm">Refer a Contractor</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <h3 className="font-semibold text-text text-sm">Refer a Contractor</h3>
+          <p className="text-xs text-muted mt-0.5">
             Give a contractor 1 month free. You get 1 month free when they subscribe.
           </p>
           <div className="flex items-center gap-2 mt-3">
             <input
               readOnly
               value={referralLink}
-              className="flex-1 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-600 font-mono truncate"
+              className="flex-1 text-xs bg-surface-3 border border-border rounded-lg px-3 py-2 text-text font-mono truncate"
             />
             <button
               onClick={handleCopy}
-              className="shrink-0 bg-fence-600 hover:bg-fence-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+              className="shrink-0 bg-accent hover:bg-accent-light text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
             >
               {copied ? "Copied!" : "Copy"}
             </button>

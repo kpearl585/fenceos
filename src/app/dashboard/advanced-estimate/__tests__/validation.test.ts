@@ -1,5 +1,68 @@
 import { describe, expect, it } from "vitest";
 import { validateEstimateBeforeConvert } from "../validation";
+import type { FenceEstimateResult } from "@/lib/fence-graph/engine";
+
+function makeResult(overrides: Partial<FenceEstimateResult> = {}): FenceEstimateResult {
+  return {
+    projectId: "p1",
+    projectName: "Test",
+    graph: {
+      projectId: "p1",
+      productLine: {
+        name: "Vinyl Privacy 6ft",
+        panelStyle: "privacy",
+        panelHeight_in: 72,
+        nominalWidth_in: 96,
+        minReducedWidth_in: 24,
+        postSize: "5x5",
+        railCount: 3,
+        railType: "routed",
+        windKitAvailable: true,
+      },
+      installRules: {
+        maxPostCenters_in: 96,
+        preferredPostCenters_in: 96,
+        holeDiameter_in: 10,
+        holeDepth_in: 30,
+        gravelBase_in: 4,
+        groundClearance_in: 2,
+        thermalGap_in: 0.25,
+        maxRackAngle_deg: 18,
+        slopeThresholdForStepped_deg: 18,
+      },
+      siteConfig: {
+        soilType: "standard",
+        soilConcreteFactor: 1,
+        hurricaneZone: false,
+        floodZone: false,
+        existingFenceRemoval: false,
+        surfaceType: "ground",
+        obstacleCt: 0,
+      },
+      nodes: [],
+      edges: [],
+      windMode: false,
+      audit: {
+        extractionMethod: "manual_input",
+        extractionDate: new Date().toISOString(),
+        overallConfidence: 0.9,
+        manualOverrides: 0,
+      },
+    },
+    bom: [{ sku: "POST", name: "Post", category: "posts", unit: "ea", qty: 1, unitCost: 10, extCost: 10, confidence: 0.95, traceability: "test" }],
+    laborDrivers: [],
+    totalMaterialCost: 10,
+    totalLaborHrs: 1,
+    totalLaborCost: 65,
+    totalCost: 75,
+    deterministicScrap_in: 0,
+    probabilisticWastePct: 0.05,
+    overallConfidence: 0.9,
+    redFlagItems: [],
+    auditTrail: [],
+    ...overrides,
+  };
+}
 
 describe("validateEstimateBeforeConvert", () => {
   it("returns null when both project name and customer name are present", () => {
@@ -89,5 +152,87 @@ describe("validateEstimateBeforeConvert", () => {
       customerName: "",
     });
     expect(err?.fieldId).toBe("est-project-name");
+  });
+
+  it("blocks conversion when the estimate has confidence blockers", () => {
+    const err = validateEstimateBeforeConvert({
+      projectName: "Smith Backyard",
+      customerName: "John Smith",
+      result: makeResult({
+        confidenceReviewGates: [
+          {
+            id: "corner-angles-missing",
+            fieldId: "est-runs",
+            severity: "blocker",
+            message: "Add corner angles before sending the quote.",
+          },
+        ],
+      }),
+    });
+
+    expect(err?.fieldId).toBe("est-runs");
+    expect(err?.message).toMatch(/corner angles/i);
+  });
+
+  it("does not block conversion for review-only confidence prompts", () => {
+    expect(
+      validateEstimateBeforeConvert({
+        projectName: "Smith Backyard",
+        customerName: "John Smith",
+        markupPct: 35,
+        targetMarginPct: 35,
+        result: makeResult({
+          confidenceReviewGates: [
+            {
+              id: "site-complexity-review",
+              fieldId: "est-site-complexity",
+              severity: "review",
+              message: "Consider adding site complexity.",
+            },
+          ],
+        }),
+      }),
+    ).toBeNull();
+  });
+
+  it("blocks conversion when margin risk falls below the hard safety floor", () => {
+    const err = validateEstimateBeforeConvert({
+      projectName: "Smith Backyard",
+      customerName: "John Smith",
+      markupPct: 15,
+      targetMarginPct: 35,
+      result: makeResult({
+        laborModelHealth: {
+          siteComplexityBand: "difficult",
+          adaptiveSampleCount: 0,
+          learnedMultiplier: 1,
+          calibrationConfidence: "low",
+          notes: [],
+        },
+      }),
+    });
+
+    expect(err?.fieldId).toBe("est-margin-risk");
+    expect(err?.message).toMatch(/hard safety floor/i);
+  });
+
+  it("does not block conversion for risky-but-not-blocked margin scenarios", () => {
+    expect(
+      validateEstimateBeforeConvert({
+        projectName: "Smith Backyard",
+        customerName: "John Smith",
+        markupPct: 35,
+        targetMarginPct: 35,
+        result: makeResult({
+          laborModelHealth: {
+            siteComplexityBand: "difficult",
+            adaptiveSampleCount: 1,
+            learnedMultiplier: 1,
+            calibrationConfidence: "low",
+            notes: [],
+          },
+        }),
+      }),
+    ).toBeNull();
   });
 });

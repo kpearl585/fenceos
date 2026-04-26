@@ -1,19 +1,32 @@
 "use server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile, getProfileByAuthId } from "@/lib/bootstrap";
+import { canAccess } from "@/lib/roles";
 import { renderToBuffer } from "@react-pdf/renderer";
+import { revalidatePath } from "next/cache";
 import React from "react";
 import { AdvancedEstimatePdf } from "@/lib/fence-graph/AdvancedEstimatePdf";
 import type { FenceProjectInput, FenceEstimateResult, FenceType, WoodStyle } from "@/lib/fence-graph/engine";
 import { inferFenceTypeFromProductLineId, totalLinearFeet } from "@/lib/fence-graph/estimateInput";
 import { updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "@/lib/fence-graph/bom/shared";
 import type { WasteCalibration } from "@/lib/fence-graph/bom/shared";
-import type { AccuracyMetrics, CloseoutData } from "@/lib/fence-graph/accuracy-types";
+import type { AccuracyMetrics, CloseoutData, SiteComplexity } from "@/lib/fence-graph/accuracy-types";
+import { buildAccuracyMetrics } from "@/lib/fence-graph/accuracyMetrics";
 import type { OrgEstimatorConfig, DeepPartial } from "@/lib/fence-graph/config/types";
-import { mergeEstimatorConfig } from "@/lib/fence-graph/config/resolveEstimatorConfig";
+import {
+  mergeEstimatorConfig,
+  extractEstimatorOverrides,
+} from "@/lib/fence-graph/config/resolveEstimatorConfig";
+import { buildFenceGraphCloseoutPersistence } from "@/lib/fence-graph/closeout/persistence";
+import type { CloseoutActuals, EstimateCloseoutAnalysis } from "@/lib/fence-graph/closeout/types";
+import {
+  applyEstimatorTuningRecommendations,
+  buildEstimatorTuningRecommendations,
+} from "@/lib/fence-graph/closeout/tuning";
 import type { PaywallBlock } from "@/lib/paywall";
 import {
   getOrgMaterialPricesByOrgId,
+  getOrgMaterialPricingByOrgId,
   recomputeEstimateForOrg,
   requireOrgEstimateContext,
 } from "./serverEstimate";
@@ -28,6 +41,19 @@ export async function getOrgMaterialPrices(): Promise<Record<string, number>> {
     return await getOrgMaterialPricesByOrgId(context.admin, context.orgId);
   } catch {
     return {};
+  }
+}
+
+export async function getOrgMaterialPricing(): Promise<{
+  priceMap: Record<string, number>;
+  priceMeta: Record<string, { updatedAt?: string | null }>;
+}> {
+  try {
+    const context = await requireOrgEstimateContext();
+    if (!context) return { priceMap: {}, priceMeta: {} };
+    return await getOrgMaterialPricingByOrgId(context.admin, context.orgId);
+  } catch {
+    return { priceMap: {}, priceMeta: {} };
   }
 }
 
@@ -104,6 +130,9 @@ export async function saveAdvancedEstimate(
           typeof resultOrName === "string" ? laborRateOrWastePct / 100 : laborRateOrWastePct,
         total_lf: totalLF,
         total_cost: persistedResult.totalCost,
+        estimated_labor_hours: persistedResult.totalLaborHrs,
+        site_complexity_json:
+          ((input.siteComplexity as SiteComplexity | undefined) ?? null) as unknown as Record<string, unknown> | null,
         status: "draft",
       })
       .select("id")
@@ -296,6 +325,14 @@ export async function getSavedEstimate(id: string): Promise<{
   result_json: FenceEstimateResult; labor_rate: number; waste_pct: number;
   total_lf: number; total_cost: number; status: string;
   closed_at: string | null; closeout_actual_waste_pct: number | null; closeout_notes: string | null;
+  closeout_actual_labor_hours: number | null;
+  closeout_crew_size: number | null;
+  closeout_weather_conditions: string | null;
+  closeout_actual_material_cost: number | null;
+  closeout_actual_labor_cost: number | null;
+  closeout_actual_total_cost: number | null;
+  closeout_analysis_json?: unknown;
+  closeout_actuals_json?: unknown;
 } | null> {
   try {
     const supabase = await createClient();
@@ -325,6 +362,13 @@ export async function closeoutEstimate(
   actualWastePct: number,  // 0–100 (user enters as percent, e.g. 7 = 7%)
   notes: string
 ): Promise<{ success: boolean; newCalibration?: WasteCalibration; error?: string }> {
+  return closeoutEstimateEnhanced(estimateId, { actualWastePct, notes });
+}
+
+export async function closeoutEstimateEnhanced(
+  estimateId: string,
+  closeoutData: CloseoutData
+): Promise<{ success: boolean; newCalibration?: WasteCalibration; error?: string }> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -334,12 +378,16 @@ export async function closeoutEstimate(
 
     // Validate estimate belongs to this org
     const { data: est } = await admin
-      .from("fence_graphs").select("id, status")
+      .from("fence_graphs").select("id, status, result_json")
       .eq("id", estimateId).eq("org_id", profile.org_id).single();
     if (!est) return { success: false, error: "Estimate not found" };
     if (est.status === "closed") return { success: false, error: "Estimate already closed" };
 
-    const actualFactor = actualWastePct / 100;
+    if (!Number.isFinite(closeoutData.actualWastePct) || closeoutData.actualWastePct < 0) {
+      return { success: false, error: "Actual waste percent is required" };
+    }
+
+    const actualFactor = closeoutData.actualWastePct / 100;
 
     // Fetch current calibration
     const { data: org } = await admin
@@ -356,16 +404,21 @@ export async function closeoutEstimate(
       .update({ waste_calibration_json: newCal as unknown as Record<string, unknown> })
       .eq("id", profile.org_id);
 
+    const closedAt = new Date().toISOString();
+    const { update } = buildFenceGraphCloseoutPersistence(
+      est.result_json as FenceEstimateResult,
+      closeoutData,
+      closedAt
+    );
+
     // Mark estimate as closed
-    await admin
+    const { error: closeoutError } = await admin
       .from("fence_graphs")
-      .update({
-        status: "closed",
-        closed_at: new Date().toISOString(),
-        closeout_actual_waste_pct: actualFactor,
-        closeout_notes: notes || null,
-      })
+      .update(update)
       .eq("id", estimateId);
+    if (closeoutError) {
+      return { success: false, error: closeoutError.message };
+    }
 
     return { success: true, newCalibration: newCal };
   } catch (err: unknown) {
@@ -373,18 +426,86 @@ export async function closeoutEstimate(
   }
 }
 
-// Compatibility wrapper for the enhanced closeout form introduced on main.
-// The persisted feedback-loop fields on this branch still center on waste +
-// notes, so we accept the richer payload and pass through the stable subset.
-export async function closeoutEstimateEnhanced(
-  estimateId: string,
-  closeoutData: CloseoutData
-): Promise<{ success: boolean; newCalibration?: WasteCalibration; error?: string }> {
-  return closeoutEstimate(
-    estimateId,
-    closeoutData.actualWastePct,
-    closeoutData.notes ?? ""
-  );
+export async function applyCloseoutTuningRecommendations(
+  estimateId: string
+): Promise<{ success: boolean; appliedCount?: number; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Not authenticated" };
+
+    const profile = await ensureProfile(supabase, user);
+    if (!canAccess(profile.role, "owner")) {
+      return { success: false, error: "Only owners can apply estimator tuning" };
+    }
+
+    const admin = createAdminClient();
+
+    const { data: est } = await admin
+      .from("fence_graphs")
+      .select("id, org_id, input_json, closeout_actuals_json, closeout_analysis_json")
+      .eq("id", estimateId)
+      .eq("org_id", profile.org_id)
+      .single();
+
+    if (!est) return { success: false, error: "Estimate not found" };
+
+    const input = est.input_json as FenceProjectInput & { fenceType?: FenceType };
+    const fenceType = input.fenceType ?? inferFenceTypeFromProductLineId(input.productLineId);
+    if (!fenceType) {
+      return { success: false, error: "Could not determine fence type for tuning" };
+    }
+
+    const actuals = (est.closeout_actuals_json as CloseoutActuals | null | undefined) ?? null;
+    const analysis = (est.closeout_analysis_json as EstimateCloseoutAnalysis | null | undefined) ?? null;
+    if (!actuals || !analysis) {
+      return { success: false, error: "Closeout data is incomplete for tuning" };
+    }
+
+    const { data: orgSettings } = await admin
+      .from("org_settings")
+      .select("estimator_config_json")
+      .eq("org_id", profile.org_id)
+      .single();
+
+    const rawOverrides =
+      ((orgSettings as Record<string, unknown> | null)?.estimator_config_json as DeepPartial<OrgEstimatorConfig> | null) ?? null;
+    const currentConfig = mergeEstimatorConfig(rawOverrides);
+
+    const recommendations = buildEstimatorTuningRecommendations({
+      analysis,
+      actuals,
+      currentConfig,
+      fenceType,
+      siteComplexity: input.siteComplexity ?? null,
+    }).filter((recommendation) => recommendation.patch);
+
+    if (recommendations.length === 0) {
+      return { success: false, error: "No safe tuning recommendations were generated for this closeout" };
+    }
+
+    const nextConfig = applyEstimatorTuningRecommendations(currentConfig, recommendations);
+    const nextOverrides = extractEstimatorOverrides(nextConfig);
+
+    await admin
+      .from("org_settings")
+      .upsert(
+        {
+          org_id: profile.org_id,
+          estimator_config_json: nextOverrides as unknown as Record<string, unknown>,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "org_id" }
+      );
+
+    revalidatePath("/dashboard/settings/estimator");
+    revalidatePath(`/dashboard/advanced-estimate/${estimateId}`);
+    revalidatePath("/dashboard/advanced-estimate/saved");
+
+    return { success: true, appliedCount: recommendations.length };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to apply tuning" };
+  }
 }
 
 // ── Get accuracy metrics ──────────────────────────────────────────
@@ -396,17 +517,26 @@ export async function getAccuracyMetrics(days: number = 30): Promise<AccuracyMet
 
     const profile = await ensureProfile(supabase, user);
     const admin = createAdminClient();
-    const { data, error } = await admin.rpc("get_accuracy_summary", {
-      p_org_id: profile.org_id,
-      p_days: days,
-    });
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await admin
+      .from("fence_graphs")
+      .select(
+        "id, name, total_lf, closed_at, input_json, site_complexity_json, closeout_analysis_json, closeout_actual_waste_pct, waste_pct"
+      )
+      .eq("org_id", profile.org_id)
+      .eq("status", "closed")
+      .gte("closed_at", since)
+      .order("closed_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching accuracy metrics:", error);
       return null;
     }
 
-    return data as AccuracyMetrics;
+    return buildAccuracyMetrics({
+      rows: (data ?? []) as Parameters<typeof buildAccuracyMetrics>[0]["rows"],
+      periodDays: days,
+    });
   } catch (err) {
     console.error("Unexpected error fetching accuracy metrics:", err);
     return null;

@@ -184,17 +184,17 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 font-semibold">Error</p>
-          <p className="text-red-700 text-sm mt-1">{error}</p>
+        <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4">
+          <p className="font-semibold text-danger">Error</p>
+          <p className="mt-1 text-sm text-danger/85">{error}</p>
         </div>
       )}
 
       {/* Customer Info */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Customer Information</h2>
+      <div className="rounded-2xl border border-border bg-surface p-6 shadow-card">
+        <h2 className="mb-4 text-lg font-semibold text-text">Customer Information</h2>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="mb-1 block text-sm font-medium text-muted">
             Customer Name
           </label>
           <input
@@ -202,18 +202,18 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
             placeholder="Test Customer"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
           />
         </div>
       </div>
 
       {/* Fence Design */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Fence Design</h2>
+      <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-card">
+        <h2 className="text-lg font-semibold text-text">Fence Design</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-muted">
               Total Linear Feet *
             </label>
             <input
@@ -223,12 +223,12 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
               min="1"
               max="10000"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-muted">
               Corner Count
             </label>
             <input
@@ -237,19 +237,19 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
               onChange={(e) => setCornerCount(Number(e.target.value))}
               min="0"
               max="100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-muted">
               Height *
             </label>
             <select
               value={heightFt}
               onChange={(e) => setHeightFt(Number(e.target.value) as 4 | 6 | 8)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-text focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             >
               <option value={4}>4 feet</option>
               <option value={6}>6 feet</option>
@@ -258,14 +258,14 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-muted">
               Frost Zone *
             </label>
             <select
               value={frostZone}
               onChange={(e) => setFrostZone(Number(e.target.value) as 1 | 2 | 3 | 4)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-text focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             >
               <option value={1}>Zone 1 (18" frost depth)</option>
               <option value={2}>Zone 2 (30" frost depth)</option>
@@ -275,14 +275,14 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-muted">
               Soil Type *
             </label>
             <select
               value={soilType}
               onChange={(e) => setSoilType(e.target.value as 'normal' | 'sandy' | 'clay' | 'rocky')}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-text focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             >
               <option value="normal">Normal</option>
               <option value="sandy">Sandy</option>
@@ -294,26 +294,26 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
       </div>
 
       {/* Gates */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="rounded-2xl border border-border bg-surface p-6 shadow-card">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Gates</h2>
+          <h2 className="text-lg font-semibold text-text">Gates</h2>
           <button
             type="button"
             onClick={addGate}
-            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="rounded-xl bg-accent px-3 py-1.5 text-sm font-semibold text-accent-foreground transition hover:bg-accent/90"
           >
             + Add Gate
           </button>
         </div>
 
         {gates.length === 0 ? (
-          <p className="text-gray-500 text-sm">No gates added</p>
+          <p className="text-sm text-muted">No gates added</p>
         ) : (
           <div className="space-y-3">
             {gates.map((gate, idx) => (
-              <div key={idx} className="flex gap-3 items-start">
+              <div key={idx} className="items-start gap-3 rounded-2xl border border-border bg-surface-2 p-4 sm:flex">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-muted">
                     Width (ft)
                   </label>
                   <input
@@ -323,11 +323,11 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
                     min="3"
                     max="12"
                     step="0.5"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-border bg-surface-3 px-3 py-2 text-text focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-muted">
                     Position (ft) - Optional
                   </label>
                   <input
@@ -335,13 +335,13 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
                     value={gate.position_ft || ''}
                     onChange={(e) => updateGate(idx, 'position_ft', Number(e.target.value))}
                     placeholder="Auto"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-border bg-surface-3 px-3 py-2 text-text placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => removeGate(idx)}
-                  className="mt-7 px-3 py-2 text-sm text-red-600 hover:text-red-800"
+                  className="mt-3 px-3 py-2 text-sm font-medium text-danger transition hover:text-danger/80 sm:mt-7"
                 >
                   Remove
                 </button>
@@ -356,7 +356,7 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="rounded-xl bg-accent px-6 py-3 font-semibold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-muted"
         >
           {loading ? 'Generating Estimate...' : 'Generate Estimate'}
         </button>
@@ -364,9 +364,9 @@ export default function Phase1EstimatorForm({ orgId, userEmail }: { orgId: strin
 
       {/* Debug Info */}
       {loading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+        <div className="rounded-2xl border border-info/30 bg-info/10 p-4 text-sm text-info">
           <p className="font-semibold">Processing...</p>
-          <p className="mt-1">Creating job → design → running estimate → navigating to results</p>
+          <p className="mt-1 text-info/80">Creating job → design → running estimate → navigating to results</p>
         </div>
       )}
     </form>

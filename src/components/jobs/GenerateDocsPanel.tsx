@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { generateJobDoc, DOC_SKUS, type DocSku } from "@/lib/docs/generateJobDoc";
+import { generateJobDoc } from "@/lib/docs/generateJobDoc";
+import { DOC_SKUS, type DocSku } from "@/lib/docs/data";
 
 type Status =
   | { kind: "idle" }

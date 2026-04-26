@@ -140,6 +140,14 @@ export const DEFAULT_PRICES_BASE: Record<string, number> = {
  * Regional price multipliers
  * Apply to base prices to get regional estimates
  */
+const BASELINE_FAMILY_CALIBRATION: Record<"vinyl" | "wood" | "chain_link" | "aluminum" | "other", number> = {
+  vinyl: 0.82,
+  wood: 0.68,
+  chain_link: 1.0,
+  aluminum: 1.0,
+  other: 1.0,
+};
+
 export const REGIONAL_MULTIPLIERS = {
   base: 1.00,           // Base wholesale pricing (no regional adjustment)
   northeast: 1.15,      // Boston, NYC, Philly
@@ -155,6 +163,21 @@ export const REGIONAL_MULTIPLIERS = {
 
 export type Region = keyof typeof REGIONAL_MULTIPLIERS;
 
+function inferSkuFamily(sku: string): keyof typeof BASELINE_FAMILY_CALIBRATION {
+  if (sku.startsWith("VINYL_") || sku.startsWith("GATE_VINYL_")) return "vinyl";
+  if (sku.startsWith("WOOD_") || sku.startsWith("POST_CAP_4X4") || sku.startsWith("GATE_WOOD_")) return "wood";
+  if (
+    sku.startsWith("CHAIN_LINK_") ||
+    sku.startsWith("CL_") ||
+    sku.startsWith("GATE_CHAIN_LINK_") ||
+    sku.startsWith("GATE_CL_")
+  ) {
+    return "chain_link";
+  }
+  if (sku.startsWith("ALUMINUM_") || sku.startsWith("ALUM_") || sku.startsWith("GATE_ALUM")) return "aluminum";
+  return "other";
+}
+
 /**
  * Get price map for specific region
  * @param region Geographic region for pricing
@@ -165,8 +188,9 @@ export function getPriceMap(region: Region = 'base'): Record<string, number> {
   const prices: Record<string, number> = {};
 
   for (const [sku, basePrice] of Object.entries(DEFAULT_PRICES_BASE)) {
+    const calibratedBasePrice = basePrice * BASELINE_FAMILY_CALIBRATION[inferSkuFamily(sku)];
     // Round to nearest $0.25 for realistic pricing
-    prices[sku] = Math.round(basePrice * multiplier * 4) / 4;
+    prices[sku] = Math.round(calibratedBasePrice * multiplier * 4) / 4;
   }
 
   return prices;

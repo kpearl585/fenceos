@@ -38,18 +38,19 @@ export default function EditablePrice({ materialId, orgId, field, value, color }
   if (editing) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-        <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>$</span>
+        <span style={{ color: '#6f786f', fontSize: '0.875rem' }}>$</span>
         <input
           ref={inputRef}
           defaultValue={current.toFixed(2)}
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
           disabled={saving}
+          className="bg-surface-3"
           style={{
             width: '80px', padding: '0.25rem 0.375rem',
-            border: '2px solid #2D6A4F', borderRadius: '4px',
+            border: '2px solid rgba(22, 163, 74, 0.7)', borderRadius: '4px',
             fontSize: '0.875rem', fontWeight: 600, outline: 'none',
-            color: color || '#111827'
+            color: color || '#f5f7f5'
           }}
           type="number"
           step="0.01"
@@ -67,15 +68,15 @@ export default function EditablePrice({ materialId, orgId, field, value, color }
         background: 'none', border: 'none', cursor: 'pointer',
         padding: '0.25rem 0.5rem', borderRadius: '4px',
         fontSize: '0.875rem', fontWeight: 600,
-        color: color || '#111827',
+        color: color || '#f5f7f5',
         transition: 'background 0.15s',
         display: 'flex', alignItems: 'center', gap: '0.25rem'
       }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#f0fdf4')}
+      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(18, 24, 18, 0.95)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
     >
       ${current.toFixed(2)}
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6f786f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
       </svg>

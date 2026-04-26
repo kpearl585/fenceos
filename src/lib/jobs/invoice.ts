@@ -1,15 +1,121 @@
-import { renderToBuffer } from "@react-pdf/renderer";
-import React from "react";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import type { UserProfile } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
-import { InvoicePdf, type InvoiceData } from "@/lib/invoice/InvoicePdf";
+import type { InvoiceData } from "@/lib/invoice/InvoicePdf";
 
 function invoiceNumber(jobId: string, date: Date): string {
   const year = date.getFullYear();
   const seq = jobId.replace(/-/g, "").substring(0, 6).toUpperCase();
   return `INV-${year}-${seq}`;
+}
+
+function safeString(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return undefined;
+}
+
+function fmtCurrency(value: number): string {
+  return `$${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+}
+
+async function renderInvoiceFallbackPdf(data: InvoiceData): Promise<Buffer> {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([612, 792]);
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const green = rgb(0.18, 0.42, 0.31);
+  const black = rgb(0.1, 0.1, 0.1);
+  const muted = rgb(0.4, 0.4, 0.4);
+
+  let y = 740;
+  const left = 48;
+  const right = 564;
+
+  const draw = (
+    text: string,
+    {
+      x = left,
+      size = 10,
+      color = black,
+      weight = "regular",
+    }: { x?: number; size?: number; color?: ReturnType<typeof rgb>; weight?: "regular" | "bold" } = {}
+  ) => {
+    page.drawText(text, {
+      x,
+      y,
+      size,
+      font: weight === "bold" ? bold : font,
+      color,
+    });
+    y -= size + 6;
+  };
+
+  page.drawText(safeString(data.org.name) ?? "Your Company", {
+    x: left,
+    y,
+    size: 18,
+    font: bold,
+    color: black,
+  });
+  page.drawText("INVOICE", {
+    x: right - 90,
+    y,
+    size: 24,
+    font: bold,
+    color: green,
+  });
+  y -= 28;
+  draw(`Invoice #: ${data.invoiceNumber}`, { x: right - 140, size: 10, color: muted });
+  draw(`Date: ${data.invoiceDate}`, { x: right - 140, size: 10, color: muted });
+
+  y -= 12;
+  draw("Bill To", { size: 9, color: muted, weight: "bold" });
+  draw(safeString(data.customer.name) ?? "Customer", { size: 12, weight: "bold" });
+  if (data.customer.address) draw(safeString(data.customer.address) ?? "");
+  const cityStateZip = [data.customer.city, data.customer.state, data.customer.zip]
+    .map((value) => safeString(value) ?? "")
+    .filter(Boolean)
+    .join(", ");
+  if (cityStateZip) draw(cityStateZip);
+  if (data.customer.phone) draw(safeString(data.customer.phone) ?? "");
+  if (data.customer.email) draw(safeString(data.customer.email) ?? "");
+
+  y -= 8;
+  draw("Job", { size: 9, color: muted, weight: "bold" });
+  draw(safeString(data.job.title) ?? "Fence Job", { size: 12, weight: "bold" });
+  draw(`${safeString(data.job.fenceType) ?? "Fence"} · ${data.job.linearFeet} LF${data.job.gateCount ? ` · ${data.job.gateCount} gate(s)` : ""}`);
+  if (data.job.scheduledDate) draw(`Scheduled: ${data.job.scheduledDate}`);
+
+  y -= 12;
+  draw("Charges", { size: 9, color: muted, weight: "bold" });
+  draw(`Original Scope: ${safeString(data.job.title) ?? "Fence Job"}`, { weight: "bold" });
+  draw(fmtCurrency(data.estimateTotal), { x: right - 80, weight: "bold" });
+
+  for (const [index, changeOrder] of data.changeOrders.entries()) {
+    draw(`Change Order ${index + 1}: ${safeString(changeOrder.description) ?? "Additional work"}`, {
+      weight: "bold",
+    });
+    draw(fmtCurrency(changeOrder.subtotal), { x: right - 80, weight: "bold" });
+  }
+
+  y -= 12;
+  draw(`Total Due: ${fmtCurrency(data.estimateTotal + data.changeOrders.reduce((sum, co) => sum + co.subtotal, 0))}`, {
+    size: 14,
+    weight: "bold",
+    color: green,
+  });
+
+  if (data.notes) {
+    y -= 12;
+    draw("Notes", { size: 9, color: muted, weight: "bold" });
+    draw(safeString(data.notes) ?? "");
+  }
+
+  const bytes = await pdf.save();
+  return Buffer.from(bytes);
 }
 
 function buildInvoiceEmail({
@@ -165,24 +271,24 @@ export async function generateInvoiceForJob(
     invoiceNumber: invNumber,
     invoiceDate: invDate,
     org: {
-      name: org?.name ?? "Your Company",
-      logoUrl: branding?.logo_url ?? undefined,
-      phone: branding?.phone ?? undefined,
-      email: branding?.email ?? undefined,
-      address: branding?.address ?? undefined,
+      name: safeString(org?.name) ?? "Your Company",
+      logoUrl: safeString(branding?.logo_url),
+      phone: safeString(branding?.phone),
+      email: safeString(branding?.email),
+      address: safeString(branding?.address),
     },
     customer: {
-      name: customer?.name ?? "Customer",
-      email: customer?.email ?? undefined,
-      phone: customer?.phone ?? undefined,
-      address: customer?.address ?? undefined,
-      city: customer?.city ?? undefined,
-      state: customer?.state ?? undefined,
-      zip: customer?.zip ?? undefined,
+      name: safeString(customer?.name) ?? "Customer",
+      email: safeString(customer?.email),
+      phone: safeString(customer?.phone),
+      address: safeString(customer?.address),
+      city: safeString(customer?.city),
+      state: safeString(customer?.state),
+      zip: safeString(customer?.zip),
     },
     job: {
-      title: job.title,
-      fenceType: estimate?.fence_type ?? "fence",
+      title: safeString(job.title) ?? "Fence Job",
+      fenceType: safeString(estimate?.fence_type) ?? "fence",
       linearFeet: Number(estimate?.linear_feet ?? 0),
       gateCount: Number(estimate?.gate_count ?? 0),
       scheduledDate: job.scheduled_date
@@ -196,7 +302,7 @@ export async function generateInvoiceForJob(
     estimateTotal: Number(estimate?.total ?? job.total_price ?? 0),
     changeOrders: (changeOrders ?? []).map((co) => ({
       id: co.id,
-      description: co.reason || co.description || "",
+      description: safeString(co.reason) || safeString(co.description) || "",
       subtotal: Number(co.subtotal ?? 0),
       lines: (Array.isArray(co.change_order_line_items)
         ? co.change_order_line_items
@@ -204,7 +310,7 @@ export async function generateInvoiceForJob(
       )
         .filter(Boolean)
         .map((l: { name: string; qty: number; unit_price: number; extended_price: number }) => ({
-          name: l.name,
+          name: safeString(l.name) ?? "Line Item",
           qty: Number(l.qty),
           unit_price: Number(l.unit_price),
           extended_price: Number(l.extended_price),
@@ -214,11 +320,9 @@ export async function generateInvoiceForJob(
 
   let pdfBuffer: Buffer;
   try {
-    pdfBuffer = await renderToBuffer(
-      React.createElement(InvoicePdf, { data: invoiceData }) as React.ReactElement
-    );
-  } catch (e) {
-    console.error("PDF generation failed:", e);
+    pdfBuffer = await renderInvoiceFallbackPdf(invoiceData);
+  } catch (fallbackError) {
+    console.error("Invoice PDF generation failed:", fallbackError);
     return { success: false, error: "Failed to generate PDF invoice." };
   }
 
@@ -246,7 +350,7 @@ export async function generateInvoiceForJob(
     invoiceData.estimateTotal +
     invoiceData.changeOrders.reduce((s, co) => s + co.subtotal, 0);
 
-  const { error: invoiceErr } = await admin.from("invoices").upsert({
+  const invoicePayload = {
     org_id: profile.org_id,
     job_id: jobId,
     customer_id: job.customer_id,
@@ -256,8 +360,29 @@ export async function generateInvoiceForJob(
     total: grandTotal,
     pdf_url: pdfUrl,
     sent_at: now.toISOString(),
-  }, { onConflict: "job_id" });
-  if (invoiceErr) {
+  };
+  const { data: existingInvoice, error: existingInvoiceErr } = await admin
+    .from("invoices")
+    .select("id")
+    .eq("job_id", jobId)
+    .maybeSingle();
+
+  if (existingInvoiceErr) {
+    console.error("Invoice lookup failed:", existingInvoiceErr);
+    return { success: false, error: "Failed to save invoice record." };
+  }
+
+  const invoiceWrite = existingInvoice
+    ? await admin
+        .from("invoices")
+        .update(invoicePayload)
+        .eq("id", existingInvoice.id)
+    : await admin
+        .from("invoices")
+        .insert(invoicePayload);
+
+  if (invoiceWrite.error) {
+    console.error("Invoice write failed:", invoiceWrite.error);
     return { success: false, error: "Failed to save invoice record." };
   }
 
@@ -272,6 +397,7 @@ export async function generateInvoiceForJob(
     .eq("id", jobId)
     .eq("org_id", profile.org_id);
   if (jobUpdateErr) {
+    console.error("Job invoice completion update failed:", jobUpdateErr);
     return { success: false, error: "Failed to mark job paid." };
   }
 

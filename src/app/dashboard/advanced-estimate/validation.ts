@@ -4,14 +4,23 @@
 // the user sees — can be unit-tested without jsdom. The hook calls this
 // and handles the scroll/focus DOM side effects separately.
 
+import type {
+  FenceEstimateResult,
+  ConfidenceReviewFieldId,
+} from "@/lib/fence-graph/engine";
+import { assessEstimateMarginRisk } from "@/lib/fence-graph/risk";
+
 export interface ConvertValidationInput {
   projectName: string;
   customerName: string;
+  markupPct?: number;
+  targetMarginPct?: number;
+  result?: FenceEstimateResult | null;
 }
 
 export interface ConvertValidationError {
   /** DOM id the caller should scroll to and focus. */
-  fieldId: "est-project-name" | "est-cust-name";
+  fieldId: ConfidenceReviewFieldId;
   /** Copy shown in the inline error banner. */
   message: string;
 }
@@ -35,6 +44,30 @@ export function validateEstimateBeforeConvert(
       fieldId: "est-cust-name",
       message: "Enter a customer name above before creating an estimate.",
     };
+  }
+  const blocker = input.result?.confidenceReviewGates?.find((gate) => gate.severity === "blocker");
+  if (blocker) {
+    return {
+      fieldId: blocker.fieldId,
+      message: blocker.message,
+    };
+  }
+  if (
+    input.result &&
+    typeof input.markupPct === "number" &&
+    typeof input.targetMarginPct === "number"
+  ) {
+    const marginRisk = assessEstimateMarginRisk({
+      result: input.result,
+      markupPct: input.markupPct,
+      targetMarginPct: input.targetMarginPct,
+    });
+    if (marginRisk.status === "blocked") {
+      return {
+        fieldId: "est-margin-risk",
+        message: marginRisk.reasons[0] ?? "Raise the markup before sending this estimate.",
+      };
+    }
   }
   return null;
 }

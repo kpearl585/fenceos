@@ -24,6 +24,7 @@ export function EnhancedCloseoutForm({
 }: EnhancedCloseoutFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hiddenCostNotesText, setHiddenCostNotesText] = useState("");
 
   const [closeoutData, setCloseoutData] = useState<CloseoutData>({
     actualWastePct: estimatedValues.wastePct,
@@ -34,6 +35,14 @@ export function EnhancedCloseoutForm({
     actualMaterialCost: estimatedValues.materialCost,
     actualLaborCost: estimatedValues.laborCost,
     actualTotalCost: estimatedValues.totalCost,
+    actualEquipmentCost: 0,
+    actualLogisticsCost: 0,
+    actualDisposalCost: 0,
+    actualRegulatoryCost: 0,
+    actualConcreteBags: 0,
+    actualPostsUsed: 0,
+    actualPanelsOrPicketsUsed: 0,
+    fieldConditions: {},
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +50,13 @@ export function EnhancedCloseoutForm({
     setLoading(true);
     setError(null);
 
-    const result = await closeoutEstimateEnhanced(estimateId, closeoutData);
+    const result = await closeoutEstimateEnhanced(estimateId, {
+      ...closeoutData,
+      hiddenCostNotes: hiddenCostNotesText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    });
 
     if (result.success) {
       onSuccess();
@@ -52,19 +67,19 @@ export function EnhancedCloseoutForm({
   };
 
   const materialVariance = estimatedValues.materialCost > 0
-    ? ((closeoutData.actualMaterialCost - estimatedValues.materialCost) / estimatedValues.materialCost * 100).toFixed(1)
+    ? ((((closeoutData.actualMaterialCost ?? 0) - estimatedValues.materialCost) / estimatedValues.materialCost) * 100).toFixed(1)
     : "0.0";
 
   const laborVariance = estimatedValues.laborHours > 0
-    ? ((closeoutData.actualLaborHours - estimatedValues.laborHours) / estimatedValues.laborHours * 100).toFixed(1)
+    ? ((((closeoutData.actualLaborHours ?? 0) - estimatedValues.laborHours) / estimatedValues.laborHours) * 100).toFixed(1)
     : "0.0";
 
   const totalVariance = estimatedValues.totalCost > 0
-    ? ((closeoutData.actualTotalCost - estimatedValues.totalCost) / estimatedValues.totalCost * 100).toFixed(1)
+    ? ((((closeoutData.actualTotalCost ?? 0) - estimatedValues.totalCost) / estimatedValues.totalCost) * 100).toFixed(1)
     : "0.0";
 
   const wasteVariance = estimatedValues.wastePct > 0
-    ? ((closeoutData.actualWastePct - estimatedValues.wastePct) / estimatedValues.wastePct * 100).toFixed(1)
+    ? ((((closeoutData.actualWastePct ?? 0) - estimatedValues.wastePct) / estimatedValues.wastePct) * 100).toFixed(1)
     : "0.0";
 
   return (
@@ -100,7 +115,7 @@ export function EnhancedCloseoutForm({
               step="0.01"
               min="0"
               required
-              value={closeoutData.actualMaterialCost}
+              value={closeoutData.actualMaterialCost ?? 0}
               onChange={(e) => setCloseoutData({ ...closeoutData, actualMaterialCost: parseFloat(e.target.value) || 0 })}
               className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
             />
@@ -129,7 +144,7 @@ export function EnhancedCloseoutForm({
               step="0.1"
               min="0"
               required
-              value={closeoutData.actualLaborHours}
+              value={closeoutData.actualLaborHours ?? 0}
               onChange={(e) => setCloseoutData({ ...closeoutData, actualLaborHours: parseFloat(e.target.value) || 0 })}
               className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
             />
@@ -149,7 +164,7 @@ export function EnhancedCloseoutForm({
               min="1"
               max="20"
               required
-              value={closeoutData.crewSize}
+              value={closeoutData.crewSize ?? 2}
               onChange={(e) => setCloseoutData({ ...closeoutData, crewSize: parseInt(e.target.value) || 2 })}
               className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
             />
@@ -159,7 +174,7 @@ export function EnhancedCloseoutForm({
               Weather Conditions *
             </label>
             <select
-              value={closeoutData.weatherConditions}
+              value={closeoutData.weatherConditions ?? "clear"}
               onChange={(e) => setCloseoutData({ ...closeoutData, weatherConditions: e.target.value as CloseoutData["weatherConditions"] })}
               className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
             >
@@ -181,7 +196,7 @@ export function EnhancedCloseoutForm({
             step="0.01"
             min="0"
             required
-            value={closeoutData.actualLaborCost}
+            value={closeoutData.actualLaborCost ?? 0}
             onChange={(e) => setCloseoutData({ ...closeoutData, actualLaborCost: parseFloat(e.target.value) || 0 })}
             className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
           />
@@ -207,7 +222,7 @@ export function EnhancedCloseoutForm({
               min="0"
               max="100"
               required
-              value={closeoutData.actualWastePct}
+              value={closeoutData.actualWastePct ?? 0}
               onChange={(e) => setCloseoutData({ ...closeoutData, actualWastePct: parseFloat(e.target.value) || 0 })}
               className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
             />
@@ -236,7 +251,7 @@ export function EnhancedCloseoutForm({
               step="0.01"
               min="0"
               required
-              value={closeoutData.actualTotalCost}
+              value={closeoutData.actualTotalCost ?? 0}
               onChange={(e) => setCloseoutData({ ...closeoutData, actualTotalCost: parseFloat(e.target.value) || 0 })}
               className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
             />
@@ -247,13 +262,147 @@ export function EnhancedCloseoutForm({
         </div>
       </div>
 
+      {/* Optional Actual Cost Buckets */}
+      <div className="space-y-4 p-4 bg-surface-3 border border-border rounded-lg">
+        <div>
+          <h3 className="font-semibold text-text">Extra Cost Categories</h3>
+          <p className="text-xs text-muted mt-1">
+            Fill these when they affected the job. Leaving them blank or zero is fine.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            ["actualEquipmentCost", "Equipment Cost"],
+            ["actualLogisticsCost", "Delivery / Logistics"],
+            ["actualDisposalCost", "Disposal / Tear-Out"],
+            ["actualRegulatoryCost", "Permits / Regulatory"],
+          ].map(([key, label]) => (
+            <div key={key}>
+              <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                {label}
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={closeoutData[key as keyof CloseoutData] as number | undefined ?? 0}
+                onChange={(e) =>
+                  setCloseoutData({
+                    ...closeoutData,
+                    [key]: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Optional Quantity Actuals */}
+      <div className="space-y-4 p-4 bg-surface-3 border border-border rounded-lg">
+        <div>
+          <h3 className="font-semibold text-text">Field Quantity Actuals</h3>
+          <p className="text-xs text-muted mt-1">
+            These help explain why a job drifted even when the final dollars look close.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            ["actualConcreteBags", "Concrete Bags"],
+            ["actualPostsUsed", "Posts Used"],
+            ["actualPanelsOrPicketsUsed", "Panels / Pickets Used"],
+          ].map(([key, label]) => (
+            <div key={key}>
+              <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                {label}
+              </label>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                value={closeoutData[key as keyof CloseoutData] as number | undefined ?? 0}
+                onChange={(e) =>
+                  setCloseoutData({
+                    ...closeoutData,
+                    [key]: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Field Conditions */}
+      <div className="space-y-4 p-4 bg-surface-3 border border-border rounded-lg">
+        <div>
+          <h3 className="font-semibold text-text">Field Conditions</h3>
+          <p className="text-xs text-muted mt-1">
+            Mark the site realities that slowed the crew or changed the scope.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[
+            ["rock", "Rock / hard digging"],
+            ["roots", "Heavy roots / vegetation"],
+            ["standingWater", "Standing water / wet holes"],
+            ["accessIssues", "Access issues / long carry"],
+            ["utilityConflict", "Utilities / locates caused delays"],
+            ["weatherDelay", "Weather delay affected productivity"],
+          ].map(([key, label]) => (
+            <label
+              key={key}
+              className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+            >
+              <input
+                type="checkbox"
+                checked={Boolean(closeoutData.fieldConditions?.[key as keyof NonNullable<CloseoutData["fieldConditions"]>])}
+                onChange={(e) =>
+                  setCloseoutData({
+                    ...closeoutData,
+                    fieldConditions: {
+                      ...closeoutData.fieldConditions,
+                      [key]: e.target.checked,
+                    },
+                  })
+                }
+                className="h-4 w-4 rounded border-border bg-surface-3 text-accent focus:ring-accent"
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Hidden Costs */}
+      <div className="space-y-3 p-4 bg-surface-3 border border-border rounded-lg">
+        <div>
+          <h3 className="font-semibold text-text">Hidden Costs / Lessons Learned</h3>
+          <p className="text-xs text-muted mt-1">
+            Enter one item per line for anything the estimator should learn from.
+          </p>
+        </div>
+        <textarea
+          value={hiddenCostNotesText}
+          onChange={(e) => setHiddenCostNotesText(e.target.value)}
+          rows={4}
+          className="w-full border border-border bg-surface-2 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"
+          placeholder={"Extra tear-out around old footings\nTight alley access required hand-carry\nCustomer changed latch hardware mid-job"}
+        />
+      </div>
+
       {/* Notes */}
       <div>
         <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
           Notes
         </label>
         <textarea
-          value={closeoutData.notes}
+          value={closeoutData.notes ?? ""}
           onChange={(e) => setCloseoutData({ ...closeoutData, notes: e.target.value })}
           rows={4}
           className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150"

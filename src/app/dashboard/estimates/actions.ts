@@ -442,8 +442,9 @@ export async function convertToJob(fd: FormData) {
     "@/lib/jobs/convertEstimateToJob"
   );
 
+  let jobId: string;
   try {
-    await convertEstimateToJob(estimateId);
+    ({ jobId } = await convertEstimateToJob(estimateId));
   } catch (e) {
     const msg = encodeURIComponent(
       e instanceof Error ? e.message : "Failed to convert estimate"
@@ -451,7 +452,7 @@ export async function convertToJob(fd: FormData) {
     redirect(`/dashboard/estimates/${estimateId}?error=${msg}`);
   }
 
-  redirect(`/dashboard/jobs`);
+  redirect(`/dashboard/jobs/${jobId}`);
 }
 
 /* ------------------------------------------------------------------ */

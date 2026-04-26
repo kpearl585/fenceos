@@ -7,6 +7,7 @@ import { segmentRun } from "../segmentation";
 import { cuttingStockOptimizer } from "../bom/shared";
 import { buildFenceGraph } from "../builder";
 import { generateBom } from "../bom/index";
+import { assertValidFenceProjectInput, sanitizeGatesForEstimator } from "../estimateInput";
 import type { FenceProjectInput, FenceNode, InstallRules, SiteConfig } from "../types";
 import { INSTALL_RULES, SOIL_CONCRETE_FACTORS } from "../types";
 
@@ -132,6 +133,25 @@ describe("Rail cutting-stock optimizer input", () => {
     // which can't fit in 8ft stock → would produce 3+ bins per piece = 39+ stock
     // Actually worse — 100ft pieces need ceil(100/8) = 13 bins each × 3 = 39
     // But with proper section widths (~8ft each), we get 1 bin per rail = much more efficient
+  });
+
+  it("vinyl picket pre-fab panels should not also buy separate rail stock", () => {
+    const input = makeInput({
+      productLineId: "vinyl_picket_4ft",
+      fenceHeight: 4,
+      postSize: "4x4",
+      runs: [{ id: "r1", linearFeet: 120, startType: "end", endType: "end" }],
+    });
+    const graph = buildFenceGraph(input);
+    const result = generateBom(graph, {
+      fenceType: "vinyl",
+      wastePct: 0.05,
+      priceMap: {},
+    });
+
+    expect(result.bom.find((b) => b.sku === "VINYL_PANEL_4FT")).toBeDefined();
+    expect(result.bom.find((b) => b.sku === "VINYL_RAIL_8FT")).toBeUndefined();
+    expect(result.bom.find((b) => b.sku === "VINYL_RAIL_BRACKET")).toBeUndefined();
   });
 
   it("section-based optimizer should be more efficient than run-length approach", () => {
@@ -292,6 +312,45 @@ describe("Input validation", () => {
     });
 
     expect(() => buildFenceGraph(input)).not.toThrow();
+  });
+
+  it("should allow extra-wide commercial gates up to 24ft", () => {
+    const input = makeInput({
+      productLineId: "chain_link_6ft",
+      postSize: "2in" as any,
+      runs: [{ id: "r1", linearFeet: 40, startType: "end", endType: "gate" }],
+      gates: [{ id: "g1", afterRunId: "r1", gateType: "double", widthFt: 16, isPoolGate: false }],
+    });
+
+    expect(() => assertValidFenceProjectInput(input)).not.toThrow();
+    expect(() => buildFenceGraph(input)).not.toThrow();
+  });
+
+  it("should preserve and estimate multiple gates on the same run", () => {
+    const input = makeInput({
+      productLineId: "chain_link_4ft",
+      postSize: "2in" as any,
+      runs: [{ id: "r1", linearFeet: 400, startType: "end", endType: "gate" }],
+      gates: [
+        { id: "g1", afterRunId: "r1", gateType: "single", widthFt: 4, isPoolGate: false },
+        { id: "g2", afterRunId: "r1", gateType: "single", widthFt: 4, isPoolGate: false },
+      ],
+    });
+
+    expect(sanitizeGatesForEstimator(input.gates)).toHaveLength(2);
+    expect(() => assertValidFenceProjectInput(input)).not.toThrow();
+
+    const graph = buildFenceGraph(input);
+    expect(graph.edges.filter((edge) => edge.type === "gate")).toHaveLength(2);
+
+    const result = generateBom(graph, {
+      fenceType: "chain_link",
+      wastePct: 0.05,
+      priceMap: {},
+    });
+
+    const gateItems = result.bom.filter((item) => item.category === "gates" || item.category === "gate_hardware");
+    expect(gateItems.length).toBeGreaterThan(0);
   });
 });
 

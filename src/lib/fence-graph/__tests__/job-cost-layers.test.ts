@@ -41,8 +41,8 @@ describe("Overhead labor lines", () => {
     expect(cleanup).toBeDefined();
 
     // Default values
-    expect(setup!.totalHrs).toBe(1.5);
-    expect(layout!.totalHrs).toBe(0.75);
+    expect(setup!.totalHrs).toBe(1.0);
+    expect(layout!.totalHrs).toBe(0.5);
     expect(cleanup!.totalHrs).toBeGreaterThan(0);
   });
 
@@ -156,28 +156,52 @@ describe("Delivery fee", () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe("Equipment rentals", () => {
-  it("should always include auger rental", () => {
+  it("should not include equipment rentals by default", () => {
     const input = makeInput();
     const result = estimateFence(input, { laborRatePerHr: 65, wastePct: 0.05, priceMap: {} });
 
+    expect(result.bom.find(b => b.sku === "EQUIP_AUGER")).toBeUndefined();
+  });
+
+  it("should add auger rental when contractor config opts into it", () => {
+    const input = makeInput();
+    const result = estimateFence(input, {
+      laborRatePerHr: 65,
+      wastePct: 0.05,
+      priceMap: {},
+      estimatorConfig: mergeEstimatorConfig({ equipment: { augerPerDay: 95 } }),
+    });
+
     const auger = result.bom.find(b => b.sku === "EQUIP_AUGER");
     expect(auger).toBeDefined();
-    expect(auger!.unitCost).toBe(DEFAULT_ESTIMATOR_CONFIG.equipment.augerPerDay);
+    expect(auger!.unitCost).toBe(95);
     expect(auger!.qty).toBeGreaterThanOrEqual(1);
   });
 
-  it("should add stretcher for chain link only", () => {
+  it("should add stretcher for chain link only when enabled", () => {
     const clInput = makeInput({ productLineId: "chain_link_6ft", postSize: "2in" as any });
-    const clResult = estimateFence(clInput, { fenceType: "chain_link", laborRatePerHr: 65, wastePct: 0.05, priceMap: {} });
+    const clResult = estimateFence(clInput, {
+      fenceType: "chain_link",
+      laborRatePerHr: 65,
+      wastePct: 0.05,
+      priceMap: {},
+      estimatorConfig: mergeEstimatorConfig({ equipment: { stretcherPerDay: 45 } }),
+    });
     expect(clResult.bom.find(b => b.sku === "EQUIP_STRETCHER")).toBeDefined();
 
     const vinylResult = estimateFence(makeInput(), { fenceType: "vinyl", laborRatePerHr: 65, wastePct: 0.05, priceMap: {} });
     expect(vinylResult.bom.find(b => b.sku === "EQUIP_STRETCHER")).toBeUndefined();
   });
 
-  it("should add saw for aluminum only", () => {
+  it("should add saw for aluminum only when enabled", () => {
     const alInput = makeInput({ productLineId: "aluminum_6ft", postSize: "4x4" });
-    const alResult = estimateFence(alInput, { fenceType: "aluminum", laborRatePerHr: 65, wastePct: 0.05, priceMap: {} });
+    const alResult = estimateFence(alInput, {
+      fenceType: "aluminum",
+      laborRatePerHr: 65,
+      wastePct: 0.05,
+      priceMap: {},
+      estimatorConfig: mergeEstimatorConfig({ equipment: { sawPerDay: 50 } }),
+    });
     expect(alResult.bom.find(b => b.sku === "EQUIP_SAW")).toBeDefined();
 
     const vinylResult = estimateFence(makeInput(), { fenceType: "vinyl", laborRatePerHr: 65, wastePct: 0.05, priceMap: {} });
@@ -211,7 +235,12 @@ describe("Mixer rental threshold", () => {
         { id: "r2", linearFeet: 300, startType: "corner", endType: "end" },
       ],
     });
-    const result = estimateFence(input, { laborRatePerHr: 65, wastePct: 0.05, priceMap: {} });
+    const result = estimateFence(input, {
+      laborRatePerHr: 65,
+      wastePct: 0.05,
+      priceMap: {},
+      estimatorConfig: mergeEstimatorConfig({ equipment: { mixerPerDay: 55 } }),
+    });
 
     const concreteBags = result.bom.find(b => b.sku === "CONCRETE_80LB")?.qty ?? 0;
     if (concreteBags >= 25) {

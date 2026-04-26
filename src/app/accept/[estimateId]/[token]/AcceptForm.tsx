@@ -20,34 +20,30 @@ export default function AcceptForm({
   const [success, setSuccess] = useState(false);
 
   function getPos(
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+    e: React.PointerEvent<HTMLCanvasElement>
   ) {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    if ("touches" in e) {
-      return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top,
-      };
-    }
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }
 
   function startDrawing(
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+    e: React.PointerEvent<HTMLCanvasElement>
   ) {
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
     e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
     setIsDrawing(true);
+    setHasSigned(true);
     const { x, y } = getPos(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
   }
 
   function draw(
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+    e: React.PointerEvent<HTMLCanvasElement>
   ) {
     if (!isDrawing) return;
     const ctx = canvasRef.current?.getContext("2d");
@@ -64,7 +60,8 @@ export default function AcceptForm({
     setHasSigned(true);
   }
 
-  function stopDrawing() {
+  function stopDrawing(e?: React.PointerEvent<HTMLCanvasElement>) {
+    e?.currentTarget.releasePointerCapture?.(e.pointerId);
     setIsDrawing(false);
   }
 
@@ -195,13 +192,10 @@ export default function AcceptForm({
               width={500}
               height={150}
               className="w-full cursor-crosshair touch-none"
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-              onTouchStart={startDrawing}
-              onTouchMove={draw}
-              onTouchEnd={stopDrawing}
+              onPointerDown={startDrawing}
+              onPointerMove={draw}
+              onPointerUp={stopDrawing}
+              onPointerLeave={stopDrawing}
             />
           </div>
           <button

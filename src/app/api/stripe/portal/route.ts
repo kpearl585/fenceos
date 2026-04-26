@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createBillingPortalSession } from "@/lib/stripe/subscription";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { getAppOrigin } from "@/lib/http/appOrigin";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const origin = req.headers.get("origin") || "https://fenceestimatepro.com";
+    const origin = getAppOrigin();
     const session = await createBillingPortalSession(
       org.stripe_customer_id,
       `${origin}/dashboard/settings`

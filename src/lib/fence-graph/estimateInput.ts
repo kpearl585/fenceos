@@ -4,6 +4,8 @@ import { PRODUCT_LINES, type FenceProjectInput, type GateInput } from "./types";
 
 const VALID_RUN_TYPES = new Set(["end", "corner", "gate"]);
 const VALID_FENCE_TYPES = new Set<FenceType>(["vinyl", "wood", "chain_link", "aluminum"]);
+const MIN_GATE_WIDTH_FT = 3;
+const MAX_GATE_WIDTH_FT = 24;
 const VALID_WOOD_STYLES = new Set<WoodStyle>([
   "dog_ear_privacy",
   "flat_top_privacy",
@@ -25,12 +27,9 @@ export function inferFenceTypeFromProductLineId(productLineId?: string | null): 
 }
 
 export function sanitizeGatesForEstimator(gates: GateInput[]): GateInput[] {
-  const runIds = new Set<string>();
-  return gates.filter((gate) => {
-    if (runIds.has(gate.afterRunId)) return false;
-    runIds.add(gate.afterRunId);
-    return true;
-  });
+  // Preserve every gate: multiple gates on one run are valid estimate inputs,
+  // and silently deduplicating them corrupts both costing and saved drafts.
+  return [...gates];
 }
 
 export function assertValidFenceProjectInput(input: FenceProjectInput): void {
@@ -63,19 +62,13 @@ export function assertValidFenceProjectInput(input: FenceProjectInput): void {
     }
   }
 
-  const gateCounts = new Map<string, number>();
   for (const gate of input.gates) {
     if (!runIds.has(gate.afterRunId)) {
       throw new Error(`Gate ${gate.id} is attached to an unknown run.`);
     }
 
-    gateCounts.set(gate.afterRunId, (gateCounts.get(gate.afterRunId) ?? 0) + 1);
-    if ((gateCounts.get(gate.afterRunId) ?? 0) > 1) {
-      throw new Error("Only one gate per run is currently supported.");
-    }
-
-    if (!isFiniteNumber(gate.widthFt) || gate.widthFt < 3 || gate.widthFt > 14) {
-      throw new Error(`Gate ${gate.id} must be between 3ft and 14ft wide.`);
+    if (!isFiniteNumber(gate.widthFt) || gate.widthFt < MIN_GATE_WIDTH_FT || gate.widthFt > MAX_GATE_WIDTH_FT) {
+      throw new Error(`Gate ${gate.id} must be between ${MIN_GATE_WIDTH_FT}ft and ${MAX_GATE_WIDTH_FT}ft wide.`);
     }
   }
 }

@@ -70,15 +70,15 @@ export default async function OnboardingChecklist({ userId, orgId, userCreatedAt
   const completedCount = steps.filter((s) => s.done).length;
 
   return (
-    <div className="bg-white rounded-xl border border-fence-200 p-5 shadow-sm">
+    <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-semibold text-fence-900 text-sm">Getting Started</h3>
-          <p className="text-xs text-gray-500 mt-0.5">{completedCount}/{steps.length} steps complete</p>
+          <h3 className="font-semibold text-text text-sm">Getting Started</h3>
+          <p className="text-xs text-muted mt-0.5">{completedCount}/{steps.length} steps complete</p>
         </div>
-        <div className="w-24 bg-gray-100 rounded-full h-2">
+        <div className="w-24 bg-surface-3 rounded-full h-2">
           <div
-            className="bg-fence-600 h-2 rounded-full transition-all"
+            className="bg-accent h-2 rounded-full transition-all"
             style={{ width: `${(completedCount / steps.length) * 100}%` }}
           />
         </div>
@@ -86,19 +86,19 @@ export default async function OnboardingChecklist({ userId, orgId, userCreatedAt
       <ul className="space-y-2">
         {steps.map((step, i) => (
           <li key={i} className="flex items-center gap-3">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${step.done ? "bg-green-100" : "bg-gray-100"}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${step.done ? "bg-accent/15" : "bg-surface-3"}`}>
               {step.done ? (
-                <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 text-accent-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
-                <span className="w-2 h-2 rounded-full bg-gray-300" />
+                <span className="w-2 h-2 rounded-full bg-muted/60" />
               )}
             </div>
             {step.done || !step.href ? (
-              <span className={`text-sm ${step.done ? "text-gray-400 line-through" : "text-gray-700"}`}>{step.label}</span>
+              <span className={`text-sm ${step.done ? "text-muted line-through" : "text-text"}`}>{step.label}</span>
             ) : (
-              <Link href={step.href} className="text-sm text-fence-700 hover:text-fence-900 hover:underline">
+              <Link href={step.href} className="text-sm text-accent-light hover:text-accent hover:underline">
                 {step.label} →
               </Link>
             )}

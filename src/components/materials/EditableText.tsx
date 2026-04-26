@@ -48,9 +48,10 @@ export default function EditableText({ materialId, orgId, field, value, placehol
         onKeyDown={handleKeyDown}
         disabled={saving}
         placeholder={placeholder}
+        className="bg-surface-3 text-text placeholder:text-muted"
         style={{
           padding: '0.25rem 0.375rem',
-          border: '2px solid #2D6A4F', borderRadius: '4px',
+          border: '2px solid rgba(22, 163, 74, 0.7)', borderRadius: '4px',
           fontSize: '0.875rem', fontWeight: 500, outline: 'none',
           width: '100%', minWidth: '80px', maxWidth: '160px'
         }}
@@ -67,15 +68,15 @@ export default function EditableText({ materialId, orgId, field, value, placehol
         background: 'none', border: 'none', cursor: 'pointer',
         padding: '0.25rem 0.5rem', borderRadius: '4px',
         fontSize: '0.875rem', fontWeight: field === 'name' ? 600 : 400,
-        color: field === 'name' ? '#1a2e1e' : '#6b7280',
+        color: field === 'name' ? '#f5f7f5' : '#a3ada2',
         transition: 'background 0.15s', textAlign: 'left',
         display: 'flex', alignItems: 'center', gap: '0.25rem'
       }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#f0fdf4')}
+      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(18, 24, 18, 0.95)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
     >
-      {current || <span style={{ color: '#d1d5db' }}>{placeholder || '—'}</span>}
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, flexShrink: 0 }}>
+      {current || <span style={{ color: '#6f786f' }}>{placeholder || '—'}</span>}
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#6f786f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.65, flexShrink: 0 }}>
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
       </svg>

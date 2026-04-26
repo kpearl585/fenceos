@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { OrgEstimatorConfig } from "@/lib/fence-graph/config/types";
 import type { DeepPartial } from "@/lib/fence-graph/config/types";
@@ -31,6 +31,19 @@ const REGION_OPTIONS = [
   { value: "northwest", label: "Northwest (+12%)" },
   { value: "mountain", label: "Mountain (-2%)" },
 ];
+
+const ADVANCED_SECTIONS = [
+  { id: "labor", label: "Crew labor hours" },
+  { id: "overhead", label: "Job overhead" },
+  { id: "concrete", label: "Concrete" },
+  { id: "material", label: "Material assumptions" },
+  { id: "gates", label: "Gates" },
+  { id: "equipment", label: "Equipment rental" },
+  { id: "logistics", label: "Delivery" },
+  { id: "removal", label: "Old fence removal" },
+  { id: "pricing", label: "Pricing rules" },
+  { id: "region", label: "Region details" },
+] as const;
 
 // Plain-English copy for each labor-hour activity. Keyed by the engine
 // key so the Object.entries(config.labor[ft]) loop can look up a
@@ -128,6 +141,30 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
   // Per-activity labor hours are hidden under a disclosure inside the
   // Labor tab. 99% of contractors only need the speed preset.
   const [showPerActivity, setShowPerActivity] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace(/^#/, "");
+      if (!hash) return;
+
+      if (hash === "essentials") {
+        setActiveSection("essentials");
+        return;
+      }
+
+      const matchesAdvanced = ADVANCED_SECTIONS.some((section) => section.id === hash);
+      if (matchesAdvanced) {
+        setShowAdvanced(true);
+        setActiveSection(hash);
+      }
+    };
+
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
 
   function update<K extends keyof OrgEstimatorConfig>(section: K, value: OrgEstimatorConfig[K]) {
     setConfig(prev => ({ ...prev, [section]: value }));
@@ -227,19 +264,6 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
     }
   }
 
-  const advancedSections = [
-    { id: "labor", label: "Crew labor hours" },
-    { id: "overhead", label: "Job overhead" },
-    { id: "concrete", label: "Concrete" },
-    { id: "material", label: "Material assumptions" },
-    { id: "gates", label: "Gates" },
-    { id: "equipment", label: "Equipment rental" },
-    { id: "logistics", label: "Delivery" },
-    { id: "removal", label: "Old fence removal" },
-    { id: "pricing", label: "Pricing rules" },
-    { id: "region", label: "Region details" },
-  ];
-
   function toggleAdvanced() {
     const next = !showAdvanced;
     setShowAdvanced(next);
@@ -281,7 +305,7 @@ export default function EstimatorSettingsClient({ config: initialConfig, hasCust
         </div>
         {showAdvanced && (
           <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-1">
-            {advancedSections.map(s => (
+            {ADVANCED_SECTIONS.map(s => (
               <button
                 key={s.id}
                 onClick={() => setActiveSection(s.id)}

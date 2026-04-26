@@ -1,6 +1,7 @@
 "use server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
+import { canAccess } from "@/lib/roles";
 import { matchSupplierRow, parseSupplierCsv } from "@/lib/price-sync/matcher";
 import type { MatchResult } from "@/lib/price-sync/matcher";
 
@@ -21,6 +22,9 @@ export async function parsePriceSyncCsv(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Not authenticated" };
     const profile = await ensureProfile(supabase, user);
+    if (!canAccess(profile.role, "materials")) {
+      return { success: false, error: "Access denied" };
+    }
     const admin = createAdminClient();
 
     // Parse CSV
@@ -72,6 +76,9 @@ export async function applyPriceUpdates(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, updatedCount: 0, error: "Not authenticated" };
     const profile = await ensureProfile(supabase, user);
+    if (!canAccess(profile.role, "materials")) {
+      return { success: false, updatedCount: 0, error: "Access denied" };
+    }
     const admin = createAdminClient();
 
     const now = new Date().toISOString();
@@ -111,6 +118,9 @@ export async function getPriceFreshness(): Promise<{
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { totalMaterials: 0, pricedMaterials: 0, staleCount: 0, neverUpdated: 0, lastSyncDate: null };
     const profile = await ensureProfile(supabase, user);
+    if (!canAccess(profile.role, "materials")) {
+      return { totalMaterials: 0, pricedMaterials: 0, staleCount: 0, neverUpdated: 0, lastSyncDate: null };
+    }
     const admin = createAdminClient();
 
     const { data: materials } = await admin

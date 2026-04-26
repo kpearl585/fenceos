@@ -52,27 +52,27 @@ function fmtPct(v: number | string | null) {
 }
 
 function marginColor(pct: number, target: number): string {
-  if (pct >= target) return "text-green-700";
-  if (pct >= target * 0.85) return "text-yellow-600";
-  return "text-red-600";
+  if (pct >= target) return "text-accent-light";
+  if (pct >= target * 0.85) return "text-warning";
+  return "text-danger";
 }
 
 function marginBg(pct: number, target: number): string {
-  if (pct >= target) return "bg-green-50 border-green-200";
-  if (pct >= target * 0.85) return "bg-yellow-50 border-yellow-200";
-  return "bg-red-50 border-red-200";
+  if (pct >= target) return "bg-accent/10 border-accent/30";
+  if (pct >= target * 0.85) return "bg-warning/10 border-warning/30";
+  return "bg-danger/10 border-danger/30";
 }
 
 function statusBadge(status: string): string {
   switch (status) {
     case "active":
-      return "bg-blue-100 text-blue-700";
+      return "bg-info/15 text-info";
     case "complete":
-      return "bg-green-100 text-green-700";
+      return "bg-accent/15 text-accent-light";
     case "scheduled":
-      return "bg-gray-100 text-gray-700";
+      return "bg-surface-3 text-text";
     default:
-      return "bg-gray-100 text-gray-600";
+      return "bg-surface-3 text-muted";
   }
 }
 
@@ -148,8 +148,8 @@ export default async function OwnerDashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-fence-900">Owner P&amp;L Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-text">Owner P&amp;L Dashboard</h1>
+          <p className="text-sm text-muted mt-0.5">
             Financial overview across all jobs and estimates. Owner access only.
           </p>
         </div>
@@ -158,8 +158,8 @@ export default async function OwnerDashboardPage() {
 
       {/* Error state */}
       {hasError && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-6">
-          <p className="text-sm font-semibold text-red-800">
+        <div className="bg-danger/10 border-2 border-danger/30 rounded-xl p-4 mb-6">
+          <p className="text-sm font-semibold text-danger">
             Failed to load financial data. Please refresh or contact support.
           </p>
         </div>
@@ -168,40 +168,40 @@ export default async function OwnerDashboardPage() {
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Revenue */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-5">
+          <p className="text-xs text-muted uppercase tracking-wider font-medium">
             Total Revenue
           </p>
-          <p className="text-2xl sm:text-3xl font-bold text-fence-900 mt-2">
+          <p className="text-2xl sm:text-3xl font-bold text-text mt-2">
             {fmt(totalRevenue)}
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted mt-1">
             Active + Completed
           </p>
         </div>
 
         {/* Total Gross Profit */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-5">
+          <p className="text-xs text-muted uppercase tracking-wider font-medium">
             Gross Profit
           </p>
-          <p className="text-2xl sm:text-3xl font-bold text-fence-900 mt-2">
+          <p className="text-2xl sm:text-3xl font-bold text-text mt-2">
             {fmt(totalProfit)}
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted mt-1">
             CO Impact: {coDelta >= 0 ? "+" : ""}{fmt(coDelta)}
           </p>
         </div>
 
         {/* Average Margin */}
         <div className={`rounded-xl shadow-sm border-2 p-5 ${marginBg(avgMargin, TARGET)}`}>
-          <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+          <p className="text-xs text-muted uppercase tracking-wider font-medium">
             Avg Margin
           </p>
           <p className={`text-2xl sm:text-3xl font-bold mt-2 ${marginColor(avgMargin, TARGET)}`}>
             {fmtPct(avgMargin)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted mt-1">
             Target: {fmtPct(TARGET)}
           </p>
         </div>
@@ -209,18 +209,18 @@ export default async function OwnerDashboardPage() {
         {/* Jobs Below Target */}
         <div className={`rounded-xl shadow-sm border-2 p-5 ${
           belowCount > 0
-            ? "bg-red-50 border-red-200"
-            : "bg-green-50 border-green-200"
+            ? "bg-danger/10 border-danger/30"
+            : "bg-accent/10 border-accent/30"
         }`}>
-          <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+          <p className="text-xs text-muted uppercase tracking-wider font-medium">
             Below Target
           </p>
           <p className={`text-2xl sm:text-3xl font-bold mt-2 ${
-            belowCount > 0 ? "text-red-600" : "text-green-700"
+            belowCount > 0 ? "text-danger" : "text-accent-light"
           }`}>
             {belowCount}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted mt-1">
             {belowCount === 0 ? "All margins healthy" : `job${belowCount !== 1 ? "s" : ""} at risk`}
           </p>
         </div>
@@ -228,27 +228,27 @@ export default async function OwnerDashboardPage() {
 
       {/* ── Pipeline Breakdown ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Quoted</p>
-          <p className="text-lg font-bold text-fence-900 mt-1">
+        <div className="bg-surface rounded-xl border border-border p-4">
+          <p className="text-xs text-muted uppercase tracking-wider">Quoted</p>
+          <p className="text-lg font-bold text-text mt-1">
             {fmt(summary.total_quoted_revenue)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Accepted</p>
-          <p className="text-lg font-bold text-fence-900 mt-1">
+        <div className="bg-surface rounded-xl border border-border p-4">
+          <p className="text-xs text-muted uppercase tracking-wider">Accepted</p>
+          <p className="text-lg font-bold text-text mt-1">
             {fmt(summary.total_accepted_revenue)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Active Jobs</p>
-          <p className="text-lg font-bold text-fence-900 mt-1">
+        <div className="bg-surface rounded-xl border border-border p-4">
+          <p className="text-xs text-muted uppercase tracking-wider">Active Jobs</p>
+          <p className="text-lg font-bold text-text mt-1">
             {fmt(summary.total_active_job_revenue)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Completed</p>
-          <p className="text-lg font-bold text-fence-900 mt-1">
+        <div className="bg-surface rounded-xl border border-border p-4">
+          <p className="text-xs text-muted uppercase tracking-wider">Completed</p>
+          <p className="text-lg font-bold text-text mt-1">
             {fmt(summary.total_completed_revenue)}
           </p>
         </div>
@@ -256,8 +256,8 @@ export default async function OwnerDashboardPage() {
 
       {/* ── Risk Alert Banner ── */}
       {belowCount > 0 && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-6">
-          <p className="text-sm font-semibold text-red-800">
+        <div className="bg-danger/10 border-2 border-danger/30 rounded-xl p-4 mb-6">
+          <p className="text-sm font-semibold text-danger">
             {belowCount} job{belowCount !== 1 ? "s are" : " is"} below target margin.
           </p>
           {atRiskJobs.filter((j) => j.is_below_target).length > 0 && (
@@ -266,10 +266,10 @@ export default async function OwnerDashboardPage() {
                 .filter((j) => j.is_below_target)
                 .slice(0, 5)
                 .map((j) => (
-                  <li key={j.job_id} className="text-sm text-red-700">
+                  <li key={j.job_id} className="text-sm text-danger">
                     <span className="font-medium">{j.job_title}</span>
-                    {j.customer_name && <span className="text-red-500"> — {j.customer_name}</span>}
-                    <span className="ml-2 text-red-600 font-semibold">{fmtPct(j.gross_margin_pct)}</span>
+                    {j.customer_name && <span className="text-danger/75"> — {j.customer_name}</span>}
+                    <span className="ml-2 text-danger font-semibold">{fmtPct(j.gross_margin_pct)}</span>
                   </li>
                 ))}
             </ul>
@@ -279,9 +279,9 @@ export default async function OwnerDashboardPage() {
 
       {/* ── Jobs at Risk Table ── */}
       {atRiskJobs.length > 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h2 className="font-semibold text-fence-900">
+        <div className="bg-surface rounded-xl border border-border overflow-hidden">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="font-semibold text-text">
               All Jobs — Margin Risk View ({atRiskJobs.length})
             </h2>
           </div>
@@ -289,7 +289,7 @@ export default async function OwnerDashboardPage() {
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-left">
+              <thead className="bg-surface-2 text-muted text-left">
                 <tr>
                   <th className="px-4 py-2 font-medium">Customer</th>
                   <th className="px-4 py-2 font-medium text-right">Contract</th>
@@ -299,16 +299,16 @@ export default async function OwnerDashboardPage() {
                   <th className="px-4 py-2 font-medium text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {atRiskJobs.map((j) => {
                   const margin = Number(j.gross_margin_pct);
                   const erosion = Number(j.margin_erosion_pct);
                   const target = Number(j.target_margin_pct) || TARGET;
                   return (
-                    <tr key={j.job_id} className="hover:bg-gray-50">
+                    <tr key={j.job_id} className="hover:bg-surface-2/80 transition-colors">
                       <td className="px-4 py-3">
-                        <p className="font-medium text-fence-900">{j.customer_name || "—"}</p>
-                        <p className="text-xs text-gray-400">{j.job_title}</p>
+                        <p className="font-medium text-text">{j.customer_name || "—"}</p>
+                        <p className="text-xs text-muted">{j.job_title}</p>
                       </td>
                       <td className="px-4 py-3 text-right font-medium">
                         {fmt(j.total_price)}
@@ -320,7 +320,7 @@ export default async function OwnerDashboardPage() {
                         {fmtPct(margin)}
                       </td>
                       <td className={`px-4 py-3 text-right font-medium ${
-                        erosion > 0.10 ? "text-orange-600" : erosion > 0 ? "text-yellow-600" : "text-gray-400"
+                        erosion > 0.10 ? "text-danger" : erosion > 0 ? "text-warning" : "text-muted"
                       }`}>
                         {erosion > 0 ? `−${fmtPct(erosion)}` : "—"}
                       </td>
@@ -337,7 +337,7 @@ export default async function OwnerDashboardPage() {
           </div>
 
           {/* Mobile stacked cards */}
-          <div className="sm:hidden divide-y divide-gray-100">
+          <div className="sm:hidden divide-y divide-border">
             {atRiskJobs.map((j) => {
               const margin = Number(j.gross_margin_pct);
               const erosion = Number(j.margin_erosion_pct);
@@ -346,10 +346,10 @@ export default async function OwnerDashboardPage() {
                 <div key={j.job_id} className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="font-medium text-fence-900 text-sm">
+                      <p className="font-medium text-text text-sm">
                         {j.customer_name || "—"}
                       </p>
-                      <p className="text-xs text-gray-400">{j.job_title}</p>
+                      <p className="text-xs text-muted">{j.job_title}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusBadge(j.status)}`}>
                       {j.status.toUpperCase()}
@@ -357,15 +357,15 @@ export default async function OwnerDashboardPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
-                      <p className="text-xs text-gray-400">Contract</p>
+                      <p className="text-xs text-muted">Contract</p>
                       <p className="font-medium">{fmt(j.total_price)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400">Profit</p>
+                      <p className="text-xs text-muted">Profit</p>
                       <p className="font-medium">{fmt(j.gross_profit)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400">Margin</p>
+                      <p className="text-xs text-muted">Margin</p>
                       <p className={`font-bold ${marginColor(margin, target)}`}>
                         {fmtPct(margin)}
                       </p>
@@ -373,7 +373,7 @@ export default async function OwnerDashboardPage() {
                   </div>
                   {erosion > 0 && (
                     <p className={`text-xs mt-2 ${
-                      erosion > 0.10 ? "text-orange-600" : "text-yellow-600"
+                      erosion > 0.10 ? "text-danger" : "text-warning"
                     }`}>
                       Margin erosion: −{fmtPct(erosion)}
                     </p>
@@ -385,8 +385,8 @@ export default async function OwnerDashboardPage() {
         </div>
       ) : (
         /* Empty state — no jobs */
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-          <p className="text-gray-400 text-sm">
+        <div className="bg-surface rounded-xl border border-border p-8 text-center">
+          <p className="text-muted text-sm">
             No jobs to display yet. Convert estimates to jobs to see margin tracking here.
           </p>
         </div>

@@ -14,16 +14,34 @@ export interface SiteComplexity {
 export interface CloseoutData {
   // Existing (already in system)
   actualWastePct: number;          // 0-100
-  notes: string;
+  notes?: string;
 
   // Phase 1 additions
-  actualLaborHours: number;        // total hours logged by crew
-  crewSize: number;                // 2-person, 3-person, etc.
-  weatherConditions: "clear" | "rain" | "heat" | "cold" | "mixed";
+  actualLaborHours?: number;       // total hours logged by crew
+  crewSize?: number;               // 2-person, 3-person, etc.
+  weatherConditions?: "clear" | "rain" | "heat" | "cold" | "mixed";
 
-  actualMaterialCost: number;      // from invoices/receipts
-  actualLaborCost: number;         // actual hours × labor rate
-  actualTotalCost: number;         // materials + labor + misc
+  actualMaterialCost?: number;     // from invoices/receipts
+  actualLaborCost?: number;        // actual hours × labor rate
+  actualTotalCost?: number;        // materials + labor + misc
+  actualEquipmentCost?: number;
+  actualLogisticsCost?: number;
+  actualDisposalCost?: number;
+  actualRegulatoryCost?: number;
+
+  actualConcreteBags?: number;
+  actualPostsUsed?: number;
+  actualPanelsOrPicketsUsed?: number;
+
+  hiddenCostNotes?: string[];
+  fieldConditions?: {
+    rock?: boolean;
+    roots?: boolean;
+    standingWater?: boolean;
+    accessIssues?: boolean;
+    utilityConflict?: boolean;
+    weatherDelay?: boolean;
+  };
 }
 
 export interface EstimateWithAccuracy {
@@ -68,13 +86,57 @@ export interface AccuracyMetrics {
   avg_labor_hours_variance_pct: number | null;
   avg_labor_cost_variance_pct: number | null;
   avg_total_cost_variance_pct: number | null;
+  avg_abs_total_cost_variance_pct: number | null;
   avg_waste_variance_pct: number | null;
+  within_5_pct_rate: number | null;
+  within_10_pct_rate: number | null;
 
   // Breakdown by fence type
-  accuracy_by_fence_type: Record<string, {
-    count: number;
-    avg_variance_pct: number;
-  }> | null;
+  accuracy_by_fence_type: Record<string, AccuracyBreakdown> | null;
+  accuracy_by_complexity_band: Record<string, AccuracyBreakdown> | null;
+  accuracy_by_job_size: Record<string, AccuracyBreakdown> | null;
+  top_variance_drivers: AccuracyDriverSummary[];
+  worst_misses: AccuracyWorstMiss[];
+  priority_actions: AccuracyPriorityAction[];
+  trend_vs_previous_period: {
+    avg_total_cost_variance_pct: number | null;
+    delta_pct: number | null;
+  } | null;
+}
+
+export interface AccuracyBreakdown {
+  count: number;
+  avg_total_cost_variance_pct: number | null;
+  avg_abs_total_cost_variance_pct: number | null;
+  avg_labor_hours_variance_pct: number | null;
+  within_10_pct_rate: number | null;
+}
+
+export interface AccuracyDriverSummary {
+  label: string;
+  count: number;
+}
+
+export interface AccuracyWorstMiss {
+  id: string;
+  name: string;
+  fence_type: string | null;
+  complexity_band: string | null;
+  total_lf: number;
+  total_cost_variance_pct: number;
+  closed_at: string;
+}
+
+export interface AccuracyPriorityAction {
+  id: string;
+  title: string;
+  reason: string;
+  recommendation: string;
+  segmentLabel?: string | null;
+  actionLabel?: string | null;
+  href?: string | null;
+  confidence: "low" | "medium" | "high";
+  impactScore: number;
 }
 
 // ── Complexity Scoring Helpers ───────────────────────────────────────

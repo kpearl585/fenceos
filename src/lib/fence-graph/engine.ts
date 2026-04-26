@@ -15,6 +15,8 @@ export type {
   FenceProjectInput,
   FenceGraph,
   FenceEstimateResult,
+  ConfidenceReviewFieldId,
+  MaterialPriceMeta,
   BomItem,
   LaborDriver,
   RunInput,
@@ -46,6 +48,12 @@ export {
   groupBomIntoShoppingList,
   DEFAULT_TERMS,
 } from "./quotePackage";
+export {
+  assessEstimateMarginRisk,
+  grossMarginPctFromMarkup,
+  markupPctForTargetMargin,
+} from "./risk";
+export type { MarginRiskAssessment } from "./risk";
 
 export { analyzeEstimateCloseout } from "./closeout/analyzeCloseout";
 export type {
@@ -60,7 +68,7 @@ export type {
 
 import { buildFenceGraph } from "./builder";
 import { generateBom, type FenceType, type WoodStyle } from "./bom/index";
-import type { FenceProjectInput, FenceEstimateResult } from "./types";
+import type { FenceProjectInput, FenceEstimateResult, MaterialPriceMeta } from "./types";
 import type { OrgEstimatorConfig, DeepPartial } from "./config/types";
 import { mergeEstimatorConfig } from "./config/resolveEstimatorConfig";
 import {
@@ -74,6 +82,7 @@ export interface EstimateOptions {
   laborRatePerHr?: number;
   wastePct?: number;
   priceMap?: Record<string, number>;
+  priceMeta?: Record<string, MaterialPriceMeta>;
   estimatorConfig?: OrgEstimatorConfig | DeepPartial<OrgEstimatorConfig>;
 }
 
@@ -110,6 +119,7 @@ export function estimateFence(
     laborRatePerHr: opts.laborRatePerHr ?? 65,
     wastePct: opts.wastePct ?? wastePct,
     priceMap: opts.priceMap ?? {},
+    priceMeta: opts.priceMeta ?? {},
     estimatorConfig: config,
     permitCost: input.permitCost,
     inspectionCost: input.inspectionCost,

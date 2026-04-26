@@ -18,11 +18,15 @@
     "eval:survey:sonnet": "tsx scripts/eval-survey-extraction.ts claude-sonnet-4-6",
     "eval:survey:ab": "tsx scripts/eval-survey-extraction.ts ab",
     "test:e2e": "playwright test",
+    "test:e2e:money-path": "playwright test e2e/owner-money-path.spec.ts",
+    "test:e2e:negative": "playwright test e2e/public-acceptance-negative.spec.ts e2e/authorization-boundaries.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "test:smoke": "node ./scripts/smoke/basic-smoke.mjs",
     "test:smoke:auth": "node ./scripts/smoke/authenticated-smoke.mjs",
-    "test:smoke:owner-flow": "node ./scripts/smoke/owner-flow.mjs"
+    "test:smoke:owner-flow": "node ./scripts/smoke/owner-flow.mjs",
+    "calibrate:closeouts": "tsx scripts/calibrate-closeouts.ts",
+    "calibrate:closeouts:apply": "tsx scripts/calibrate-closeouts.ts --apply"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",

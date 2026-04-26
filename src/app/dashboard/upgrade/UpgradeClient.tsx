@@ -37,25 +37,25 @@ export default function UpgradeClient({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-16 px-4">
+    <div className="min-h-screen bg-background text-text py-16 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-fence-950 mb-3">Choose Your Plan</h1>
-          <p className="text-gray-500">Subscribe and unlock your full account. Cancel anytime.</p>
+          <h1 className="text-3xl font-bold text-text mb-3">Choose Your Plan</h1>
+          <p className="text-muted">Subscribe and unlock your full account. Cancel anytime.</p>
         </div>
 
         {/* Billing Toggle */}
         <div className="flex items-center justify-center gap-4 mb-10">
-          <span className={`text-sm font-semibold ${billingPeriod === "monthly" ? "text-fence-900" : "text-gray-400"}`}>Monthly</span>
+          <span className={`text-sm font-semibold ${billingPeriod === "monthly" ? "text-text" : "text-muted"}`}>Monthly</span>
           <button
             onClick={() => setBillingPeriod(billingPeriod === "monthly" ? "annual" : "monthly")}
-            className={`relative w-14 h-7 rounded-full transition-colors ${billingPeriod === "annual" ? "bg-fence-600" : "bg-gray-300"}`}
+            className={`relative w-14 h-7 rounded-full transition-colors ${billingPeriod === "annual" ? "bg-accent" : "bg-surface-3"}`}
           >
             <span className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${billingPeriod === "annual" ? "translate-x-7" : "translate-x-0"}`} />
           </button>
-          <span className={`text-sm font-semibold ${billingPeriod === "annual" ? "text-fence-900" : "text-gray-400"}`}>
+          <span className={`text-sm font-semibold ${billingPeriod === "annual" ? "text-text" : "text-muted"}`}>
             Annual
-            <span className="ml-2 bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">Save up to ${maxAnnualSavings}</span>
+            <span className="ml-2 bg-accent/15 text-accent-light text-xs font-bold px-2 py-0.5 rounded-full">Save up to ${maxAnnualSavings}</span>
           </span>
         </div>
 
@@ -67,35 +67,35 @@ export default function UpgradeClient({
                 key={plan.key}
                 className={`rounded-2xl p-8 border-2 flex flex-col ${
                   plan.highlighted
-                    ? "border-fence-600 bg-white shadow-xl"
-                    : "border-gray-200 bg-white"
+                    ? "border-accent bg-surface shadow-xl"
+                    : "border-border bg-surface"
                 }`}
               >
                 {plan.highlighted && (
-                  <div className="text-xs font-bold text-fence-600 uppercase tracking-wider mb-3">
+                  <div className="text-xs font-bold text-accent-light uppercase tracking-wider mb-3">
                     Most Popular
                   </div>
                 )}
-                <h2 className="text-xl font-bold text-fence-950 mb-1">{plan.name}</h2>
-                <p className="text-gray-500 text-sm mb-4">{plan.description}</p>
+                <h2 className="text-xl font-bold text-text mb-1">{plan.name}</h2>
+                <p className="text-muted text-sm mb-4">{plan.description}</p>
                 <div className="mb-2">
-                  <span className="text-4xl font-black text-fence-950">${price}</span>
-                  <span className="text-gray-400">/mo</span>
+                  <span className="text-4xl font-black text-text">${price}</span>
+                  <span className="text-muted">/mo</span>
                   {billingPeriod === "annual" && (
-                    <p className="text-xs text-gray-400 mt-0.5">billed ${plan.annualPrice}/yr</p>
+                    <p className="text-xs text-muted mt-0.5">billed ${plan.annualPrice}/yr</p>
                   )}
                 </div>
                 {billingPeriod === "annual" && (
                   <div className="mb-4">
-                    <span className="inline-block bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">
+                    <span className="inline-block bg-accent/15 text-accent-light text-xs font-bold px-2 py-1 rounded-full">
                       Save ${plan.annualSavings}/yr
                     </span>
                   </div>
                 )}
                 <ul className="space-y-2 mb-8 flex-1">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
-                      <svg className="w-4 h-4 text-fence-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <li key={f} className="flex items-start gap-2 text-sm text-text">
+                      <svg className="w-4 h-4 text-accent-light mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       {f}
@@ -107,8 +107,8 @@ export default function UpgradeClient({
                   disabled={!!loading}
                   className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
                     plan.highlighted
-                      ? "bg-fence-600 text-white hover:bg-fence-700"
-                      : "bg-fence-950 text-white hover:bg-fence-800"
+                      ? "bg-accent text-white hover:bg-accent-light"
+                      : "bg-surface-3 text-text hover:bg-surface-2"
                   } disabled:opacity-50`}
                 >
                   {loading === plan.key ? "Loading..." : "Subscribe Now"}
@@ -118,7 +118,7 @@ export default function UpgradeClient({
           })}
         </div>
 
-        <p className="text-center text-gray-400 text-xs mt-8">
+        <p className="text-center text-muted text-xs mt-8">
           Cancel anytime. No contracts. Prices in USD.
         </p>
       </div>

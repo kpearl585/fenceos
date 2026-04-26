@@ -61,14 +61,14 @@ export default function ProductShowcase() {
   ];
 
   return (
-    <section id="demo" className="py-20 px-6 bg-gray-50">
+    <section id="demo" className="bg-surface py-20 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-display">
+          <h2 className="mb-4 font-display text-3xl font-bold text-text md:text-4xl">
             Everything You Need. Nothing You Don't.
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="mx-auto max-w-3xl text-xl text-muted">
             Built by fence contractors for fence contractors. Every feature solves a real problem.
           </p>
         </div>
@@ -76,27 +76,27 @@ export default function ProductShowcase() {
         {/* Features grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {features.map((feature, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-xl p-6 hover:border-green-500 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-4">
+            <div key={i} className="rounded-xl border border-border bg-surface-2 p-6 transition-all hover:border-accent hover:shadow-lg">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-accent/15 text-accent-light">
                 {feature.icon}
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
+              <h3 className="mb-2 text-lg font-bold text-text">{feature.title}</h3>
+              <p className="text-sm leading-relaxed text-muted">{feature.description}</p>
             </div>
           ))}
         </div>
 
         {/* Video placeholder */}
-        <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-xl">
-          <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative">
+        <div className="overflow-hidden rounded-xl border-2 border-border bg-surface-2 shadow-xl">
+          <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-surface-2 to-surface-3">
             <div className="text-center">
-              <div className="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-green-700 transition-colors">
+              <div className="mx-auto mb-4 flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-accent transition-colors hover:bg-accent/90">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
                   <polygon points="5 3 19 12 5 21 5 3"/>
                 </svg>
               </div>
-              <p className="text-gray-700 font-semibold text-lg">Watch: Real Contractor Builds an Estimate in 5 Minutes</p>
-              <p className="text-gray-500 text-sm mt-2">See the full workflow from job site to signed proposal</p>
+              <p className="text-lg font-semibold text-text">Watch: Real Contractor Builds an Estimate in 5 Minutes</p>
+              <p className="mt-2 text-sm text-muted">See the full workflow from job site to signed proposal</p>
             </div>
             {/* Replace this div with actual video embed */}
           </div>

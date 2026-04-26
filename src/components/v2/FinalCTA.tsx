@@ -2,7 +2,7 @@ export default function FinalCTA() {
   return (
     <>
       {/* Final CTA section */}
-      <section id="waitlist" className="bg-gradient-to-br from-green-600 to-green-700 py-20 px-6">
+      <section id="waitlist" className="bg-gradient-to-br from-accent to-[#123524] py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 font-display">
             Stop Losing Money on Bad Estimates
@@ -15,7 +15,7 @@ export default function FinalCTA() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
             <a
               href="#pricing"
-              className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-green-700 font-bold text-lg px-10 py-5 rounded-lg transition-all shadow-xl"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-surface px-10 py-5 text-lg font-bold text-accent-light transition-all shadow-xl hover:bg-surface-2"
             >
               Start Your Free Trial
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -24,7 +24,7 @@ export default function FinalCTA() {
             </a>
             <a
               href="mailto:support@fenceestimatepro.com"
-              className="inline-flex items-center justify-center gap-2 bg-green-800 hover:bg-green-900 text-white font-semibold text-lg px-10 py-5 rounded-lg transition-all border-2 border-green-500"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-accent-light/40 bg-[#123524] px-10 py-5 text-lg font-semibold text-white transition-all hover:bg-[#0f2b1d]"
             >
               Talk to Us First
             </a>
@@ -59,13 +59,13 @@ export default function FinalCTA() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12 px-6">
+      <footer className="bg-surface py-12 px-6 text-muted">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Brand */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
                   <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                     <polyline points="9 22 9 12 15 12 15 22"/>
@@ -73,44 +73,44 @@ export default function FinalCTA() {
                 </div>
                 <span className="font-bold text-white text-lg font-display">FenceEstimatePro</span>
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted">
                 Professional fence estimating software for contractors.
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <p className="font-semibold text-white mb-3 text-sm">Product</p>
+              <p className="mb-3 text-sm font-semibold text-text">Product</p>
               <ul className="space-y-2 text-sm">
-                <li><a href="#demo" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="/login" className="hover:text-white transition-colors">Login</a></li>
+                <li><a href="#demo" className="transition-colors hover:text-text">Features</a></li>
+                <li><a href="#pricing" className="transition-colors hover:text-text">Pricing</a></li>
+                <li><a href="/login" className="transition-colors hover:text-text">Login</a></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <p className="font-semibold text-white mb-3 text-sm">Company</p>
+              <p className="mb-3 text-sm font-semibold text-text">Company</p>
               <ul className="space-y-2 text-sm">
-                <li><a href="/privacy" className="hover:text-white transition-colors">Privacy</a></li>
-                <li><a href="/terms" className="hover:text-white transition-colors">Terms</a></li>
+                <li><a href="/privacy" className="transition-colors hover:text-text">Privacy</a></li>
+                <li><a href="/terms" className="transition-colors hover:text-text">Terms</a></li>
               </ul>
             </div>
 
             {/* Support */}
             <div>
-              <p className="font-semibold text-white mb-3 text-sm">Support</p>
+              <p className="mb-3 text-sm font-semibold text-text">Support</p>
               <ul className="space-y-2 text-sm">
-                <li><a href="mailto:support@fenceestimatepro.com" className="hover:text-white transition-colors">Email Support</a></li>
+                <li><a href="mailto:support@fenceestimatepro.com" className="transition-colors hover:text-text">Email Support</a></li>
               </ul>
             </div>
           </div>
 
           {/* Bottom bar */}
-          <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-500">© 2026 FenceEstimatePro. All rights reserved.</p>
-            <p className="text-sm text-gray-500">
-              A <span className="text-gray-400">Pearl Ventures</span> Company
+          <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
+            <p className="text-sm text-muted">© 2026 FenceEstimatePro. All rights reserved.</p>
+            <p className="text-sm text-muted">
+              A <span className="text-text">Pearl Ventures</span> Company
             </p>
           </div>
         </div>

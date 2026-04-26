@@ -67,7 +67,7 @@ export default memo(function EstimateSummaryCard({
       return () => clearTimeout(t);
     }
     if (result) prevCostRef.current = result.totalCost;
-  }, [result?.totalCost]);
+  }, [result]);
 
   if (!result) {
     return (

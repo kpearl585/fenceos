@@ -11,7 +11,7 @@ function currency(n: number) {
 function pct(n: number, decimals = 1) { return `${n.toFixed(decimals)}%`; }
 function deltaLabel(n: number) {
   const sign = n >= 0 ? "" : "";
-  const color = n >= 0 ? "text-green-600" : "text-red-500";
+  const color = n >= 0 ? "text-accent-light" : "text-danger";
   return { sign, color, text: `${sign} ${Math.abs(n).toFixed(1)}%` };
 }
 
@@ -19,14 +19,14 @@ interface StatCardProps {
   label: string; value: string; sub?: string;
   deltaText?: string; deltaColor?: string; icon: string; accent?: string;
 }
-function StatCard({ label, value, sub, deltaText, deltaColor, icon, accent = "text-fence-950" }: StatCardProps) {
+function StatCard({ label, value, sub, deltaText, deltaColor, icon, accent = "text-text" }: StatCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+    <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
       <div className="text-lg mb-2">{icon}</div>
       <div className={`text-2xl font-black mb-0.5 ${accent}`}>{value}</div>
-      <div className="text-xs text-gray-500 font-medium">{label}</div>
+      <div className="text-xs text-muted font-medium">{label}</div>
       {deltaText && <div className={`text-xs font-semibold mt-1 ${deltaColor}`}>{deltaText}</div>}
-      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
+      {sub && <div className="text-xs text-muted mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -40,10 +40,10 @@ function HealthBar({ label, value, max, target, format = "pct" }: {
   return (
     <div>
       <div className="flex justify-between items-center mb-1.5">
-        <span className="text-sm text-gray-600">{label}</span>
-        <span className="text-sm font-bold text-fence-950">{display}</span>
+        <span className="text-sm text-muted">{label}</span>
+        <span className="text-sm font-bold text-text">{display}</span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-surface-3 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pctFilled}%` }} />
       </div>
     </div>
@@ -169,13 +169,13 @@ export default async function MetricsDashboard() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-fence-950">KPI Dashboard</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Owner-only · Updates in real time</p>
+          <h1 className="text-2xl font-bold text-text">KPI Dashboard</h1>
+          <p className="text-sm text-muted mt-0.5">Owner-only · Updates in real time</p>
         </div>
         <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-          plan === "trial" ? "bg-amber-100 text-amber-700" :
-          plan === "pro"   ? "bg-fence-100 text-fence-700" :
-          plan === "business" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
+          plan === "trial" ? "bg-warning/15 text-warning" :
+          plan === "pro"   ? "bg-accent/15 text-accent-light" :
+          plan === "business" ? "bg-info/15 text-info" : "bg-surface-3 text-muted"
         }`}>
           {plan === "trial" ? `Trial · ${daysLeft}d left` : plan}
         </span>
@@ -183,7 +183,7 @@ export default async function MetricsDashboard() {
 
       {/* Revenue Row */}
       <div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Revenue</h2>
+        <h2 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Revenue</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon="" label="Revenue This Week"  value={currency(revWeek)}
             deltaText={weekDelta.text}  deltaColor={weekDelta.color}  sub="vs prior 7 days" />
@@ -196,22 +196,22 @@ export default async function MetricsDashboard() {
 
       {/* Acquisition Row */}
       <div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Acquisition</h2>
+        <h2 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Acquisition</h2>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard icon="" label="Quotes Sent (Week)"  value={String(sentWeek.length)}
             deltaText={leadsDeltaObj.text} deltaColor={leadsDeltaObj.color} sub="vs prior 7 days" />
           <StatCard icon="" label="Close Rate (All Time)" value={pct(closeRate)}
-            accent={closeRate >= 30 ? "text-green-600" : closeRate >= 15 ? "text-amber-600" : "text-red-500"}
+            accent={closeRate >= 30 ? "text-accent-light" : closeRate >= 15 ? "text-warning" : "text-danger"}
             sub={`${closed.length} of ${sent.length} sent`} />
           <StatCard icon="" label="Close Rate (Week)"     value={pct(closeRateWeek)}
-            accent={closeRateWeek >= 30 ? "text-green-600" : "text-amber-600"}
+            accent={closeRateWeek >= 30 ? "text-accent-light" : "text-warning"}
             sub={`${closedWeek.length} of ${sentWeek.length} this week`} />
         </div>
       </div>
 
       {/* Operations Row */}
       <div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Operations</h2>
+        <h2 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Operations</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon="" label="Active Jobs" value={String(activeJobs)} sub={`${scheduledJobs} scheduled`} />
           <StatCard icon="" label="Avg Days To Close" value={avgDaysToClose != null ? `${avgDaysToClose.toFixed(1)}d` : "N/A"} sub="quote sent → accepted" />
@@ -221,8 +221,8 @@ export default async function MetricsDashboard() {
       </div>
 
       {/* Health Bars */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-        <h2 className="font-bold text-fence-950 mb-5">Performance Health</h2>
+      <div className="bg-surface rounded-xl border border-border p-6 shadow-sm">
+        <h2 className="font-bold text-text mb-5">Performance Health</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <HealthBar label="Close Rate"       value={closeRate}     max={50}  target={30} />
           <HealthBar label="Quotes Sent This Week" value={sentWeek.length} max={10} target={5} format="raw" />
@@ -233,23 +233,23 @@ export default async function MetricsDashboard() {
       {/* Bottleneck Diagnostic */}
       <div className={`rounded-xl border p-6 ${
         bottleneck.includes("No data") || bottleneck.includes("No quotes")
-          ? "bg-gray-50 border-gray-200"
-          : bottleneck.includes("Low close") ? "bg-amber-50 border-amber-200"
-          : bottleneck.includes("taking too long") ? "bg-red-50 border-red-200"
-          : "bg-green-50 border-green-200"
+          ? "bg-surface border-border"
+          : bottleneck.includes("Low close") ? "bg-warning/10 border-warning/30"
+          : bottleneck.includes("taking too long") ? "bg-danger/10 border-danger/30"
+          : "bg-accent/10 border-accent/30"
       }`}>
         <div className="flex items-start gap-3">
           <div>
-            <h3 className="font-bold text-fence-950 mb-1">Current Bottleneck</h3>
-            <p className="text-sm text-gray-700 mb-2">{bottleneck}</p>
-            <p className="text-sm font-semibold text-fence-700">→ {bottleneckAction}</p>
+            <h3 className="font-bold text-text mb-1">Current Bottleneck</h3>
+            <p className="text-sm text-text mb-2">{bottleneck}</p>
+            <p className="text-sm font-semibold text-accent-light">→ {bottleneckAction}</p>
           </div>
         </div>
       </div>
 
       {/* KPI Priority Rule */}
-      <div className="bg-fence-950 rounded-xl p-6 text-white">
-        <h2 className="font-bold mb-4 text-fence-300 text-xs uppercase tracking-wider">KPI Priority Diagnostic</h2>
+      <div className="bg-surface rounded-xl border border-border p-6 text-white">
+        <h2 className="font-bold mb-4 text-accent-light text-xs uppercase tracking-wider">KPI Priority Diagnostic</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           {[
             { cond: "Leads low",              fix: "Acquisition problem → increase outreach",   active: sentWeek.length < 3 },
@@ -257,11 +257,11 @@ export default async function MetricsDashboard() {
             { cond: "Quotes slow to close",   fix: "Follow-up problem → tighten quote follow-up cadence", active: avgDaysToClose != null && avgDaysToClose > 14 },
             { cond: "Revenue high, deal size low",fix: "Packaging problem → raise minimum job size", active: revMonth > 10000 && avgDeal < 2500 },
           ].map(({ cond, fix, active }) => (
-            <div key={cond} className={`flex gap-3 p-3 rounded-lg ${active ? "bg-amber-500/20 border border-amber-500/40" : "bg-white/5"}`}>
+            <div key={cond} className={`flex gap-3 p-3 rounded-lg ${active ? "bg-warning/15 border border-warning/30" : "bg-surface-3"}`}>
               <span>{active ? "" : ""}</span>
               <div>
-                <div className={`font-semibold text-xs ${active ? "text-amber-300" : "text-white/50"}`}>{cond}</div>
-                <div className={`text-xs mt-0.5 ${active ? "text-white" : "text-white/30"}`}>{fix}</div>
+                <div className={`font-semibold text-xs ${active ? "text-warning" : "text-muted"}`}>{cond}</div>
+                <div className={`text-xs mt-0.5 ${active ? "text-text" : "text-muted/70"}`}>{fix}</div>
               </div>
             </div>
           ))}

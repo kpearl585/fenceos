@@ -7,6 +7,8 @@ import { CRITIQUE_SYSTEM_PROMPT, CRITIQUE_USER_PROMPT } from "@/lib/fence-graph/
 import { EXTRACTION_JSON_SCHEMA, CRITIQUE_JSON_SCHEMA, validateExtraction } from "@/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph/ai-extract/types";
 import type { CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
+import { detectHiddenCosts } from "@/lib/fence-graph/ai-extract/hiddenCostDetection";
+import { buildScopeRiskAssessment } from "@/lib/fence-graph/ai-extract/scopeRisk";
 import crypto from "crypto";
 
 // ── Rate limiting constants ────────────────────────────────────────
@@ -291,11 +293,21 @@ export async function extractFromText(
 
     // Pass 2: Critique (parallel, non-blocking path)
     const critique = await runCritique(client, result, description);
+    const scopeRiskAssessment = buildScopeRiskAssessment(description, result, critique);
+    result.hiddenCostFlags = detectHiddenCosts(description, result);
 
     // Merge critique flags into result
     if (critique?.questionsForContractor?.length) {
       result.flags = [...(result.flags ?? []), ...critique.questionsForContractor.slice(0, 3)];
     }
+
+    const validationBlockers = validation.blockers;
+    const validationWarnings = validation.warnings;
+    const critiqueBlockers = critique?.criticalBlockers ?? [];
+    const criticallyBlocked =
+      validation.blocked ||
+      critiqueBlockers.length > 0 ||
+      critique?.overallReadyToApply === false;
 
     // Persist audit (non-blocking)
     void persistAudit({
@@ -315,8 +327,12 @@ export async function extractFromText(
       success: true,
       result,
       critique: critique ?? undefined,
+      scopeRiskAssessment,
       validationErrors: validation.errors,
-      blocked: validation.blocked,
+      validationWarnings,
+      validationBlockers,
+      criticallyBlocked,
+      blocked: criticallyBlocked,
       inputTokens,
       outputTokens,
       rateRemaining: rateCheck.remaining - 1,
@@ -375,9 +391,19 @@ export async function extractFromImage(
     // Critique pass
     const critiqueInput = additionalText ?? "Image upload (no additional context)";
     const critique = await runCritique(client, result, critiqueInput);
+    const scopeRiskAssessment = buildScopeRiskAssessment(critiqueInput, result, critique);
+    result.hiddenCostFlags = detectHiddenCosts(critiqueInput, result);
     if (critique?.questionsForContractor?.length) {
       result.flags = [...(result.flags ?? []), ...critique.questionsForContractor.slice(0, 3)];
     }
+
+    const validationBlockers = validation.blockers;
+    const validationWarnings = validation.warnings;
+    const critiqueBlockers = critique?.criticalBlockers ?? [];
+    const criticallyBlocked =
+      validation.blocked ||
+      critiqueBlockers.length > 0 ||
+      critique?.overallReadyToApply === false;
 
     // Persist audit
     void persistAudit({
@@ -397,8 +423,12 @@ export async function extractFromImage(
       success: true,
       result,
       critique: critique ?? undefined,
+      scopeRiskAssessment,
       validationErrors: validation.errors,
-      blocked: validation.blocked,
+      validationWarnings,
+      validationBlockers,
+      criticallyBlocked,
+      blocked: criticallyBlocked,
       inputTokens,
       outputTokens,
       rateRemaining: rateCheck.remaining - 1,
