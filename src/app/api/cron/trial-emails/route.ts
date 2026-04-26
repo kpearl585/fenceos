@@ -9,11 +9,19 @@ import {
 } from "@/lib/email";
 import { isEmailSuppressed } from "@/lib/email/suppressions";
 import * as Sentry from "@sentry/nextjs";
+import { getSupabaseServiceKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 function admin() {
+  const url = getSupabaseUrl();
+  const key = getSupabaseServiceKey();
+
+  if (!url || !key) {
+    throw new Error("Missing Supabase admin env vars for trial-emails cron.");
+  }
+
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    url,
+    key
   );
 }
 

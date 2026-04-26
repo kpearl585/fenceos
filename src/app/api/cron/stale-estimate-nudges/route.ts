@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, staleEstimateNudgeEmail } from "@/lib/email";
 import * as Sentry from "@sentry/nextjs";
+import { getSupabaseServiceKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 // Daily cron: find quotes that have sat in "quoted" status for >= N days
 // without a customer response, and email the contractor a one-time nudge.
@@ -22,14 +23,24 @@ const NUDGE_AFTER_DAYS = 5;
 const MAX_NUDGES_PER_RUN = 200;
 
 function admin() {
+  const url = getSupabaseUrl();
+  const key = getSupabaseServiceKey();
+
+  if (!url || !key) {
+    throw new Error(
+      "Missing Supabase admin env vars for stale-estimate-nudges cron."
+    );
+  }
+
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    url,
+    key
   );
 }
 
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://fenceestimatepro.com";
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\\n/g, "").trim() ||
+  "https://fenceestimatepro.com";
 
 export async function GET(req: NextRequest) {
   const secret = req.headers.get("authorization")?.replace("Bearer ", "");

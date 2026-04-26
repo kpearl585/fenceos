@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/nextjs";
+import { getSupabaseServiceKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 // Daily cron: aggregate yesterday's GPT-4o extraction usage per org,
 // compute cost, surface to Sentry. Catches runaway AI spend before the
@@ -30,9 +31,18 @@ const GPT4O_OUTPUT_PER_TOKEN = 10 / 1_000_000;   // $10.00 per 1M tokens
 const ALERT_USD = 5.0;
 
 function admin() {
+  const url = getSupabaseUrl();
+  const key = getSupabaseServiceKey();
+
+  if (!url || !key) {
+    throw new Error(
+      "Missing Supabase admin env vars for ai-cost-rollup cron."
+    );
+  }
+
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    url,
+    key
   );
 }
 

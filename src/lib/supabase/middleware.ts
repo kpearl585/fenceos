@@ -1,14 +1,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabasePublicKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+  const url = getSupabaseUrl();
+  const key = getSupabasePublicKey();
+
+  if (!url || !key) {
+    throw new Error(
+      "Missing Supabase public env vars. Expected NEXT_PUBLIC_SUPABASE_URL and a publishable/anon key."
+    );
+  }
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    key,
     {
       cookies: {
         getAll() {

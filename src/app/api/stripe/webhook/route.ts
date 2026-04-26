@@ -3,13 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/nextjs";
 
 import { getStripe } from "@/lib/stripe/client";
+import { getSupabaseServiceKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 function getServiceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getSupabaseUrl();
+  const key = getSupabaseServiceKey();
   if (!url || !key) {
     throw new Error(
-      "Missing Supabase env vars: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
+      "Missing Supabase env vars: NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
     );
   }
   return createClient(url, key);
