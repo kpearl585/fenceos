@@ -1,11 +1,11 @@
-// Client-side PDF → PNG rasterizer with adaptive DPI fallback.
+// Client-side PDF → image rasterizer with adaptive DPI/format fallback.
 //
 // Uses pdfjs-dist (Mozilla's PDF.js) to render the first page of a PDF
-// to an HTML canvas, then exports as a base64 PNG. Runs in the browser
+// to an HTML canvas, then exports as a base64 image. Runs in the browser
 // only — we dynamic-import pdfjs-dist to avoid bundling its ~1MB worker
 // into every SSR response.
 //
-// The resulting base64 PNG is sent to a Next.js server action with a
+// The resulting base64 image is sent to a Next.js server action with a
 // 20 MB body limit. To stay inside that budget even on large or
 // multi-page surveys, this rasterizer tries 400 DPI first (best for
 // GPT-4o handwriting reads) and falls back step-by-step to smaller
@@ -20,7 +20,11 @@
 // trying to send — a previous fixed 400 DPI produced 20+ MB PNGs on
 // oversized surveys and the platform-layer 413 blew up as a client-
 // side "unexpected response" error (Sentry FENCEOS-9).
-const TARGET_MAX_BASE64_BYTES = 17_000_000;
+// 17 MB left too little headroom once the base64 string was wrapped in a
+// server-action payload. Keep a materially safer ceiling so marked surveys
+// fail locally with a useful message instead of tripping a transport-layer
+// "unexpected response" error in the browser.
+const TARGET_MAX_BASE64_BYTES = 12_000_000;
 
 // DPI ladder. First attempt = 400 (the A/B-eval accuracy sweet spot).
 // If the result exceeds the size target, fall back one step at a time.
@@ -29,15 +33,17 @@ const TARGET_MAX_BASE64_BYTES = 17_000_000;
 const DPI_LADDER = [400, 300, 240, 200, 150] as const;
 
 export interface RasterizedPdf {
-  /** base64-encoded PNG (no data: prefix) */
+  /** base64-encoded image payload (no data: prefix) */
   base64: string;
+  /** Final MIME type used for extraction/preview */
+  mimeType: "image/png" | "image/jpeg";
   /** Final width of the rendered page */
   widthPx: number;
   /** Final height of the rendered page */
   heightPx: number;
   /** Data URL for <img src={...}> previews */
   dataUrl: string;
-  /** Bytes of the rendered PNG (for size tracking) */
+  /** Bytes of the rendered image (for size tracking) */
   sizeBytes: number;
   /** Pages in the original PDF — we currently only render page 1 */
   totalPages: number;
@@ -55,6 +61,28 @@ export interface RasterizedPdf {
  * @param file - PDF File from an <input type="file"> element
  * @param signal - Optional AbortSignal to cancel mid-render
  */
+type SerializedCanvasAttempt = {
+  dataUrl: string;
+  base64: string;
+  sizeBytes: number;
+  mimeType: "image/png" | "image/jpeg";
+  quality?: number;
+};
+
+function serializeCanvas(
+  canvas: HTMLCanvasElement,
+  mimeType: "image/png" | "image/jpeg",
+  quality?: number,
+): SerializedCanvasAttempt {
+  const dataUrl =
+    mimeType === "image/jpeg"
+      ? canvas.toDataURL(mimeType, quality)
+      : canvas.toDataURL(mimeType);
+  const base64 = dataUrl.split(",")[1] ?? "";
+  const sizeBytes = Math.ceil((base64.length * 3) / 4);
+  return { dataUrl, base64, sizeBytes, mimeType, quality };
+}
+
 export async function rasterizePdfFirstPage(
   file: File,
   signal?: AbortSignal,
@@ -87,7 +115,17 @@ export async function rasterizePdfFirstPage(
     if (signal?.aborted) throw new Error("Cancelled");
     const page = await doc.getPage(1);
 
-    let lastAttempt: { dataUrl: string; base64: string; width: number; height: number; sizeBytes: number; dpi: number } | null = null;
+    let lastAttempt:
+      | {
+          dataUrl: string;
+          base64: string;
+          width: number;
+          height: number;
+          sizeBytes: number;
+          dpi: number;
+          mimeType: "image/png" | "image/jpeg";
+        }
+      | null = null;
 
     for (const dpi of DPI_LADDER) {
       if (signal?.aborted) throw new Error("Cancelled");
@@ -116,15 +154,36 @@ export async function rasterizePdfFirstPage(
 
       if (signal?.aborted) throw new Error("Cancelled");
 
-      const dataUrl = canvas.toDataURL("image/png");
-      const base64 = dataUrl.split(",")[1] ?? "";
-      const sizeBytes = Math.ceil((base64.length * 3) / 4);
+      // Try PNG first to preserve small text and markup lines. If the PNG is
+      // too large, fall back to high-quality JPEG before dropping the DPI.
+      const attempts: SerializedCanvasAttempt[] = [
+        serializeCanvas(canvas, "image/png"),
+        serializeCanvas(canvas, "image/jpeg", 0.92),
+        serializeCanvas(canvas, "image/jpeg", 0.85),
+        serializeCanvas(canvas, "image/jpeg", 0.75),
+      ];
 
-      console.log(`[rasterize] dpi=${dpi} size=${(sizeBytes / 1_000_000).toFixed(1)}MB ${canvas.width}x${canvas.height}`);
+      const withinBudget =
+        attempts.find((attempt) => attempt.base64.length <= TARGET_MAX_BASE64_BYTES) ??
+        attempts[attempts.length - 1];
 
-      lastAttempt = { dataUrl, base64, width: canvas.width, height: canvas.height, sizeBytes, dpi };
+      console.log(
+        `[rasterize] dpi=${dpi} format=${withinBudget.mimeType} size=${(
+          withinBudget.sizeBytes / 1_000_000
+        ).toFixed(1)}MB ${canvas.width}x${canvas.height}`
+      );
 
-      if (base64.length <= TARGET_MAX_BASE64_BYTES) break;
+      lastAttempt = {
+        dataUrl: withinBudget.dataUrl,
+        base64: withinBudget.base64,
+        width: canvas.width,
+        height: canvas.height,
+        sizeBytes: withinBudget.sizeBytes,
+        dpi,
+        mimeType: withinBudget.mimeType,
+      };
+
+      if (withinBudget.base64.length <= TARGET_MAX_BASE64_BYTES) break;
       // Too big — fall to next DPI step. Canvas gets GC'd when out of scope.
     }
 
@@ -140,6 +199,7 @@ export async function rasterizePdfFirstPage(
 
     return {
       base64: lastAttempt.base64,
+      mimeType: lastAttempt.mimeType,
       widthPx: lastAttempt.width,
       heightPx: lastAttempt.height,
       dataUrl: lastAttempt.dataUrl,

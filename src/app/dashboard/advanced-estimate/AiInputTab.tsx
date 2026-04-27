@@ -245,6 +245,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   // via pdfjs-dist, so `surveyBase64` ends up as an image under the
   // hood — we just take a PDF-rendering step to get there.
   const [surveyBase64, setSurveyBase64] = useState<string | null>(null);
+  const [surveyMime, setSurveyMime] = useState<"image/png" | "image/jpeg">("image/png");
   const [surveyPreview, setSurveyPreview] = useState<string | null>(null);
   const [surveyFilename, setSurveyFilename] = useState<string | null>(null);
   const [surveyPages, setSurveyPages] = useState<number>(1);
@@ -308,11 +309,20 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       if (typeof window !== "undefined") {
         console.log("[ai-extract] sending", { mode, hasSurvey: !!surveyBase64, hasImage: !!imageBase64, textLen: text.length });
       }
+      if (mode === "survey" && surveyBase64) {
+        const estimatedPayloadBytes = surveyBase64.length + (additionalContext?.length ?? 0) + 2048;
+        if (estimatedPayloadBytes > 12_500_000) {
+          setError(
+            "Survey image is still too large to send after rendering. Crop the PDF to the marked area or export a smaller first page."
+          );
+          return;
+        }
+      }
       const res = mode === "text"
         ? await extractFromText(text)
         : mode === "image"
         ? await extractFromImage(imageBase64!, imageMime, additionalContext || undefined)
-        : await extractFromSurvey(surveyBase64!, "image/png", additionalContext || undefined, "gpt-4o");
+        : await extractFromSurvey(surveyBase64!, surveyMime, additionalContext || undefined, "gpt-4o");
 
       if (typeof window !== "undefined") {
         console.log("[ai-extract] response", { success: res?.success, hasResult: !!res?.result, error: res?.error, runs: res?.result?.runs?.length });
@@ -360,7 +370,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
     try {
       const res = await extractFromSurvey(
         surveyBase64,
-        "image/png",
+        surveyMime,
         additionalContext || undefined,
         "claude-opus-4-7",
       );
@@ -532,10 +542,12 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
     setError(null);
     setRenderingPdf(true);
     setSurveyBase64(null);
+    setSurveyMime("image/png");
     setSurveyPreview(null);
     try {
       const rendered = await rasterizePdfFirstPage(file);
       setSurveyBase64(rendered.base64);
+      setSurveyMime(rendered.mimeType);
       setSurveyPreview(rendered.dataUrl);
       setSurveyFilename(file.name);
       setSurveyPages(rendered.totalPages);
