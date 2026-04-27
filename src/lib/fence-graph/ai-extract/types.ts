@@ -72,6 +72,7 @@ export interface ScopeRiskAssessment {
 
 export interface AiExtractionResponse {
   success: boolean;
+  modelUsed?: "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6";
   result?: AiExtractionResult;
   critique?: CritiqueResult;
   scopeRiskAssessment?: ScopeRiskAssessment;

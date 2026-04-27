@@ -322,7 +322,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
         ? await extractFromText(text)
         : mode === "image"
         ? await extractFromImage(imageBase64!, imageMime, additionalContext || undefined)
-        : await extractFromSurvey(surveyBase64!, surveyMime, additionalContext || undefined, "gpt-4o");
+        : await extractFromSurvey(surveyBase64!, surveyMime, additionalContext || undefined, "claude-opus-4-7");
 
       if (typeof window !== "undefined") {
         console.log("[ai-extract] response", { success: res?.success, hasResult: !!res?.result, error: res?.error, runs: res?.result?.runs?.length });
@@ -338,7 +338,9 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
         return;
       }
 
-      if (mode === "survey") setExtractedWithModel("gpt-4o");
+      if (mode === "survey") {
+        setExtractedWithModel((res.modelUsed as "gpt-4o" | "claude-opus-4-7" | null) ?? "claude-opus-4-7");
+      }
       setResult(res.result);
       setCritique(res.critique ?? null);
       setValidationWarnings(res.validationWarnings ?? []);
@@ -393,7 +395,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       setDeletedRunIndices(new Set());
       setAddedRuns([]);
       setApplied(false);
-      setExtractedWithModel("claude-opus-4-7");
+      setExtractedWithModel((res.modelUsed as "gpt-4o" | "claude-opus-4-7" | null) ?? "claude-opus-4-7");
       if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Re-run failed — please try again.";

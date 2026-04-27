@@ -2,13 +2,21 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/bootstrap";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT, USER_PROMPT_TEXT, USER_PROMPT_IMAGE, AERIAL_SYSTEM_ADDENDUM } from "@/lib/fence-graph/ai-extract/prompt";
 import { CRITIQUE_SYSTEM_PROMPT, CRITIQUE_USER_PROMPT } from "@/lib/fence-graph/ai-extract/critique-prompt";
-import { EXTRACTION_JSON_SCHEMA, CRITIQUE_JSON_SCHEMA, validateExtraction } from "@/lib/fence-graph/ai-extract/schema";
+import {
+  EXTRACTION_JSON_SCHEMA,
+  CRITIQUE_JSON_SCHEMA,
+  SURVEY_EXTRACTION_JSON_SCHEMA,
+  SurveyExtractionSchema,
+  validateExtraction,
+} from "@/lib/fence-graph/ai-extract/schema";
 import type { AiExtractionResponse, AiExtractionResult } from "@/lib/fence-graph/ai-extract/types";
 import type { CritiqueResult } from "@/lib/fence-graph/ai-extract/types";
 import { detectHiddenCosts } from "@/lib/fence-graph/ai-extract/hiddenCostDetection";
 import { buildScopeRiskAssessment } from "@/lib/fence-graph/ai-extract/scopeRisk";
+import { SURVEY_SYSTEM_PROMPT, SURVEY_USER_PROMPT_IMAGE } from "@/lib/fence-graph/ai-extract/survey-prompt";
 import crypto from "crypto";
 
 // ── Rate limiting constants ────────────────────────────────────────
@@ -20,6 +28,25 @@ function getOpenAI(): OpenAI {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new Error("AI_UNAVAILABLE: OPENAI_API_KEY not configured");
   return new OpenAI({ apiKey: key });
+}
+
+function getAnthropic(): Anthropic {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error("AI_UNAVAILABLE: ANTHROPIC_API_KEY not configured");
+  return new Anthropic({ apiKey: key });
+}
+
+function hasOpenAI(): boolean {
+  return Boolean(process.env.OPENAI_API_KEY);
+}
+
+function hasAnthropic(): boolean {
+  return Boolean(process.env.ANTHROPIC_API_KEY);
+}
+
+function isQuotaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return /quota|rate limit|429|billing details|credit balance/i.test(msg);
 }
 
 // ── AI health check ───────────────────────────────────────────────
@@ -143,6 +170,95 @@ async function runCritique(
   } catch {
     return null; // critique is enhancement, not critical path
   }
+}
+
+async function runSurveyExtractionOpenAI(
+  client: OpenAI,
+  base64: string,
+  mimeType: "image/png" | "image/jpeg",
+  additionalText?: string
+): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number }> {
+  const response = await client.chat.completions.create({
+    model: "gpt-4o",
+    temperature: 0.1,
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "survey_extraction",
+        strict: true,
+        schema: SURVEY_EXTRACTION_JSON_SCHEMA,
+      },
+    },
+    messages: [
+      { role: "system", content: SURVEY_SYSTEM_PROMPT },
+      { role: "user", content: SURVEY_USER_PROMPT_IMAGE(base64, mimeType, additionalText) },
+    ],
+  });
+
+  const raw = response.choices[0]?.message?.content ?? "{}";
+  const parsed = JSON.parse(raw) as AiExtractionResult;
+  return {
+    result: parsed,
+    inputTokens: response.usage?.prompt_tokens ?? 0,
+    outputTokens: response.usage?.completion_tokens ?? 0,
+  };
+}
+
+async function runSurveyExtractionAnthropic(
+  client: Anthropic,
+  model: "claude-opus-4-7" | "claude-sonnet-4-6",
+  base64: string,
+  mimeType: "image/png" | "image/jpeg",
+  additionalText?: string
+): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number }> {
+  const userContent: Anthropic.Messages.ContentBlockParam[] = [
+    {
+      type: "image",
+      source: { type: "base64", media_type: mimeType, data: base64 },
+    },
+    {
+      type: "text",
+      text: additionalText
+        ? `Additional context from contractor: ${additionalText}\n\nThis is a marked-up boundary survey. Extract fence runs from the contractor's colored markup. Use the handwritten legend to decide which color means "new install" vs "existing fence" vs other.`
+        : `This is a marked-up boundary survey. Extract fence runs from the contractor's colored markup. Use the handwritten legend to decide which color means "new install" vs "existing fence" vs other.`,
+    },
+  ];
+
+  const response = await client.messages.create({
+    model,
+    max_tokens: 16_000,
+    system: SURVEY_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userContent }],
+  });
+
+  const textBlock = response.content.find(
+    (block): block is Anthropic.Messages.TextBlock => block.type === "text"
+  );
+  if (!textBlock) {
+    throw new Error("Anthropic survey extraction returned no text block");
+  }
+
+  const raw = textBlock.text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+  const firstBrace = raw.indexOf("{");
+  const lastBrace = raw.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace < 0) {
+    throw new Error(`Could not find JSON object in Anthropic response: ${raw.slice(0, 200)}…`);
+  }
+
+  const parsedRaw = JSON.parse(raw.slice(firstBrace, lastBrace + 1));
+  const validation = SurveyExtractionSchema.safeParse(parsedRaw);
+  const parsed = validation.success
+    ? (validation.data as AiExtractionResult)
+    : (parsedRaw as AiExtractionResult);
+
+  return {
+    result: parsed,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+  };
 }
 
 // ── Image quality ladder ──────────────────────────────────────────
@@ -446,7 +562,175 @@ export async function extractFromSurvey(
   base64: string,
   mimeType: string,
   additionalText?: string,
-  _model: "gpt-4o" | "claude-opus-4-7" = "gpt-4o"
+  model: "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6" = "claude-opus-4-7"
 ): Promise<AiExtractionResponse> {
-  return extractFromImage(base64, mimeType, additionalText);
+  if (!base64) return { success: false, error: "Survey image data required" };
+
+  if (!hasAnthropic() && !hasOpenAI()) {
+    return {
+      success: false,
+      error: "Survey extraction is not configured. Add ANTHROPIC_API_KEY or OPENAI_API_KEY.",
+    };
+  }
+
+  const auth = await getAuthContext();
+  if (!auth) return { success: false, error: "Not authenticated" };
+
+  const rateCheck = await checkRateLimit(auth.orgId);
+  if (!rateCheck.allowed) {
+    return { success: false, error: `Rate limit reached (${RATE_LIMIT_PER_HOUR}/hour). Try again later.` };
+  }
+
+  const sizeBytes = (base64.length * 3) / 4;
+  if (sizeBytes > 12_500_000) {
+    return {
+      success: false,
+      error: "Survey image is too large to send. Crop the PDF to the marked area or export a smaller first page.",
+    };
+  }
+
+  const inputHash = crypto.createHash("sha256").update(base64.slice(0, 1000)).digest("hex").slice(0, 16);
+
+  const preferredAnthropic = model.startsWith("claude");
+  const tried: string[] = [];
+
+  try {
+    let result: AiExtractionResult;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let modelUsed: "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6";
+
+    try {
+      if (preferredAnthropic) {
+        tried.push(model);
+        const client = getAnthropic();
+        const run = await runSurveyExtractionAnthropic(
+          client,
+          model as "claude-opus-4-7" | "claude-sonnet-4-6",
+          base64,
+          mimeType as "image/png" | "image/jpeg",
+          additionalText
+        );
+        ({ result, inputTokens, outputTokens } = run);
+        modelUsed = model;
+      } else {
+        tried.push("gpt-4o");
+        const client = getOpenAI();
+        const run = await runSurveyExtractionOpenAI(
+          client,
+          base64,
+          mimeType as "image/png" | "image/jpeg",
+          additionalText
+        );
+        ({ result, inputTokens, outputTokens } = run);
+        modelUsed = "gpt-4o";
+      }
+    } catch (primaryErr) {
+      if (preferredAnthropic && hasOpenAI()) {
+        tried.push("gpt-4o");
+        const client = getOpenAI();
+        const run = await runSurveyExtractionOpenAI(
+          client,
+          base64,
+          mimeType as "image/png" | "image/jpeg",
+          additionalText
+        );
+        ({ result, inputTokens, outputTokens } = run);
+        modelUsed = "gpt-4o";
+      } else if (!preferredAnthropic && hasAnthropic() && isQuotaError(primaryErr)) {
+        const fallbackModel: "claude-opus-4-7" = "claude-opus-4-7";
+        tried.push(fallbackModel);
+        const client = getAnthropic();
+        const run = await runSurveyExtractionAnthropic(
+          client,
+          fallbackModel,
+          base64,
+          mimeType as "image/png" | "image/jpeg",
+          additionalText
+        );
+        ({ result, inputTokens, outputTokens } = run);
+        modelUsed = fallbackModel;
+      } else {
+        throw primaryErr;
+      }
+    }
+
+    const validation = validateExtraction(result);
+    if (validation.data) Object.assign(result, validation.data);
+
+    let critique: CritiqueResult | null = null;
+    if (hasOpenAI()) {
+      try {
+        critique = await runCritique(
+          getOpenAI(),
+          result,
+          additionalText ?? "Survey upload"
+        );
+      } catch {
+        critique = null;
+      }
+    }
+
+    const critiqueInput = additionalText ?? "Survey upload";
+    const scopeRiskAssessment = buildScopeRiskAssessment(critiqueInput, result, critique);
+    result.hiddenCostFlags = detectHiddenCosts(critiqueInput, result);
+    if (critique?.questionsForContractor?.length) {
+      result.flags = [...(result.flags ?? []), ...critique.questionsForContractor.slice(0, 3)];
+    }
+    if (tried.length > 1) {
+      result.flags = [`Primary survey extractor failed, fell back to ${modelUsed}.`, ...(result.flags ?? [])];
+    }
+
+    const validationBlockers = validation.blockers;
+    const validationWarnings = validation.warnings;
+    const critiqueBlockers = critique?.criticalBlockers ?? [];
+    const criticallyBlocked =
+      validation.blocked ||
+      critiqueBlockers.length > 0 ||
+      critique?.overallReadyToApply === false;
+
+    void persistAudit({
+      orgId: auth.orgId,
+      userId: auth.userId,
+      inputType: "image",
+      inputHash,
+      rawExtraction: result,
+      critiqueJson: critique,
+      validationErrors: validation.errors,
+      confidence: result.confidence,
+      inputTokens,
+      outputTokens,
+    });
+
+    return {
+      success: true,
+      modelUsed,
+      result,
+      critique: critique ?? undefined,
+      scopeRiskAssessment,
+      validationErrors: validation.errors,
+      validationWarnings,
+      validationBlockers,
+      criticallyBlocked,
+      blocked: criticallyBlocked,
+      inputTokens,
+      outputTokens,
+      rateRemaining: rateCheck.remaining - 1,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Survey extraction failed";
+    if (/AI_UNAVAILABLE/.test(msg)) {
+      return {
+        success: false,
+        error: "Survey extraction is not configured. Add ANTHROPIC_API_KEY or OPENAI_API_KEY.",
+      };
+    }
+    if (isQuotaError(err) && !hasAnthropic()) {
+      return {
+        success: false,
+        error: "OpenAI quota is exhausted. Add ANTHROPIC_API_KEY to use Claude for marked survey extraction.",
+      };
+    }
+    return { success: false, error: msg };
+  }
 }
