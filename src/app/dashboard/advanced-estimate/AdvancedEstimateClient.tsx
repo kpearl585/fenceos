@@ -41,7 +41,14 @@ const WOOD_STYLES: { value: WoodStyle; label: string }[] = [
 ];
 
 const PRODUCT_LINE_BY_TYPE: Record<FenceType, string[]> = {
-  vinyl: ["vinyl_privacy_6ft", "vinyl_privacy_8ft", "vinyl_picket_4ft", "vinyl_picket_6ft"],
+  vinyl: [
+    "vinyl_privacy_6ft",
+    "vinyl_privacy_8ft",
+    "vinyl_privacy_component_6ft",
+    "vinyl_privacy_component_8ft",
+    "vinyl_picket_4ft",
+    "vinyl_picket_6ft",
+  ],
   wood: ["wood_privacy_6ft", "wood_privacy_8ft", "wood_picket_4ft"],
   chain_link: ["chain_link_4ft", "chain_link_6ft"],
   aluminum: ["aluminum_4ft", "aluminum_6ft"],

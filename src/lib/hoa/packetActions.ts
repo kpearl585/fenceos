@@ -20,6 +20,8 @@ function fenceTypeLabel(productLineId: string, heightFt: number): string {
   const map: Record<string, string> = {
     vinyl_privacy_6ft:  `Vinyl Privacy ${HEIGHT}`,
     vinyl_privacy_8ft:  `Vinyl Privacy ${HEIGHT}`,
+    vinyl_privacy_component_6ft: `Vinyl Privacy ${HEIGHT}`,
+    vinyl_privacy_component_8ft: `Vinyl Privacy ${HEIGHT}`,
     vinyl_picket_4ft:   `Vinyl Picket ${HEIGHT}`,
     vinyl_picket_6ft:   `Vinyl Picket ${HEIGHT}`,
     wood_privacy_6ft:   `Wood Privacy ${HEIGHT}`,

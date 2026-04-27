@@ -110,6 +110,7 @@ describe("Vinyl concrete waste consistency", () => {
 describe("Rail cutting-stock optimizer input", () => {
   it("should produce realistic rail counts for a 100ft vinyl run", () => {
     const input = makeInput({
+      productLineId: "vinyl_privacy_component_6ft",
       runs: [{ id: "r1", linearFeet: 100, startType: "end", endType: "end" }],
     });
     const graph = buildFenceGraph(input);
@@ -152,6 +153,30 @@ describe("Rail cutting-stock optimizer input", () => {
     expect(result.bom.find((b) => b.sku === "VINYL_PANEL_4FT")).toBeDefined();
     expect(result.bom.find((b) => b.sku === "VINYL_RAIL_8FT")).toBeUndefined();
     expect(result.bom.find((b) => b.sku === "VINYL_RAIL_BRACKET")).toBeUndefined();
+  });
+
+  it("vinyl privacy defaults to prefab panels instead of component pickets", () => {
+    const input = makeInput({
+      runs: [
+        { id: "r1", linearFeet: 100, startType: "end", endType: "corner" },
+        { id: "r2", linearFeet: 43, startType: "corner", endType: "corner" },
+        { id: "r3", linearFeet: 40, startType: "corner", endType: "end" },
+      ],
+      gates: [
+        { id: "g1", afterRunId: "r3", gateType: "single", widthFt: 5, isPoolGate: false },
+      ],
+    });
+    const graph = buildFenceGraph(input);
+    const result = generateBom(graph, {
+      fenceType: "vinyl",
+      wastePct: 0.05,
+      priceMap: {},
+    });
+
+    expect(result.bom.find((b) => b.sku === "VINYL_PANEL_6FT")).toBeDefined();
+    expect(result.bom.find((b) => b.sku === "VINYL_PICKET_6FT")).toBeUndefined();
+    expect(result.bom.find((b) => b.sku === "VINYL_U_CHANNEL_8FT")).toBeUndefined();
+    expect(result.bom.find((b) => b.sku === "VINYL_RAIL_8FT")).toBeUndefined();
   });
 
   it("section-based optimizer should be more efficient than run-length approach", () => {
