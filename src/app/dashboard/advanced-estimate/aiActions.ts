@@ -20,14 +20,20 @@ import { SURVEY_SYSTEM_PROMPT, SURVEY_USER_PROMPT_IMAGE } from "@/lib/fence-grap
 import crypto from "crypto";
 
 type SurveyAnthropicModel =
-  | "claude-opus-4-20250514"
-  | "claude-sonnet-4-20250514";
+  | "claude-opus-4-7"
+  | "claude-sonnet-4-6";
 
 function normalizeSurveyModel(
-  model: "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6" | SurveyAnthropicModel
+  model:
+    | "gpt-4o"
+    | "claude-opus-4-7"
+    | "claude-sonnet-4-6"
+    | "claude-opus-4-20250514"
+    | "claude-sonnet-4-20250514"
+    | SurveyAnthropicModel
 ): "gpt-4o" | SurveyAnthropicModel {
-  if (model === "claude-opus-4-7") return "claude-opus-4-20250514";
-  if (model === "claude-sonnet-4-6") return "claude-sonnet-4-20250514";
+  if (model === "claude-opus-4-20250514") return "claude-opus-4-7";
+  if (model === "claude-sonnet-4-20250514") return "claude-sonnet-4-6";
   return model;
 }
 
@@ -155,7 +161,7 @@ async function runExtractionAnthropic(
   text: string
 ): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number }> {
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 8_000,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: USER_PROMPT_TEXT(text) }],
@@ -328,7 +334,7 @@ async function runImageExtractionAnthropic(
   ];
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 8_000,
     system: systemPrompt,
     messages: [{ role: "user", content: userContent }],
@@ -696,7 +702,9 @@ export async function extractFromSurvey(
     | "gpt-4o"
     | "claude-opus-4-7"
     | "claude-sonnet-4-6"
-    | SurveyAnthropicModel = "claude-sonnet-4-20250514"
+    | "claude-opus-4-20250514"
+    | "claude-sonnet-4-20250514"
+    | SurveyAnthropicModel = "claude-sonnet-4-6"
 ): Promise<AiExtractionResponse> {
   if (!base64) return { success: false, error: "Survey image data required" };
 
@@ -773,7 +781,7 @@ export async function extractFromSurvey(
         ({ result, inputTokens, outputTokens } = run);
         modelUsed = "gpt-4o";
       } else if (!preferredAnthropic && hasAnthropic() && isQuotaError(primaryErr)) {
-        const fallbackModel: SurveyAnthropicModel = "claude-sonnet-4-20250514";
+        const fallbackModel: SurveyAnthropicModel = "claude-sonnet-4-6";
         tried.push(fallbackModel);
         const client = getAnthropic();
         const run = await runSurveyExtractionAnthropic(

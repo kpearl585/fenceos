@@ -266,7 +266,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
   // enabled so the contractor can go back to text/image modes while
   // the re-run is in flight.
   const [reRunning, setReRunning] = useState(false);
-  const [extractedWithModel, setExtractedWithModel] = useState<"gpt-4o" | "claude-opus-4-20250514" | "claude-sonnet-4-20250514" | null>(null);
+  const [extractedWithModel, setExtractedWithModel] = useState<"gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6" | null>(null);
   const [result, setResult] = useState<AiExtractionResult | null>(null);
   const [critique, setCritique] = useState<CritiqueResult | null>(null);
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
@@ -322,7 +322,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
         ? await extractFromText(text)
         : mode === "image"
         ? await extractFromImage(imageBase64!, imageMime, additionalContext || undefined)
-        : await extractFromSurvey(surveyBase64!, surveyMime, additionalContext || undefined, "claude-sonnet-4-20250514");
+        : await extractFromSurvey(surveyBase64!, surveyMime, additionalContext || undefined, "claude-sonnet-4-6");
 
       if (typeof window !== "undefined") {
         console.log("[ai-extract] response", { success: res?.success, hasResult: !!res?.result, error: res?.error, runs: res?.result?.runs?.length });
@@ -339,7 +339,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       }
 
       if (mode === "survey") {
-        setExtractedWithModel((res.modelUsed as "gpt-4o" | "claude-opus-4-20250514" | "claude-sonnet-4-20250514" | null) ?? "claude-sonnet-4-20250514");
+        setExtractedWithModel((res.modelUsed as "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6" | null) ?? "claude-sonnet-4-6");
       }
       setResult(res.result);
       setCritique(res.critique ?? null);
@@ -374,7 +374,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
         surveyBase64,
         surveyMime,
         additionalContext || undefined,
-        "claude-opus-4-20250514",
+        "claude-opus-4-7",
       );
       if (isPaywallBlock(res)) {
         onPaywall?.(res);
@@ -395,7 +395,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
       setDeletedRunIndices(new Set());
       setAddedRuns([]);
       setApplied(false);
-      setExtractedWithModel((res.modelUsed as "gpt-4o" | "claude-opus-4-20250514" | "claude-sonnet-4-20250514" | null) ?? "claude-opus-4-20250514");
+      setExtractedWithModel((res.modelUsed as "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6" | null) ?? "claude-opus-4-7");
       if (res.rateRemaining != null) setRateRemaining(res.rateRemaining);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Re-run failed — please try again.";
@@ -860,15 +860,15 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
           {/* Note when the result came from Claude so it's clear which
               model produced the runs being reviewed. */}
           {mode === "survey" &&
-            (extractedWithModel === "claude-opus-4-20250514" ||
-              extractedWithModel === "claude-sonnet-4-20250514") && (
+            (extractedWithModel === "claude-opus-4-7" ||
+              extractedWithModel === "claude-sonnet-4-6") && (
             <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-2">
               <p className="text-xs text-accent-light">
                 <span className="font-semibold">
                   Extracted via{" "}
-                  {extractedWithModel === "claude-opus-4-20250514"
+                  {extractedWithModel === "claude-opus-4-7"
                     ? "Claude Opus 4"
-                    : "Claude Sonnet 4"}
+                    : "Claude Sonnet"}
                 </span>
                 <span className="text-muted"> · higher-accuracy mode</span>
               </p>
