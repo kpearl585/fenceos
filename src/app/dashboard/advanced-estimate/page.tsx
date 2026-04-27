@@ -8,21 +8,44 @@ import { getOrgMarginTargets } from "@/lib/marginTargets";
 
 export const metadata = { title: "Advanced Estimate — FenceEstimatePro" };
 
-export default async function AdvancedEstimatePage() {
+export default async function AdvancedEstimatePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ customerId?: string }>;
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const profile = await ensureProfile(supabase, user);
+  const { customerId } = await searchParams;
 
-  const [pricing, calibration, aiReadiness, estimatorConfig, marginTargets] = await Promise.all([
+  const [pricing, calibration, aiReadiness, estimatorConfig, marginTargets, customersResult] = await Promise.all([
     getOrgMaterialPricing(),
     getOrgCalibration(),
     checkAiReadiness(),
     getOrgEstimatorConfig(),
     getOrgMarginTargets(profile.org_id),
+    supabase
+      .from("customers")
+      .select("id, name, phone, email, address, city, state, zip")
+      .eq("org_id", profile.org_id)
+      .order("name", { ascending: true })
+      .limit(500),
   ]);
   const { priceMap, priceMeta } = pricing;
   const hasPrices = Object.keys(priceMap).length > 0;
+  const customers = (customersResult.data ?? []).map((customer) => ({
+    id: customer.id,
+    name: customer.name,
+    phone: customer.phone,
+    email: customer.email,
+    address: customer.address,
+    city: customer.city,
+    state: customer.state,
+    zip: customer.zip,
+  }));
+  const selectedCustomerId =
+    customerId && customers.some((customer) => customer.id === customerId) ? customerId : null;
 
   return (
     <div>
@@ -68,6 +91,8 @@ export default async function AdvancedEstimatePage() {
         estimatorConfig={estimatorConfig.config}
         hasCustomConfig={estimatorConfig.hasCustomConfig}
         targetMarginPct={Math.round(marginTargets.target * 100)}
+        customers={customers}
+        initialCustomerId={selectedCustomerId}
       />
     </div>
   );

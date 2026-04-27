@@ -28,9 +28,6 @@ export default async function NewEstimateRedirect({
   searchParams: Promise<{ customerId?: string }>;
 }) {
   const { customerId } = await searchParams;
-  // The advanced estimator doesn't currently accept a customerId prefill;
-  // preserving the query param so a follow-up can wire it in without breaking
-  // existing links when we do.
   redirect(
     customerId
       ? `/dashboard/advanced-estimate?customerId=${encodeURIComponent(customerId)}`

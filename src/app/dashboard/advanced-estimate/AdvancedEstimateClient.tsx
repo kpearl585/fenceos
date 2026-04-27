@@ -78,6 +78,33 @@ function defaultRun(): RunInput {
   };
 }
 
+type EstimateCustomer = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+};
+
+function formatCustomerLocation(customer: EstimateCustomer): string {
+  const cityBits = [customer.city, customer.state].filter(Boolean).join(", ");
+  const zip = customer.zip?.trim();
+  return [cityBits, zip].filter(Boolean).join(" ").trim();
+}
+
+function customerFieldsFromOption(customer: EstimateCustomer | null) {
+  return {
+    name: customer?.name ?? "",
+    address: customer?.address ?? "",
+    city: customer ? formatCustomerLocation(customer) : "",
+    phone: customer?.phone ?? "",
+    email: customer?.email ?? "",
+  };
+}
+
 export default function AdvancedEstimateClient({
   priceMap = {},
   priceMeta = {},
@@ -86,6 +113,8 @@ export default function AdvancedEstimateClient({
   estimatorConfig,
   hasCustomConfig: _hasCustomConfig = false,
   targetMarginPct = 35,
+  customers = [],
+  initialCustomerId = null,
 }: {
   priceMap?: Record<string, number>;
   priceMeta?: Record<string, MaterialPriceMeta>;
@@ -94,6 +123,8 @@ export default function AdvancedEstimateClient({
   estimatorConfig?: OrgEstimatorConfig | DeepPartial<OrgEstimatorConfig>;
   hasCustomConfig?: boolean;
   targetMarginPct?: number;
+  customers?: EstimateCustomer[];
+  initialCustomerId?: string | null;
 }) {
   const [fenceType, setFenceType] = useState<FenceType>("vinyl");
   const [woodStyle, setWoodStyle] = useState<WoodStyle>("dog_ear_privacy");
@@ -112,7 +143,12 @@ export default function AdvancedEstimateClient({
   const [projectName, setProjectName] = useState("New Estimate");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [markupPct, setMarkupPct] = useState(() => markupPctForTargetMargin(targetMarginPct));
-  const [customer, setCustomer] = useState({ name: "", address: "", city: "", phone: "", email: "" });
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(initialCustomerId ?? "");
+  const [customer, setCustomer] = useState(() =>
+    customerFieldsFromOption(
+      initialCustomerId ? customers.find((item) => item.id === initialCustomerId) ?? null : null
+    )
+  );
   const [proposalStatus, setProposalStatus] = useState<"idle" | "generating" | "error">("idle");
   const [pdfStatus, setPdfStatus] = useState<"idle" | "generating" | "error">("idle");
   const [isPending, startTransition] = useTransition();
@@ -122,6 +158,10 @@ export default function AdvancedEstimateClient({
   const productLine = PRODUCT_LINES[productLineId];
   const postSize = productLine?.postSize ?? "5x5";
   const fenceHeight = Math.round(productLine?.panelHeight_in / 12) as PanelHeight;
+  const selectedCustomer = useMemo(
+    () => customers.find((item) => item.id === selectedCustomerId) ?? null,
+    [customers, selectedCustomerId]
+  );
 
   const input: FenceProjectInput = useMemo(
     () => ({
@@ -289,7 +329,10 @@ export default function AdvancedEstimateClient({
         wastePct,
         fenceType,
         woodStyle,
-        customer,
+        customer: {
+          ...customer,
+          id: selectedCustomerId || null,
+        },
       });
       if (res.success && res.estimateId) {
         setConvertStatus("done");
@@ -680,7 +723,54 @@ export default function AdvancedEstimateClient({
         {/* Customer Info */}
         <div className="bg-surface rounded-xl border border-border p-5">
           <h2 className="font-semibold text-text mb-1">Customer Info</h2>
-          <p className="text-xs text-muted mb-4">Optional — populates the customer proposal PDF</p>
+          <p className="text-xs text-muted mb-4">Pick an existing customer or type in a new one for this quote.</p>
+          {customers.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-muted mb-1">Saved Customer</label>
+              <select
+                value={selectedCustomerId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setSelectedCustomerId(nextId);
+                  const nextCustomer = customers.find((item) => item.id === nextId) ?? null;
+                  if (nextCustomer) {
+                    setCustomer(customerFieldsFromOption(nextCustomer));
+                  } else {
+                    setCustomer((current) => ({
+                      ...current,
+                      name: "",
+                      address: "",
+                      city: "",
+                      phone: "",
+                      email: "",
+                    }));
+                  }
+                }}
+                className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
+              >
+                <option value="">Select a customer from your list</option>
+                {customers.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                    {option.address ? ` — ${option.address}` : ""}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted">
+                <span>
+                  {selectedCustomer
+                    ? "Using the saved customer record for this estimate."
+                    : "No customer selected yet."}
+                </span>
+                <a
+                  href="/dashboard/customers/new?afterCreate=estimate"
+                  className="font-semibold text-accent-light hover:text-accent transition-colors"
+                >
+                  Add new customer
+                </a>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-muted mb-1">Customer Name</label>

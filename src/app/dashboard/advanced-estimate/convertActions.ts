@@ -19,12 +19,26 @@ interface ConvertInput {
   fenceType: FenceType;
   woodStyle?: WoodStyle;
   customer: {
+    id?: string | null;
     name: string;
     address: string;
     city: string;
     phone: string;
     email: string;
   };
+}
+
+function parseCityStateZip(raw: string) {
+  const trimmed = raw.trim();
+  if (!trimmed) return { city: null, state: null, zip: null };
+
+  const match = /^(.*?)(?:,\s*([A-Za-z]{2}))?(?:\s+(\d{5}(?:-\d{4})?))?$/.exec(trimmed);
+  if (!match) return { city: trimmed, state: null, zip: null };
+
+  const city = match[1]?.trim() || null;
+  const state = match[2]?.trim().toUpperCase() || null;
+  const zip = match[3]?.trim() || null;
+  return { city, state, zip };
 }
 
 export async function createEstimateFromFenceGraph(
@@ -60,7 +74,22 @@ export async function createEstimateFromFenceGraph(
     const grossMarginRatio = grossMarginPct / 100;
 
     let customerId: string | null = null;
-    if (customer.name.trim()) {
+    if (customer.id) {
+      const { data: existingCustomer, error: existingCustomerError } = await context.admin
+        .from("customers")
+        .select("id")
+        .eq("id", customer.id)
+        .eq("org_id", context.orgId)
+        .maybeSingle();
+
+      if (existingCustomerError) {
+        return { success: false, error: `Customer lookup failed: ${existingCustomerError.message}` };
+      }
+      if (!existingCustomer) {
+        return { success: false, error: "The selected customer was not found for this organization." };
+      }
+      customerId = existingCustomer.id;
+    } else if (customer.name.trim()) {
       const { data: existing } = await context.admin
         .from("customers")
         .select("id")
@@ -72,6 +101,7 @@ export async function createEstimateFromFenceGraph(
       if (existing) {
         customerId = existing.id;
       } else {
+        const parsedLocation = parseCityStateZip(customer.city);
         const { data: newCust, error: custErr } = await context.admin
           .from("customers")
           .insert({
@@ -80,6 +110,9 @@ export async function createEstimateFromFenceGraph(
             phone: customer.phone || null,
             address: customer.address || null,
             email: customer.email || null,
+            city: parsedLocation.city,
+            state: parsedLocation.state,
+            zip: parsedLocation.zip,
           })
           .select("id")
           .single();

@@ -46,9 +46,22 @@ export default function CustomerForm() {
         <textarea name="notes" rows={3} placeholder="Any additional notes about this customer..." className={inputClass} />
       </div>
 
-      <button type="submit" className="w-full bg-accent hover:bg-accent-light accent-glow text-white py-4 rounded-xl text-lg font-bold transition-colors duration-150">
-        Save Customer
-      </button>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="submit"
+          className="w-full bg-accent hover:bg-accent-light accent-glow text-white py-4 rounded-xl text-lg font-bold transition-colors duration-150"
+        >
+          Save Customer
+        </button>
+        <button
+          type="submit"
+          name="afterCreate"
+          value="estimate"
+          className="w-full border border-accent/40 bg-surface-3 hover:bg-surface-2 text-text py-4 rounded-xl text-lg font-bold transition-colors duration-150"
+        >
+          Save & Start Estimate
+        </button>
+      </div>
     </form>
   );
 }

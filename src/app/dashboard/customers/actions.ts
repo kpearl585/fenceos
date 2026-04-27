@@ -49,6 +49,11 @@ export async function createCustomer(fd: FormData) {
 
   if (error) throw new Error(`Failed to create customer: ${error.message}`);
 
+  const afterCreate = (fd.get("afterCreate") as string | null)?.trim();
+  if (afterCreate === "estimate") {
+    redirect(`/dashboard/advanced-estimate?customerId=${data.id}`);
+  }
+
   // If called from estimate form (returnTo param), redirect back
   const returnTo = fd.get("returnTo") as string;
   if (returnTo) {
