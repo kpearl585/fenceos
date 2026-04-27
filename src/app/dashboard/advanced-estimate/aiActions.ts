@@ -19,6 +19,18 @@ import { buildScopeRiskAssessment } from "@/lib/fence-graph/ai-extract/scopeRisk
 import { SURVEY_SYSTEM_PROMPT, SURVEY_USER_PROMPT_IMAGE } from "@/lib/fence-graph/ai-extract/survey-prompt";
 import crypto from "crypto";
 
+type SurveyAnthropicModel =
+  | "claude-opus-4-20250514"
+  | "claude-sonnet-4-20250514";
+
+function normalizeSurveyModel(
+  model: "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6" | SurveyAnthropicModel
+): "gpt-4o" | SurveyAnthropicModel {
+  if (model === "claude-opus-4-7") return "claude-opus-4-20250514";
+  if (model === "claude-sonnet-4-6") return "claude-sonnet-4-20250514";
+  return model;
+}
+
 // ── Rate limiting constants ────────────────────────────────────────
 const RATE_LIMIT_PER_HOUR = 20;   // max extractions per org per hour
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
@@ -206,7 +218,7 @@ async function runSurveyExtractionOpenAI(
 
 async function runSurveyExtractionAnthropic(
   client: Anthropic,
-  model: "claude-opus-4-7" | "claude-sonnet-4-6",
+  model: SurveyAnthropicModel,
   base64: string,
   mimeType: "image/png" | "image/jpeg",
   additionalText?: string
@@ -562,7 +574,11 @@ export async function extractFromSurvey(
   base64: string,
   mimeType: string,
   additionalText?: string,
-  model: "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6" = "claude-opus-4-7"
+  model:
+    | "gpt-4o"
+    | "claude-opus-4-7"
+    | "claude-sonnet-4-6"
+    | SurveyAnthropicModel = "claude-sonnet-4-20250514"
 ): Promise<AiExtractionResponse> {
   if (!base64) return { success: false, error: "Survey image data required" };
 
@@ -590,29 +606,30 @@ export async function extractFromSurvey(
   }
 
   const inputHash = crypto.createHash("sha256").update(base64.slice(0, 1000)).digest("hex").slice(0, 16);
+  const requestedModel = normalizeSurveyModel(model);
 
-  const preferredAnthropic = model.startsWith("claude");
+  const preferredAnthropic = requestedModel.startsWith("claude");
   const tried: string[] = [];
 
   try {
     let result: AiExtractionResult;
     let inputTokens = 0;
     let outputTokens = 0;
-    let modelUsed: "gpt-4o" | "claude-opus-4-7" | "claude-sonnet-4-6";
+    let modelUsed: "gpt-4o" | SurveyAnthropicModel;
 
     try {
       if (preferredAnthropic) {
-        tried.push(model);
+        tried.push(requestedModel);
         const client = getAnthropic();
         const run = await runSurveyExtractionAnthropic(
           client,
-          model as "claude-opus-4-7" | "claude-sonnet-4-6",
+          requestedModel as SurveyAnthropicModel,
           base64,
           mimeType as "image/png" | "image/jpeg",
           additionalText
         );
         ({ result, inputTokens, outputTokens } = run);
-        modelUsed = model;
+        modelUsed = requestedModel;
       } else {
         tried.push("gpt-4o");
         const client = getOpenAI();
@@ -626,7 +643,7 @@ export async function extractFromSurvey(
         modelUsed = "gpt-4o";
       }
     } catch (primaryErr) {
-      if (preferredAnthropic && hasOpenAI()) {
+      if (preferredAnthropic && !hasAnthropic() && hasOpenAI()) {
         tried.push("gpt-4o");
         const client = getOpenAI();
         const run = await runSurveyExtractionOpenAI(
@@ -638,7 +655,7 @@ export async function extractFromSurvey(
         ({ result, inputTokens, outputTokens } = run);
         modelUsed = "gpt-4o";
       } else if (!preferredAnthropic && hasAnthropic() && isQuotaError(primaryErr)) {
-        const fallbackModel: "claude-opus-4-7" = "claude-opus-4-7";
+        const fallbackModel: SurveyAnthropicModel = "claude-sonnet-4-20250514";
         tried.push(fallbackModel);
         const client = getAnthropic();
         const run = await runSurveyExtractionAnthropic(
@@ -723,6 +740,12 @@ export async function extractFromSurvey(
       return {
         success: false,
         error: "Survey extraction is not configured. Add ANTHROPIC_API_KEY or OPENAI_API_KEY.",
+      };
+    }
+    if (preferredAnthropic && isQuotaError(err)) {
+      return {
+        success: false,
+        error: "Claude survey extraction hit an Anthropic quota or billing limit. Check the Anthropic plan tied to this key.",
       };
     }
     if (isQuotaError(err) && !hasAnthropic()) {
