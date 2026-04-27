@@ -31,6 +31,7 @@ export function generateVinylBom(
   // Determine system type early for audit trail
   const isComponentSystem = productLine.panelStyle === "privacy" && productLine.railType === "routed";
   const isPicketSystem = productLine.panelStyle === "picket";
+  const isPrefabPanelSystem = !isComponentSystem;
 
   // Pricing class indicator
   if (isComponentSystem) {
@@ -52,13 +53,18 @@ export function generateVinylBom(
 
   bom.push(makeBomItem(postSku, `Vinyl Post ${postLabel} 10ft`, "posts", "ea", nodes.length, 0.95,
     `${linePosts.length}L + ${endPosts.length}E + ${cornerPosts.length}C + ${gatePosts.length}G posts`, p(postSku)));
-  bom.push(makeBomItem("VINYL_POST_CAP", `Vinyl Post Cap ${postLabel}`, "hardware", "ea", nodes.length, 0.95,
-    `1 cap × ${nodes.length} posts`, p("VINYL_POST_CAP")));
+  if (isComponentSystem) {
+    bom.push(makeBomItem("VINYL_POST_CAP", `Vinyl Post Cap ${postLabel}`, "hardware", "ea", nodes.length, 0.95,
+      `1 cap × ${nodes.length} posts`, p("VINYL_POST_CAP")));
 
-  // Post sleeves (ground contact protection for posts in ground)
-  const sleeveCount = nodes.filter(n => n.type !== "tie_in").length; // All posts except tie-ins go in ground
-  bom.push(makeBomItem(sleeveSku, `Vinyl Post Sleeve 48\" (ground contact)`, "posts", "ea", sleeveCount, 0.98,
-    `${sleeveCount} posts in ground (excludes tie-ins)`, p(sleeveSku)));
+    // Routed/component systems often buy the outer post shell and
+    // separate ground-contact sleeve as distinct parts.
+    const sleeveCount = nodes.filter(n => n.type !== "tie_in").length;
+    bom.push(makeBomItem(sleeveSku, `Vinyl Post Sleeve 48\" (ground contact)`, "posts", "ea", sleeveCount, 0.98,
+      `${sleeveCount} posts in ground (excludes tie-ins)`, p(sleeveSku)));
+  } else {
+    audit.push("Pre-fab privacy/picket: post caps and ground sleeves assumed bundled with the standard post/panel system");
+  }
 
   // Panels - determine if pre-fab or component-based system
   const segEdges = edges.filter(e => e.type === "segment");
@@ -307,24 +313,33 @@ export function generateVinylBom(
 
   // Fasteners — screws per section from config
   const totalSections = segEdges.reduce((s, e) => s + (e.sections?.length ?? 0), 0);
-  const screwsPerSec = config.material.screwsPerSection;
-  const screwsNeeded = totalSections * screwsPerSec;
-  const screwBoxes = Math.ceil(screwsNeeded / 150 * (1 + wastePct)); // ~150 screws per 1lb box
-  bom.push(makeBomItem("SCREWS_1LB", "Screws (1lb box ~150ct)", "hardware", "ea", screwBoxes, 0.90,
-    `${totalSections} sections × ${screwsPerSec} screws/section ÷ 150/box + ${Math.round(wastePct * 100)}% waste`, p("SCREWS_1LB")));
+  if (isComponentSystem) {
+    const screwsPerSec = config.material.screwsPerSection;
+    const screwsNeeded = totalSections * screwsPerSec;
+    const screwBoxes = Math.ceil(screwsNeeded / 150 * (1 + wastePct)); // ~150 screws per 1lb box
+    bom.push(makeBomItem("SCREWS_1LB", "Screws (1lb box ~150ct)", "hardware", "ea", screwBoxes, 0.90,
+      `${totalSections} sections × ${screwsPerSec} screws/section ÷ 150/box + ${Math.round(wastePct * 100)}% waste`, p("SCREWS_1LB")));
+  } else {
+    audit.push("Pre-fab panel system: panel kits assumed to include standard fasteners");
+  }
 
   // Labor — rates from org config
   const rackedSections = segEdges.filter(e => e.slopeMethod === "racked").reduce((s, e) => s + (e.sections?.length ?? 0), 0);
   const vl = config.labor.vinyl;
+  const prefabLaborMultiplier = isPrefabPanelSystem ? 0.88 : 1;
   const laborDrivers: LaborDriver[] = [
-    { activity: "Hole Digging", count: nodes.length, rateHrs: vl.holeDig, totalHrs: nodes.length * vl.holeDig },
-    { activity: "Post Setting", count: nodes.length, rateHrs: vl.postSet, totalHrs: nodes.length * vl.postSet },
-    { activity: "Section Installation", count: totalSections, rateHrs: vl.sectionInstall, totalHrs: totalSections * vl.sectionInstall },
-    { activity: "Cutting Operations", count: totalCuts, rateHrs: vl.cutting, totalHrs: totalCuts * vl.cutting },
+    { activity: "Hole Digging", count: nodes.length, rateHrs: vl.holeDig * prefabLaborMultiplier, totalHrs: nodes.length * vl.holeDig * prefabLaborMultiplier },
+    { activity: "Post Setting", count: nodes.length, rateHrs: vl.postSet * prefabLaborMultiplier, totalHrs: nodes.length * vl.postSet * prefabLaborMultiplier },
+    { activity: "Section Installation", count: totalSections, rateHrs: vl.sectionInstall * prefabLaborMultiplier, totalHrs: totalSections * vl.sectionInstall * prefabLaborMultiplier },
+    { activity: "Cutting Operations", count: totalCuts, rateHrs: vl.cutting * prefabLaborMultiplier, totalHrs: totalCuts * vl.cutting * prefabLaborMultiplier },
     { activity: "Gate Installation", count: gateSpecs.length, rateHrs: 0, totalHrs: totalGateLaborHours },
-    { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: vl.racking, totalHrs: rackedSections * vl.racking },
-    { activity: "Concrete Pour", count: nodes.length, rateHrs: vl.concretePour, totalHrs: nodes.length * vl.concretePour },
+    { activity: "Racking (Field Fab)", count: rackedSections, rateHrs: vl.racking * prefabLaborMultiplier, totalHrs: rackedSections * vl.racking * prefabLaborMultiplier },
+    { activity: "Concrete Pour", count: nodes.length, rateHrs: vl.concretePour * prefabLaborMultiplier, totalHrs: nodes.length * vl.concretePour * prefabLaborMultiplier },
   ];
+
+  if (isPrefabPanelSystem) {
+    audit.push(`Pre-fab panel labor multiplier: ${prefabLaborMultiplier}x on standard vinyl install tasks`);
+  }
 
   return { bom, laborDrivers, auditTrail: audit };
 }

@@ -63,6 +63,8 @@ ALUMINUM / ORNAMENTAL:
 
 1. Split into separate runs whenever fence type, height, or product changes.
 2. Split long runs at corners or structural breaks if the contractor mentions them.
+   If the input describes multiple sides, corners, ends, returns, or a backyard wrap, do NOT collapse everything into one straight run.
+   Output one run per side/segment whenever the wording implies turns or corner-bounded sections.
 3. If soil type is not mentioned and the job is in Florida, default to "sandy".
 4. If height is not mentioned, default to 6ft for privacy, 4ft for picket/chain link.
 5. Pool gates MUST have type "pool" and poolCode: true.
