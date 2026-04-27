@@ -18,8 +18,8 @@ function getClient(): PostHog | null {
   if (attemptedInit) return client;
   attemptedInit = true;
 
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
+  const host = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com").trim();
 
   if (!key) return null;
 

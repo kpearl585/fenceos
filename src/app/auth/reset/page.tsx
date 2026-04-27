@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
+import { getSupabasePublicKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 function ResetForm() {
   const searchParams = useSearchParams();
@@ -13,9 +14,18 @@ function ResetForm() {
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () => {
+      const url = getSupabaseUrl();
+      const key = getSupabasePublicKey();
+      if (!url || !key) {
+        throw new Error(
+          "Missing Supabase public env vars. Expected NEXT_PUBLIC_SUPABASE_URL and a publishable/anon key."
+        );
+      }
+      return createBrowserClient(url, key);
+    },
+    []
   );
 
   useEffect(() => {
@@ -25,7 +35,7 @@ function ResetForm() {
       if (event === "PASSWORD_RECOVERY") setReady(true);
     });
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,33 +50,26 @@ function ResetForm() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background text-text flex items-center justify-center p-6 overflow-hidden">
-      <div className="absolute inset-0 grid-pattern pointer-events-none" />
-      <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-accent/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative w-full max-w-sm">
-        <Link href="/" className="flex items-center gap-2 justify-center mb-8">
+    <div className="min-h-screen bg-background text-text flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="flex items-center gap-2 justify-center mb-8">
           <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
             <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
           </div>
-          <span className="font-display font-bold">FenceEstimate<span className="text-accent-light">Pro</span></span>
-        </Link>
+          <span className="text-text font-bold">FenceEstimatePro</span>
+        </div>
 
         {status === "done" ? (
           <div className="text-center">
-            <div className="w-14 h-14 bg-accent/10 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-accent-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-              </svg>
-            </div>
-            <h1 className="font-display text-text font-bold text-xl mb-2">Password updated</h1>
+            <div className="w-14 h-14 bg-accent/10 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-7 h-7 text-accent-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+            <h1 className="text-text font-bold text-xl mb-2">Password updated!</h1>
             <p className="text-muted text-sm">Redirecting you to the dashboard...</p>
           </div>
         ) : (
           <>
-            <h1 className="font-display text-3xl font-bold text-text text-center mb-2">Set new password</h1>
+            <h1 className="text-2xl font-bold text-text text-center mb-2">Set new password</h1>
             <p className="text-muted text-sm text-center mb-8">Enter a new password for your account.</p>
 
             {!ready && (
@@ -83,7 +86,7 @@ function ResetForm() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">New Password</label>
+                <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wide">New Password</label>
                 <input
                   type="password"
                   required
@@ -91,31 +94,31 @@ function ResetForm() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Min. 8 characters"
-                  className="w-full px-4 py-3 bg-surface-3 border border-border rounded-lg text-text placeholder:text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-sm transition-colors duration-150"
+                  className="w-full px-4 py-3 bg-surface-3 border border-border rounded-lg text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Confirm Password</label>
+                <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wide">Confirm Password</label>
                 <input
                   type="password"
                   required
                   value={confirm}
                   onChange={e => setConfirm(e.target.value)}
                   placeholder="Repeat password"
-                  className="w-full px-4 py-3 bg-surface-3 border border-border rounded-lg text-text placeholder:text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-sm transition-colors duration-150"
+                  className="w-full px-4 py-3 bg-surface-3 border border-border rounded-lg text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent text-sm"
                 />
               </div>
               <button
                 type="submit"
                 disabled={status === "loading" || !ready}
-                className="w-full py-3 bg-accent hover:bg-accent-light accent-glow text-white font-semibold rounded-lg text-sm transition-colors duration-150 disabled:opacity-50 disabled:hover:bg-accent"
+                className="w-full py-3 bg-accent hover:bg-accent-light text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
               >
                 {status === "loading" ? "Updating..." : "Update Password →"}
               </button>
             </form>
 
-            <p className="text-center text-xs text-muted mt-6">
-              <Link href="/login" className="hover:text-text transition-colors duration-150">Back to sign in</Link>
+            <p className="text-center text-xs text-muted/70 mt-6">
+              <Link href="/login" className="hover:text-text">Back to sign in</Link>
             </p>
           </>
         )}

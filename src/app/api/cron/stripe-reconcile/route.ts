@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getStripe } from "@/lib/stripe/client";
 import * as Sentry from "@sentry/nextjs";
+import { getSupabaseServiceKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 // Hourly cron: reconcile our organizations.plan_status with Stripe's
 // authoritative subscription.status. Catches the ~0.5% of webhook events
@@ -17,9 +18,18 @@ import * as Sentry from "@sentry/nextjs";
 const MAX_ORGS_PER_RUN = 500;
 
 function admin() {
+  const url = getSupabaseUrl();
+  const key = getSupabaseServiceKey();
+
+  if (!url || !key) {
+    throw new Error(
+      "Missing Supabase admin env vars for stripe-reconcile cron."
+    );
+  }
+
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    url,
+    key
   );
 }
 

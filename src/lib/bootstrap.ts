@@ -77,3 +77,17 @@ export async function ensureProfile(
 
   return profile as UserProfile;
 }
+
+export async function getProfileByAuthId(
+  authUserId: string
+): Promise<UserProfile | null> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("users")
+    .select("id, auth_id, org_id, email, full_name, role")
+    .eq("auth_id", authUserId)
+    .single();
+
+  if (error || !data) return null;
+  return data as UserProfile;
+}

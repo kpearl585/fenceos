@@ -116,6 +116,15 @@ export default async function DashboardHome({
   const recentEstimates = allEstimates.slice(0, 5);
   // Active + scheduled jobs (show first 5)
   const liveJobs = [...activeJobs, ...scheduledJobs].slice(0, 5);
+  const meaningfulRecentEstimates = recentEstimates.filter((estimate) => {
+    const customer = Array.isArray(estimate.customers) ? estimate.customers[0] : estimate.customers;
+    return Boolean(customer?.name || estimate.title || Number(estimate.total) > 0);
+  });
+  const meaningfulLiveJobs = liveJobs.filter((job) => {
+    const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
+    const estimate = Array.isArray(job.estimates) ? job.estimates[0] : job.estimates;
+    return Boolean(customer?.name || estimate?.fence_type || Number(estimate?.linear_feet) > 0 || Number(job.total_price) > 0);
+  });
 
   const firstName = profile.full_name ? profile.full_name.split(" ")[0] : "there";
 
@@ -257,14 +266,14 @@ export default async function DashboardHome({
               <h2 className="font-semibold text-text text-sm">Recent Estimates</h2>
               <Link href="/dashboard/estimates" className="text-xs text-accent hover:text-accent-light font-medium">View all →</Link>
             </div>
-            {recentEstimates.length === 0 ? (
+            {meaningfulRecentEstimates.length === 0 ? (
               <div className="px-5 py-8 text-center">
                 <p className="text-sm text-muted">No estimates yet</p>
                 <Link href="/dashboard/advanced-estimate" className="mt-3 inline-block text-xs text-accent font-semibold hover:underline">Create your first estimate →</Link>
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {recentEstimates.map((e: { id: string; title: string; status: string; total: number | null; gross_margin_pct: number | null; customers: { name: string }[] | null }) => (
+                {meaningfulRecentEstimates.map((e: { id: string; title: string; status: string; total: number | null; gross_margin_pct: number | null; customers: { name: string }[] | null }) => (
                   <Link key={e.id} href={`/dashboard/estimates/${e.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-surface-3 transition-colors duration-150 group">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-text truncate group-hover:text-accent">{(e.customers as { name: string }[] | null)?.[0]?.name || "No customer"}</p>
@@ -289,13 +298,13 @@ export default async function DashboardHome({
             <h2 className="font-semibold text-text text-sm">Active & Scheduled Jobs</h2>
             <Link href="/dashboard/jobs" className="text-xs text-accent hover:text-accent-light font-medium">View all →</Link>
           </div>
-          {liveJobs.length === 0 ? (
+          {meaningfulLiveJobs.length === 0 ? (
             <div className="px-5 py-8 text-center">
               <p className="text-sm text-muted">No active or scheduled jobs</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {liveJobs.map((j: { id: string; status: string; total_price: number | null; gross_margin_pct: number | null; customers: { name: string }[] | null; estimates: { fence_type: string; linear_feet: number }[] | null }) => (
+              {meaningfulLiveJobs.map((j: { id: string; status: string; total_price: number | null; gross_margin_pct: number | null; customers: { name: string }[] | null; estimates: { fence_type: string; linear_feet: number }[] | null }) => (
                 <Link key={j.id} href={`/dashboard/jobs/${j.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-surface-3 transition-colors duration-150 group">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-text truncate group-hover:text-accent">

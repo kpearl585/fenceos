@@ -40,14 +40,14 @@ export default function FAQV2() {
   ];
 
   return (
-    <section className="py-20 px-6 bg-white">
+    <section className="bg-background py-20 px-6">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-display">
+          <h2 className="mb-4 font-display text-3xl font-bold text-text md:text-4xl">
             Common Questions
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-muted">
             Everything you need to know before starting your free trial
           </p>
         </div>
@@ -55,14 +55,14 @@ export default function FAQV2() {
         {/* FAQ accordion */}
         <div className="space-y-4">
           {faqs.map((faq, i) => (
-            <div key={i} className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+            <div key={i} className="overflow-hidden rounded-lg border border-border bg-surface">
               <button
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-100 transition-colors"
+                className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-surface-2"
               >
-                <span className="font-bold text-gray-900 pr-4">{faq.q}</span>
+                <span className="pr-4 font-bold text-text">{faq.q}</span>
                 <svg
-                  className={`w-5 h-5 text-gray-600 flex-shrink-0 transition-transform ${
+                  className={`h-5 w-5 flex-shrink-0 text-muted transition-transform ${
                     openIndex === i ? 'rotate-180' : ''
                   }`}
                   viewBox="0 0 24 24"
@@ -75,7 +75,7 @@ export default function FAQV2() {
               </button>
               {openIndex === i && (
                 <div className="px-6 pb-6">
-                  <p className="text-gray-700 leading-relaxed">{faq.a}</p>
+                  <p className="leading-relaxed text-muted">{faq.a}</p>
                 </div>
               )}
             </div>
@@ -83,12 +83,12 @@ export default function FAQV2() {
         </div>
 
         {/* Still have questions CTA */}
-        <div className="mt-12 text-center bg-green-50 border border-green-200 rounded-lg p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Still have questions?</h3>
-          <p className="text-gray-600 mb-4">We're here to help. Email us and we'll respond within 2 hours.</p>
+        <div className="mt-12 rounded-lg border border-accent/20 bg-accent/10 p-8 text-center">
+          <h3 className="mb-2 text-xl font-bold text-text">Still have questions?</h3>
+          <p className="mb-4 text-muted">We're here to help. Email us and we'll respond within 2 hours.</p>
           <a
             href="mailto:support@fenceestimatepro.com"
-            className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-semibold"
+            className="inline-flex items-center gap-2 font-semibold text-accent-light hover:text-accent"
           >
             support@fenceestimatepro.com
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

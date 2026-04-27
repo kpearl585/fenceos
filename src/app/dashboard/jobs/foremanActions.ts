@@ -16,6 +16,29 @@ async function getForemanAuthContext() {
   return { supabase, profile, user };
 }
 
+async function assertAccessibleJob(
+  jobId: string,
+  profile: Awaited<ReturnType<typeof getForemanAuthContext>>["profile"]
+) {
+  const admin = createAdminClient();
+  const { data: job, error } = await admin
+    .from("jobs")
+    .select("id, org_id, assigned_foreman_id")
+    .eq("id", jobId)
+    .eq("org_id", profile.org_id)
+    .single();
+
+  if (error || !job) {
+    throw new Error("Job not found");
+  }
+
+  if (profile.role === "foreman" && job.assigned_foreman_id !== profile.id) {
+    throw new Error("You can only update jobs assigned to you");
+  }
+
+  return { admin, job };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Initialize Checklist + Material Verifications                      */
 /* ------------------------------------------------------------------ */
@@ -81,7 +104,7 @@ export async function initForemanData(fd: FormData) {
 /* ------------------------------------------------------------------ */
 
 export async function toggleChecklistItem(fd: FormData) {
-  const { supabase, profile, user } = await getForemanAuthContext();
+  const { profile } = await getForemanAuthContext();
   const jobId = fd.get("jobId") as string;
   const itemId = fd.get("itemId") as string;
   const completed = fd.get("completed") === "true";
@@ -90,13 +113,15 @@ export async function toggleChecklistItem(fd: FormData) {
     throw new Error("Only owners and foremen can update checklists");
   }
 
-  const admin = createAdminClient();
+  const { admin } = await assertAccessibleJob(jobId, profile);
 
   const updateData: Record<string, unknown> = { completed };
   if (completed) {
     updateData.completed_at = new Date().toISOString();
+    updateData.completed_by = profile.id;
   } else {
     updateData.completed_at = null;
+    updateData.completed_by = null;
   }
 
   const { error } = await admin
@@ -114,7 +139,7 @@ export async function toggleChecklistItem(fd: FormData) {
 /* ------------------------------------------------------------------ */
 
 export async function verifyMaterial(fd: FormData) {
-  const { supabase, profile, user } = await getForemanAuthContext();
+  const { profile } = await getForemanAuthContext();
   const verificationId = fd.get("verificationId") as string;
   const verifiedQty = Number(fd.get("verifiedQty")) || 0;
   const jobId = fd.get("jobId") as string;
@@ -123,7 +148,7 @@ export async function verifyMaterial(fd: FormData) {
     throw new Error("Only owners and foremen can verify materials");
   }
 
-  const admin = createAdminClient();
+  const { admin } = await assertAccessibleJob(jobId, profile);
 
   const { error } = await admin
     .from("job_material_verifications")
@@ -131,6 +156,7 @@ export async function verifyMaterial(fd: FormData) {
       verified: true,
       verified_qty: verifiedQty,
       verified_at: new Date().toISOString(),
+      verified_by: profile.id,
     })
     .eq("id", verificationId);
 
@@ -150,7 +176,7 @@ export async function uploadJobPhoto(fd: FormData) {
 
   if (!file || file.size === 0) throw new Error("No file provided");
 
-  const admin = createAdminClient();
+  const { admin } = await assertAccessibleJob(jobId, profile);
   const ext = file.name.split(".").pop() ?? "jpg";
   const path = `${profile.org_id}/${jobId}/${Date.now()}.${ext}`;
 
@@ -160,14 +186,10 @@ export async function uploadJobPhoto(fd: FormData) {
 
   if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
 
-  const { data: { publicUrl } } = admin.storage.from("job-photos").getPublicUrl(path);
-
-  // uploaded_by references users.id (the profile's PK, not auth_id)
   const { error: insertErr } = await admin
     .from("job_photos")
     .insert({
       job_id: jobId,
-      org_id: profile.org_id,
       storage_path: path,
       caption: caption || null,
       uploaded_by: profile.id,
@@ -187,19 +209,20 @@ export async function deleteJobPhoto(fd: FormData) {
   const jobId = fd.get("jobId") as string;
   if (!photoId) throw new Error("Missing photoId");
 
-  const admin = createAdminClient();
+  const { admin } = await assertAccessibleJob(jobId, profile);
 
   const { data: photo } = await admin
     .from("job_photos")
     .select("storage_path")
     .eq("id", photoId)
+    .eq("job_id", jobId)
     .single();
 
   if (photo?.storage_path) {
     await admin.storage.from("job-photos").remove([photo.storage_path]);
   }
 
-  await admin.from("job_photos").delete().eq("id", photoId);
+  await admin.from("job_photos").delete().eq("id", photoId).eq("job_id", jobId);
   redirect(`/dashboard/jobs/${jobId}`);
 }
 

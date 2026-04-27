@@ -13,7 +13,14 @@ const nextConfig = {
       bodySizeLimit: "20mb",
     },
   },
-  serverExternalPackages: ["@react-pdf/renderer"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
+    ],
+  },
 };
 
 // Sentry configuration options

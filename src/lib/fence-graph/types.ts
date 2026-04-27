@@ -2,6 +2,8 @@
 // Production-grade vinyl fence estimation engine
 // Based on: FenceEstimatePro Engineering Packet (March 2026)
 
+import type { SiteComplexity } from "./accuracy-types";
+
 export type PostType =
   | "end"           // Start/terminus of a fence run (degree = 1)
   | "line"          // Interior post in a straight run
@@ -123,6 +125,7 @@ export interface SiteConfig {
   existingFenceRemoval: boolean;
   surfaceType: "ground" | "concrete" | "pavers";
   obstacleCt: number;          // trees/roots
+  siteComplexity?: SiteComplexity | null;
 }
 
 export interface AuditTrail {
@@ -131,6 +134,48 @@ export interface AuditTrail {
   extractionDate: string;
   overallConfidence: number;
   manualOverrides: number;
+  confidenceNotes?: string[];
+  confidenceReviewGates?: ConfidenceReviewGate[];
+}
+
+export type ConfidenceReviewFieldId =
+  | "est-project-name"
+  | "est-cust-name"
+  | "est-site-complexity"
+  | "est-runs"
+  | "est-pricing-health"
+  | "est-margin-risk";
+
+export interface ConfidenceReviewGate {
+  id: string;
+  fieldId: ConfidenceReviewFieldId;
+  severity: "blocker" | "review";
+  message: string;
+}
+
+export interface MaterialPriceMeta {
+  updatedAt?: string | null;
+}
+
+export interface EstimatePricingHealth {
+  staleThresholdDays: number;
+  trueMaterialItemCount: number;
+  missingPriceItemCount: number;
+  fallbackPriceItemCount: number;
+  freshPriceItemCount: number;
+  stalePriceItemCount: number;
+  pricedCoveragePct: number;
+  orgCoveragePct: number;
+  freshCoveragePct: number;
+  staleCoveragePct: number;
+}
+
+export interface LaborModelHealth {
+  siteComplexityBand: string | null;
+  adaptiveSampleCount: number;
+  learnedMultiplier: number;
+  calibrationConfidence: "low" | "medium" | "high";
+  notes: string[];
 }
 
 // ── User Input Types (what the contractor fills in) ──────────────
@@ -169,6 +214,7 @@ export interface FenceProjectInput {
   runs: RunInput[];
   gates: GateInput[];
   existingFenceRemoval?: boolean;
+  siteComplexity?: SiteComplexity;
   // Optional regulatory costs (manual entry by contractor)
   permitCost?: number;
   inspectionCost?: number;
@@ -284,6 +330,10 @@ export interface FenceEstimateResult {
   probabilisticWastePct: number;
   // Confidence
   overallConfidence: number;
+  confidenceNotes?: string[];
+  confidenceReviewGates?: ConfidenceReviewGate[];
+  pricingHealth?: EstimatePricingHealth;
+  laborModelHealth?: LaborModelHealth;
   redFlagItems: BomItem[];  // items with confidence < 0.8
   // Edge case detection (v1.0.0 production guardrails)
   edgeCaseFlags?: EdgeCaseFlag[];

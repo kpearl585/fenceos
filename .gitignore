@@ -31,3 +31,7 @@ public/pdf.worker.min.mjs
 
 # Per-run survey extraction eval reports — iteration history lives on disk, not in git
 eval-runs/
+
+# Playwright generated artifacts
+playwright-report/
+test-results/

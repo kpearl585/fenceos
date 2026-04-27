@@ -5,7 +5,7 @@ import { canAccess } from "@/lib/roles";
 /**
  * Transactional conversion: Estimate → Job
  *
- * 1. Validate estimate status = 'quoted'
+ * 1. Validate estimate status = 'deposit_paid'
  * 2. Check no existing job (prevent double conversion)
  * 3. Insert jobs row (financial snapshot)
  * 4. Copy estimate_line_items → job_line_items
@@ -48,17 +48,12 @@ export async function convertEstimateToJob(
     throw new Error("Estimate not found or access denied");
   }
 
-
-  // 2. Validate status — allow quoted, accepted, or deposit_paid
-  const allowedStatuses = ["quoted", "accepted", "deposit_paid"];
-  if (!allowedStatuses.includes(est.status)) {
+  // 2. Enforce deposit before operational conversion
+  if (est.status !== "deposit_paid") {
     throw new Error(
-      `Cannot convert estimate with status "${est.status}".`
+      `Estimate must have a paid deposit before it can be converted to a job. Current status: "${est.status}".`
     );
   }
-
-  // Deposit gate removed — contractors manage deposits outside the app.
-  // Job conversion is allowed regardless of deposit status.
 
   // 4. Prevent double conversion
   const { data: existingJob } = await supabase

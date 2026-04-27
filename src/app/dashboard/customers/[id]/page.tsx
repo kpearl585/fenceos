@@ -13,38 +13,30 @@ function fmt(v: number | string | null) {
   }).format(Number(v) || 0);
 }
 
-const INPUT_CLASS =
-  "w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-colors duration-150";
-const LABEL_CLASS =
-  "block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider";
-
 const EST_STATUS_STYLES: Record<string, string> = {
   draft: "bg-surface-3 text-muted",
-  quoted: "bg-accent/15 text-accent-light",
-  sent: "bg-accent/15 text-accent-light",
+  quoted: "bg-info/15 text-info",
+  sent: "bg-info/20 text-info",
   accepted: "bg-warning/15 text-warning",
   deposit_paid: "bg-accent/15 text-accent-light",
-  converted: "bg-accent text-white",
+  converted: "bg-accent/20 text-accent-light",
   rejected: "bg-danger/15 text-danger",
   expired: "bg-surface-3 text-muted",
 };
 
 const JOB_STATUS_STYLES: Record<string, string> = {
   scheduled: "bg-warning/15 text-warning",
-  active: "bg-accent/15 text-accent-light",
-  complete: "bg-accent text-white",
+  active: "bg-info/15 text-info",
+  complete: "bg-accent/15 text-accent-light",
   cancelled: "bg-surface-3 text-muted",
 };
 
 export default async function CustomerDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string }>;
 }) {
   const { id } = await params;
-  const { saved } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -73,7 +65,7 @@ export default async function CustomerDetailPage({
   // Load related jobs
   const { data: jobs } = await supabase
     .from("jobs")
-    .select("id, title, status, total_price, scheduled_date")
+    .select("id, title, status, total_price, scheduled_date, created_at")
     .eq("customer_id", id)
     .order("created_at", { ascending: false });
 
@@ -84,8 +76,7 @@ export default async function CustomerDetailPage({
   const allJobs = jobs ?? [];
   const acceptedEstimates = allEstimates.filter((e: {status: string}) => ["approved", "accepted", "deposit_paid", "converted"].includes(e.status));
   const totalRevenue = allJobs.filter((j: {status: string; total_price: number | null}) => j.status === "complete").reduce((s: number, j: {status: string; total_price: number | null}) => s + (Number(j.total_price) || 0), 0);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allActivity: any[] = [...allEstimates, ...allJobs];
+  const allActivity: Array<{ created_at?: string | null }> = [...allEstimates, ...allJobs];
   const lastActivity = allActivity.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
   const hasLinkedRecords =
     (estimates?.length ?? 0) > 0 || (jobs?.length ?? 0) > 0;
@@ -96,29 +87,20 @@ export default async function CustomerDetailPage({
       <div className="mb-4">
         <Link
           href="/dashboard/customers"
-          className="text-sm text-accent-light hover:text-accent font-medium transition-colors duration-150"
+          className="text-sm text-accent-light hover:text-accent font-medium"
         >
           &larr; Back to Customers
         </Link>
       </div>
 
-      {saved === "1" && (
-        <div className="mb-4 bg-accent/10 border border-accent/30 text-accent-light text-sm rounded-lg px-4 py-2 flex items-center gap-2">
-          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          Customer details saved
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-        <h1 className="font-display text-2xl font-bold text-text">{customer.name}</h1>
+        <h1 className="text-2xl font-bold text-text">{customer.name}</h1>
         <div className="flex gap-2">
           {canEdit && (
             <Link
               href={`/dashboard/estimates/new?customerId=${customer.id}`}
-              className="bg-accent hover:bg-accent-light accent-glow text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
+              className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-accent-light transition-colors"
             >
               + New Estimate
             </Link>
@@ -127,54 +109,35 @@ export default async function CustomerDetailPage({
       </div>
 
 
-      {/* Stats Row — the Revenue card (or Total Estimates for non-owners) gets the signature accent-glow treatment */}
+      {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {isOwner ? (
-          <>
-            <div className="bg-surface-2 rounded-xl border border-border p-4">
-              <p className="text-xs text-muted uppercase tracking-wider mb-1">Total Estimates</p>
-              <p className="font-display text-2xl font-bold text-text">{allEstimates.length}</p>
-            </div>
-            <div className="bg-surface-2 rounded-xl border border-border p-4">
-              <p className="text-xs text-muted uppercase tracking-wider mb-1">Accepted</p>
-              <p className="font-display text-2xl font-bold text-accent-light">{acceptedEstimates.length}</p>
-            </div>
-            <div className="bg-background border border-accent/20 accent-glow rounded-xl p-4">
-              <p className="text-xs text-muted uppercase tracking-wider mb-1">Revenue</p>
-              <p className="font-display text-2xl font-bold text-text">{fmt(totalRevenue)}</p>
-            </div>
-            <div className="bg-surface-2 rounded-xl border border-border p-4">
-              <p className="text-xs text-muted uppercase tracking-wider mb-1">Last Activity</p>
-              <p className="font-display text-sm font-semibold text-text mt-1">
-                {lastActivity ? new Date(lastActivity.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "\u2014"}
-              </p>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="bg-background border border-accent/20 accent-glow rounded-xl p-4">
-              <p className="text-xs text-muted uppercase tracking-wider mb-1">Total Estimates</p>
-              <p className="font-display text-2xl font-bold text-text">{allEstimates.length}</p>
-            </div>
-            <div className="bg-surface-2 rounded-xl border border-border p-4">
-              <p className="text-xs text-muted uppercase tracking-wider mb-1">Accepted</p>
-              <p className="font-display text-2xl font-bold text-accent-light">{acceptedEstimates.length}</p>
-            </div>
-            <div className="bg-surface-2 rounded-xl border border-border p-4">
-              <p className="text-xs text-muted uppercase tracking-wider mb-1">Last Activity</p>
-              <p className="font-display text-sm font-semibold text-text mt-1">
-                {lastActivity ? new Date(lastActivity.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "\u2014"}
-              </p>
-            </div>
-          </>
+        <div className="bg-surface rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs text-muted uppercase tracking-wide mb-1">Total Estimates</p>
+          <p className="text-2xl font-bold text-text">{allEstimates.length}</p>
+        </div>
+        <div className="bg-surface rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs text-muted uppercase tracking-wide mb-1">Accepted</p>
+          <p className="text-2xl font-bold text-accent-light">{acceptedEstimates.length}</p>
+        </div>
+        {isOwner && (
+          <div className="bg-surface rounded-xl border border-border p-4 shadow-sm">
+            <p className="text-xs text-muted uppercase tracking-wide mb-1">Revenue</p>
+            <p className="text-2xl font-bold text-text">{fmt(totalRevenue)}</p>
+          </div>
         )}
+        <div className="bg-surface rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs text-muted uppercase tracking-wide mb-1">Last Activity</p>
+          <p className="text-sm font-semibold text-text mt-1">
+            {lastActivity?.created_at ? new Date(lastActivity.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+          </p>
+        </div>
       </div>
 
       {/* Customer Info Card + Edit Form */}
       {canEdit ? (
         <form
           action={updateCustomer}
-          className="bg-surface-2 rounded-xl border border-border p-5 sm:p-6 mb-6"
+          className="bg-surface rounded-xl border border-border p-5 sm:p-6 mb-6"
         >
           <input type="hidden" name="customerId" value={customer.id} />
           <h2 className="font-semibold text-text mb-4">
@@ -182,104 +145,104 @@ export default async function CustomerDetailPage({
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={LABEL_CLASS}>
-                Name <span className="text-danger">*</span>
+              <label className="block text-xs font-medium text-muted mb-1">
+                Name <span className="text-red-500">*</span>
               </label>
               <input
                 name="name"
                 required
                 defaultValue={customer.name}
-                className={INPUT_CLASS}
+                className="w-full border border-border bg-surface-3 text-text rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent/40 focus:border-accent"
               />
             </div>
             <div>
-              <label className={LABEL_CLASS}>
+              <label className="block text-xs font-medium text-muted mb-1">
                 Phone
               </label>
               <input
                 name="phone"
                 type="tel"
                 defaultValue={customer.phone || ""}
-                className={INPUT_CLASS}
+                className="w-full border border-border bg-surface-3 text-text rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent/40 focus:border-accent"
               />
             </div>
             <div>
-              <label className={LABEL_CLASS}>
+              <label className="block text-xs font-medium text-muted mb-1">
                 Email
               </label>
               <input
                 name="email"
                 type="email"
                 defaultValue={customer.email || ""}
-                className={INPUT_CLASS}
+                className="w-full border border-border bg-surface-3 text-text rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent/40 focus:border-accent"
               />
             </div>
             <div>
-              <label className={LABEL_CLASS}>
+              <label className="block text-xs font-medium text-muted mb-1">
                 Address
               </label>
               <input
                 name="address"
                 defaultValue={customer.address || ""}
-                className={INPUT_CLASS}
+                className="w-full border border-border bg-surface-3 text-text rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent/40 focus:border-accent"
               />
             </div>
             <div>
-              <label className={LABEL_CLASS}>
+              <label className="block text-xs font-medium text-muted mb-1">
                 City
               </label>
               <input
                 name="city"
                 defaultValue={customer.city || ""}
-                className={INPUT_CLASS}
+                className="w-full border border-border bg-surface-3 text-text rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent/40 focus:border-accent"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={LABEL_CLASS}>
+                  <label className="block text-xs font-medium text-muted mb-1">
                   State
                 </label>
                 <input
                   name="state"
                   maxLength={2}
                   defaultValue={customer.state || ""}
-                  className={INPUT_CLASS}
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent/40 focus:border-accent"
                 />
               </div>
               <div>
-                <label className={LABEL_CLASS}>
+                  <label className="block text-xs font-medium text-muted mb-1">
                   Zip
                 </label>
                 <input
                   name="zip"
                   defaultValue={customer.zip || ""}
-                  className={INPUT_CLASS}
+                  className="w-full border border-border bg-surface-3 text-text rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent/40 focus:border-accent"
                 />
               </div>
             </div>
             <div className="sm:col-span-2">
-              <label className={LABEL_CLASS}>
+              <label className="block text-xs font-medium text-muted mb-1">
                 Notes
               </label>
               <textarea
                 name="notes"
                 rows={2}
                 defaultValue={customer.notes || ""}
-                className={INPUT_CLASS}
+                className="w-full border border-border bg-surface-3 text-text rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent/40 focus:border-accent"
               />
             </div>
           </div>
           <div className="mt-4 flex gap-2">
             <button
               type="submit"
-              className="bg-accent hover:bg-accent-light accent-glow text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-150"
+              className="bg-accent text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-accent-light transition-colors"
             >
               Save Changes
             </button>
           </div>
         </form>
       ) : (
-        <div className="bg-surface-2 rounded-xl border border-border p-5 mb-6">
+        <div className="bg-surface rounded-xl border border-border p-5 mb-6">
           <h2 className="font-semibold text-text mb-3">
             Customer Information
           </h2>
@@ -289,7 +252,7 @@ export default async function CustomerDetailPage({
                 <span className="text-muted">Phone:</span>{" "}
                 <a
                   href={`tel:${customer.phone}`}
-                  className="text-accent-light hover:text-accent hover:underline transition-colors duration-150"
+                  className="text-accent-light hover:underline"
                 >
                   {customer.phone}
                 </a>
@@ -300,14 +263,14 @@ export default async function CustomerDetailPage({
                 <span className="text-muted">Email:</span>{" "}
                 <a
                   href={`mailto:${customer.email}`}
-                  className="text-accent-light hover:text-accent hover:underline transition-colors duration-150"
+                  className="text-accent-light hover:underline"
                 >
                   {customer.email}
                 </a>
               </div>
             )}
             {customer.address && (
-              <div className="text-text">
+              <div>
                 <span className="text-muted">Address:</span>{" "}
                 {customer.address}
                 {customer.city && `, ${customer.city}`}
@@ -316,7 +279,7 @@ export default async function CustomerDetailPage({
               </div>
             )}
             {customer.notes && (
-              <div className="sm:col-span-2 text-text">
+              <div className="sm:col-span-2">
                 <span className="text-muted">Notes:</span>{" "}
                 {customer.notes}
               </div>
@@ -326,7 +289,7 @@ export default async function CustomerDetailPage({
       )}
 
       {/* Related Estimates */}
-      <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+      <div className="bg-surface rounded-xl border border-border overflow-hidden mb-6">
         <div className="px-5 py-3 border-b border-border">
           <h2 className="font-semibold text-text">
             Estimates ({estimates?.length ?? 0})
@@ -345,7 +308,7 @@ export default async function CustomerDetailPage({
                 <Link
                   key={est.id}
                   href={`/dashboard/estimates/${est.id}`}
-                  className="flex items-center justify-between px-5 py-3 hover:bg-surface-3 transition-colors duration-150"
+                  className="flex items-center justify-between px-5 py-3 hover:bg-surface-2 transition-colors"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-text truncate">
@@ -356,11 +319,11 @@ export default async function CustomerDetailPage({
                     </p>
                   </div>
                   <div className="flex items-center gap-3 ml-3">
-                    <span className="font-display text-sm font-semibold text-text">
+                    <span className="text-sm font-semibold">
                       {fmt(est.total)}
                     </span>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${EST_STATUS_STYLES[est.status] || "bg-surface-3 text-muted"}`}
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${EST_STATUS_STYLES[est.status] || "bg-surface-3 text-muted"}`}
                     >
                       {est.status.replace("_", " ")}
                     </span>
@@ -377,7 +340,7 @@ export default async function CustomerDetailPage({
       </div>
 
       {/* Related Jobs */}
-      <div className="bg-surface-2 rounded-xl border border-border overflow-hidden mb-6">
+      <div className="bg-surface rounded-xl border border-border overflow-hidden mb-6">
         <div className="px-5 py-3 border-b border-border">
           <h2 className="font-semibold text-text">
             Jobs ({jobs?.length ?? 0})
@@ -396,7 +359,7 @@ export default async function CustomerDetailPage({
                 <Link
                   key={job.id}
                   href={`/dashboard/jobs/${job.id}`}
-                  className="flex items-center justify-between px-5 py-3 hover:bg-surface-3 transition-colors duration-150"
+                  className="flex items-center justify-between px-5 py-3 hover:bg-surface-2 transition-colors"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-text truncate">
@@ -409,13 +372,13 @@ export default async function CustomerDetailPage({
                     </p>
                   </div>
                   <div className="flex items-center gap-3 ml-3">
-                    <span className="font-display text-sm font-semibold text-text">
+                    <span className="text-sm font-semibold">
                       {fmt(job.total_price)}
                     </span>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${JOB_STATUS_STYLES[job.status] || "bg-surface-3 text-muted"}`}
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${JOB_STATUS_STYLES[job.status] || "bg-surface-3 text-muted"}`}
                     >
-                      {job.status}
+                      {job.status.toUpperCase()}
                     </span>
                   </div>
                 </Link>
@@ -431,8 +394,8 @@ export default async function CustomerDetailPage({
 
       {/* Delete Customer (owner only, no linked records) */}
       {canDelete && (
-        <div className="bg-surface-2 rounded-xl border border-danger/30 p-4">
-          <h2 className="font-semibold text-danger mb-2 text-sm uppercase tracking-wider">
+        <div className="bg-danger/10 rounded-xl border border-danger/30 p-4">
+          <h2 className="font-semibold text-danger mb-2 text-sm">
             Danger Zone
           </h2>
           {hasLinkedRecords ? (
@@ -448,7 +411,7 @@ export default async function CustomerDetailPage({
               </p>
               <button
                 type="submit"
-                className="bg-danger hover:bg-danger/90 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
+                className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
               >
                 Delete Customer
               </button>

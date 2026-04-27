@@ -6,18 +6,35 @@ export { buildFenceGraph } from "./builder";
 export { generateBom, type FenceType, type WoodStyle } from "./bom/index";
 export { segmentRun, countPanelsToBuy } from "./segmentation";
 export { calcConcretePerPost, calcTotalConcrete } from "./concrete";
-export { cuttingStockOptimizer, updateWasteCalibration, DEFAULT_WASTE_CALIBRATION } from "./bom/shared";
+export {
+  cuttingStockOptimizer,
+  updateWasteCalibration,
+  DEFAULT_WASTE_CALIBRATION,
+} from "./bom/shared";
 export type {
-  FenceProjectInput, FenceGraph, FenceEstimateResult,
-  BomItem, LaborDriver, RunInput, GateInput,
-  FenceNode, FenceEdge, ProductLineConfig,
-  CommercialSummary, QuoteMetadata, CustomerProposalSummary, ShoppingListGroup,
+  FenceProjectInput,
+  FenceGraph,
+  FenceEstimateResult,
+  ConfidenceReviewFieldId,
+  MaterialPriceMeta,
+  BomItem,
+  LaborDriver,
+  RunInput,
+  GateInput,
+  FenceNode,
+  FenceEdge,
+  ProductLineConfig,
+  CommercialSummary,
+  QuoteMetadata,
+  CustomerProposalSummary,
+  ShoppingListGroup,
 } from "./types";
 export {
-  PRODUCT_LINES, INSTALL_RULES, SOIL_CONCRETE_FACTORS,
+  PRODUCT_LINES,
+  INSTALL_RULES,
+  SOIL_CONCRETE_FACTORS,
 } from "./types";
 
-// Config system
 export type { OrgEstimatorConfig, DeepPartial } from "./config/types";
 export { DEFAULT_ESTIMATOR_CONFIG } from "./config/defaults";
 export {
@@ -25,15 +42,19 @@ export {
   resolveEstimatorConfigFromOrgSettings,
 } from "./config/resolveEstimatorConfig";
 
-// Quote package helpers
 export {
   buildQuoteMetadata,
   buildTermsAndConditions,
   groupBomIntoShoppingList,
   DEFAULT_TERMS,
 } from "./quotePackage";
+export {
+  assessEstimateMarginRisk,
+  grossMarginPctFromMarkup,
+  markupPctForTargetMargin,
+} from "./risk";
+export type { MarginRiskAssessment } from "./risk";
 
-// Closeout intelligence
 export { analyzeEstimateCloseout } from "./closeout/analyzeCloseout";
 export type {
   CloseoutActuals,
@@ -47,9 +68,13 @@ export type {
 
 import { buildFenceGraph } from "./builder";
 import { generateBom, type FenceType, type WoodStyle } from "./bom/index";
-import type { FenceProjectInput, FenceEstimateResult } from "./types";
+import type { FenceProjectInput, FenceEstimateResult, MaterialPriceMeta } from "./types";
 import type { OrgEstimatorConfig, DeepPartial } from "./config/types";
 import { mergeEstimatorConfig } from "./config/resolveEstimatorConfig";
+import {
+  assertValidEstimateOptions,
+  assertValidFenceProjectInput,
+} from "./estimateInput";
 
 export interface EstimateOptions {
   fenceType?: FenceType;
@@ -57,27 +82,34 @@ export interface EstimateOptions {
   laborRatePerHr?: number;
   wastePct?: number;
   priceMap?: Record<string, number>;
-  /** Org-level estimator config (merged over defaults if partial) */
+  priceMeta?: Record<string, MaterialPriceMeta>;
   estimatorConfig?: OrgEstimatorConfig | DeepPartial<OrgEstimatorConfig>;
 }
 
-/**
- * Full pipeline: contractor input → FenceGraph → BOM → result
- */
 export function estimateFence(
   input: FenceProjectInput,
   laborRateOrOptions: number | EstimateOptions = 65,
   wastePct = 0.05
 ): FenceEstimateResult {
-  const opts: EstimateOptions = typeof laborRateOrOptions === "number"
-    ? { laborRatePerHr: laborRateOrOptions, wastePct }
-    : laborRateOrOptions;
+  const opts: EstimateOptions =
+    typeof laborRateOrOptions === "number"
+      ? { laborRatePerHr: laborRateOrOptions, wastePct }
+      : laborRateOrOptions;
 
-  // Resolve full config: if caller provided a partial, merge over defaults
+  assertValidFenceProjectInput(input);
+  assertValidEstimateOptions({
+    laborRatePerHr: opts.laborRatePerHr ?? 65,
+    wastePct: opts.wastePct ?? wastePct,
+    fenceType: opts.fenceType ?? "vinyl",
+    woodStyle: opts.woodStyle,
+  });
+
   const config = opts.estimatorConfig
-    ? ("configVersion" in opts.estimatorConfig
-        ? opts.estimatorConfig as OrgEstimatorConfig
-        : mergeEstimatorConfig(opts.estimatorConfig as DeepPartial<OrgEstimatorConfig>))
+    ? "configVersion" in opts.estimatorConfig
+      ? (opts.estimatorConfig as OrgEstimatorConfig)
+      : mergeEstimatorConfig(
+          opts.estimatorConfig as DeepPartial<OrgEstimatorConfig>
+        )
     : mergeEstimatorConfig(null);
 
   const graph = buildFenceGraph(input, config);
@@ -87,8 +119,8 @@ export function estimateFence(
     laborRatePerHr: opts.laborRatePerHr ?? 65,
     wastePct: opts.wastePct ?? wastePct,
     priceMap: opts.priceMap ?? {},
+    priceMeta: opts.priceMeta ?? {},
     estimatorConfig: config,
-    // Pass through regulatory costs from project input
     permitCost: input.permitCost,
     inspectionCost: input.inspectionCost,
     engineeringCost: input.engineeringCost,

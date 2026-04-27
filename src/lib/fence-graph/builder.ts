@@ -16,6 +16,7 @@ import { segmentRun, countPanelsToBuy } from "./segmentation";
 import { calcConcretePerPost } from "./concrete";
 import type { OrgEstimatorConfig } from "./config/types";
 import { DEFAULT_ESTIMATOR_CONFIG } from "./config/defaults";
+import { buildScopeConfidence, normalizeSiteComplexity } from "./siteComplexity";
 
 let nodeCounter = 0;
 let edgeCounter = 0;
@@ -152,6 +153,7 @@ export function buildFenceGraph(input: FenceProjectInput, config: OrgEstimatorCo
 
   const rules: InstallRules = { ...INSTALL_RULES[input.postSize] };
   const soilFactor = SOIL_CONCRETE_FACTORS[input.soilType];
+  const siteComplexity = normalizeSiteComplexity(input.siteComplexity);
   const site = {
     soilType: input.soilType,
     soilConcreteFactor: soilFactor,
@@ -159,8 +161,10 @@ export function buildFenceGraph(input: FenceProjectInput, config: OrgEstimatorCo
     floodZone: false,
     existingFenceRemoval: input.existingFenceRemoval ?? false,
     surfaceType: "ground" as const,
-    obstacleCt: 0,
+    obstacleCt: siteComplexity?.obstacles ?? 0,
+    siteComplexity,
   };
+  const scopeConfidence = buildScopeConfidence(input);
 
   // Florida sandy soil: force depth
   if (input.soilType === "sandy" || input.soilType === "wet") {
@@ -311,8 +315,10 @@ export function buildFenceGraph(input: FenceProjectInput, config: OrgEstimatorCo
     audit: {
       extractionMethod: "manual_input",
       extractionDate: new Date().toISOString(),
-      overallConfidence: 0.95,
+      overallConfidence: scopeConfidence.confidence,
       manualOverrides: 0,
+      confidenceNotes: scopeConfidence.notes,
+      confidenceReviewGates: scopeConfidence.reviewGates,
     },
   };
 }

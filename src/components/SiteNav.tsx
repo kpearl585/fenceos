@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
+import { getSupabasePublicKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 export default function SiteNav() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -11,9 +12,16 @@ export default function SiteNav() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
+    const url = getSupabaseUrl();
+    const key = getSupabasePublicKey();
+    if (!url || !key) {
+      setChecked(true);
+      return;
+    }
+
     const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      url,
+      key
     );
     supabase.auth.getUser().then(({ data }) => {
       setLoggedIn(!!data.user);

@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendEmail, trialDay7Email, trialDay12Email, trialExpiredEmail, trialWinbackEmail } from "@/lib/email";
+import {
+  sendEmail,
+  trialDay7Email,
+  trialDay12Email,
+  trialExpiredEmail,
+  trialWinbackEmail,
+} from "@/lib/email";
+import { isEmailSuppressed } from "@/lib/email/suppressions";
 import * as Sentry from "@sentry/nextjs";
+import { getSupabaseServiceKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 function admin() {
+  const url = getSupabaseUrl();
+  const key = getSupabaseServiceKey();
+
+  if (!url || !key) {
+    throw new Error("Missing Supabase admin env vars for trial-emails cron.");
+  }
+
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    url,
+    key
   );
 }
 
@@ -19,7 +34,6 @@ export async function GET(req: NextRequest) {
   const supabase = admin();
   const now = new Date();
 
-  // ── Active trial orgs ──────────────────────────────────────────────────────
   const { data: trialOrgs, error: trialErr } = await supabase
     .from("organizations")
     .select("id, name, trial_ends_at, trial_day7_sent, trial_day12_sent, trial_expired_sent")
@@ -30,23 +44,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch trial orgs" }, { status: 500 });
   }
 
-  // ── Expired orgs eligible for win-back (expired, not yet on paid plan, within 30 days) ──
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000).toISOString();
-  const sevenDaysAgo  = new Date(now.getTime() - 7  * 86400000).toISOString();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
 
   const { data: expiredOrgs } = await supabase
     .from("organizations")
     .select("id, name, trial_ends_at, trial_expired_sent, trial_winback_sent")
     .eq("plan", "trial")
     .not("trial_expired_sent", "is", null)
-    .gte("trial_ends_at", thirtyDaysAgo)   // expired within last 30 days
-    .lte("trial_ends_at", sevenDaysAgo)    // but at least 7 days ago
-    .is("trial_winback_sent", null);       // win-back not yet sent
+    .gte("trial_ends_at", thirtyDaysAgo)
+    .lte("trial_ends_at", sevenDaysAgo)
+    .is("trial_winback_sent", null);
 
-  let day7Sent = 0, day12Sent = 0, expiredSent = 0, winbackSent = 0;
+  let day7Sent = 0;
+  let day12Sent = 0;
+  let expiredSent = 0;
+  let winbackSent = 0;
   const errors: { orgId: string; step: string; message: string }[] = [];
 
-  // ── Active trial sequence ─────────────────────────────────────────────────
   for (const org of trialOrgs) {
     try {
       const endsAt = new Date(org.trial_ends_at);
@@ -60,30 +75,39 @@ export async function GET(req: NextRequest) {
         .single();
 
       if (!owner?.email) continue;
+      if (await isEmailSuppressed(owner.email)) continue;
 
-      // Day 7 — 7 or fewer days remaining (but trial still active).
-      // `<=` instead of `===` so a missed cron run doesn't permanently skip
-      // the reminder. Idempotency guaranteed by the `!trial_day7_sent` guard.
       if (daysLeft <= 7 && daysLeft > 2 && !org.trial_day7_sent) {
-        const tpl = trialDay7Email({ email: owner.email, orgName: org.name, trialEndsAt: org.trial_ends_at });
+        const tpl = trialDay7Email({
+          email: owner.email,
+          orgName: org.name,
+          trialEndsAt: org.trial_ends_at,
+        });
         await sendEmail(tpl);
-        await supabase.from("organizations").update({ trial_day7_sent: now.toISOString() }).eq("id", org.id);
+        await supabase
+          .from("organizations")
+          .update({ trial_day7_sent: now.toISOString() })
+          .eq("id", org.id);
         day7Sent++;
       }
 
-      // Day 12 — 2 or fewer days remaining (but trial still active).
       if (daysLeft <= 2 && daysLeft > 0 && !org.trial_day12_sent) {
         const tpl = trialDay12Email({ email: owner.email, orgName: org.name });
         await sendEmail(tpl);
-        await supabase.from("organizations").update({ trial_day12_sent: now.toISOString() }).eq("id", org.id);
+        await supabase
+          .from("organizations")
+          .update({ trial_day12_sent: now.toISOString() })
+          .eq("id", org.id);
         day12Sent++;
       }
 
-      // Expired — 0 or negative days left
       if (daysLeft <= 0 && !org.trial_expired_sent) {
         const tpl = trialExpiredEmail({ email: owner.email, orgName: org.name });
         await sendEmail(tpl);
-        await supabase.from("organizations").update({ trial_expired_sent: now.toISOString() }).eq("id", org.id);
+        await supabase
+          .from("organizations")
+          .update({ trial_expired_sent: now.toISOString() })
+          .eq("id", org.id);
         expiredSent++;
       }
     } catch (err) {
@@ -96,8 +120,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── Win-back sequence (7 days post-expiry) ────────────────────────────────
-  for (const org of (expiredOrgs ?? [])) {
+  for (const org of expiredOrgs ?? []) {
     try {
       const { data: owner } = await supabase
         .from("users")
@@ -107,10 +130,14 @@ export async function GET(req: NextRequest) {
         .single();
 
       if (!owner?.email) continue;
+      if (await isEmailSuppressed(owner.email)) continue;
 
       const tpl = trialWinbackEmail({ email: owner.email, orgName: org.name });
       await sendEmail(tpl);
-      await supabase.from("organizations").update({ trial_winback_sent: now.toISOString() }).eq("id", org.id);
+      await supabase
+        .from("organizations")
+        .update({ trial_winback_sent: now.toISOString() })
+        .eq("id", org.id);
       winbackSent++;
     } catch (err) {
       const message = err instanceof Error ? err.message : "unknown error";
@@ -124,8 +151,11 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    day7Sent, day12Sent, expiredSent, winbackSent,
+    day7Sent,
+    day12Sent,
+    expiredSent,
+    winbackSent,
     errorCount: errors.length,
-    errors: errors.slice(0, 10), // cap payload; full list is in Sentry
+    errors: errors.slice(0, 10),
   });
 }

@@ -134,8 +134,8 @@ export async function POST(request: NextRequest) {
       legalTerms: est.legal_terms_snapshot || null,
       orgName,
       logoUrl: branding?.logo_url || null,
-      primaryColor: branding?.primary_color || "#1e3a5f",
-      accentColor: branding?.accent_color || "#f59e0b",
+      primaryColor: branding?.primary_color || "#080808",
+      accentColor: branding?.accent_color || "#16A34A",
       fontFamily: branding?.font_family || "helvetica",
       footerNote: branding?.footer_note || null,
     };

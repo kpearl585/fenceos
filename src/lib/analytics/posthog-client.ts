@@ -20,8 +20,8 @@ export function initPostHogClient(): void {
   if (typeof window === "undefined") return;
   if (initialized) return;
 
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
+  const host = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com").trim();
 
   if (!key) {
     // Soft-skip. Mirror the pattern used by the Sentry init: don't

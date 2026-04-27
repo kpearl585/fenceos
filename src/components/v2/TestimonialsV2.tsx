@@ -27,14 +27,14 @@ export default function TestimonialsV2() {
   ];
 
   return (
-    <section className="py-20 px-6 bg-white">
+    <section className="bg-background py-20 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-display">
+          <h2 className="mb-4 font-display text-3xl font-bold text-text md:text-4xl">
             Real Contractors. Real Results.
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-muted">
             Join 47+ fence contractors already protecting their margins
           </p>
         </div>
@@ -42,7 +42,7 @@ export default function TestimonialsV2() {
         {/* Testimonials grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {testimonials.map((t, i) => (
-            <div key={i} className="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-green-500 hover:shadow-lg transition-all">
+            <div key={i} className="rounded-xl border-2 border-border bg-surface p-6 transition-all hover:border-accent hover:shadow-lg">
               {/* Stars */}
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
@@ -53,38 +53,38 @@ export default function TestimonialsV2() {
               </div>
 
               {/* Quote */}
-              <p className="text-gray-900 leading-relaxed mb-6">"{t.quote}"</p>
+              <p className="mb-6 leading-relaxed text-text">"{t.quote}"</p>
 
               {/* Person */}
-              <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold">
+              <div className="flex items-center gap-3 border-t border-border pt-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 font-bold text-accent-light">
                   {t.avatar}
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-sm">{t.name}</p>
-                  <p className="text-xs text-gray-600">{t.company}</p>
-                  <p className="text-xs text-gray-500">{t.location}</p>
+                  <p className="text-sm font-bold text-text">{t.name}</p>
+                  <p className="text-xs text-muted">{t.company}</p>
+                  <p className="text-xs text-muted">{t.location}</p>
                 </div>
               </div>
 
               {/* Result badge */}
-              <div className="mt-4 inline-flex items-center gap-2 bg-green-100 border border-green-200 rounded-full px-3 py-1">
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                <span className="text-green-700 text-xs font-semibold">{t.result}</span>
+                <span className="text-xs font-semibold text-accent-light">{t.result}</span>
               </div>
             </div>
           ))}
         </div>
 
         {/* CTA */}
-        <div className="text-center bg-green-50 border-2 border-green-500 rounded-xl p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-2 font-display">Ready to Stop Losing Money?</h3>
-          <p className="text-gray-600 mb-6">Join these contractors and start protecting your margins today</p>
+        <div className="rounded-xl border-2 border-accent/40 bg-accent/10 p-8 text-center">
+          <h3 className="mb-2 font-display text-2xl font-bold text-text">Ready to Stop Losing Money?</h3>
+          <p className="mb-6 text-muted">Join these contractors and start protecting your margins today</p>
           <a
             href="#pricing"
-            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold text-lg px-8 py-4 rounded-lg transition-all shadow-lg"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-8 py-4 text-lg font-bold text-accent-foreground shadow-lg transition-all hover:bg-accent/90"
           >
             Start Your Free Trial
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

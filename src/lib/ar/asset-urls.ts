@@ -1,6 +1,7 @@
 // Constructs public Supabase Storage URLs for AR assets stored in the ar-assets bucket.
+import { getSupabaseUrl } from "@/lib/supabase/env";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_URL = getSupabaseUrl();
 
 export interface ARAssetUrls {
   glbUrl: string;

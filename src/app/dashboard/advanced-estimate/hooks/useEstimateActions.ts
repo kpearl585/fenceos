@@ -196,12 +196,14 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
     setConvertStatus("converting");
     setConvertError(null);
     const res = await createEstimateFromFenceGraph({
+      input,
       result,
       projectName,
       laborRate,
       markupPct,
-      totalLF,
+      wastePct,
       fenceType,
+      woodStyle,
       customer,
     });
     if (isPaywallBlock(res)) {
@@ -217,7 +219,7 @@ export function useEstimateActions(args: UseEstimateActionsArgs): UseEstimateAct
       setConvertError(res.error ?? "Conversion failed");
       setTimeout(() => setConvertStatus("idle"), CONVERT_ERROR_RESET_MS);
     }
-  }, [result, projectName, laborRate, markupPct, totalLF, fenceType, customer, router]);
+  }, [input, result, projectName, laborRate, markupPct, wastePct, fenceType, woodStyle, customer, router]);
 
   return {
     saveStatus, pdfStatus, proposalStatus, convertStatus, convertError,

@@ -54,6 +54,18 @@ export interface AluminumLaborRates {
   concretePour: number;
 }
 
+export type SiteComplexityBand =
+  | "easy"
+  | "standard"
+  | "moderate"
+  | "difficult"
+  | "very_difficult";
+
+export interface AdaptiveLaborBucket {
+  multiplier: number;
+  sampleCount: number;
+}
+
 // ── Main config type ─────────────────────────────────────────────
 
 export interface OrgEstimatorConfig {
@@ -166,5 +178,15 @@ export interface OrgEstimatorConfig {
     key: string;              // region identifier (e.g., "florida", "west")
     laborMultiplier: number;   // 1.0 = base, 1.15 = 15% more
     materialMultiplier: number; // applied to default prices
+  };
+
+  /** Learned labor drift by fence type and site-complexity band */
+  adaptiveLabor: {
+    byFenceType: {
+      vinyl: Record<SiteComplexityBand, AdaptiveLaborBucket>;
+      wood: Record<SiteComplexityBand, AdaptiveLaborBucket>;
+      chain_link: Record<SiteComplexityBand, AdaptiveLaborBucket>;
+      aluminum: Record<SiteComplexityBand, AdaptiveLaborBucket>;
+    };
   };
 }

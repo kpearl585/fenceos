@@ -59,18 +59,18 @@ describe("Default config", () => {
 describe("mergeEstimatorConfig", () => {
   it("null overrides should return defaults", () => {
     const config = mergeEstimatorConfig(null);
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
     expect(config.concrete.bagYieldCuFt).toBe(0.60);
   });
 
   it("undefined overrides should return defaults", () => {
     const config = mergeEstimatorConfig(undefined);
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
   });
 
   it("empty object overrides should return defaults", () => {
     const config = mergeEstimatorConfig({});
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
     expect(config.region.key).toBe("base");
   });
 
@@ -102,9 +102,9 @@ describe("mergeEstimatorConfig", () => {
     });
     expect(config.overhead.fixed.setupHrs).toBe(2.5);
     // layoutHrs should still be default
-    expect(config.overhead.fixed.layoutHrs).toBe(0.75);
+    expect(config.overhead.fixed.layoutHrs).toBe(0.5);
     // perDay should be untouched
-    expect(config.overhead.perDay.cleanupHrs).toBe(0.5);
+    expect(config.overhead.perDay.cleanupHrs).toBe(0.35);
   });
 });
 
@@ -122,8 +122,8 @@ describe("Sibling preservation", () => {
     // Vinyl changed
     expect(config.labor.vinyl.holeDig).toBe(0.50);
     // Wood untouched
-    expect(config.labor.wood.holeDig).toBe(0.25);
-    expect(config.labor.wood.railInstall).toBe(0.10);
+    expect(config.labor.wood.holeDig).toBe(0.18);
+    expect(config.labor.wood.railInstall).toBe(0.07);
     // Chain link untouched
     expect(config.labor.chain_link.fabricStretch).toBe(1.50);
     // Aluminum untouched
@@ -137,11 +137,11 @@ describe("Sibling preservation", () => {
       },
     });
     expect(config.labor.vinyl.cutting).toBe(0.25);
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
-    expect(config.labor.vinyl.postSet).toBe(0.20);
-    expect(config.labor.vinyl.sectionInstall).toBe(0.50);
-    expect(config.labor.vinyl.racking).toBe(0.30);
-    expect(config.labor.vinyl.concretePour).toBe(0.08);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
+    expect(config.labor.vinyl.postSet).toBe(0.17);
+    expect(config.labor.vinyl.sectionInstall).toBe(0.43);
+    expect(config.labor.vinyl.racking).toBe(0.26);
+    expect(config.labor.vinyl.concretePour).toBe(0.07);
   });
 
   it("overriding gateLaborBase should not affect gateWidthMultipliers", () => {
@@ -165,7 +165,7 @@ describe("Malformed config handling", () => {
         vinyl: { holeDig: "fast" as unknown as number },
       },
     });
-    expect(config.labor.vinyl.holeDig).toBe(0.25); // default preserved
+    expect(config.labor.vinyl.holeDig).toBe(0.21); // default preserved
   });
 
   it("NaN should keep default", () => {
@@ -186,7 +186,7 @@ describe("Malformed config handling", () => {
     const config = mergeEstimatorConfig({
       labor: [1, 2, 3] as unknown as DeepPartial<OrgEstimatorConfig>["labor"],
     });
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
   });
 
   it("null nested value should keep defaults", () => {
@@ -195,14 +195,14 @@ describe("Malformed config handling", () => {
         vinyl: null as unknown as DeepPartial<OrgEstimatorConfig>["labor"],
       },
     } as DeepPartial<OrgEstimatorConfig>);
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
   });
 
   it("completely garbage input should return defaults", () => {
     const config = mergeEstimatorConfig(
       "garbage" as unknown as DeepPartial<OrgEstimatorConfig>
     );
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
     expect(config.concrete.bagYieldCuFt).toBe(0.60);
   });
 });
@@ -227,7 +227,7 @@ describe("Immutability", () => {
     const config = mergeEstimatorConfig(null);
     config.labor.vinyl.holeDig = 999;
 
-    expect(DEFAULT_ESTIMATOR_CONFIG.labor.vinyl.holeDig).toBe(0.25);
+    expect(DEFAULT_ESTIMATOR_CONFIG.labor.vinyl.holeDig).toBe(0.21);
   });
 });
 
@@ -238,12 +238,12 @@ describe("Immutability", () => {
 describe("resolveEstimatorConfigFromOrgSettings", () => {
   it("null orgSettings should return defaults", () => {
     const config = resolveEstimatorConfigFromOrgSettings(null);
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
   });
 
   it("missing estimator_config_json should return defaults", () => {
     const config = resolveEstimatorConfigFromOrgSettings({});
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
   });
 
   it("valid partial JSON should merge correctly", () => {
@@ -254,7 +254,7 @@ describe("resolveEstimatorConfigFromOrgSettings", () => {
       },
     });
     expect(config.labor.vinyl.holeDig).toBe(0.35);
-    expect(config.labor.vinyl.postSet).toBe(0.20); // default preserved
+    expect(config.labor.vinyl.postSet).toBe(0.17); // default preserved
     expect(config.region.key).toBe("florida");
     expect(config.region.materialMultiplier).toBe(1.08);
     expect(config.region.laborMultiplier).toBe(1.0); // default preserved
@@ -264,14 +264,14 @@ describe("resolveEstimatorConfigFromOrgSettings", () => {
     const config = resolveEstimatorConfigFromOrgSettings({
       estimator_config_json: "not an object",
     });
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
   });
 
   it("number estimator_config_json should return defaults", () => {
     const config = resolveEstimatorConfigFromOrgSettings({
       estimator_config_json: 42,
     });
-    expect(config.labor.vinyl.holeDig).toBe(0.25);
+    expect(config.labor.vinyl.holeDig).toBe(0.21);
   });
 });
 

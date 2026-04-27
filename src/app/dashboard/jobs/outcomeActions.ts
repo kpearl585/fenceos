@@ -130,7 +130,7 @@ export async function getJobOutcome(jobId: string): Promise<JobOutcome | null> {
 
   if (error) {
     // Not found is OK
-    if (error.code === "PGRST116") {
+    if (error.code === "PGRST116" || error.code === "PGRST205") {
       return null;
     }
     console.error("Error fetching job outcome:", error);

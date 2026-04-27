@@ -177,25 +177,12 @@ export default async function JobDetailPage({
   }
 
   /*  computed  */
-  const customer = (
-    job.customers as unknown as {
-      name: string;
-      email: string | null;
-      phone: string | null;
-      address: string | null;
-      city: string | null;
-      state: string | null;
-    }[]
-  )?.[0];
-  const est = (
-    job.estimates as unknown as {
-      fence_type: string;
-      linear_feet: number;
-      gate_count: number;
-      title: string;
-      target_margin_pct: number;
-    }[]
-  )?.[0];
+  const customer = Array.isArray(job.customers)
+    ? job.customers[0]
+    : job.customers;
+  const est = Array.isArray(job.estimates)
+    ? job.estimates[0]
+    : job.estimates;
   const targetMarginPct = Number(est?.target_margin_pct) || 0.35;
 
   const isOwner = profile.role === "owner";
@@ -1145,7 +1132,7 @@ export default async function JobDetailPage({
           </div>
 
           {/* Action */}
-          {job.status === "active" && canExecute && (
+          {job.status === "active" && isOwner && (
             <div>
               <MarkPaidModal
                 jobId={job.id}

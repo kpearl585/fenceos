@@ -50,8 +50,8 @@ describe("Config-driven labor rates", () => {
     const slowDig = slowResult.laborDrivers.find(l => l.activity === "Hole Digging")!;
 
     expect(slowDig.rateHrs).toBe(0.50);
-    expect(defaultDig.rateHrs).toBe(0.25);
-    expect(slowDig.totalHrs).toBe(defaultDig.totalHrs * 2);
+    expect(defaultDig.rateHrs).toBe(0.21);
+    expect(slowDig.totalHrs).toBeCloseTo(defaultDig.count * 0.50, 6);
   });
 
   it("wood: config labor rates flow through", () => {

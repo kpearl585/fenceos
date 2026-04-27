@@ -152,30 +152,25 @@ export function generateVinylBom(
     audit.push(`Pre-fab system: ${finalPanelCount} panels (${totalPanels} base + slope adj + waste)`);
   }
 
-  // Rails — cutting-stock optimizer using section widths (post-to-post spans), not run lengths
-  const sectionWidths_ft: number[] = [];
-  for (const edge of segEdges) {
-    if (!edge.sections) continue;
-    for (const sec of edge.sections) {
-      // Each section needs railCount rails, each rail = section width
-      for (let r = 0; r < productLine.railCount; r++) {
-        sectionWidths_ft.push(sec.width_in / 12);
+  // Rails — only component privacy systems buy separate rails.
+  // Pre-fab picket panels already include their rails, so adding separate
+  // rail stock/brackets would double-count material.
+  if (isComponentSystem) {
+    const sectionWidths_ft: number[] = [];
+    for (const edge of segEdges) {
+      if (!edge.sections) continue;
+      for (const sec of edge.sections) {
+        // Each section needs railCount rails, each rail = section width
+        for (let r = 0; r < productLine.railCount; r++) {
+          sectionWidths_ft.push(sec.width_in / 12);
+        }
       }
     }
-  }
-  const railCutPlan = cuttingStockOptimizer(sectionWidths_ft, 8, wastePct);
-  bom.push(makeBomItem("VINYL_RAIL_8FT", "Vinyl Rail 8ft", "rails", "ea", railCutPlan.stockPiecesNeeded, 0.92,
-    railCutPlan.explanation, p("VINYL_RAIL_8FT")));
-
-  // Rail brackets — only for plain-rail (picket) systems; routed privacy rails slot into posts (no brackets)
-  // Each section has railCount rails, each rail needs 2 brackets (one at each post end)
-  if (productLine.railType === "plain") {
-    const totalSectionsForBrackets = segEdges.reduce((s, e) => s + (e.sections?.length ?? 0), 0);
-    const bracketCount = totalSectionsForBrackets * productLine.railCount * 2;
-    bom.push(makeBomItem("VINYL_RAIL_BRACKET", "Vinyl Rail Bracket (L-bracket)", "vinyl_hardware", "ea",
-      bracketCount, 0.98,
-      `${totalSectionsForBrackets} sections × ${productLine.railCount} rails × 2 ends (plain-rail system)`, p("VINYL_RAIL_BRACKET")));
-    audit.push(`Vinyl picket plain-rail: ${bracketCount} L-brackets needed`);
+    const railCutPlan = cuttingStockOptimizer(sectionWidths_ft, 8, wastePct);
+    bom.push(makeBomItem("VINYL_RAIL_8FT", "Vinyl Rail 8ft", "rails", "ea", railCutPlan.stockPiecesNeeded, 0.92,
+      railCutPlan.explanation, p("VINYL_RAIL_8FT")));
+  } else {
+    audit.push("Pre-fab panel system: panel pricing includes rails; skipping separate rail stock and brackets");
   }
 
   // Concrete + gravel — waste already applied inside calcTotalConcrete()

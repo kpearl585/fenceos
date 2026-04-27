@@ -4,20 +4,20 @@
 // estimate workflow: BOM line items → estimate record → redirect to
 // estimate detail page where contractor can review, send, and get signed.
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { RateLimiters } from "@/lib/security/rate-limit";
-import { enforceBillingGate } from "@/lib/subscription";
+import type { FenceEstimateResult, FenceProjectInput, FenceType, WoodStyle } from "@/lib/fence-graph/engine";
+import { recomputeEstimateForOrg, requireOrgEstimateContext } from "./serverEstimate";
+import { validateEstimateBeforeConvert } from "./validation";
 import { getOrgMarginTargets, marginStatus } from "@/lib/marginTargets";
-import type { FenceEstimateResult } from "@/lib/fence-graph/types";
-import { toEstimatesFenceType } from "@/lib/fence-graph/enum-normalizers";
 
 interface ConvertInput {
-  result: FenceEstimateResult;
+  input: FenceProjectInput;
+  result?: FenceEstimateResult;
   projectName: string;
   laborRate: number;
   markupPct: number;
-  totalLF: number;
-  fenceType: string;
+  wastePct: number;
+  fenceType: FenceType;
+  woodStyle?: WoodStyle;
   customer: {
     name: string;
     address: string;
@@ -31,43 +31,40 @@ export async function createEstimateFromFenceGraph(
   input: ConvertInput
 ): Promise<{ success: boolean; estimateId?: string; error?: string }> {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: "Not authenticated" };
+    const context = await requireOrgEstimateContext();
+    if (!context) return { success: false, error: "Not authenticated" };
 
-    const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("users").select("id, org_id").eq("auth_id", user.id).single();
-    if (!profile) return { success: false, error: "Profile not found" };
-
-    // ✅ BILLING: Subscription + monthly cap gate.
-    const billingBlock = await enforceBillingGate(profile.org_id);
-    if (billingBlock) return billingBlock;
-
-    // ✅ SECURITY: Rate limit estimate conversion (creates DB records)
-    const rateLimit = RateLimiters.estimateCreation(profile.org_id);
-    if (!rateLimit.success) {
-      return { success: false, error: rateLimit.error ?? "Rate limit exceeded. Please try again later." };
+    const { input: projectInput, projectName, laborRate, markupPct, wastePct, fenceType, woodStyle, customer } = input;
+    const marginTargets = await getOrgMarginTargets(context.orgId);
+    const { result, totalLF } = await recomputeEstimateForOrg(context, {
+      input: projectInput,
+      laborRate,
+      wastePctPercent: wastePct,
+      fenceType,
+      woodStyle,
+    });
+    const conversionError = validateEstimateBeforeConvert({
+      projectName,
+      customerName: customer.name,
+      markupPct,
+      targetMarginPct: Math.round(marginTargets.target * 100),
+      result,
+    });
+    if (conversionError) {
+      return { success: false, error: conversionError.message };
     }
-
-    const { result, projectName, laborRate, markupPct, totalLF, fenceType, customer } = input;
     const bidPrice = Math.round(result.totalCost * (1 + markupPct / 100));
     const grossProfit = bidPrice - result.totalCost;
-    // Store as decimal (0.259) to match the format used by createEstimate/sendQuote
-    const grossMarginPct = bidPrice > 0 ? Math.round((grossProfit / bidPrice) * 1000) / 1000 : 0;
-    // margin_status bucket follows the org's configured target from Settings
-    // rather than a hardcoded 30%/20% split. So a Pearl Labs estimate with
-    // margin at 33% correctly reads "warning" if their target is 35%, not "good".
-    const marginTargets = await getOrgMarginTargets(profile.org_id);
+    const grossMarginRatioRaw = bidPrice > 0 ? grossProfit / bidPrice : 0;
+    const grossMarginPct = Math.round(grossMarginRatioRaw * 1000) / 10;
+    const grossMarginRatio = grossMarginPct / 100;
 
-    // ── 1. Create or find customer ──────────────────────────────────
     let customerId: string | null = null;
     if (customer.name.trim()) {
-      // Check if customer already exists (by name + org)
-      const { data: existing } = await admin
+      const { data: existing } = await context.admin
         .from("customers")
         .select("id")
-        .eq("org_id", profile.org_id)
+        .eq("org_id", context.orgId)
         .ilike("name", customer.name.trim())
         .limit(1)
         .single();
@@ -75,10 +72,10 @@ export async function createEstimateFromFenceGraph(
       if (existing) {
         customerId = existing.id;
       } else {
-        const { data: newCust, error: custErr } = await admin
+        const { data: newCust, error: custErr } = await context.admin
           .from("customers")
           .insert({
-            org_id: profile.org_id,
+            org_id: context.orgId,
             name: customer.name.trim(),
             phone: customer.phone || null,
             address: customer.address || null,
@@ -96,31 +93,30 @@ export async function createEstimateFromFenceGraph(
       return { success: false, error: "Customer name is required to create an estimate." };
     }
 
-    // ── 2. Create estimate record ────────────────────────────────────
-    const { data: est, error: estErr } = await admin
+    const { data: est, error: estErr } = await context.admin
       .from("estimates")
       .insert({
-        org_id: profile.org_id,
-        created_by: profile.id,
+        org_id: context.orgId,
+        created_by: context.profileId,
         customer_id: customerId,
         title: projectName,
         status: "draft",
-        fence_type: toEstimatesFenceType(fenceType),
+        fence_type: fenceType,
         linear_feet: totalLF,
-        gate_count: result.bom.filter(b => b.category === "gates").reduce((s, b) => s + b.qty, 0),
+        gate_count: result.bom.filter((item) => item.category === "gates").reduce((sum, item) => sum + item.qty, 0),
         post_spacing: 8,
-        height: 6,
-        waste_factor_pct: result.probabilisticWastePct,  // decimal (0.05), matches createEstimate format
-        target_margin_pct: grossMarginPct,              // decimal (0.259), NOT markup% — matches sendQuote margin guard
+        height: projectInput.fenceHeight,
+        waste_factor_pct: Math.round(result.probabilisticWastePct * 100),
+        target_margin_pct: marginTargets.target,
         labor_rate_per_hr: laborRate,
         total: bidPrice,
-        margin_pct: grossMarginPct,
+        margin_pct: grossMarginRatio,
         materials_subtotal: result.totalMaterialCost,
         labor_subtotal: result.totalLaborCost,
         estimated_cost: result.totalCost,
         gross_profit: grossProfit,
-        gross_margin_pct: grossMarginPct,
-        margin_status: marginStatus(grossMarginPct, marginTargets),
+        gross_margin_pct: grossMarginRatio,
+        margin_status: marginStatus(grossMarginRatio, marginTargets),
         notes: `Generated by FenceGraph Advanced Estimator. Confidence: ${Math.round((result.overallConfidence ?? 0) * 100)}%. Total LF: ${totalLF}. ${result.bom.length} BOM line items.`,
       })
       .select("id")
@@ -128,16 +124,15 @@ export async function createEstimateFromFenceGraph(
 
     if (estErr) return { success: false, error: `Estimate creation failed: ${estErr.message}` };
 
-    // ── 3. Insert BOM as line items ──────────────────────────────────
     const materialRows = result.bom
-      .filter(item => item.qty > 0)
+      .filter((item) => item.qty > 0)
       .map((item, idx) => {
         const unitPrice = item.unitCost != null ? Math.round(item.unitCost * (1 + markupPct / 100) * 100) / 100 : 0;
         const extendedCost = item.extCost ?? 0;
         const extendedPrice = unitPrice * item.qty;
         return {
           estimate_id: est.id,
-          org_id: profile.org_id,
+          org_id: context.orgId,
           sku: item.sku,
           description: item.name,
           quantity: item.qty,
@@ -153,16 +148,15 @@ export async function createEstimateFromFenceGraph(
         };
       });
 
-    // Labor line item
     const laborUnitPrice = result.totalLaborHrs > 0
       ? Math.round((result.totalLaborCost / result.totalLaborHrs) * (1 + markupPct / 100) * 100) / 100
       : 0;
 
     materialRows.push({
       estimate_id: est.id,
-      org_id: profile.org_id,
+      org_id: context.orgId,
       sku: "",
-      description: `Labor — ${result.totalLaborHrs}h @ $${laborRate}/hr (${result.laborDrivers.filter(l => l.count > 0).map(l => `${l.activity}: ${l.totalHrs.toFixed(1)}h`).join(", ")})`,
+      description: `Labor — ${result.totalLaborHrs}h @ $${laborRate}/hr (${result.laborDrivers.filter((driver) => driver.count > 0).map((driver) => `${driver.activity}: ${driver.totalHrs.toFixed(1)}h`).join(", ")})`,
       quantity: result.totalLaborHrs,
       unit: "hr",
       unit_cost: laborRate,
@@ -176,13 +170,13 @@ export async function createEstimateFromFenceGraph(
     });
 
     if (materialRows.length > 0) {
-      const { error: lineErr } = await admin
+      const { error: lineErr } = await context.admin
         .from("estimate_line_items")
         .insert(materialRows);
 
       if (lineErr) {
-        // Non-fatal — estimate was created, line items failed
-        console.error("Line items insert error:", lineErr);
+        await context.admin.from("estimates").delete().eq("id", est.id).eq("org_id", context.orgId);
+        return { success: false, error: `Estimate line item creation failed: ${lineErr.message}` };
       }
     }
 

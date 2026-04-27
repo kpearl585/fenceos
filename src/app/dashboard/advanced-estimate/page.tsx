@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AdvancedEstimateClient from "./AdvancedEstimateClient";
-import { getOrgMaterialPrices, getOrgCalibration, getOrgEstimatorConfig } from "./actions";
+import { getOrgMaterialPricing, getOrgCalibration, getOrgEstimatorConfig } from "./actions";
 import { checkAiReadiness } from "./aiActions";
+import { ensureProfile } from "@/lib/bootstrap";
+import { getOrgMarginTargets } from "@/lib/marginTargets";
 
 export const metadata = { title: "Advanced Estimate — FenceEstimatePro" };
 
@@ -10,13 +12,16 @@ export default async function AdvancedEstimatePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const profile = await ensureProfile(supabase, user);
 
-  const [priceMap, calibration, aiReadiness, estimatorConfig] = await Promise.all([
-    getOrgMaterialPrices(),
+  const [pricing, calibration, aiReadiness, estimatorConfig, marginTargets] = await Promise.all([
+    getOrgMaterialPricing(),
     getOrgCalibration(),
     checkAiReadiness(),
     getOrgEstimatorConfig(),
+    getOrgMarginTargets(profile.org_id),
   ]);
+  const { priceMap, priceMeta } = pricing;
   const hasPrices = Object.keys(priceMap).length > 0;
 
   return (
@@ -39,17 +44,12 @@ export default async function AdvancedEstimatePage() {
           )}
         </div>
         {!hasPrices && (
-          /* Softened from a red-alert "dollar amounts will show $0" banner.
-             The BOM engines layer DEFAULT_PRICES_BASE under the org map
-             via mergePrices(), so totals are real — just not tuned to
-             this contractor's suppliers. No reason to scare a new user
-             away from their first estimate. */
           <div className="mt-3 flex items-start gap-2 bg-accent/10 border border-accent/20 rounded-lg px-4 py-3">
             <span className="text-accent-light text-sm">
-              Using default material prices so you can price jobs right away.
-              Update your{" "}
+              Using fallback default prices for draft estimating.
+              Sendable quotes should use current supplier pricing from your{" "}
               <a href="/dashboard/materials" className="underline font-semibold hover:text-accent transition-colors duration-150">Materials</a>{" "}
-              catalog anytime to match your supplier costs.
+              catalog so the estimator can trust the number.
             </span>
           </div>
         )}
@@ -62,10 +62,12 @@ export default async function AdvancedEstimatePage() {
       )}
       <AdvancedEstimateClient
         priceMap={priceMap}
+        priceMeta={priceMeta}
         defaultWastePct={Math.round(calibration.currentFactor * 100)}
         aiAvailable={aiReadiness.available}
         estimatorConfig={estimatorConfig.config}
         hasCustomConfig={estimatorConfig.hasCustomConfig}
+        targetMarginPct={Math.round(marginTargets.target * 100)}
       />
     </div>
   );

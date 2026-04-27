@@ -49,10 +49,32 @@ export interface CritiqueResult {
   criticalBlockers: string[];
 }
 
+export type ScopeRiskField =
+  | "soilType"
+  | "demoRequired"
+  | "accessDifficulty"
+  | "obstacles"
+  | "permitComplexity";
+
+export interface ScopeRiskQuestion {
+  id: string;
+  field: ScopeRiskField;
+  priority: "high" | "medium";
+  question: string;
+  reason: string;
+  suggestedValue?: string | number | boolean;
+}
+
+export interface ScopeRiskAssessment {
+  summary: string;
+  questions: ScopeRiskQuestion[];
+}
+
 export interface AiExtractionResponse {
   success: boolean;
   result?: AiExtractionResult;
   critique?: CritiqueResult;
+  scopeRiskAssessment?: ScopeRiskAssessment;
   /** Legacy combined messages (warnings + blockers). UI should prefer
    *  validationBlockers / validationWarnings going forward. */
   validationErrors?: string[];

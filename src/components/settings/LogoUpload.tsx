@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/browser'
 
 export default function LogoUpload({ orgId, currentLogoUrl }: { orgId: string; currentLogoUrl?: string }) {
@@ -45,21 +46,23 @@ export default function LogoUpload({ orgId, currentLogoUrl }: { orgId: string; c
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <label className="text-xs font-semibold text-muted uppercase tracking-wider">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
         Company Logo
-        <span className="ml-2 text-xs font-normal text-muted normal-case tracking-normal">Appears on estimates and PDFs &middot; Max 10MB</span>
+        <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 400, marginLeft: '0.5rem' }}>Appears on estimates and PDFs · Max 10MB</span>
       </label>
 
       {logoUrl ? (
-        <div className="flex items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoUrl} alt="Company logo" className="h-14 max-w-[180px] object-contain border border-border rounded-md p-2 bg-surface-3" />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="text-xs text-accent-light border border-accent/30 hover:bg-accent/10 px-3 py-1.5 rounded-md font-semibold transition-colors duration-150"
-          >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Image
+            src={logoUrl}
+            alt="Company logo"
+            width={180}
+            height={56}
+            unoptimized
+            style={{ height: '56px', maxWidth: '180px', objectFit: 'contain', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '0.5rem', background: '#f9fafb', width: 'auto' }}
+          />
+          <button type="button" onClick={() => inputRef.current?.click()} style={{ fontSize: '0.8rem', color: '#2D6A4F', background: 'none', border: '1px solid #2D6A4F', padding: '0.4rem 0.875rem', borderRadius: '6px', cursor: 'pointer' }}>
             Replace
           </button>
         </div>
@@ -68,15 +71,15 @@ export default function LogoUpload({ orgId, currentLogoUrl }: { orgId: string; c
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-3 px-5 py-3.5 border-2 border-dashed border-border hover:border-accent/60 rounded-lg bg-surface-3 cursor-pointer text-sm text-muted hover:text-text w-fit transition-colors duration-150 disabled:opacity-50"
+          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1.25rem', border: '2px dashed #d1d5db', borderRadius: '8px', background: '#f9fafb', cursor: 'pointer', fontSize: '0.875rem', color: '#6b7280', width: 'fit-content' }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          {uploading ? 'Uploading\u2026' : 'Upload Logo'}
+          {uploading ? 'Uploading…' : 'Upload Logo'}
         </button>
       )}
 
-      <input ref={inputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
-      {error && <span className="text-xs text-danger">{error}</span>}
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} />
+      {error && <span style={{ fontSize: '0.8rem', color: '#dc2626' }}>{error}</span>}
     </div>
   )
 }

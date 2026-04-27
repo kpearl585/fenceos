@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendEmail, waitlistDayThreeEmail, waitlistDaySevenEmail } from "@/lib/email";
+import { isEmailSuppressed } from "@/lib/email/suppressions";
 
 export async function POST(req: NextRequest) {
   // CRON_SECRET protection
@@ -34,6 +35,9 @@ export async function POST(req: NextRequest) {
 
       for (const row of day3Rows ?? []) {
         try {
+          if (await isEmailSuppressed(row.email)) {
+            continue;
+          }
           await sendEmail({
             to: row.email,
             subject: "The $4,200 mistake most fence contractors make every month",
@@ -60,6 +64,9 @@ export async function POST(req: NextRequest) {
 
       for (const row of day7Rows ?? []) {
         try {
+          if (await isEmailSuppressed(row.email)) {
+            continue;
+          }
           await sendEmail({
             to: row.email,
             subject: "Early access is almost here — sneak peek inside",

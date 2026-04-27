@@ -52,6 +52,35 @@ function deepMergeSafe<T extends Record<string, unknown>>(
   return result;
 }
 
+function diffFromBase<T extends Record<string, unknown>>(
+  base: T,
+  current: T
+): Partial<T> {
+  const diff: Partial<T> = {};
+
+  for (const key of Object.keys(base) as Array<keyof T>) {
+    const baseVal = base[key];
+    const currentVal = current[key];
+
+    if (isPlainObject(baseVal) && isPlainObject(currentVal)) {
+      const child = diffFromBase(
+        baseVal as Record<string, unknown>,
+        currentVal as Record<string, unknown>
+      );
+      if (Object.keys(child).length > 0) {
+        diff[key] = child as T[keyof T];
+      }
+      continue;
+    }
+
+    if (currentVal !== baseVal) {
+      diff[key] = currentVal;
+    }
+  }
+
+  return diff;
+}
+
 // ── Public API ───────────────────────────────────────────────────
 
 /**
@@ -68,6 +97,36 @@ export function mergeEstimatorConfig(
     structuredClone(DEFAULT_ESTIMATOR_CONFIG) as unknown as Record<string, unknown>,
     overrides
   ) as unknown as OrgEstimatorConfig;
+}
+
+/**
+ * Apply a patch onto an already-resolved config.
+ * Useful when auto-tuning wants to adjust the live config rather than
+ * re-merging from defaults.
+ */
+export function mergeResolvedEstimatorConfig(
+  base: OrgEstimatorConfig,
+  overrides?: DeepPartial<OrgEstimatorConfig> | null
+): OrgEstimatorConfig {
+  if (!overrides) return structuredClone(base);
+
+  return deepMergeSafe(
+    structuredClone(base) as unknown as Record<string, unknown>,
+    overrides
+  ) as unknown as OrgEstimatorConfig;
+}
+
+/**
+ * Convert a resolved config back into sparse overrides relative to defaults.
+ * Keeps org_settings.estimator_config_json lean and forward-compatible.
+ */
+export function extractEstimatorOverrides(
+  config: OrgEstimatorConfig
+): DeepPartial<OrgEstimatorConfig> {
+  return diffFromBase(
+    structuredClone(DEFAULT_ESTIMATOR_CONFIG) as unknown as Record<string, unknown>,
+    structuredClone(config) as unknown as Record<string, unknown>
+  ) as DeepPartial<OrgEstimatorConfig>;
 }
 
 /**
@@ -133,6 +192,17 @@ export function validateEstimatorConfig(
   // Check waste is in reasonable range
   if (config.waste.defaultPct < 0 || config.waste.defaultPct > 0.5) {
     warnings.push(`waste.defaultPct should be 0-0.50, got ${config.waste.defaultPct}`);
+  }
+
+  for (const [fenceType, buckets] of Object.entries(config.adaptiveLabor.byFenceType)) {
+    for (const [band, bucket] of Object.entries(buckets)) {
+      if (bucket.multiplier <= 0 || !Number.isFinite(bucket.multiplier)) {
+        warnings.push(`adaptiveLabor.byFenceType.${fenceType}.${band}.multiplier must be > 0`);
+      }
+      if (bucket.sampleCount < 0 || !Number.isFinite(bucket.sampleCount)) {
+        warnings.push(`adaptiveLabor.byFenceType.${fenceType}.${band}.sampleCount must be >= 0`);
+      }
+    }
   }
 
   return warnings;

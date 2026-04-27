@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSubscriptionCheckout } from "@/lib/stripe/subscription";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { parsePaywallTrigger } from "@/lib/paywall";
+import { getAppOrigin } from "@/lib/http/appOrigin";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Only owners can manage billing" }, { status: 403 });
   }
 
-  const origin = req.headers.get("origin") || "https://fenceestimatepro.com";
+  const origin = getAppOrigin();
 
   try {
     const session = await createSubscriptionCheckout({

@@ -177,6 +177,42 @@ Output:
 export const USER_PROMPT_TEXT = (input: string) =>
   `Extract fence project data from the following contractor input:\n\n${input}`;
 
+// ── Aerial / Satellite specific prompt ────────────────────────────
+export const AERIAL_SYSTEM_ADDENDUM = `
+## Aerial and Satellite Photo Instructions
+
+When analyzing aerial or satellite imagery:
+
+SCALE CALIBRATION — Use these reference object sizes to estimate scale:
+- Standard residential driveway: 10–12ft wide
+- Standard parking space: 8.5ft wide × 18ft long  
+- Full-size vehicle (car): 14–16ft long, 6–6.5ft wide
+- SUV/truck: 16–20ft long
+- Standard entry door: 3ft wide × 6.8ft tall
+- Standard garage door (single): 9ft wide; (double): 16ft wide
+- Typical fence post visible from above: 4–6 inch dot
+- Basketball hoop backboard: 6ft wide
+- Swimming pool (residential): typically 12×24ft to 16×32ft
+
+PROPERTY BOUNDARY DETECTION:
+- Look for existing fence lines (thin lines, shadow patterns, color changes at property edge)
+- Identify driveway as likely gate location
+- Pool = likely pool gate requirement
+- Property corner markers = fence corner posts
+- Grass/concrete boundary = likely fence line
+
+MEASUREMENT TECHNIQUE:
+- Identify the most reliable reference object in the image
+- Establish pixels-per-foot scale from that object
+- Apply scale to fence line lengths
+- Report your reference object and estimated scale in flags
+
+CONFIDENCE RULES for aerial:
+- If you can establish a clear scale reference: confidence = 0.75–0.85
+- If scale is uncertain: confidence < 0.65 and flag it
+- If no reference objects visible: confidence = 0.4, linearFeet = 0 for all runs, flag as critical
+`;
+
 export const USER_PROMPT_IMAGE = (base64: string, mimeType: string, additionalText?: string) => [
   {
     type: "image_url" as const,

@@ -1,10 +1,16 @@
+import { createClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/bootstrap";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getSavedEstimate, getOrgCalibration } from "../actions";
+import { getSavedEstimate, getOrgCalibration, getOrgEstimatorConfig } from "../actions";
 import CloseoutPanel from "./CloseoutPanel";
 import ShareQuoteButton from "@/components/ShareQuoteButton";
 import HoaPacketButton from "@/components/HoaPacketButton";
 import type { FenceEstimateResult } from "@/lib/fence-graph/types";
+import type { EstimateCloseoutAnalysis } from "@/lib/fence-graph/closeout/types";
+import type { CloseoutActuals } from "@/lib/fence-graph/closeout/types";
+import { buildEstimatorTuningRecommendations, type EstimatorTuningRecommendation } from "@/lib/fence-graph/closeout/tuning";
+import { inferFenceTypeFromProductLineId } from "@/lib/fence-graph/estimateInput";
 
 export const metadata = { title: "Estimate Detail — FenceEstimatePro" };
 
@@ -14,13 +20,42 @@ function fmt(n: number) {
 
 export default async function SavedEstimateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const profile = await ensureProfile(supabase, user);
+
   const est = await getSavedEstimate(id);
   if (!est) redirect("/dashboard/advanced-estimate/saved");
 
   const cal = await getOrgCalibration();
+  const { config } = await getOrgEstimatorConfig();
   const result = est.result_json as FenceEstimateResult;
-  const input = est.input_json;
   const isClosed = est.status === "closed";
+  const analysis =
+    (est.closeout_analysis_json as EstimateCloseoutAnalysis | null | undefined) ?? null;
+  const actuals =
+    (est.closeout_actuals_json as CloseoutActuals | null | undefined) ?? null;
+  const persistedInput = est.input_json as {
+    productLineId?: string;
+    fenceType?: string;
+    siteComplexity?: import("@/lib/fence-graph/accuracy-types").SiteComplexity | null;
+  };
+  const fenceType = (
+    typeof persistedInput.fenceType === "string"
+      ? persistedInput.fenceType
+      : inferFenceTypeFromProductLineId(persistedInput.productLineId)
+  ) as "vinyl" | "wood" | "chain_link" | "aluminum" | null;
+  const tuningRecommendations: EstimatorTuningRecommendation[] =
+    analysis && actuals && fenceType
+      ? buildEstimatorTuningRecommendations({
+          analysis,
+          actuals,
+          currentConfig: config,
+          fenceType,
+          siteComplexity: persistedInput.siteComplexity ?? null,
+        })
+      : [];
 
   return (
     <div>
@@ -150,11 +185,29 @@ export default async function SavedEstimateDetailPage({ params }: { params: Prom
           <CloseoutPanel
             estimateId={est.id}
             estimateName={est.name}
-            estimatedWastePct={est.waste_pct * 100}
+            estimatedValues={{
+              materialCost: result.totalMaterialCost,
+              laborHours: result.totalLaborHrs,
+              laborCost: result.totalLaborCost,
+              totalCost: result.totalCost,
+              wastePct: est.waste_pct * 100,
+            }}
             isClosed={isClosed}
-            actualWastePct={est.closeout_actual_waste_pct != null ? est.closeout_actual_waste_pct * 100 : null}
+            actuals={{
+              wastePct: est.closeout_actual_waste_pct != null ? est.closeout_actual_waste_pct * 100 : null,
+              laborHours: est.closeout_actual_labor_hours ?? null,
+              crewSize: est.closeout_crew_size ?? null,
+              weatherConditions: est.closeout_weather_conditions ?? null,
+              materialCost: est.closeout_actual_material_cost ?? null,
+              laborCost: est.closeout_actual_labor_cost ?? null,
+              totalCost: est.closeout_actual_total_cost ?? null,
+              notes: est.closeout_notes ?? null,
+            }}
             closedAt={est.closed_at}
             calibration={cal}
+            analysis={analysis}
+            tuningRecommendations={tuningRecommendations}
+            canApplyTuning={profile.role === "owner"}
           />
         </div>
       </div>

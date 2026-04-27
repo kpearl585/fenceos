@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function LandingPageV2() {
   return (
-    <main className="bg-white">
+    <main className="bg-background text-text">
       <HeroV2 />
       <SocialProofBar />
       <ProblemSolution />

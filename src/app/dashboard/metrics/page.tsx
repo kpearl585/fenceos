@@ -11,7 +11,7 @@ function currency(n: number) {
 function pct(n: number, decimals = 1) { return `${n.toFixed(decimals)}%`; }
 function deltaLabel(n: number) {
   const sign = n >= 0 ? "" : "";
-  const color = n >= 0 ? "text-green-600" : "text-red-500";
+  const color = n >= 0 ? "text-accent-light" : "text-danger";
   return { sign, color, text: `${sign} ${Math.abs(n).toFixed(1)}%` };
 }
 
@@ -19,14 +19,14 @@ interface StatCardProps {
   label: string; value: string; sub?: string;
   deltaText?: string; deltaColor?: string; icon: string; accent?: string;
 }
-function StatCard({ label, value, sub, deltaText, deltaColor, icon, accent = "text-fence-950" }: StatCardProps) {
+function StatCard({ label, value, sub, deltaText, deltaColor, icon, accent = "text-text" }: StatCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+    <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
       <div className="text-lg mb-2">{icon}</div>
       <div className={`text-2xl font-black mb-0.5 ${accent}`}>{value}</div>
-      <div className="text-xs text-gray-500 font-medium">{label}</div>
+      <div className="text-xs text-muted font-medium">{label}</div>
       {deltaText && <div className={`text-xs font-semibold mt-1 ${deltaColor}`}>{deltaText}</div>}
-      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
+      {sub && <div className="text-xs text-muted mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -40,10 +40,10 @@ function HealthBar({ label, value, max, target, format = "pct" }: {
   return (
     <div>
       <div className="flex justify-between items-center mb-1.5">
-        <span className="text-sm text-gray-600">{label}</span>
-        <span className="text-sm font-bold text-fence-950">{display}</span>
+        <span className="text-sm text-muted">{label}</span>
+        <span className="text-sm font-bold text-text">{display}</span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-surface-3 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pctFilled}%` }} />
       </div>
     </div>
@@ -91,7 +91,9 @@ export default async function MetricsDashboard() {
   ]);
 
   const estimates  = allEstimates  ?? [];
+  const jobs       = allJobs       ?? [];
   const customers  = allCustomers  ?? [];
+  const team       = teamMembers   ?? [];
 
   //  Revenue 
   const closed     = estimates.filter(e => ["accepted","deposit_paid"].includes(e.status));
@@ -120,21 +122,21 @@ export default async function MetricsDashboard() {
   const closeRate     = sent.length  > 0 ? (closed.length  / sent.length)  * 100 : 0;
   const closeRateWeek = sentWeek.length > 0 ? (closedWeek.length / sentWeek.length) * 100 : 0;
 
-  //  CAC / LTV / LTV:CAC 
-  // CAC = estimated (no ad spend yet — using $0 paid, time-cost proxy)
-  // Once Stripe live: CAC = total acquisition spend / new customers
   const newCust90  = customers.filter(c => c.created_at >= start90).length;
-  const cac        = newCust90 > 0 ? 0 : 0; // $0 when all organic — update when paid traffic starts
-  const avgMonthlyRev = avgDeal > 0 ? avgDeal : 0;
-  const estimatedLTV  = avgDeal * 3; // conservative: avg contractor stays 3+ jobs
-  const ltvcac         = cac > 0 ? estimatedLTV / cac : null;
+  const activeJobs = jobs.filter(j => j.status === "active").length;
+  const scheduledJobs = jobs.filter(j => j.status === "scheduled").length;
+  const closeCycleSamples = closed
+    .filter(e => e.accepted_at && e.last_sent_at)
+    .map((e) => {
+      const acceptedAt = new Date(e.accepted_at!).getTime();
+      const sentAt = new Date(e.last_sent_at!).getTime();
+      return acceptedAt > sentAt ? (acceptedAt - sentAt) / 86400000 : null;
+    })
+    .filter((days): days is number => days != null);
+  const avgDaysToClose = closeCycleSamples.length > 0
+    ? closeCycleSamples.reduce((sum, days) => sum + days, 0) / closeCycleSamples.length
+    : null;
 
-  //  Retention proxies 
-  const custWithJobs   = new Set((allJobs ?? []).map(j => j.id)).size;
-  const onboardingRate = customers.length > 0 ? Math.min(100, (custWithJobs / customers.length) * 100) : 0;
-
-  //  Efficiency 
-  const grossMarginPct = 75; // SaaS target — update when cost data available
   const plan = org?.plan ?? "trial";
   const daysLeft = org?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(org.trial_ends_at).getTime() - now.getTime()) / 86400000))
@@ -149,9 +151,9 @@ export default async function MetricsDashboard() {
   } else if (sent.length > 0 && closeRate < 15) {
     bottleneck = "Low close rate — offer or pricing issue.";
     bottleneckAction = "Review your last 3 rejected estimates. Adjust price or scope.";
-  } else if (closeRate >= 15 && customers.length > 5 && onboardingRate < 50) {
-    bottleneck = "Low onboarding completion — retention risk.";
-    bottleneckAction = "Call your last 5 customers. Ask what's confusing about the process.";
+  } else if (avgDaysToClose != null && avgDaysToClose > 14) {
+    bottleneck = "Deals are taking too long to close.";
+    bottleneckAction = "Tighten follow-up after quotes go out and review quote speed-to-send.";
   } else if (closeRate >= 25 && revMonth > 0) {
     bottleneck = "Engine running. Bottleneck: volume.";
     bottleneckAction = "Increase outreach volume — more quotes = more revenue.";
@@ -167,13 +169,13 @@ export default async function MetricsDashboard() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-fence-950">KPI Dashboard</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Owner-only · Updates in real time</p>
+          <h1 className="text-2xl font-bold text-text">KPI Dashboard</h1>
+          <p className="text-sm text-muted mt-0.5">Owner-only · Updates in real time</p>
         </div>
         <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-          plan === "trial" ? "bg-amber-100 text-amber-700" :
-          plan === "pro"   ? "bg-fence-100 text-fence-700" :
-          plan === "business" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
+          plan === "trial" ? "bg-warning/15 text-warning" :
+          plan === "pro"   ? "bg-accent/15 text-accent-light" :
+          plan === "business" ? "bg-info/15 text-info" : "bg-surface-3 text-muted"
         }`}>
           {plan === "trial" ? `Trial · ${daysLeft}d left` : plan}
         </span>
@@ -181,7 +183,7 @@ export default async function MetricsDashboard() {
 
       {/* Revenue Row */}
       <div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Revenue</h2>
+        <h2 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Revenue</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon="" label="Revenue This Week"  value={currency(revWeek)}
             deltaText={weekDelta.text}  deltaColor={weekDelta.color}  sub="vs prior 7 days" />
@@ -194,42 +196,36 @@ export default async function MetricsDashboard() {
 
       {/* Acquisition Row */}
       <div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Acquisition</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <h2 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Acquisition</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard icon="" label="Quotes Sent (Week)"  value={String(sentWeek.length)}
             deltaText={leadsDeltaObj.text} deltaColor={leadsDeltaObj.color} sub="vs prior 7 days" />
           <StatCard icon="" label="Close Rate (All Time)" value={pct(closeRate)}
-            accent={closeRate >= 30 ? "text-green-600" : closeRate >= 15 ? "text-amber-600" : "text-red-500"}
+            accent={closeRate >= 30 ? "text-accent-light" : closeRate >= 15 ? "text-warning" : "text-danger"}
             sub={`${closed.length} of ${sent.length} sent`} />
           <StatCard icon="" label="Close Rate (Week)"     value={pct(closeRateWeek)}
-            accent={closeRateWeek >= 30 ? "text-green-600" : "text-amber-600"}
+            accent={closeRateWeek >= 30 ? "text-accent-light" : "text-warning"}
             sub={`${closedWeek.length} of ${sentWeek.length} this week`} />
-          <StatCard icon="" label="CAC"  value={cac > 0 ? currency(cac) : "$0 (organic)"}
-            sub="cost per acquired customer" />
         </div>
       </div>
 
-      {/* Retention + LTV Row */}
+      {/* Operations Row */}
       <div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Retention & LTV</h2>
+        <h2 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Operations</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon=""  label="Est. Customer LTV"    value={currency(estimatedLTV)} sub="avg deal × 3 jobs" />
-          <StatCard icon=""  label="LTV:CAC Ratio"        value={ltvcac !== null ? `${ltvcac.toFixed(1)}:1` : "N/A (organic)"}
-            accent="text-green-600" sub="Target: >3:1" />
-          <StatCard icon=""  label="Onboarding Rate"      value={pct(onboardingRate)}
-            accent={onboardingRate >= 60 ? "text-green-600" : "text-amber-600"}
-            sub="customers with active jobs" />
-          <StatCard icon=""  label="Total Customers"      value={String(customers.length)}
-            sub={`${customers.filter(c => c.created_at >= startThisMonth).length} new this month`} />
+          <StatCard icon="" label="Active Jobs" value={String(activeJobs)} sub={`${scheduledJobs} scheduled`} />
+          <StatCard icon="" label="Avg Days To Close" value={avgDaysToClose != null ? `${avgDaysToClose.toFixed(1)}d` : "N/A"} sub="quote sent → accepted" />
+          <StatCard icon="" label="Customers (90d)" value={String(newCust90)} sub="new customer records created" />
+          <StatCard icon="" label="Team Size" value={String(team.length)} sub="users in this org" />
         </div>
       </div>
 
       {/* Health Bars */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-        <h2 className="font-bold text-fence-950 mb-5">Performance Health</h2>
+      <div className="bg-surface rounded-xl border border-border p-6 shadow-sm">
+        <h2 className="font-bold text-text mb-5">Performance Health</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <HealthBar label="Close Rate"       value={closeRate}     max={50}  target={30} />
-          <HealthBar label="Onboarding Rate"  value={onboardingRate} max={100} target={60} />
+          <HealthBar label="Quotes Sent This Week" value={sentWeek.length} max={10} target={5} format="raw" />
           <HealthBar label="Avg Deal Size"    value={avgDeal}       max={10000} target={3000} format="currency" />
         </div>
       </div>
@@ -237,40 +233,35 @@ export default async function MetricsDashboard() {
       {/* Bottleneck Diagnostic */}
       <div className={`rounded-xl border p-6 ${
         bottleneck.includes("No data") || bottleneck.includes("No quotes")
-          ? "bg-gray-50 border-gray-200"
-          : bottleneck.includes("Low close") ? "bg-amber-50 border-amber-200"
-          : bottleneck.includes("onboarding") ? "bg-red-50 border-red-200"
-          : "bg-green-50 border-green-200"
+          ? "bg-surface border-border"
+          : bottleneck.includes("Low close") ? "bg-warning/10 border-warning/30"
+          : bottleneck.includes("taking too long") ? "bg-danger/10 border-danger/30"
+          : "bg-accent/10 border-accent/30"
       }`}>
         <div className="flex items-start gap-3">
-          <span className="text-xl">
-            {bottleneck.includes("volume") ? "" :
-             bottleneck.includes("onboarding") ? "" :
-             bottleneck.includes("close rate") ? "" : ""}
-          </span>
           <div>
-            <h3 className="font-bold text-fence-950 mb-1">Current Bottleneck</h3>
-            <p className="text-sm text-gray-700 mb-2">{bottleneck}</p>
-            <p className="text-sm font-semibold text-fence-700">→ {bottleneckAction}</p>
+            <h3 className="font-bold text-text mb-1">Current Bottleneck</h3>
+            <p className="text-sm text-text mb-2">{bottleneck}</p>
+            <p className="text-sm font-semibold text-accent-light">→ {bottleneckAction}</p>
           </div>
         </div>
       </div>
 
       {/* KPI Priority Rule */}
-      <div className="bg-fence-950 rounded-xl p-6 text-white">
-        <h2 className="font-bold mb-4 text-fence-300 text-xs uppercase tracking-wider">KPI Priority Diagnostic</h2>
+      <div className="bg-surface rounded-xl border border-border p-6 text-white">
+        <h2 className="font-bold mb-4 text-accent-light text-xs uppercase tracking-wider">KPI Priority Diagnostic</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           {[
             { cond: "Leads low",              fix: "Acquisition problem → increase outreach",   active: sentWeek.length < 3 },
             { cond: "Leads high, closes low", fix: "Offer problem → review pricing + messaging", active: sentWeek.length >= 3 && closeRate < 15 },
-            { cond: "Sales high, churn high", fix: "Onboarding problem → improve activation",   active: closed.length > 10 && onboardingRate < 50 },
-            { cond: "Revenue high, margin low",fix: "Pricing problem → raise prices",           active: revMonth > 10000 && grossMarginPct < 60 },
+            { cond: "Quotes slow to close",   fix: "Follow-up problem → tighten quote follow-up cadence", active: avgDaysToClose != null && avgDaysToClose > 14 },
+            { cond: "Revenue high, deal size low",fix: "Packaging problem → raise minimum job size", active: revMonth > 10000 && avgDeal < 2500 },
           ].map(({ cond, fix, active }) => (
-            <div key={cond} className={`flex gap-3 p-3 rounded-lg ${active ? "bg-amber-500/20 border border-amber-500/40" : "bg-white/5"}`}>
+            <div key={cond} className={`flex gap-3 p-3 rounded-lg ${active ? "bg-warning/15 border border-warning/30" : "bg-surface-3"}`}>
               <span>{active ? "" : ""}</span>
               <div>
-                <div className={`font-semibold text-xs ${active ? "text-amber-300" : "text-white/50"}`}>{cond}</div>
-                <div className={`text-xs mt-0.5 ${active ? "text-white" : "text-white/30"}`}>{fix}</div>
+                <div className={`font-semibold text-xs ${active ? "text-warning" : "text-muted"}`}>{cond}</div>
+                <div className={`text-xs mt-0.5 ${active ? "text-text" : "text-muted/70"}`}>{fix}</div>
               </div>
             </div>
           ))}
