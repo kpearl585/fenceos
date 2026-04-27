@@ -108,6 +108,7 @@ export default function AdvancedEstimateClient({
   const [gates, setGates] = useState<GateInput[]>([]);
   const [activeTab, setActiveTab] = useState<"bom" | "labor" | "audit">("bom");
   const [inputMode, setInputMode] = useState<"manual" | "ai">("manual");
+  const [showAdvancedInputs, setShowAdvancedInputs] = useState(false);
   const [projectName, setProjectName] = useState("New Estimate");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [markupPct, setMarkupPct] = useState(() => markupPctForTargetMargin(targetMarginPct));
@@ -208,6 +209,11 @@ export default function AdvancedEstimateClient({
       : customer.name.trim()
         ? "Create a sendable estimate from the current scope."
         : "Requires customer name in Customer Info above");
+  const primaryWarning =
+    confidenceBlockers[0]?.message ||
+    (pricingHealth && pricingHealth.freshCoveragePct < 0.25
+      ? "Refresh material prices before sending this quote."
+      : marginRisk?.reasons?.[0] || null);
 
   async function handleProposalDownload() {
     if (!result) return;
@@ -385,7 +391,19 @@ export default function AdvancedEstimateClient({
 
         {inputMode === "manual" && (<>
         <div className="bg-surface rounded-xl border border-border p-5">
-          <h2 className="font-semibold text-text mb-4">Project Setup</h2>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-text">Project Setup</h2>
+              <p className="mt-1 text-xs text-muted">Enter the basics first. Only open advanced settings if this is an unusual job.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedInputs((v) => !v)}
+              className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-muted hover:text-text transition-colors"
+            >
+              {showAdvancedInputs ? "Hide advanced" : "Show advanced"}
+            </button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Project Name</label>
@@ -452,63 +470,83 @@ export default function AdvancedEstimateClient({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Labor Rate ($/hr)</label>
-              <input
-                type="number" min={20} max={200} value={laborRate}
-                onChange={(e) => setLaborRate(Number(e.target.value))}
-                className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Waste Factor (%)</label>
-              <input
-                type="number" min={1} max={20} value={wastePct}
-                onChange={(e) => setWastePct(Number(e.target.value))}
-                className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Markup Over Cost (%)</label>
-              <input
-                type="number" min={0} max={200} value={markupPct}
-                onChange={(e) => setMarkupPct(Number(e.target.value))}
-                className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
-              />
-              <p className="mt-1 text-[11px] text-muted">
-                Starts at the markup needed to hit your {targetMarginPct}% target margin.
-              </p>
-            </div>
           </div>
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setWindMode((v) => !v)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${windMode ? "bg-accent" : "bg-surface-3"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${windMode ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-            <span className="text-sm font-medium text-text">Wind Mode / Hurricane Zone</span>
-            {windMode && <span className="text-xs text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded">Deeper posts + aluminum inserts + rebar applied</span>}
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setExistingFenceRemoval((v) => !v)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${existingFenceRemoval ? "bg-accent" : "bg-surface-3"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${existingFenceRemoval ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-            <span className="text-sm font-medium text-text">Existing Fence Removal</span>
-            {existingFenceRemoval && <span className="text-xs text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded">Removal labor + disposal applied</span>}
-          </div>
+          {showAdvancedInputs && (
+            <div className="mt-4 rounded-xl border border-border bg-surface-2 p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Advanced Settings</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Labor Rate ($/hr)</label>
+                  <input
+                    type="number" min={20} max={200} value={laborRate}
+                    onChange={(e) => setLaborRate(Number(e.target.value))}
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Waste Factor (%)</label>
+                  <input
+                    type="number" min={1} max={20} value={wastePct}
+                    onChange={(e) => setWastePct(Number(e.target.value))}
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Markup Over Cost (%)</label>
+                  <input
+                    type="number" min={0} max={200} value={markupPct}
+                    onChange={(e) => setMarkupPct(Number(e.target.value))}
+                    className="w-full border border-border bg-surface-3 text-text rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
+                  />
+                  <p className="mt-1 text-[11px] text-muted">
+                    Starts at the markup needed to hit your {targetMarginPct}% target margin.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setWindMode((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${windMode ? "bg-accent" : "bg-surface-3"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${windMode ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                  <span className="text-sm font-medium text-text">Wind / hurricane job</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExistingFenceRemoval((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${existingFenceRemoval ? "bg-accent" : "bg-surface-3"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${existingFenceRemoval ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                  <span className="text-sm font-medium text-text">Remove old fence</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div id="est-site-complexity" tabIndex={-1} className="outline-none">
-          <SiteComplexityForm
-            initialComplexity={siteComplexity ?? undefined}
-            onComplexityChange={(complexity) => setSiteComplexity(complexity)}
-          />
+          <details className="bg-surface rounded-xl border border-border p-5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+              <div>
+                <h2 className="font-semibold text-text">Job Difficulty</h2>
+                <p className="mt-1 text-xs text-muted">Only fill this out if the site is tricky, steep, rocky, or has permit headaches.</p>
+              </div>
+              <span className="rounded-full border border-border bg-surface-2 px-3 py-1 text-xs font-semibold text-muted">
+                Optional
+              </span>
+            </summary>
+            <div className="mt-4">
+              <SiteComplexityForm
+                initialComplexity={siteComplexity ?? undefined}
+                onComplexityChange={(complexity) => setSiteComplexity(complexity)}
+              />
+            </div>
+          </details>
         </div>
 
         {/* Runs */}
@@ -681,7 +719,7 @@ export default function AdvancedEstimateClient({
         {result ? (
           <>
             <div className="bg-surface rounded-xl border border-border p-5 text-white">
-              <p className="text-accent-light text-xs font-semibold uppercase tracking-widest mb-3">Estimate Summary</p>
+              <p className="text-accent-light text-xs font-semibold uppercase tracking-widest mb-3">Quick Quote</p>
               {/* Cost breakdown */}
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
@@ -733,6 +771,18 @@ export default function AdvancedEstimateClient({
                   <span className="text-amber-400">{result.redFlagItems.length} unpriced</span>
                 )}
               </div>
+              {primaryWarning && (
+                <div className="mt-3 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2">
+                  <p className="text-sm font-semibold text-warning">Quick review needed</p>
+                  <p className="mt-1 text-xs text-warning/90">{primaryWarning}</p>
+                </div>
+              )}
+              <details className="mt-3 rounded-lg border border-border bg-surface-2">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2">
+                  <span className="text-sm font-semibold text-text">View estimate details</span>
+                  <span className="text-xs text-muted">Pricing, margin, BOM, labor</span>
+                </summary>
+                <div className="border-t border-border p-3 space-y-3">
               {pricingHealth && (
                 <div
                   id="est-pricing-health"
@@ -844,6 +894,8 @@ export default function AdvancedEstimateClient({
                   ))}
                 </div>
               )}
+                </div>
+              </details>
               <div className="mt-4 space-y-2">
                 {/* PRIMARY CTA — Convert to sendable estimate */}
                 <button
@@ -853,7 +905,7 @@ export default function AdvancedEstimateClient({
                 >
                   {convertStatus === "converting" ? "Creating Estimate..." :
                    convertStatus === "done" ? "Redirecting..." :
-                   sendBlocked ? "Resolve Estimate Risk Blockers" : "Create Estimate & Send to Customer"}
+                   sendBlocked ? "Review quote details first" : "Create Customer Quote"}
                 </button>
                 {primaryCtaHint && (
                   <p className={`text-xs text-center ${convertError ? "text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1" : "text-muted"}`}>
@@ -867,6 +919,11 @@ export default function AdvancedEstimateClient({
                 >
                   {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error" : "Save Draft"}
                 </button>
+                <details className="rounded-lg border border-border bg-surface-2">
+                  <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-muted hover:text-text">
+                    Show internal downloads and exports
+                  </summary>
+                  <div className="border-t border-border p-3">
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={handlePdfDownload}
@@ -907,9 +964,17 @@ export default function AdvancedEstimateClient({
                   </div>
                   <p className="text-xs text-muted text-center mt-1">Internal shows margins · Supplier PO shows quantities only</p>
                 </div>
+                  </div>
+                </details>
               </div>
             </div>
 
+            <details className="bg-surface rounded-xl border border-border">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                <span className="text-sm font-semibold text-text">Internal breakdown</span>
+                <span className="text-xs text-muted">Waste, BOM, labor, audit</span>
+              </summary>
+              <div className="border-t border-border p-4 space-y-4">
             {/* Scrap summary */}
             <div className="bg-surface rounded-xl border border-border p-4">
               <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Waste Analysis</p>
@@ -999,6 +1064,8 @@ export default function AdvancedEstimateClient({
                 </div>
               )}
             </div>
+              </div>
+            </details>
           </>
         ) : (
           <div className="bg-surface rounded-xl border border-border p-8 text-center">
