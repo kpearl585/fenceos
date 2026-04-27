@@ -63,7 +63,7 @@ function isQuotaError(err: unknown): boolean {
 
 // ── AI health check ───────────────────────────────────────────────
 export async function checkAiReadiness(): Promise<{ available: boolean; reason?: string }> {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
     return { available: false, reason: "AI extraction is not configured. Contact your administrator." };
   }
   return { available: true };
@@ -147,6 +147,36 @@ async function runExtraction(
     result: parsed,
     inputTokens: response.usage?.prompt_tokens ?? 0,
     outputTokens: response.usage?.completion_tokens ?? 0,
+  };
+}
+
+async function runExtractionAnthropic(
+  client: Anthropic,
+  text: string
+): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number }> {
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 8_000,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: USER_PROMPT_TEXT(text) }],
+  });
+
+  const textBlock = response.content.find(
+    (block): block is Anthropic.Messages.TextBlock => block.type === "text"
+  );
+  if (!textBlock) throw new Error("Anthropic text extraction returned no text block");
+
+  const raw = textBlock.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const firstBrace = raw.indexOf("{");
+  const lastBrace = raw.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace < 0) {
+    throw new Error(`Could not find JSON object in Anthropic response: ${raw.slice(0, 200)}…`);
+  }
+
+  return {
+    result: JSON.parse(raw.slice(firstBrace, lastBrace + 1)) as AiExtractionResult,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
   };
 }
 
@@ -270,6 +300,57 @@ async function runSurveyExtractionAnthropic(
     result: parsed,
     inputTokens: response.usage.input_tokens,
     outputTokens: response.usage.output_tokens,
+  };
+}
+
+async function runImageExtractionAnthropic(
+  client: Anthropic,
+  base64: string,
+  mimeType: "image/png" | "image/jpeg",
+  additionalText?: string
+): Promise<{ result: AiExtractionResult; inputTokens: number; outputTokens: number; usedHighDetail: boolean }> {
+  const isLikelyAerial = additionalText?.toLowerCase().match(/aerial|satellite|google maps|overhead|bird.?s? eye|drone|top.?down/) != null;
+  const systemPrompt = isLikelyAerial
+    ? SYSTEM_PROMPT + "\n" + AERIAL_SYSTEM_ADDENDUM
+    : SYSTEM_PROMPT;
+
+  const userContent: Anthropic.Messages.ContentBlockParam[] = [
+    {
+      type: "image",
+      source: { type: "base64", media_type: mimeType, data: base64 },
+    },
+    {
+      type: "text",
+      text: additionalText
+        ? `Additional context: ${additionalText}\n\nExtract fence project data from this image.`
+        : "Extract fence project data from this image.",
+    },
+  ];
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 8_000,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userContent }],
+  });
+
+  const textBlock = response.content.find(
+    (block): block is Anthropic.Messages.TextBlock => block.type === "text"
+  );
+  if (!textBlock) throw new Error("Anthropic image extraction returned no text block");
+
+  const raw = textBlock.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const firstBrace = raw.indexOf("{");
+  const lastBrace = raw.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace < 0) {
+    throw new Error(`Could not find JSON object in Anthropic response: ${raw.slice(0, 200)}…`);
+  }
+
+  return {
+    result: JSON.parse(raw.slice(firstBrace, lastBrace + 1)) as AiExtractionResult,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+    usedHighDetail: false,
   };
 }
 
@@ -405,13 +486,20 @@ export async function extractFromText(
   const inputHash = crypto.createHash("sha256").update(description).digest("hex").slice(0, 16);
 
   try {
-    const client = getOpenAI();
+    let result: AiExtractionResult;
+    let inputTokens = 0;
+    let outputTokens = 0;
 
-    // Pass 1: Extract
-    const { result, inputTokens, outputTokens } = await runExtraction(client, [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Extract fence project data from the following contractor input:\n\n${description}` },
-    ]);
+    if (hasAnthropic()) {
+      const client = getAnthropic();
+      ({ result, inputTokens, outputTokens } = await runExtractionAnthropic(client, description));
+    } else {
+      const client = getOpenAI();
+      ({ result, inputTokens, outputTokens } = await runExtraction(client, [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Extract fence project data from the following contractor input:\n\n${description}` },
+      ]));
+    }
 
     // Validate
     const validation = validateExtraction(result);
@@ -420,7 +508,14 @@ export async function extractFromText(
     }
 
     // Pass 2: Critique (parallel, non-blocking path)
-    const critique = await runCritique(client, result, description);
+    let critique: CritiqueResult | null = null;
+    if (hasOpenAI()) {
+      try {
+        critique = await runCritique(getOpenAI(), result, description);
+      } catch {
+        critique = null;
+      }
+    }
     const scopeRiskAssessment = buildScopeRiskAssessment(description, result, critique);
     result.hiddenCostFlags = detectHiddenCosts(description, result);
 
@@ -468,6 +563,9 @@ export async function extractFromText(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Extraction failed";
     if (msg.startsWith("AI_UNAVAILABLE")) return { success: false, error: "AI extraction is not available. Contact your administrator." };
+    if (isQuotaError(err) && hasAnthropic()) {
+      return { success: false, error: "OpenAI quota is exhausted, but Anthropic fallback also failed. Check the Anthropic key and billing." };
+    }
     return { success: false, error: msg };
   }
 }
@@ -500,12 +598,25 @@ export async function extractFromImage(
   const inputHash = crypto.createHash("sha256").update(base64.slice(0, 1000)).digest("hex").slice(0, 16);
 
   try {
-    const client = getOpenAI();
+    let result: AiExtractionResult;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let usedHighDetail = false;
 
-    // Image extraction with quality ladder (low → high)
-    const { result, inputTokens, outputTokens, usedHighDetail } = await runImageExtraction(
-      client, base64, mimeType, additionalText
-    );
+    if (hasAnthropic()) {
+      const client = getAnthropic();
+      ({ result, inputTokens, outputTokens, usedHighDetail } = await runImageExtractionAnthropic(
+        client,
+        base64,
+        mimeType as "image/png" | "image/jpeg",
+        additionalText
+      ));
+    } else {
+      const client = getOpenAI();
+      ({ result, inputTokens, outputTokens, usedHighDetail } = await runImageExtraction(
+        client, base64, mimeType, additionalText
+      ));
+    }
 
     // Validate
     const validation = validateExtraction(result);
@@ -518,7 +629,14 @@ export async function extractFromImage(
 
     // Critique pass
     const critiqueInput = additionalText ?? "Image upload (no additional context)";
-    const critique = await runCritique(client, result, critiqueInput);
+    let critique: CritiqueResult | null = null;
+    if (hasOpenAI()) {
+      try {
+        critique = await runCritique(getOpenAI(), result, critiqueInput);
+      } catch {
+        critique = null;
+      }
+    }
     const scopeRiskAssessment = buildScopeRiskAssessment(critiqueInput, result, critique);
     result.hiddenCostFlags = detectHiddenCosts(critiqueInput, result);
     if (critique?.questionsForContractor?.length) {

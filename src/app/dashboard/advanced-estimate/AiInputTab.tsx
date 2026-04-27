@@ -582,7 +582,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
           <p className="font-display text-sm font-bold">AI Estimate Assistant</p>
-          <span className="text-xs bg-surface-2 text-accent-light border border-border px-2 py-0.5 rounded font-semibold uppercase tracking-wider">GPT-4o</span>
+          <span className="text-xs bg-surface-2 text-accent-light border border-border px-2 py-0.5 rounded font-semibold uppercase tracking-wider">Claude + AI</span>
         </div>
         <p className="text-xs text-muted">
           Describe the job or upload a site photo, sketch, or plan. AI extracts the runs — the engine does all the math.
@@ -796,7 +796,7 @@ export default function AiInputTab({ onApply, onPaywall }: Props) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Analyzing marked survey...
+            {mode === "survey" ? "Analyzing marked survey..." : "Extracting runs..."}
           </span>
         ) : "Extract Runs with AI"}
       </button>
